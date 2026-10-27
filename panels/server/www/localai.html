@@ -45,6 +45,11 @@ select.sel { min-height: 40px; border-radius: 12px; border: 1px solid var(--line
 .ci.on { border-color: var(--hue); } .ci b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ci small { color: var(--mute); font-size: 12px; }
 .chip { font-size: 11px; padding: 1px 8px; border-radius: 99px; margin-left: 4px; background: rgba(255,255,255,.08); } .chip.answering, .chip.waiting { background: color-mix(in srgb, var(--hue) 35%, transparent); }
 .chip.cut { background: rgba(251,191,36,.18); color: #fde68a; }
+.code { position: relative; margin: 8px 0; border-radius: 12px; background: #0b0e14; border: 1px solid var(--line); }
+.code pre { margin: 0; padding: 12px; overflow-x: auto; font: 12.5px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; white-space: pre; }
+.code .cl { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 6px 12px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--mute); }
+.code .cl button { min-height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.08); color: var(--ink); font: inherit; font-weight: 650; }
+.msg.assistant { white-space: normal; } .msg.assistant:has(.code) { width: 100%; max-width: 100%; } .msg .tx { white-space: pre-wrap; }
 .msg .cut { display: block; margin-top: 6px; font-size: 12.5px; color: #fde68a; }
 .msgs { display: flex; flex-direction: column; gap: 10px; max-height: 55vh; overflow-y: auto; }
 .msg { max-width: 92%; padding: 10px 14px; border-radius: 16px; white-space: pre-wrap; font-size: 14.5px; line-height: 1.5; }
@@ -148,6 +153,30 @@ function bind() {
   document.querySelectorAll('[data-chat]').forEach(b => b.onclick = () => { chatModel = b.dataset.chat; OPEN = null; chatRender(); $('#ctext').focus(); $('#chat').scrollIntoView({ block: 'start' }); });
 }
 // ---------- saved chats: answers run on Home Deck and keep going when this page closes ----------
+// Code in an answer: ``` blocks (an unclosed one while it is still answering), or an answer that is only a web page.
+let CODES = [];
+function richText(t) {
+  const parts = [], re = /```([\w+-]*)[^\n]*\n([\s\S]*?)(```|$)/g; let at = 0, m;
+  if (!t.includes('```') && /^\s*(<!doctype html|<html)/i.test(t)) return codeBox('html', t.trim());
+  while ((m = re.exec(t))) {
+    if (m.index > at) parts.push(`<span class="tx">${esc(t.slice(at, m.index).trim())}</span>`);
+    parts.push(codeBox(m[1], m[2].replace(/\n$/, ''))); at = re.lastIndex;
+    if (!m[3]) break;
+  }
+  if (at < t.length) parts.push(`<span class="tx">${esc(t.slice(at).trim())}</span>`);
+  return parts.join('');
+}
+function codeBox(lang, code) {
+  CODES.push(code);
+  return `<div class="code"><div class="cl"><span>${esc(lang || 'code')}</span><button data-copy="${CODES.length - 1}">Copy</button></div><pre>${esc(code)}</pre></div>`;
+}
+async function copyText(t) {             // the Clipboard API needs https; Home Deck on the LAN is http, so fall back
+  try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(t); return true; } } catch (e) { }
+  const ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+  document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, t.length);
+  let ok = false; try { ok = document.execCommand('copy'); } catch (e) { }
+  ta.remove(); return ok;
+}
 const ago = t => { const d = Math.round(Date.now() / 1000 - t); return d < 60 ? 'just now' : d < 3600 ? Math.round(d / 60) + ' min ago' : d < 86400 ? Math.round(d / 3600) + ' h ago' : new Date(t * 1000).toLocaleDateString(); };
 const chipOf = st => st === 'answering' ? '<span class="chip answering">answering…</span>' : st === 'waiting' ? '<span class="chip waiting">waiting for the GPU</span>'
   : st === 'cut off' ? '<span class="chip cut">cut off</span>' : st === 'stopped' ? '<span class="chip">stopped</span>' : '';
@@ -162,10 +191,11 @@ async function chatOpen(id) {
 }
 function chatRender() {
   const box = $('#chat'), keep = $('#ctext')?.value || '', focused = document.activeElement?.id === 'ctext';
+  CODES = [];
   const msgs = OPEN ? OPEN.messages.map((m, i) => {
     const last = i === OPEN.messages.length - 1 && m.role === 'assistant';
     const body = m.content || (last && running(OPEN) ? (OPEN.status === 'waiting' ? 'waiting for the GPU…' : 'thinking…') : '');
-    return `<div class="msg ${m.role}">${esc(body)}${last && OPEN.note ? `<span class="cut">${esc(OPEN.note)}</span>` : ''}</div>`;
+    return `<div class="msg ${m.role}">${m.role === 'assistant' && m.content ? richText(body) : esc(body)}${last && OPEN.note ? `<span class="cut">${esc(OPEN.note)}</span>` : ''}</div>`;
   }).join('') : '<div class="tag">A new chat. Answers keep going on Home Deck if you close this page, and every chat is saved here.</div>';
   box.innerHTML = `<div class="cw"><div><button class="bt go" id="cnew" style="width:100%;margin-bottom:8px">New chat</button><div class="clist">${CL.map(c => `<button class="ci ${OPEN && OPEN.id === c.id ? 'on' : ''}" data-open="${c.id}">
       <b>${esc(c.title)}</b><small>${esc(c.model)} · ${ago(c.updated)}</small>${chipOf(c.status)}</button>`).join('') || '<div class="tag">No chats yet.</div>'}</div></div>
@@ -181,6 +211,7 @@ function chatRender() {
   if (focused) { const t = $('#ctext'); t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
   $('#cnew').onclick = () => { OPEN = null; chatRender(); $('#ctext').focus(); };
   document.querySelectorAll('[data-open]').forEach(b => b.onclick = () => chatOpen(b.dataset.open));
+  document.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => { b.textContent = (await copyText(CODES[+b.dataset.copy])) ? 'Copied' : 'Select and copy'; setTimeout(() => b.textContent = 'Copy', 2000); });
   $('#cm') && ($('#cm').onchange = e => { chatModel = e.target.value; try { localStorage.setItem('lai_model', chatModel); } catch (x) { } });
   $('#csend').onclick = send; $('#ctext').onkeydown = e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send(); };
   $('#cstop') && ($('#cstop').onclick = async () => { await post(`/api/llm/chats/${OPEN.id}/stop`); setTimeout(() => chatOpen(OPEN.id), 400); });
