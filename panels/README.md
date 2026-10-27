@@ -13,6 +13,19 @@ the Android app, the camera feed service, the edge proxy config and the friend e
 | `docs/` | Studio handbook | |
 | `tools/`, `tests/` | pull-live, deploy, staging, check; Playwright smoke test | |
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Start](docs/screenshots/start.jpg)<br>**Start**: the wall home: who's home, front door, lights, weather, next bus, now playing | ![Control](docs/screenshots/control.jpg)<br>**Control**: every switch in the house, speakers and media |
+| ![Rooms](docs/screenshots/rooms.jpg)<br>**Rooms**: all lights, room by room | ![Media](docs/screenshots/media.jpg)<br>**Media**: Sonos, Spotify and the Apple TV remote |
+| ![Ambient](docs/screenshots/ambient.jpg)<br>**Ambient**: night-time clock with door and camera-alert status | ![Boards](docs/screenshots/boards.jpg)<br>**Boards**: your own dashboards, built from modules |
+| ![Lab panel](docs/screenshots/labpanel.jpg)<br>**Lab panel**: every server and service at a glance | |
+
+| Phone: Remote | Phone: Family info |
+|---|---|
+| <img src="docs/screenshots/phone-remote.jpg" width="300"> | <img src="docs/screenshots/phone-familyinfo.jpg" width="300"> |
+
 ## Daily use
 
 ```bash
