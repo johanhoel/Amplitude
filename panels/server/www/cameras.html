@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#101418">
+<meta name="apple-mobile-web-app-title" content="Cameras">
+<link rel="apple-touch-icon" href="/familyinfo-icon.png">
+<title>Cameras</title>
+<style>
+/* Cameras (phone first): live view on top, every recording below, newest first, day by day as you scroll.
+   Live: a snapshot every 4 s (light on mobile data); tap ▶ Live for video (MJPEG, stops by itself after 2 min).
+   Recordings: /api/sec/days + /api/sec/visits?day= (camwatch-feed), thumbnails /api/sec/thumb, video /api/sec/video (Range).
+   Player: full screen, swipe or ‹ › for the previous / next recording, the phone's Back closes it. */
+:root { --bg: #101418; --ink: #eef2f6; --mute: #8b98a8; --faint: #5d6b7b; --line: #2a333d; --card: #1a2027; --card-hi: #222a33;
+  --accent: #38bdf8; --ok: #22c55e; --warn: #f59e0b; --bad: #ef4444; --live: #e11d48;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
+* { box-sizing: border-box; }
+html { background: var(--bg); -webkit-text-size-adjust: 100%; }
+body { margin: 0; color: var(--ink); font: 15px/1.4 var(--font); -webkit-tap-highlight-color: transparent; overscroll-behavior-y: contain;
+  padding: calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 12px) calc(env(safe-area-inset-bottom) + 30px) calc(env(safe-area-inset-left) + 12px); }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+.wrap { max-width: 900px; margin: 0 auto; }
+header { display: flex; align-items: center; gap: 10px; margin: 2px 0 12px; }
+header h1 { flex: 1; margin: 0; font-size: 26px; font-weight: 750; }
+header a, header select { min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); text-decoration: none;
+  font-weight: 650; font-size: 14px; display: inline-flex; align-items: center; }
+/* live */
+.live { position: relative; border-radius: 20px; overflow: hidden; background: #000; border: 1px solid var(--line); aspect-ratio: 16/9; }
+.live img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.live .top { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: linear-gradient(rgba(0,0,0,.65), transparent); }
+.badge { padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 750; letter-spacing: .08em; background: rgba(255,255,255,.22); }
+.badge.on { background: var(--live); } .live .when { font-size: 12.5px; color: rgba(255,255,255,.8); flex: 1; text-shadow: 0 1px 3px #000; }
+.live .bot { position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; justify-content: flex-end; padding: 10px; background: linear-gradient(transparent, rgba(0,0,0,.6)); }
+.pill { min-height: 40px; padding: 0 16px; border-radius: 999px; background: rgba(0,0,0,.55); color: #fff; font-weight: 700; font-size: 14px; border: 1px solid rgba(255,255,255,.2); }
+.pill.on { background: var(--live); border-color: var(--live); }
+.live.full { position: fixed; inset: 0; z-index: 60; border-radius: 0; aspect-ratio: auto; border: 0; }
+.live.full img { object-fit: contain; }
+/* filters + list */
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 14px 0 6px; scrollbar-width: none; } .chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; min-height: 38px; padding: 0 15px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-weight: 650; font-size: 14px; }
+.chip.on { background: var(--accent); border-color: var(--accent); color: #062033; }
+.day { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 12px 2px 8px; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--mute);
+  font-weight: 700; display: flex; justify-content: space-between; }
+.list { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+@media (max-width: 420px) { .list { grid-template-columns: 1fr 1fr; gap: 8px; } }
+.v { position: relative; border-radius: 14px; overflow: hidden; background: var(--card); border: 1px solid var(--line); text-align: left; padding: 0; }
+.v img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; background: #0b0e12; }
+.v .meta { padding: 7px 9px 9px; } .v b { font-size: 14.5px; font-variant-numeric: tabular-nums; } .v .w { display: block; font-size: 12.5px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v .w.known { color: #86efac; } .v .star { position: absolute; top: 6px; right: 8px; font-size: 16px; text-shadow: 0 1px 3px #000; }
+.v .dur { position: absolute; top: 6px; left: 6px; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,.6); }
+.more { text-align: center; color: var(--mute); padding: 18px; } .empty { color: var(--faint); padding: 10px 2px 4px; font-size: 14px; }
+/* player */
+#pl { position: fixed; inset: 0; z-index: 80; background: #000; display: none; flex-direction: column; touch-action: pan-y; }
+#pl.open { display: flex; }
+#pl .ptop { display: flex; align-items: center; gap: 10px; padding: calc(env(safe-area-inset-top) + 8px) 12px 8px; background: #000; }
+#pl .ptop .t { flex: 1; min-width: 0; } #pl .ptop b { display: block; font-size: 16px; } #pl .ptop span { font-size: 13px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+#pl .x { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.12); font-size: 20px; color: #fff; }
+#pl video { flex: 1; width: 100%; min-height: 0; background: #000; }
+#pl .pbot { display: flex; gap: 10px; align-items: center; padding: 10px 12px calc(env(safe-area-inset-bottom) + 12px); }
+#pl .pbot button, #pl .pbot a { min-height: 48px; padding: 0 18px; border-radius: 14px; background: rgba(255,255,255,.12); color: #fff; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; }
+#pl .pbot .sp { flex: 1; text-align: center; color: var(--mute); font-size: 13px; }
+#pl .faces { display: flex; gap: 6px; padding: 0 12px 6px; overflow-x: auto; } #pl .faces img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; }
+[hidden] { display: none !important; }
+</style>
+<link rel="stylesheet" href="/wall.css">
+</head>
+<body>
+<div class="wrap">
+  <header><h1>Cameras</h1><select id="cam" hidden aria-label="Camera"></select><a href="/start" class="start-link">‹ Start</a></header>
+
+  <section class="live" id="live">
+    <img id="snap" alt="Live camera">
+    <div class="top"><span class="badge" id="badge">SNAPSHOT</span><span class="when" id="when"></span></div>
+    <div class="bot"><button class="pill" id="golive">▶ Live</button><button class="pill" id="full" aria-label="Full screen">⤢</button></div>
+  </section>
+
+  <div class="chips" id="chips"></div>
+  <div id="days"></div>
+  <div class="more" id="more">Loading…</div>
+</div>
+
+<div id="pl" role="dialog" aria-label="Recording">
+  <div class="ptop"><div class="t"><b id="pt"></b><span id="ps"></span></div><button class="x" id="px" aria-label="Close">✕</button></div>
+  <div class="faces" id="pf"></div>
+  <video id="pv" controls playsinline preload="metadata"></video>
+  <div class="pbot"><button id="pprev" aria-label="Newer recording">‹ Newer</button><span class="sp" id="pn"></span><a id="pdl" download>⬇</a><button id="pnext" aria-label="Older recording">Older ›</button></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const hm = d => new Date(d).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+const get = u => fetch(u, { cache: 'no-store' }).then(r => r.ok ? r.json() : Promise.reject(r.status));
+const FILTERS = [['all', 'All'], ['person', '🧍 People'], ['known', '😀 Known faces'], ['vehicle', '🚗 Cars'], ['star', '⭐ Starred']];
+let filter = 'all', days = [], nextDay = 0, loading = false, shown = [];          // shown = every visit on screen, in order (for ‹ ›)
+
+// ---------- live ----------
+let cam = null, liveTimer = null, liveOff = null, streaming = false;
+function snapshot() {
+  if (streaming || document.visibilityState !== 'visible' || !cam) return;
+  const img = new Image();
+  img.onload = () => { $('#snap').src = img.src; $('#when').textContent = 'updated ' + hm(Date.now()); };
+  img.src = `/api/cam/${cam}/snap?w=960&t=${Date.now()}`;
+}
+function setLive(on) {
+  streaming = on; clearTimeout(liveOff);
+  $('#golive').classList.toggle('on', on); $('#golive').textContent = on ? '■ Stop' : '▶ Live';
+  $('#badge').classList.toggle('on', on); $('#badge').textContent = on ? 'LIVE' : 'SNAPSHOT';
+  if (on) { $('#snap').src = `/api/cam/${cam}/stream?t=${Date.now()}`; $('#when').textContent = 'live video'; liveOff = setTimeout(() => setLive(false), 120000); }
+  else { $('#snap').src = 'data:,'; snapshot(); }
+}
+$('#golive').onclick = () => setLive(!streaming);
+$('#full').onclick = () => { const l = $('#live'); l.classList.toggle('full'); $('#full').textContent = l.classList.contains('full') ? '✕' : '⤢'; };
+$('#snap').onclick = () => { if ($('#live').classList.contains('full')) $('#full').click(); else setLive(!streaming); };
+document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible' && streaming) setLive(false); else snapshot(); });
+async function cams() {
+  const list = await get('/api/cams').catch(() => []);
+  const sel = $('#cam'); sel.innerHTML = list.map(c => `<option value="${esc(c.entity)}">${esc(c.name)}</option>`).join(''); sel.hidden = list.length < 2;
+  let saved = null; try { saved = localStorage.getItem('camsel'); } catch {}
+  cam = (list.find(c => c.entity === saved) || list[0])?.entity || null;
+  if (cam) sel.value = cam;
+  sel.onchange = () => { cam = sel.value; try { localStorage.setItem('camsel', cam); } catch {} setLive(false); };
+  snapshot(); liveTimer = setInterval(snapshot, 4000);
+}
+
+// ---------- recordings ----------
+const dayName = d => { const t = new Date(); t.setHours(0, 0, 0, 0); const x = new Date(d + 'T00:00'); const n = Math.round((t - x) / 86400000);
+  return n === 0 ? 'Today' : n === 1 ? 'Yesterday' : x.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }); };
+const who = v => v.people?.length ? v.people.map(p => p.name).join(', ') : v.plates?.length ? 'Car ' + v.plates.map(p => p.plate || p).join(', ')
+  : v.labels?.length ? v.labels[0][0].toUpperCase() + v.labels[0].slice(1) + (v.labels.length > 1 ? ' + ' + v.labels.slice(1).join(', ') : '') : 'Motion';
+const secs = v => Math.max(1, Math.round((new Date(v.end) - new Date(v.start)) / 1000));
+const pass = v => filter === 'all' || (filter === 'person' && v.labels?.includes('person')) || (filter === 'known' && v.people?.length)
+  || (filter === 'vehicle' && (v.vehicles?.length || v.plates?.length || v.labels?.some(l => /car|truck|bus|motorcycle|bicycle/.test(l)))) || (filter === 'star' && v.star);
+const cache = {};
+async function loadDay(d) {
+  if (!cache[d.day] || d.day === days[0]?.day) cache[d.day] = await get('/api/sec/visits?day=' + d.day).catch(() => []);
+  const vs = cache[d.day].filter(pass);
+  const sec = document.createElement('section');
+  sec.innerHTML = `<div class="day"><span>${esc(dayName(d.day))}</span><span>${vs.length}${filter === 'all' ? '' : ' of ' + cache[d.day].length}</span></div>`
+    + (vs.length ? `<div class="list">${vs.map(v => { const i = shown.push(v) - 1;
+        return `<button class="v" data-i="${i}"><img loading="lazy" src="/api/sec/thumb/${esc(v.day)}/${esc(v.stem)}.jpg?w=480" alt="">
+          <span class="dur">${secs(v)} s</span>${v.star ? '<span class="star">⭐</span>' : ''}
+          <div class="meta"><b>${hm(v.start)}</b><span class="w ${v.people?.length ? 'known' : ''}">${esc(who(v))}</span></div></button>`; }).join('')}</div>`
+      : `<div class="empty">Nothing ${filter === 'all' ? '' : 'matching '}this day.</div>`);
+  $('#days').appendChild(sec);
+}
+async function more() {
+  if (loading || nextDay >= days.length) return;
+  loading = true; $('#more').textContent = 'Loading…';
+  try { await loadDay(days[nextDay++]); while (nextDay < days.length && document.body.scrollHeight < innerHeight * 1.6) await loadDay(days[nextDay++]); }
+  finally { loading = false; $('#more').textContent = nextDay < days.length ? '' : `That's everything (${days.length} day${days.length > 1 ? 's' : ''} kept).`; }
+}
+async function restart() {
+  $('#days').innerHTML = ''; shown = []; nextDay = 0;
+  days = await get('/api/sec/days').catch(() => []);
+  if (!days.length) { $('#more').textContent = 'No recordings.'; return; }
+  more();
+}
+new IntersectionObserver(es => { if (es[0].isIntersecting) more(); }, { rootMargin: '600px' }).observe($('#more'));
+$('#chips').innerHTML = FILTERS.map(([k, t]) => `<button class="chip ${k === filter ? 'on' : ''}" data-f="${k}">${t}</button>`).join('');
+$('#chips').onclick = e => { const b = e.target.closest('[data-f]'); if (!b) return; filter = b.dataset.f;
+  $('#chips').querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === b)); restart(); };
+$('#days').onclick = e => { const b = e.target.closest('.v'); if (b) openPlayer(+b.dataset.i); };
+
+// ---------- player ----------
+let cur = -1;
+function show(i) {
+  if (i < 0 || i >= shown.length) return;
+  cur = i; const v = shown[i], src = `/api/sec/video/${v.day}/${v.stem}.mp4`, pv = $('#pv');
+  $('#pt').textContent = `${dayName(v.day)} ${hm(v.start)}`;
+  $('#ps').textContent = `${who(v)} · ${secs(v)} s${v.unknown ? ` · ${v.unknown} unknown face${v.unknown > 1 ? 's' : ''}` : ''}`;
+  $('#pf').innerHTML = (v.people || []).filter(p => p.crop).map(p => `<img src="/api/sec/crop/${esc(v.day)}/${esc(v.stem)}_faces/${esc(p.crop.split('/').pop())}" alt="${esc(p.name)}" title="${esc(p.name)}">`).join('');
+  pv.poster = `/api/sec/thumb/${v.day}/${v.stem}.jpg?w=960`; pv.src = src; pv.play().catch(() => {});
+  $('#pdl').href = src; $('#pdl').setAttribute('download', `${v.stem}.mp4`);
+  $('#pn').textContent = `${i + 1} / ${shown.length}${nextDay < days.length ? '+' : ''}`;
+  $('#pprev').disabled = i === 0; $('#pnext').disabled = i === shown.length - 1 && nextDay >= days.length;
+  if (i >= shown.length - 3) more();                                    // keep older ones coming
+}
+function openPlayer(i) { if (streaming) setLive(false); $('#pl').classList.add('open'); history.pushState({ pl: 1 }, ''); show(i); }
+function closePlayer() { const pv = $('#pv'); pv.pause(); pv.removeAttribute('src'); pv.load(); $('#pl').classList.remove('open'); }
+$('#px').onclick = () => history.back();
+addEventListener('popstate', () => { if ($('#pl').classList.contains('open')) closePlayer(); });
+$('#pprev').onclick = () => show(cur - 1);
+$('#pnext').onclick = async () => { if (cur === shown.length - 1) await more(); show(cur + 1); };
+$('#pv').addEventListener('ended', () => { if (cur < shown.length - 1) show(cur + 1); });   // play on through older recordings
+let sx = null, sy = null;                                                                   // swipe left = older, right = newer
+$('#pl').addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+$('#pl').addEventListener('touchend', e => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
+  if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) { if (dx < 0) $('#pnext').click(); else $('#pprev').click(); } });
+addEventListener('keydown', e => { if (!$('#pl').classList.contains('open')) return; if (e.key === 'Escape') history.back(); if (e.key === 'ArrowRight') $('#pnext').click(); if (e.key === 'ArrowLeft') $('#pprev').click(); });
+
+// new recordings while the page is open: refresh today's list every minute (unless the player is open)
+setInterval(async () => { if (document.visibilityState !== 'visible' || $('#pl').classList.contains('open') || scrollY > 400) return;
+  const d = await get('/api/sec/days').catch(() => null); if (d && d[0] && (!days[0] || d[0].count !== days[0].count || d[0].day !== days[0].day)) restart(); }, 60000);
+
+cams(); restart();
+</script>
+<script src="/refresh.js" defer></script>
+</body>
+</html>

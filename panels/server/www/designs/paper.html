@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f6f4ef">
+<title>Design 2 · Paper</title>
+<style>
+/* Design 2 "Paper" v2: light and calm, laid out like a well-made settings app. Grouped lists with a serif heading per group;
+   every light is a full-width row (56 px) with an iOS-style switch; two columns on iPad. Navigation: segmented control on top.
+   Reversible = instant + Undo; disruptive = slide-to-confirm (a tap does nothing, a half slide springs back). */
+:root { --bg: #f4f1ea; --paper: #fffdf8; --ink: #1d1b18; --mute: #77716a; --line: #e4ded2; --acc: #2f5d50; --warn: #b4531f; --ok: #2f7a4f; --on: #34a36b;
+  --serif: "Iowan Old Style", "Palatino Linotype", Georgia, serif; --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, sans-serif; --toast-bg: #1d1b18; }
+* { box-sizing: border-box; } html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--ui); -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+header { position: sticky; top: 0; z-index: 40; background: rgba(244,241,234,.94); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); padding: 12px 18px; border-bottom: 1px solid var(--line); }
+.seg { display: flex; max-width: 620px; margin: 0 auto; padding: 4px; border-radius: 14px; background: #e7e2d8; }
+.seg button { flex: 1; min-height: 46px; border-radius: 11px; font-weight: 650; font-size: 15px; color: var(--mute); }
+.seg button.on { background: var(--paper); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+main { max-width: 1000px; margin: 0 auto; padding: 24px 18px calc(env(safe-area-inset-bottom) + 80px); }
+h1 { font-family: var(--serif); font-weight: 600; font-size: 38px; margin: 0; } .sub { color: var(--mute); margin: 6px 0 22px; font-size: 15.5px; }
+.v { display: none; } .v.on { display: block; animation: fade .3s ease; } @keyframes fade { from { opacity: 0; } }
+.cols { columns: 1; column-gap: 22px; } @media (min-width: 820px) { .cols { columns: 2; } }
+.grp { break-inside: avoid; margin-bottom: 22px; } .grp h2 { font-family: var(--serif); font-weight: 600; font-size: 20px; margin: 0 4px 8px; }
+.list { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 16px; border-top: 1px solid var(--line); width: 100%; text-align: left; font-size: 16px; }
+.row:first-child { border-top: 0; } .row .lbl { flex: 1; min-width: 0; } .row .lbl small { display: block; color: var(--mute); font-size: 13px; margin-top: 1px; }
+.row .val { color: var(--mute); font-size: 15px; text-align: right; } .row .val b { color: var(--ink); font-weight: 600; } .row .val .ok { color: var(--ok); }
+.sw { width: 51px; height: 31px; border-radius: 16px; background: #d9d3c7; position: relative; flex: none; transition: background .2s; }
+.sw::after { content: ""; position: absolute; left: 2px; top: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.2); transition: left .2s; }
+.row.on .sw { background: var(--on); } .row.on .sw::after { left: 22px; }
+button.row.kdown { background: #f5f0e6; }
+.people { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; } .pp { padding: 5px 11px; border-radius: 999px; font-size: 13px; font-weight: 600; border: 1px solid var(--line); }
+.pp.home { background: #e1eee6; border-color: #c5dccd; } .pp:not(.home) { color: var(--mute); }
+.danger { margin-top: 30px; } .danger h2 { font-family: var(--serif); font-size: 22px; margin: 0 4px 4px; } .danger p { color: var(--mute); margin: 0 4px 14px; }
+.kslide { position: relative; height: 64px; border-radius: 999px; background: #ebe4d7; border: 1px solid var(--line); margin-bottom: 12px; overflow: hidden; --p: 0; touch-action: none; }
+.kslide::before { content: ""; position: absolute; inset: 0; background: var(--warn); opacity: calc(var(--p) * .25); }
+.kslide span { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 650; color: var(--mute); pointer-events: none; padding-left: 56px; opacity: calc(1 - var(--p)); }
+.kslide .knob { position: absolute; left: 4px; top: 3px; width: 56px; height: 56px; border-radius: 50%; background: var(--warn); color: #fff; display: grid; place-items: center; font-size: 24px; cursor: grab; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+</style></head><body>
+<header><div class="seg" role="tablist"><button data-go="home" class="on">Home</button><button data-go="rooms">Lights</button><button data-go="media">Media</button><button data-go="actions">Actions</button></div></header>
+<main>
+  <section class="v on" data-v="home"><h1 id="greet">Home</h1><div class="sub" id="date"></div><div class="cols" id="home"></div></section>
+  <section class="v" data-v="rooms"><h1>Lights</h1><div class="sub">Tap a row to switch; every change can be undone.</div><div class="cols" id="rooms"></div></section>
+  <section class="v" data-v="media"><h1>Media</h1><div class="sub">Players around the house</div><div class="cols" id="media"></div></section>
+  <section class="v" data-v="actions"><h1>Actions</h1><div class="sub">Everyday actions are one tap.</div><div class="grp"><div class="list" id="acts"></div></div>
+    <div class="danger"><h2>Slide to confirm</h2><p>Slide the knob all the way to the right. A tap or a short slide does nothing.</p><div id="slides"></div></div></section>
+</main>
+<script src="/designs/kit.js"></script>
+<script>
+const $ = s => document.querySelector(s), { esc } = Kit; let S = null;
+document.querySelectorAll('.seg button').forEach(b => Kit.press(b, () => { document.querySelectorAll('.seg button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.v').forEach(v => v.classList.toggle('on', v.dataset.v === b.dataset.go)); scrollTo({ top: 0 }); }));
+const row = (l, v, stack) => stack ? `<div class="row" style="flex-direction:column;align-items:flex-start;gap:8px;padding:12px 16px"><span class="lbl">${l}</span><span class="val" style="text-align:left">${v}</span></div>`
+  : `<div class="row"><span class="lbl">${l}</span><span class="val">${v}</span></div>`;
+function render() {
+  if (!S) return; const h = new Date().getHours();
+  $('#greet').textContent = h < 10 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  $('#date').textContent = new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
+  const on = S.rooms.reduce((a, r) => a + r.lights.filter(Kit.isOn).length, 0);
+  $('#home').innerHTML = `<div class="grp"><h2>The house</h2><div class="list">
+      ${row('Front door', S.door === 'locked' ? '<b class="ok">Locked</b>' : `<b>${esc(S.door || '–')}</b>`)}
+      ${row('Lights on', `<b>${on}</b>`)}${on ? row('Lit rooms', esc(S.rooms.filter(r => r.lights.some(Kit.isOn)).map(r => r.room).join(', ')), true) : ''}
+      ${row('Who is home', `<span class="people" style="justify-content:flex-start">${S.people.map(p => `<span class="pp ${p.home ? 'home' : ''}">${esc(p.name)}</span>`).join('')}</span>`, true)}</div></div>
+    <div class="grp"><h2>Today</h2><div class="list">
+      ${row('Outside', `<b>${Kit.WX[S.wx?.condition] || ''} ${S.wx?.temperature != null ? Math.round(S.wx.temperature) + '°' : '–'}</b>`)}
+      ${row('Next bus', S.bus?.none ? 'No buses in the next hour' : S.bus ? `<b>${esc(Kit.busText(S.bus))}</b> · ${esc(S.bus.line)} to ${esc(S.bus.to)}` : '–')}
+      ${row('Now playing', `<b>${esc(S.playing?.title || 'Nothing')}</b>`)}</div></div>`;
+  $('#rooms').innerHTML = S.rooms.map(r => `<div class="grp"><h2>${esc(r.room)}</h2><div class="list">${r.lights.map(l => `<button class="row ${Kit.isOn(l) ? 'on' : ''}" data-id="${esc(l.id)}" role="switch" aria-checked="${Kit.isOn(l)}">
+    <span class="lbl">${esc(l.name === 'All' ? 'Whole room' : l.name)}${l.bri != null && Kit.isOn(l) ? `<small>${l.bri}%</small>` : ''}</span><span class="sw"></span></button>`).join('')}</div></div>`).join('');
+  document.querySelectorAll('#rooms .row').forEach(b => Kit.press(b, () => Kit.flip(S.rooms.flatMap(r => r.lights).find(l => l.id === b.dataset.id), render)));
+  $('#media').innerHTML = `<div class="grp"><div class="list">${(S.H.players || []).concat(S.H.appletv ? [S.H.appletv] : []).map(p => row(esc(p.label), `<b>${esc(p.title || p.state)}</b>`)).join('')}</div></div>`;
+}
+$('#acts').innerHTML = [['🧹', 'Start the vacuum', 'Roborock'], ['⏻', 'Wake the PC', 'Wake-on-LAN'], ['◎', 'Switch camera alerts', 'On or off']].map(([i, t, s]) =>
+  `<button class="row" data-t="${t}"><span style="font-size:20px">${i}</span><span class="lbl">${t}<small>${s}</small></span><span class="val">›</span></button>`).join('');
+document.querySelectorAll('#acts .row').forEach(b => Kit.press(b, () => Kit.toast('Demo: would ' + b.dataset.t.toLowerCase())));
+$('#slides').innerHTML = ['Lock the front door', 'Turn off every light', 'Put the PC to sleep'].map(t => `<div class="kslide" data-t="${t}" role="button" aria-label="Slide to ${t.toLowerCase()}"><span>Slide to ${t.toLowerCase()}</span><div class="knob">›</div></div>`).join('');
+document.querySelectorAll('.kslide').forEach(s => Kit.slide(s, () => Kit.toast('Demo: would ' + s.dataset.t.toLowerCase())));
+Kit.data(D => { S = Kit.summary(D); render(); });
+</script></body></html>

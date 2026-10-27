@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Desktop | Home Deck</title>
+<!-- Windows desktop wallpaper (Lively Wallpaper: Add wallpaper -> URL http://192.168.1.52/desktop).
+     Keeps the left edge free for desktop icons and the bottom for the taskbar. No animation, data every 30-60 s,
+     clock once a minute: close to zero CPU. ?left=, ?bottom=, ?scale= adjust the clear zones and the size;
+     data cards sit on the left by default, ?side=right puts them on the right. -->
+<style>
+:root {
+  --accent: #38bdf8; --glass: rgba(16, 17, 26, .58); --line: rgba(255,255,255,.09); --text: #f2f3fa;
+  --mute: rgba(242,243,250,.56); --faint: rgba(242,243,250,.3); --ok: #34d399; --warn: #fbbf24; --bad: #f87171;
+  --left: 10px; --bottom: 64px; --u: calc(1vh * var(--scale, 1));
+  --font: "Segoe UI Variable Display", "Segoe UI", -apple-system, "SF Pro Display", Inter, Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+html { background: #06070c; }
+body { margin: 0; height: 100%; overflow: hidden; color: var(--text); font-family: var(--font);
+  -webkit-user-select: none; user-select: none; cursor: default; }
+/* still background: same palette as the Home Deck aurora, no animation */
+#bg { position: fixed; inset: 0; z-index: -1;
+  background: radial-gradient(42% 52% at 12% 16%, rgba(91,60,255,.55), transparent 70%),
+              radial-gradient(38% 46% at 88% 8%, rgba(0,160,220,.38), transparent 70%),
+              radial-gradient(46% 50% at 62% 104%, rgba(194,24,91,.32), transparent 70%),
+              radial-gradient(30% 34% at 30% 92%, rgba(255,176,32,.16), transparent 70%), #06070c; }
+#bg::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 90% at 40% 40%, transparent 40%, rgba(0,0,0,.55)); }
+
+/* clock: bottom-left, above the taskbar, right of the icon column */
+.time { position: fixed; left: calc(var(--left) + 1.2 * var(--u)); bottom: calc(var(--bottom) + 3.2 * var(--u)); }
+.clock { font-size: calc(17 * var(--u)); font-weight: 200; letter-spacing: -.04em; line-height: .9; font-variant-numeric: tabular-nums;
+  text-shadow: 0 6px 40px rgba(0,0,0,.35); }
+.date { font-size: calc(2.5 * var(--u)); color: var(--mute); margin: calc(1.2 * var(--u)) 0 0 calc(.6 * var(--u)); font-weight: 300; text-transform: capitalize; }
+.wx { display: flex; align-items: center; gap: calc(2.2 * var(--u)); margin: calc(2 * var(--u)) 0 0 calc(.6 * var(--u)); }
+.wx .t { font-size: calc(4.6 * var(--u)); font-weight: 250; font-variant-numeric: tabular-nums; }
+.wx .c { font-size: calc(1.7 * var(--u)); color: var(--mute); line-height: 1.35; }
+.hours { display: flex; gap: calc(1.6 * var(--u)); margin-left: calc(1 * var(--u)); padding-left: calc(2.2 * var(--u)); border-left: 1px solid var(--line); }
+.hours div { text-align: center; font-size: calc(1.35 * var(--u)); color: var(--mute); line-height: 1.5; }
+.hours b { display: block; color: var(--text); font-weight: 500; font-size: calc(1.6 * var(--u)); }
+.hours i { display: block; font-style: normal; color: #7dd3fc; font-size: calc(1.2 * var(--u)); min-height: 1.2em; }
+
+/* right column of cards */
+.col { position: fixed; top: calc(3.2 * var(--u)); right: calc(2.6 * var(--u)); bottom: calc(var(--bottom) + 2.6 * var(--u));
+  width: calc(46 * var(--u)); display: flex; flex-direction: column; gap: calc(1.5 * var(--u)); }
+.card { background: var(--glass); border: 1px solid var(--line); border-radius: calc(2.4 * var(--u)); padding: calc(1.9 * var(--u)) calc(2.2 * var(--u));
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+.card h3 { margin: 0 0 calc(1.2 * var(--u)); font-size: calc(1.2 * var(--u)); letter-spacing: .16em; text-transform: uppercase; color: var(--mute);
+  font-weight: 600; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.card h3 span:last-child { letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--faint); font-size: calc(1.3 * var(--u)); }
+.row { display: flex; align-items: center; gap: calc(1.2 * var(--u)); }
+.sub { color: var(--mute); font-size: calc(1.45 * var(--u)); }
+.dot { width: calc(.9 * var(--u)); height: calc(.9 * var(--u)); border-radius: 50%; background: var(--faint); flex: none; }
+.dot.ok { background: var(--ok); box-shadow: 0 0 10px var(--ok); } .dot.bad { background: var(--bad); box-shadow: 0 0 10px var(--bad); }
+.dot.warn { background: var(--warn); }
+
+/* people */
+.people { display: flex; gap: calc(1.2 * var(--u)); }
+.p { flex: 1; text-align: center; }
+.av { width: calc(5.4 * var(--u)); height: calc(5.4 * var(--u)); margin: 0 auto calc(.7 * var(--u)); border-radius: 50%; display: grid; place-items: center;
+  font-size: calc(2.1 * var(--u)); font-weight: 600; color: var(--faint); border: 2px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
+.p.home .av { color: var(--text); border-color: var(--ok); box-shadow: 0 0 calc(1.8 * var(--u)) rgba(52,211,153,.3); background: rgba(52,211,153,.12); }
+.p .n { font-size: calc(1.5 * var(--u)); font-weight: 500; }
+.p .s { font-size: calc(1.25 * var(--u)); color: var(--mute); }
+.homeline { display: flex; gap: calc(2 * var(--u)); margin-top: calc(1.4 * var(--u)); padding-top: calc(1.2 * var(--u)); border-top: 1px solid var(--line);
+  font-size: calc(1.45 * var(--u)); color: var(--mute); }
+.homeline b { color: var(--text); font-weight: 500; }
+
+/* camera */
+.cam { display: grid; grid-template-columns: calc(15 * var(--u)) 1fr; gap: calc(1.6 * var(--u)); align-items: center; }
+.cam img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: calc(1.2 * var(--u)); background: rgba(255,255,255,.05); display: block; }
+.cam .what { font-size: calc(2 * var(--u)); font-weight: 500; line-height: 1.2; }
+
+/* lab */
+.big { font-size: calc(2.6 * var(--u)); font-weight: 300; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(1 * var(--u)); margin-top: calc(1.3 * var(--u)); }
+.stats div { font-size: calc(1.2 * var(--u)); color: var(--mute); }
+.stats b { display: block; color: var(--text); font-size: calc(1.9 * var(--u)); font-weight: 300; font-variant-numeric: tabular-nums; }
+.nodes { display: grid; gap: calc(.7 * var(--u)); margin-top: calc(1.4 * var(--u)); }
+.node { display: grid; grid-template-columns: calc(6.5 * var(--u)) 1fr calc(14 * var(--u)); align-items: center; gap: calc(1 * var(--u)); font-size: calc(1.35 * var(--u)); color: var(--mute); }
+.bar { height: calc(.6 * var(--u)); border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
+
+/* media + bus */
+.np { display: grid; grid-template-columns: auto 1fr; gap: calc(1.5 * var(--u)); align-items: center; }
+.art { width: calc(6.4 * var(--u)); height: calc(6.4 * var(--u)); border-radius: calc(1.1 * var(--u)); background: rgba(255,255,255,.06) center/cover; }
+.np .tt { font-size: calc(1.8 * var(--u)); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bus { display: grid; gap: calc(.8 * var(--u)); }
+.b { display: grid; grid-template-columns: auto 1fr auto; gap: calc(1.2 * var(--u)); align-items: center; font-size: calc(1.5 * var(--u)); }
+.line { font-weight: 700; padding: calc(.25 * var(--u)) calc(.8 * var(--u)); border-radius: calc(.6 * var(--u)); font-size: calc(1.3 * var(--u)); }
+.b .min { font-variant-numeric: tabular-nums; font-weight: 500; }
+.b .min small { color: var(--mute); font-weight: 400; margin-left: 6px; }
+.hide { display: none !important; }
+/* data on the left (default): cards right of the icon column, clock bottom-right. ?side=right swaps back. */
+body.left .col { right: auto; left: calc(var(--left) + 1.6 * var(--u)); }
+body.left .time { left: auto; right: calc(3.2 * var(--u)); text-align: right; }
+body.left .date { margin-left: 0; margin-right: calc(.6 * var(--u)); }
+body.left .wx { justify-content: flex-end; margin-left: 0; margin-right: calc(.6 * var(--u)); }
+body.left .stale { right: auto; left: calc(var(--left) + 1.6 * var(--u)); }
+.stale { position: fixed; right: calc(2.6 * var(--u)); bottom: calc(var(--bottom) + .6 * var(--u)); font-size: calc(1.1 * var(--u)); color: var(--faint); }
+</style>
+<link rel="stylesheet" href="/wall.css">
+</head>
+<body>
+<div id="bg"></div>
+
+<div class="time">
+  <div class="clock" id="clock">--:--</div>
+  <div class="date" id="date"></div>
+  <div class="wx"><div class="t" id="temp">--°</div><div class="c" id="cond"></div><div class="hours" id="hours"></div></div>
+</div>
+
+<div class="col">
+  <section class="card"><h3><span>Home</span><span id="since"></span></h3>
+    <div class="people" id="people"></div>
+    <div class="homeline"><span>Door <b id="door">–</b></span><span>Lights <b id="lights">–</b></span><span>PC <b id="pc">–</b></span></div>
+  </section>
+
+  <section class="card"><h3><span>Front camera</span><span id="camago"></span></h3>
+    <div class="cam"><img id="camimg" alt=""><div><div class="what" id="camwhat">–</div><div class="sub" id="camsub"></div></div></div>
+  </section>
+
+  <section class="card"><h3><span>Lab</span><span id="labat"></span></h3>
+    <div class="row"><i class="dot" id="labdot"></i><div class="big" id="labhead">–</div></div>
+    <div class="stats">
+      <div><b id="ms">–</b>ping</div><div><b id="down">–</b>Mbit/s down</div><div><b id="blocked">–</b>ads blocked</div><div><b id="backup">–</b>last backup</div>
+    </div>
+    <div class="nodes" id="nodes"></div>
+  </section>
+
+  <section class="card" id="npcard"><h3><span id="nplabel">Now playing</span><span></span></h3>
+    <div class="np"><div class="art" id="art"></div><div style="min-width:0"><div class="tt" id="nptitle"></div><div class="sub" id="npartist"></div></div></div>
+  </section>
+
+  <section class="card" id="buscard"><h3><span>Buses</span><span id="busstop"></span></h3><div class="bus" id="bus"></div></section>
+</div>
+<div class="stale" id="stale"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const Q = new URLSearchParams(location.search), R = document.documentElement.style;
+if (Q.get('left')) R.setProperty('--left', +Q.get('left') + 'px');
+if (Q.get('bottom')) R.setProperty('--bottom', +Q.get('bottom') + 'px');
+if (Q.get('scale')) R.setProperty('--scale', +Q.get('scale'));
+document.body.classList.toggle('left', Q.get('side') !== 'right');
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const get = u => fetch(u, { cache: 'no-store' }).then(r => r.ok ? r.json() : Promise.reject(r.status));
+const ago = s => s < 90 ? 'just now' : s < 5400 ? Math.round(s / 60) + ' min ago' : s < 172800 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' d ago';
+const hhmm = d => d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+const COND = { 'clear-night': 'Clear', cloudy: 'Cloudy', fog: 'Fog', hail: 'Hail', lightning: 'Thunder', 'lightning-rainy': 'Thunder, rain', partlycloudy: 'Partly cloudy',
+  pouring: 'Heavy rain', rainy: 'Rain', snowy: 'Snow', 'snowy-rainy': 'Sleet', sunny: 'Sunny', windy: 'Windy', 'windy-variant': 'Windy', exceptional: 'Unusual' };
+let lastOk = Date.now();
+
+function clock() {
+  const d = new Date();
+  $('#clock').textContent = hhmm(d);
+  $('#date').textContent = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  const s = (Date.now() - lastOk) / 1000;
+  $('#stale').textContent = s > 180 ? `No new data for ${Math.round(s / 60)} min` : '';
+  setTimeout(clock, 60000 - d.getSeconds() * 1000 - d.getMilliseconds() + 50);     // wake once per minute, on the minute
+}
+
+async function home() {
+  const [h, pr, st] = await Promise.all([get('/api/home/state'), get('/api/presence').catch(() => ({})), get('/api/status').catch(() => ({}))]);
+  lastOk = Date.now();
+  const nHome = h.people.filter(p => p.home).length;
+  $('#people').innerHTML = h.people.map(p => {
+    const k = p.name.toLowerCase(), q = pr[k] || {};
+    const sub = p.home ? 'home' : q.silent_s != null ? 'away · ' + ago(q.silent_s).replace(' ago', '') : 'away';
+    return `<div class="p ${p.home ? 'home' : ''}"><div class="av">${esc(p.name[0])}</div><div class="n">${esc(p.name)}</div><div class="s">${esc(sub)}</div></div>`;
+  }).join('');
+  $('#since').textContent = nHome ? `${nHome} home` : 'nobody home';
+  const door = h.door && h.door.state;
+  $('#door').textContent = door === 'locked' ? 'locked' : door === 'unlocked' ? 'unlocked' : (door || '–');
+  $('#door').style.color = door === 'unlocked' ? 'var(--warn)' : '';
+  const on = h.rooms.reduce((n, r) => n + r.lights.filter(l => l.on).length, 0);
+  $('#lights').textContent = on ? `${on} on` : 'all off';
+  $('#pc').textContent = st.pc_online ? 'on' : 'off';
+  // weather now (from HA's weather entity in the home state)
+  if (h.wx) { $('#temp').textContent = Math.round(h.wx.temperature) + '°';
+    $('#cond').innerHTML = `${esc(COND[h.wx.condition] || h.wx.condition || '')}<br>wind ${Math.round(h.wx.wind_speed / 3.6)} m/s`; }
+  // media: Spotify first, else anything playing
+  const pl = (h.players || []).find(p => p.state === 'playing' && p.title) || null;
+  $('#npcard').classList.toggle('hide', !pl);
+  if (pl) { $('#nplabel').textContent = 'Now playing · ' + pl.label; $('#nptitle').textContent = pl.title; $('#npartist').textContent = pl.artist || pl.app || '';
+    const art = pl.art ? `url(/api/art?e=${encodeURIComponent(pl.id)}&k=${encodeURIComponent(pl.art_key)})` : '';
+    if ($('#art').style.backgroundImage !== art) $('#art').style.backgroundImage = art;
+    $('#art').classList.toggle('hide', !art); }
+}
+
+async function camera() {
+  const v = (await get('/api/sec/visits?limit=1'))[0];
+  if (!v) return;
+  const t = new Date(v.start), names = v.people.map(p => p.name);
+  const what = names.length ? names.join(', ') : v.plates.length ? 'Car ' + v.plates.map(p => p.plate || p).join(', ')
+    : v.labels.length ? v.labels[0][0].toUpperCase() + v.labels[0].slice(1) + (v.labels.length > 1 ? ' + ' + v.labels.slice(1).join(', ') : '') : 'Motion';
+  $('#camwhat').textContent = what;
+  $('#camsub').textContent = `${hhmm(t)} · ${Math.max(1, Math.round((new Date(v.end) - t) / 1000))} s` + (v.unknown ? ` · ${v.unknown} unknown face${v.unknown > 1 ? 's' : ''}` : '');
+  $('#camago').textContent = ago((Date.now() - t) / 1000);
+  const src = v.has_jpg ? `/api/sec/thumb/${v.day}/${v.stem}.jpg?w=480` : '';
+  if ($('#camimg').getAttribute('src') !== src) $('#camimg').setAttribute('src', src);
+}
+
+async function lab() {
+  const s = await get('/api/ops/snapshot');
+  const probs = s.problems || [];
+  $('#labdot').className = 'dot ' + (probs.length ? 'bad' : 'ok');
+  $('#labhead').textContent = probs.length ? `${probs.length} problem${probs.length > 1 ? 's' : ''}: ${probs.slice(0, 3).join(', ')}` : 'All good';
+  const n = s.net || {}, d = s.dns || {}, b = s.backups || {};
+  $('#down').textContent = n.down ? Math.round(n.down / 1e6) : '–';
+  $('#ms').textContent = n.ping != null ? Math.round(n.ping * 1000) + ' ms' : '–';
+  $('#blocked').textContent = d.blocked_pct != null ? Math.round(d.blocked_pct) + '%' : '–';
+  $('#backup').textContent = b.newest ? ago(Date.now() / 1000 - b.newest).replace(' ago', '') : '–';
+  const running = (s.guests || []).filter(g => g.status === 'running').length;
+  $('#labat').textContent = `${running}/${(s.guests || []).length} guests running`;
+  $('#nodes').innerHTML = (s.nodes || []).map(x => {
+    const cpu = 100 * (x.cpu || 0), mem = x.maxmem ? 100 * x.mem / x.maxmem : 0;
+    const col = mem > 90 ? 'var(--bad)' : mem > 80 ? 'var(--warn)' : x.color || 'var(--accent)';
+    return `<div class="node"><span>${esc(x.node)}</span><div class="bar"><i style="width:${Math.min(100, mem).toFixed(0)}%;background:${col}"></i></div>`
+      + `<span style="text-align:right;white-space:nowrap">${x.status === 'online' ? `CPU ${cpu.toFixed(0)}% · RAM ${mem.toFixed(0)}%` : 'OFFLINE'}</span></div>`;
+  }).join('');
+}
+
+async function bus() {
+  const b = await get('/api/bus');
+  const deps = (b.departures || []).slice(0, 2);
+  $('#buscard').classList.toggle('hide', !deps.length);
+  $('#busstop').textContent = b.stop || '';
+  $('#bus').innerHTML = deps.map(x => {
+    const mins = t => t ? Math.max(0, Math.round((new Date(t.time) - Date.now()) / 60000)) : null;
+    const m1 = mins(x.next), m2 = mins(x.then);
+    return `<div class="b"><span class="line" style="background:${esc(x.line.backgroundColor)};color:${esc(x.line.textColor)}">${esc(x.line.shortName)}</span>`
+      + `<span>${esc(x.to)}</span><span class="min">${m1 == null ? '–' : m1 ? m1 + ' min' : 'now'}${m2 != null ? `<small>then ${m2}</small>` : ''}</span></div>`;
+  }).join('');
+}
+
+async function weather() {
+  const w = await get('/api/weather');
+  const now = Date.now();
+  $('#hours').innerHTML = (w.hourly || []).filter(h => new Date(h.datetime) > now).filter((_, i) => i % 3 === 0).slice(0, 5).map(h =>
+    `<div>${new Date(h.datetime).getHours()}:00<b>${Math.round(h.temperature)}°</b><i>${h.precipitation >= .2 ? h.precipitation.toFixed(1) + ' mm' : ''}</i></div>`).join('');
+}
+
+const every = (fn, s) => { const run = () => fn().catch(() => {}); run(); setInterval(run, s * 1000); };
+clock();
+every(home, 30); every(camera, 30); every(lab, 60); every(bus, 60); every(weather, 600);
+</script>
+<script src="/cam.js" defer></script>
+</body>
+</html>

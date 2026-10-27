@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#101418">
+<title>Home Deck app</title>
+<style>
+/* Download page for the Home Deck Android app (home network: http://192.168.1.52/app). The APK and version.json live
+   in www/app/; the app updates itself from there afterwards. iPhone: the panels as a home-screen web app instead. */
+:root { --bg: #101418; --ink: #f6f4fb; --mute: rgba(246,244,251,.6); --line: rgba(255,255,255,.1); --accent: #38bdf8;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; min-height: 100vh; color: var(--ink); font: 16px/1.55 var(--font); background: var(--bg);
+  padding: calc(env(safe-area-inset-top) + 24px) 18px calc(env(safe-area-inset-bottom) + 30px); }
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: radial-gradient(70% 45% at 50% -10%, rgba(56,189,248,.26), transparent 70%); }
+main { max-width: 560px; margin: 0 auto; }
+h1 { font-size: 32px; margin: 0 0 4px; } .lead { color: var(--mute); margin: 0 0 20px; }
+.card { background: rgba(255,255,255,.045); border: 1px solid var(--line); border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; }
+.card h2 { margin: 0 0 8px; font-size: 18px; }
+ol { margin: 6px 0 0; padding-left: 20px; } li { margin: 6px 0; } b { font-weight: 650; }
+.btn { display: flex; align-items: center; justify-content: center; min-height: 54px; border-radius: 999px; background: var(--accent); color: #062033;
+  font-weight: 750; text-decoration: none; margin: 12px 0 4px; }
+.ver { color: var(--mute); font-size: 13.5px; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Home Deck app</h1>
+  <p class="lead">The home panels as an app, at home and away. Lights, the front door, who's home and the buses.</p>
+
+  <section class="card" id="android"><h2>🤖 Android</h2>
+    <a class="btn" href="/app/homedeck.apk" download>Download the app</a>
+    <div class="ver" id="ver"></div>
+    <ol>
+      <li>Open the downloaded file. Android asks to <b>allow installing from your browser</b>: allow it, then <b>Install</b>.</li>
+      <li>Open <b>Home Deck</b>. Ask the home admin for a pairing code, then tap <b>Scan QR code</b> (or type the 6 digits).</li>
+      <li>Optional: add the <b>Home Deck widget</b> (long-press the home screen → Widgets), and the tiles
+        <b>All lights off</b>, <b>Lock front door</b> and <b>Wake PC</b> (swipe down twice → ✎ edit).</li>
+    </ol>
+    <p class="ver">Updates come by themselves: the app offers them when you open it.</p>
+  </section>
+
+  <section class="card"><h2> iPhone</h2>
+    <ol>
+      <li>Ask the home admin for a pairing code and scan the QR code with the Camera app (on the home Wi-Fi).</li>
+      <li>In Safari: <b>Share → Add to Home Screen</b>.</li>
+    </ol>
+  </section>
+</main>
+<script>
+fetch('/app/version.json', { cache: 'no-store' }).then(r => r.json())
+  .then(v => { document.getElementById('ver').textContent = 'Version ' + v.name + (v.notes ? ' · ' + v.notes : ''); }).catch(() => {});
+</script>
+</body>
+</html>

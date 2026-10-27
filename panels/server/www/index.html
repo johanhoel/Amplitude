@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Home Deck">
+<meta name="theme-color" content="#05060a">
+<link rel="apple-touch-icon" href="http://192.168.1.52:4440/apple-touch-icon.png">
+<title>Home Deck</title>
+<style>
+:root {
+  --accent: #38bdf8; --glass: rgba(18, 20, 30, .48); --glass-hi: rgba(255,255,255,.07);
+  --line: rgba(255,255,255,.12); --text: #f4f5fb; --mute: rgba(244,245,251,.58);
+  --ok: #34d399; --warn: #fbbf24; --bad: #f87171; --r: 26px;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+html { background: #05060a; }
+html, body { margin: 0; min-height: 100%; color: var(--text); font-family: var(--font); touch-action: manipulation;
+  -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+
+/* ---------- wallpaper ---------- */
+#wall { position: fixed; inset: -40px; z-index: -2; background-size: cover; background-position: center;
+  transition: opacity .6s; }
+#shade { position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(120% 80% at 50% 0%, transparent, rgba(0,0,0,.55)); }
+.w-aurora { background: #05060a; }
+.w-aurora::before, .w-aurora::after { content: ""; position: absolute; inset: 0; filter: blur(60px); opacity: .9;
+  background: radial-gradient(40% 35% at 20% 25%, #5b3cff, transparent 70%),
+              radial-gradient(35% 30% at 80% 20%, #00c2ff, transparent 70%),
+              radial-gradient(45% 40% at 60% 85%, #ff3c8e, transparent 70%);
+  animation: drift 28s ease-in-out infinite alternate; will-change: transform; }
+.w-aurora::after { background: radial-gradient(30% 30% at 75% 70%, #19e6a3, transparent 70%),
+                               radial-gradient(30% 25% at 25% 80%, #ffb020, transparent 70%);
+  animation-duration: 36s; animation-direction: alternate-reverse; opacity: .55; }
+/* motion off (setting, or auto on low-power devices) and while a view switch renders */
+#wall.still::before, #wall.still::after, body.switching #wall::before, body.switching #wall::after { animation-play-state: paused; }
+@keyframes drift { 0% { transform: translate(0,0) scale(1); } 50% { transform: translate(4%, -3%) scale(1.08); }
+                   100% { transform: translate(-3%, 4%) scale(1.02); } }
+.w-midnight { background: radial-gradient(90% 70% at 70% 10%, #1b2a6b, transparent 60%),
+                          radial-gradient(70% 60% at 10% 90%, #301050, transparent 60%), #04050c; }
+.w-sunset  { background: linear-gradient(160deg, #ff7a59 0%, #c2187a 45%, #2a0d4a 100%); }
+.w-forest  { background: radial-gradient(80% 60% at 30% 20%, #1f7a55, transparent 65%),
+                         radial-gradient(70% 60% at 80% 80%, #0d3b4a, transparent 65%), #03130d; }
+.w-ocean   { background: linear-gradient(200deg, #00b4d8 0%, #0353a4 50%, #021a3a 100%); }
+.w-graphite{ background: radial-gradient(100% 80% at 50% 0%, #2a2d36, #0b0c10 70%); }
+
+/* ---------- layout ---------- */
+.app { min-height: 100vh; padding: calc(env(safe-area-inset-top) + 14px) calc(env(safe-area-inset-right) + 16px)
+       calc(env(safe-area-inset-bottom) + 20px) calc(env(safe-area-inset-left) + 16px);
+       display: grid; gap: 14px; max-width: 1500px; margin: 0 auto;
+       grid-template-columns: 1fr; grid-template-areas: "top" "deck" "widgets"; }
+@media (min-width: 900px) {
+  .app { grid-template-columns: minmax(0, 1.25fr) minmax(340px, 1fr); grid-template-areas: "top top" "deck widgets";
+         align-items: start; padding-top: calc(env(safe-area-inset-top) + 22px); gap: 18px; }
+}
+.glass { background: var(--glass); border: 1px solid var(--line); border-radius: var(--r);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 10px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06); }
+.card.glass, .deck.glass { contain: paint; }
+
+/* ---------- top bar ---------- */
+.top { grid-area: top; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 4px; }
+.clock { font-size: clamp(38px, 9vw, 64px); font-weight: 200; letter-spacing: -.03em; line-height: 1;
+  font-variant-numeric: tabular-nums; }
+.date { color: var(--mute); font-size: 14px; margin-top: 4px; text-transform: capitalize; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 999px; font-size: 12.5px;
+  background: var(--glass-hi); border: 1px solid var(--line); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  white-space: nowrap; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mute); box-shadow: 0 0 0 3px rgba(255,255,255,.06); }
+.dot.ok { background: var(--ok); box-shadow: 0 0 10px var(--ok); } .dot.bad { background: var(--bad); box-shadow: 0 0 10px var(--bad); }
+.dot.warn { background: var(--warn); }
+.gear { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--glass-hi);
+  border: 1px solid var(--line); }
+@media (max-width: 520px) { .chips .chip.opt { display: none; } }
+
+/* ---------- deck ---------- */
+.deck { grid-area: deck; padding: 12px; }
+.deck-head { display: flex; justify-content: space-between; align-items: center; padding: 2px 6px 10px; }
+.label { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); font-weight: 600; }
+#clip { position: relative; overflow: hidden; border-radius: 18px; background: #000; margin: 0 auto; }
+#frame { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; background: #000; will-change: transform; }
+
+/* ---------- widgets ---------- */
+.widgets { grid-area: widgets; display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+.card { padding: 16px; position: relative; overflow: hidden; min-height: 120px; }
+.card.wide { grid-column: 1 / -1; }
+.card h3 { margin: 0 0 12px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); font-weight: 600;
+  display: flex; align-items: center; justify-content: space-between; }
+.big { font-size: 40px; font-weight: 250; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+.big small { font-size: 16px; color: var(--mute); margin-left: 3px; font-weight: 400; }
+.sub { color: var(--mute); font-size: 13px; margin-top: 6px; }
+.row { display: flex; align-items: center; gap: 10px; }
+.pill { padding: 9px 14px; border-radius: 999px; background: var(--glass-hi); border: 1px solid var(--line); font-size: 13px;
+  font-weight: 600; transition: transform .12s, background .2s; }
+.pill:active { transform: scale(.95); }
+.pill.on { background: var(--accent); border-color: transparent; box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 45%, transparent); }
+.pill.red.on { background: #e5484d; box-shadow: 0 6px 20px rgba(229,72,77,.4); }
+.seg { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(0,0,0,.3); border: 1px solid var(--line); }
+.seg button { padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--mute); }
+.seg button.on { background: rgba(255,255,255,.14); color: var(--text); }
+.connect { margin-top: 10px; font-size: 13px; color: var(--mute); display: block; line-height: 1.5; }
+.connect[hidden] { display: none; }
+.off { opacity: .35; pointer-events: none; filter: saturate(.3); }
+.connect button { color: var(--accent); font-weight: 600; padding: 0; }
+
+/* volume dial */
+.vol { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; }
+.dial { width: 112px; height: 112px; position: relative; }
+.dial svg { width: 100%; height: 100%; transform: rotate(135deg); }
+.dial .val { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.dial .val b { font-size: 26px; font-weight: 300; font-variant-numeric: tabular-nums; }
+.dial .val span { display: block; font-size: 11px; color: var(--mute); letter-spacing: .1em; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 34px; background: transparent; }
+input[type=range]::-webkit-slider-runnable-track { height: 8px; border-radius: 8px;
+  background: linear-gradient(90deg, var(--accent) var(--p, 50%), rgba(255,255,255,.12) var(--p, 50%)); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; margin-top: -8px; border-radius: 50%;
+  background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.4); }
+input[type=range]::-moz-range-track { height: 8px; border-radius: 8px; background: rgba(255,255,255,.12); }
+input[type=range]::-moz-range-progress { height: 8px; border-radius: 8px; background: var(--accent); }
+input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border: 0; border-radius: 50%; background: #fff; }
+.spk { display: flex; gap: 12px; margin-top: 12px; font-size: 12px; color: var(--mute); flex-wrap: wrap; }
+.spk span { display: inline-flex; gap: 6px; align-items: center; }
+
+/* now playing */
+.np-bg { position: absolute; inset: -30px; background-size: cover; background-position: center; filter: blur(20px);
+  opacity: .45; z-index: 0; transition: background-image .5s; }
+.np { position: relative; z-index: 1; display: grid; grid-template-columns: 74px 1fr; gap: 14px; align-items: center; }
+.art { width: 74px; height: 74px; border-radius: 14px; background: rgba(255,255,255,.08) center/cover; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+.np .t { font-weight: 650; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.np .a { color: var(--mute); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.ctl { display: flex; gap: 6px; margin-top: 10px; }
+.ctl button { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: var(--glass-hi); }
+.ctl button.main { background: #fff; color: #000; width: 42px; height: 42px; }
+.list { display: grid; gap: 7px; margin-top: 12px; font-size: 13.5px; }
+.list div { display: flex; justify-content: space-between; gap: 8px; }
+.list div span:first-child { color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list b { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* ---------- settings sheet ---------- */
+#sheet { position: fixed; inset: 0; z-index: 10; display: none; }
+#sheet.open { display: block; }
+#sheet .back { position: absolute; inset: 0; background: rgba(0,0,0,.5); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+#sheet .panel { position: absolute; left: 0; right: 0; bottom: 0; max-height: 88vh; overflow: auto; padding: 22px 18px
+  calc(env(safe-area-inset-bottom) + 24px); border-radius: 28px 28px 0 0; background: rgba(16,17,26,.92);
+  border: 1px solid var(--line); -webkit-user-select: text; user-select: text; }
+@media (min-width: 900px) { #sheet .panel { left: auto; top: 0; width: 440px; max-height: none; border-radius: 0; } }
+.panel h2 { margin: 0 0 18px; font-size: 22px; font-weight: 650; display: flex; justify-content: space-between; }
+.panel h4 { margin: 22px 0 10px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
+.swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.sw { aspect-ratio: 3/4; border-radius: 16px; border: 2px solid transparent; position: relative; overflow: hidden;
+  background-size: cover; background-position: center; }
+.sw.on { border-color: #fff; }
+.sw small { position: absolute; left: 6px; bottom: 5px; font-size: 10.5px; font-weight: 600; text-shadow: 0 1px 4px #000; }
+.sw .x { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,.6); font-size: 12px; }
+.sw.add { display: grid; place-items: center; border: 2px dashed var(--line); font-size: 26px; color: var(--mute); }
+.accents { display: flex; gap: 10px; flex-wrap: wrap; }
+.accents button { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; }
+.accents button.on { border-color: #fff; }
+.field { display: grid; gap: 6px; margin-bottom: 12px; font-size: 13px; color: var(--mute); }
+.field input[type=password], .field input[type=text] { padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line);
+  background: rgba(255,255,255,.06); color: var(--text); font: inherit; font-size: 15px; }
+.ok-badge { color: var(--ok); font-weight: 600; }
+.checks { display: grid; gap: 8px; font-size: 14px; }
+.checks label { display: flex; gap: 10px; align-items: center; }
+.save { width: 100%; margin-top: 18px; padding: 14px; border-radius: 16px; background: var(--accent); font-weight: 700; }
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 24px); transform: translateX(-50%) translateY(20px);
+  opacity: 0; transition: all .3s; padding: 10px 16px; border-radius: 999px; background: rgba(20,20,28,.92); border: 1px solid var(--line);
+  font-size: 14px; z-index: 20; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- views: Home | Lab ---------- */
+.top-mid { display: flex; justify-content: center; flex: 1; }
+.labside { grid-area: side; display: none; flex-direction: column; gap: 14px; }
+body.lab .widgets { display: none; }
+body.lab .app { grid-template-columns: 1fr; grid-template-areas: "top" "deck"; max-width: none; align-content: start; }
+body.lab .deck { justify-self: center; }
+@media (min-width: 1400px) {
+  body.lab .app { grid-template-columns: auto 320px; grid-template-areas: "top top" "deck side"; justify-content: center; }
+  body.lab .labside { display: flex; }
+}
+@media (min-width: 900px) { body.lab { overflow: hidden; height: 100vh; } }
+.labside .card { min-height: 0; }
+.crumbs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 15px; }
+.crumbs span { color: var(--mute); } .crumbs b { font-weight: 600; } .crumbs i { color: var(--mute); font-style: normal; opacity: .6; }
+.result { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45; }
+.result .sub { margin-top: 2px; }
+/* live camera overlay (part B of the camera popup) */
+#cam { position: fixed; inset: 0; z-index: 12; display: none; place-items: center; padding: 24px; }
+#cam.open { display: grid; }
+#cam .back { position: absolute; inset: 0; background: rgba(5,6,10,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+#cam .win { position: relative; width: min(94vw, calc((94vh - 70px) * 16 / 9)); padding: 12px; }
+#cam .win header { display: flex; justify-content: space-between; align-items: center; padding: 2px 6px 10px; }
+#cam .win img { width: 100%; display: block; border-radius: 16px; background: #000; aspect-ratio: 16/9; object-fit: contain; }
+#campreview { cursor: pointer; }
+#cp-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 14px; background: #000; display: block; }
+#campreview .cp-nav { display: inline-flex; gap: 6px; }
+#campreview .cp-nav button { width: 28px; height: 28px; border-radius: 50%; background: var(--glass-hi); border: 1px solid var(--line); font-size: 15px; line-height: 1; }
+#campreview .cp-err { position: absolute; left: 16px; right: 16px; bottom: 26px; text-align: center; font-size: 13px; color: var(--mute); }
+#cam .x { width: 36px; height: 36px; border-radius: 50%; background: var(--glass-hi); border: 1px solid var(--line); }
+</style>
+<link rel="stylesheet" href="/wall.css">
+</head>
+<body>
+<div id="wall" class="w-aurora"></div><div id="shade"></div>
+
+<div class="app">
+  <header class="top">
+    <div><div class="clock" id="clock">--:--</div><div class="date" id="date"></div></div>
+    <div class="top-mid"><span class="seg" id="view"><button data-v="home">Home</button><button data-v="lab">Lab</button></span></div>
+    <div class="chips">
+      <span class="chip" id="c-net"><i class="dot"></i><span>Internet</span></span>
+      <span class="chip" id="c-pc"><i class="dot"></i><span>PC</span></span>
+      <span class="chip opt" id="c-out"><span>☁︎</span><span>--°</span></span>
+      <button class="gear" id="gear" aria-label="Settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 1 1 4.1 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1A2 2 0 1 1 7 4.1l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 1 1 19.9 7l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <section class="deck glass">
+    <div class="deck-head"><span class="label" id="deck-title">Deck</span><span class="label" id="deck-state"></span></div>
+    <div id="clip"><iframe id="frame" title="Deck" scrolling="no"></iframe></div>
+  </section>
+
+  <aside class="labside">
+    <article class="card glass"><h3>Where</h3><div class="crumbs" id="crumbs"><b>Overview</b></div></article>
+    <article class="card glass"><h3>Last command</h3><div class="result" id="result"><span class="sub">Nothing run yet.</span></div></article>
+    <article class="card glass camside" id="camside" hidden><h3><span>Camera</span><span id="camside-name"></span></h3>
+      <div class="sub" id="camside-text">Live view is open on top. Close it to return to Cameras.</div></article>
+  </aside>
+
+  <section class="widgets">
+    <article class="card glass wide" id="audio">
+      <h3><span>Speakers · Genelec</span><span class="seg" id="src"><button data-s="pc">PC</button><button data-s="bt">Bluetooth</button></span></h3>
+      <div class="vol">
+        <div class="dial"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="8" stroke-linecap="round" stroke-dasharray="197.9 263.9"/>
+          <circle id="arc" cx="50" cy="50" r="42" fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round" stroke-dasharray="0 263.9"/></svg>
+          <div class="val"><div><b id="db">--</b><span>dB</span></div></div></div>
+        <div>
+          <input type="range" id="vol" min="-60" max="0" step="1" value="-30">
+          <div class="row" style="margin-top:6px"><button class="pill red" id="mute">Mute</button><button class="pill" id="power">Power</button></div>
+        </div>
+      </div>
+      <div class="spk" id="spk"></div>
+      <div class="connect" id="gen-connect" hidden>Enter the Genelec password to show volume. <button data-open>Connect</button></div>
+    </article>
+
+    <article class="card glass wide" id="np-card">
+      <div class="np-bg" id="np-bg"></div>
+      <div class="np"><div class="art" id="art"></div>
+        <div style="min-width:0"><div class="label" style="margin-bottom:4px">Now playing · Spotify</div>
+          <div class="t" id="np-t">—</div><div class="a" id="np-a"></div>
+          <div class="ctl"><button data-m="previous" aria-label="Previous">⏮</button><button class="main" data-m="play_pause" id="np-pp" aria-label="Play/pause">▶</button><button data-m="next" aria-label="Next">⏭</button></div>
+        </div></div>
+    </article>
+
+    <article class="card glass" id="climate">
+      <h3>Climate</h3>
+      <div class="big" id="out">--<small>°</small></div><div class="sub" id="wx">Outside</div>
+      <div class="list" id="temps"></div>
+    </article>
+
+    <article class="card glass" id="home">
+      <h3>Home</h3>
+      <div class="big" id="lights">--<small>on</small></div><div class="sub">Lights</div>
+      <div class="list">
+        <div><span>Front door</span><b id="door">--</b></div>
+        <div><span>Charger</span><b id="charger">--</b></div>
+        <div><span>Dante</span><b id="dante">--</b></div>
+      </div>
+    </article>
+
+    <article class="card glass wide" id="campreview">
+      <h3><span>Camera · <span id="cp-name">—</span></span><span class="cp-nav" id="cp-nav" hidden><button data-cp="-1" aria-label="Previous camera">‹</button><button data-cp="1" aria-label="Next camera">›</button></span></h3>
+      <img id="cp-img" alt="Camera preview"><div class="cp-err" id="cp-err" hidden></div>
+    </article>
+  </section>
+</div>
+
+<div id="sheet"><div class="back" data-close></div>
+  <div class="panel">
+    <h2><span>Personalize</span><button data-close aria-label="Close">✕</button></h2>
+    <h4>Wallpaper</h4>
+    <div class="swatches" id="walls"></div>
+    <input type="file" id="upload" accept="image/*" hidden>
+    <h4>Accent</h4>
+    <div class="accents" id="accents"></div>
+    <h4>Dim wallpaper</h4>
+    <input type="range" id="dim" min="0" max="80" value="25">
+    <h4>Wallpaper motion</h4>
+    <span class="seg" id="motion"><button data-mo="auto">Auto</button><button data-mo="on">On</button><button data-mo="off">Off</button></span>
+    <div class="sub">Auto turns the aurora animation off on low-power devices (tablets).</div>
+    <h4>Camera on Home</h4>
+    <span class="seg" id="campick"><span class="sub" style="padding:7px 10px">Loading…</span></span>
+    <h4>Deck card on Home</h4>
+    <span class="seg" id="deckmode"><button data-d="full">Full lab overview</button><button data-d="fav">Favourites 3×2</button></span>
+    <h4>Connections</h4>
+    <div class="field">Home Assistant long-lived token <span id="ha-set"></span>
+      <input type="password" id="ha" placeholder="Paste token (stored on the server only)" autocomplete="off"></div>
+    <div class="field">Genelec password (user admin) <span id="gen-set"></span>
+      <input type="password" id="gen" placeholder="Speaker password" autocomplete="off"></div>
+    <h4>Temperatures to show</h4>
+    <div class="checks" id="temp-pick"><span class="sub">Connect Home Assistant first.</span></div>
+    <button class="save" id="save">Save</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div id="cam"><div class="back" data-camclose></div>
+  <div class="win glass"><header><span class="label" id="cam-name">Camera</span>
+    <span class="row"><span class="label" id="cam-left"></span><button class="x" data-camclose aria-label="Close">✕</button></span></header>
+    <img id="cam-img" alt="Live camera"></div></div>
+
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const PANEL = 'http://192.168.1.52:4440/device/n8j3yawqc308p4cpworcag1r';
+const Q = new URLSearchParams(location.search), PW = +Q.get('w') || 1000, PH = +Q.get('h') || 1000;   // 6x6 lab panel
+const THEMES = ['aurora', 'midnight', 'sunset', 'forest', 'ocean', 'graphite'];
+const ACCENTS = ['#38bdf8', '#22d3ee', '#34d399', '#fbbf24', '#fb7185', '#f97316', '#e5e7eb'];
+let settings = {}, last = {}, cams = [], snapBusy = false, snapFails = 0;
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('show'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('show'), 2200); }
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || r.status); return j;
+}
+
+/* clock */
+function tick() { const d = new Date();
+  $('#clock').textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  $('#date').textContent = d.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' }); }
+tick(); setInterval(tick, 1000);
+
+/* deck / lab card: one Buttons web view (it allows a single viewer), scaled to fit without cropping.
+   Home view: the whole 6x6 scaled into the Deck card, or the top-left 3x2 "favourites" (setting).
+   Lab view: the whole 6x6 as large as the window height allows. */
+const frame = $('#frame'), clip = $('#clip');
+frame.src = PANEL; frame.style.width = (PW + 24) + 'px'; frame.style.height = (PH + 24) + 'px';
+let view = /^\/lab\/?$/.test(location.pathname) || Q.get('view') === 'lab' ? 'lab' : 'home';
+/* Each view's geometry is computed once (load, resize, settings change) and cached, so a view switch only
+   applies stored numbers in the same frame instead of measuring + rescaling the page afterwards. */
+const geo = {};
+function measure(v) {
+  const lab = v === 'lab', fav = !lab && settings.deck_mode === 'fav';
+  const vw = fav ? PW / 2 : PW, vh = fav ? PH / 3 : PH;                  // favourites = 3 of 6 columns, 2 of 6 rows
+  const card = $('.deck'), top = card.getBoundingClientRect().top + scrollY;
+  let w, maxH;
+  if (lab) {
+    const side = innerWidth >= 1400 ? 320 + 18 : 0;
+    w = Math.min(innerWidth - 32 - side, 2000) - 24;
+    maxH = innerHeight - top - 24 - 48;
+  } else {
+    w = card.clientWidth - 24;
+    maxH = innerWidth >= 900 ? innerHeight - top - 70 : Infinity;
+  }
+  const s = Math.max(.2, Math.min(w / vw, maxH / vh));
+  return { cw: vw * s, ch: vh * s, s, card: lab ? vw * s + 24 + 'px' : '' };
+}
+function apply(g) {
+  clip.style.width = g.cw + 'px'; clip.style.height = g.ch + 'px'; frame.style.transform = `scale(${g.s})`;
+  $('.deck').style.width = g.card;
+}
+function fit() {                    // (re)measure the current view; the other view is measured on its first use
+  for (const k in geo) delete geo[k];
+  geo[view] = measure(view); apply(geo[view]);
+}
+function setView(v, push) {
+  if (v === view && geo[v]) return;
+  document.body.classList.add('switching');                 // pause the wallpaper animation for this render
+  view = v; document.body.classList.toggle('lab', v === 'lab');
+  $$('#view button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  $('#deck-title').textContent = v === 'lab' ? 'Lab · Proxmox' : 'Deck';
+  if (geo[v]) apply(geo[v]); else { geo[v] = measure(v); apply(geo[v]); }   // first visit measures once
+  if (push) history.replaceState(null, '', v === 'lab' ? '/lab' : '/');
+  clearTimeout(setView._t); setView._t = setTimeout(() => document.body.classList.remove('switching'), 400);
+  if (v === 'home') snap();
+}
+/* react on touch-down, not on click (~100-150 ms later on touch screens); click still works for keyboard */
+function fast(el, fn) {
+  el.addEventListener('pointerdown', e => { if (e.button > 0) return; e.preventDefault(); fn(e); });
+  el.addEventListener('click', e => { if (e.detail === 0) fn(e); });
+}
+/* a tap that may sit in a scrolling page: act on lift, only if the finger did not move */
+function tap(el, fn) {
+  let d = null;
+  el.addEventListener('pointerdown', e => { d = { x: e.clientX, y: e.clientY, t: Date.now() }; });
+  el.addEventListener('pointerup', e => {
+    if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 10 && Date.now() - d.t < 600) { e.preventDefault(); fn(e); }
+    d = null; });
+  el.addEventListener('click', e => { if (e.detail === 0) fn(e); });
+}
+fast($('#view'), e => { const b = e.target.closest('[data-v]'); if (b) setView(b.dataset.v, true); });
+let rz; const onResize = () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(fit); };
+addEventListener('resize', onResize); window.visualViewport && visualViewport.addEventListener('resize', onResize);
+document.body.classList.toggle('lab', view === 'lab'); setView(view);
+
+/* wallpaper + accent */
+function applyLook() {
+  const w = settings.wallpaper || 'aurora', wall = $('#wall');
+  wall.className = ''; wall.style.backgroundImage = '';
+  if (w.startsWith('img:')) wall.style.backgroundImage = `url(/wall/${w.slice(4)})`; else wall.classList.add('w-' + w);
+  $('#shade').style.background = `radial-gradient(120% 80% at 50% 0%, rgba(0,0,0,${(settings.dim ?? 25) / 200}), rgba(0,0,0,${.35 + (settings.dim ?? 25) / 160}))`;
+  document.documentElement.style.setProperty('--accent', settings.accent || ACCENTS[0]);
+  const mo = settings.motion || 'auto';
+  const lowPower = matchMedia('(prefers-reduced-motion: reduce)').matches || (navigator.hardwareConcurrency || 8) <= 4
+    || (navigator.deviceMemory || 8) <= 3 || /Android|iPad|Tablet|Silk|Kindle|Fire/i.test(navigator.userAgent)
+    || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));      // iPadOS reports "Macintosh"
+  wall.classList.toggle('still', mo === 'off' || (mo === 'auto' && lowPower));
+}
+function renderPickers() {
+  const cur = settings.wallpaper || 'aurora';
+  $('#walls').innerHTML = THEMES.map(t => `<button class="sw w-${t} ${cur === t ? 'on' : ''}" data-w="${t}"><small>${t}</small></button>`).join('')
+    + (settings.walls || []).map(n => `<button class="sw ${cur === 'img:' + n ? 'on' : ''}" data-w="img:${n}" style="background-image:url(/wall/${n})"><span class="x" data-del="${n}">✕</span></button>`).join('')
+    + `<button class="sw add" id="add" aria-label="Upload wallpaper">＋</button>`;
+  $('#accents').innerHTML = ACCENTS.map(c => `<button data-a="${c}" class="${(settings.accent || ACCENTS[0]) === c ? 'on' : ''}" style="background:${c}"></button>`).join('');
+  $('#dim').value = settings.dim ?? 25; $('#dim').style.setProperty('--p', (settings.dim ?? 25) / .8 + '%');
+  $$('#deckmode button').forEach(b => b.classList.toggle('on', b.dataset.d === (settings.deck_mode || 'full')));
+  $$('#motion button').forEach(b => b.classList.toggle('on', b.dataset.mo === (settings.motion || 'auto')));
+  if (cams.length) $('#campick').innerHTML = cams.map(c => `<button data-cam="${esc(c.entity)}" class="${c.entity === curCam() ? 'on' : ''}">${esc(c.name)}</button>`).join('');
+  $('#ha-set').innerHTML = settings.ha_token_set ? '<span class="ok-badge">· connected</span>' : '';
+  $('#gen-set').innerHTML = settings.genelec_set ? '<span class="ok-badge">· connected</span>' : '';
+  const temps = (last.ha && last.ha.temps) || [], chosen = settings.temps || [];
+  if (temps.length) $('#temp-pick').innerHTML = temps.map(t => `<label><input type="checkbox" value="${t.id}" ${chosen.includes(t.id) ? 'checked' : ''}> ${t.name} <span class="sub">${t.value}°</span></label>`).join('');
+}
+async function loadSettings() { settings = await api('/api/settings'); applyLook(); renderPickers(); fit(); }
+$('#deckmode').onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return;
+  settings.deck_mode = b.dataset.d; renderPickers(); fit(); api('/api/settings', { deck_mode: settings.deck_mode }); };
+
+$('#motion').onclick = e => { const b = e.target.closest('[data-mo]'); if (!b) return;
+  settings.motion = b.dataset.mo; applyLook(); renderPickers(); api('/api/settings', { motion: settings.motion }); };
+$('#campick').onclick = e => { const b = e.target.closest('[data-cam]'); if (!b) return; setCam(b.dataset.cam, true); renderPickers(); };
+$('#gear').onclick = () => { renderPickers(); $('#sheet').classList.add('open'); };
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-close]')) $('#sheet').classList.remove('open');
+  if (e.target.closest('[data-open]')) { renderPickers(); $('#sheet').classList.add('open'); }
+});
+$('#walls').onclick = async e => {
+  const del = e.target.closest('[data-del]');
+  if (del) { e.stopPropagation(); await api('/api/settings', { delete_wall: del.dataset.del, wallpaper: settings.wallpaper === 'img:' + del.dataset.del ? 'aurora' : settings.wallpaper }); return loadSettings(); }
+  if (e.target.closest('#add')) return $('#upload').click();
+  const b = e.target.closest('[data-w]'); if (!b) return;
+  settings.wallpaper = b.dataset.w; applyLook(); renderPickers(); api('/api/settings', { wallpaper: settings.wallpaper });
+};
+$('#upload').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; toast('Uploading…');
+  const blob = await shrink(f);
+  const r = await fetch('/api/wallpaper', { method: 'POST', headers: { 'Content-Type': blob.type }, body: blob }).then(r => r.json());
+  if (r.error) return toast(r.error);
+  await api('/api/settings', { wallpaper: 'img:' + r.name }); await loadSettings(); toast('Wallpaper set');
+};
+async function shrink(file) {  // phone photos are huge: resize to max 2560 px as JPEG
+  try { const img = await createImageBitmap(file), s = Math.min(1, 2560 / Math.max(img.width, img.height));
+    const c = Object.assign(document.createElement('canvas'), { width: img.width * s, height: img.height * s });
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise(r => c.toBlob(r, 'image/jpeg', .88)); } catch { return file; }
+}
+$('#accents').onclick = e => { const b = e.target.closest('[data-a]'); if (!b) return;
+  settings.accent = b.dataset.a; applyLook(); renderPickers(); api('/api/settings', { accent: settings.accent }); };
+$('#dim').oninput = e => { settings.dim = +e.target.value; e.target.style.setProperty('--p', settings.dim / .8 + '%'); applyLook(); };
+$('#dim').onchange = e => api('/api/settings', { dim: +e.target.value });
+$('#save').onclick = async () => {
+  const body = { temps: $$('#temp-pick input:checked').map(i => i.value) };
+  if ($('#ha').value) body.ha_token = $('#ha').value;
+  if ($('#gen').value) body.genelec_password = $('#gen').value;
+  try { await api('/api/settings', body); $('#ha').value = $('#gen').value = ''; await loadSettings();
+    $('#sheet').classList.remove('open'); toast('Saved'); setTimeout(poll, 1500); } catch (e) { toast('Error: ' + e.message); }
+};
+
+/* speakers */
+const vol = $('#vol');
+function setVolUI(level) {
+  if (level == null) return; vol.value = Math.max(-60, level);
+  const p = (vol.value - -60) / 60; vol.style.setProperty('--p', p * 100 + '%');
+  $('#arc').setAttribute('stroke-dasharray', `${(197.9 * p).toFixed(1)} 263.9`); $('#db').textContent = Math.round(level);
+}
+let volBusy = 0;
+vol.oninput = () => { volBusy = Date.now(); setVolUI(+vol.value); };
+vol.onchange = () => api('/api/genelec', { action: 'volume', value: +vol.value }).catch(e => toast(e.message));
+$('#mute').onclick = () => { const on = !$('#mute').classList.contains('on'); $('#mute').classList.toggle('on', on);
+  api('/api/genelec', { action: 'mute', value: on }).catch(e => toast(e.message)); };
+$('#power').onclick = () => { const on = !$('#power').classList.contains('on'); $('#power').classList.toggle('on', on);
+  api('/api/genelec', { action: 'power', value: on }).catch(e => toast(e.message)); };
+$('#src').onclick = async e => { const b = e.target.closest('[data-s]'); if (!b) return;
+  $$('#src button').forEach(x => x.classList.toggle('on', x === b)); toast('Switching Dante source…');
+  try { await api('/api/dante/source', { source: b.dataset.s }); toast('Source: ' + b.textContent); } catch (err) { toast('Dante: ' + err.message); } };
+$$('[data-m]').forEach(b => b.onclick = () => api('/api/media', { action: b.dataset.m }).then(() => setTimeout(poll, 800)).catch(e => toast(e.message)));
+
+/* live data */
+async function poll() {
+  let s; try { s = await api('/api/status'); } catch { return; } last = s;
+  const net = $('#c-net'); net.querySelector('.dot').className = 'dot ' + (s.internet_ms != null ? 'ok' : 'bad');
+  net.lastElementChild.textContent = s.internet_ms != null ? s.internet_ms + ' ms' : 'Offline';
+  const pc = $('#c-pc'); pc.querySelector('.dot').className = 'dot ' + (s.pc_online ? 'ok' : '');
+  pc.lastElementChild.textContent = s.pc_online ? 'PC on' : 'PC off';
+  $('#deck-state').textContent = s.pc_online ? '' : 'PC keys offline';
+
+  const g = s.genelec || {};
+  $('#gen-connect').hidden = g.configured !== false && !g.auth_failed;
+  $('#gen-connect').firstChild.textContent = g.auth_failed ? 'The speakers rejected the Genelec password. ' : 'Enter the Genelec password to show volume. ';
+  $$('#audio .vol').forEach(e => e.classList.toggle('off', !g.configured));
+  if (g.configured && Date.now() - volBusy > 4000) setVolUI(g.level);
+  $('#mute').classList.toggle('on', !!g.mute);
+  $('#power').classList.toggle('on', g.power === 'ACTIVE');
+  $('#spk').innerHTML = (g.speakers || []).map((x, i) => `<span><i class="dot ${!x.ok ? 'bad' : x.power === 'ACTIVE' ? 'ok' : 'warn'}"></i>${['4430 L', '4430 R', '3440'][i]} ${x.ok ? (x.power === 'ACTIVE' ? 'on' : x.power === 'ISS_SLEEP' ? 'asleep' : 'standby') : 'offline'}</span>`).join('');
+
+  const d = s.dante || {};
+  if (d.ok) { $$('#src button').forEach(x => x.classList.toggle('on', x.dataset.s === d.source));
+    $('#dante').textContent = d.front_total ? `${d.source === 'pc' ? 'PC' : d.source === 'bt' ? 'Bluetooth' : d.source} · ${d.front_live}/${d.front_total}` : '—'; }
+
+  const h = s.ha || {};
+  if (h.configured) {
+    $('#lights').innerHTML = `${h.lights_on}<small>on</small>`;
+    $('#door').textContent = h.door === 'locked' ? '🔒 Locked' : h.door === 'unlocked' ? '🔓 Open' : (h.door || '—');
+    $('#door').style.color = h.door === 'unlocked' ? 'var(--warn)' : '';
+    $('#charger').textContent = h.charger_w != null ? `${h.charger_w.toFixed(h.charger_unit === 'kW' ? 1 : 0)} ${h.charger_unit || 'W'}` : '—';
+    $('#out').innerHTML = h.outside != null ? `${Math.round(h.outside * 10) / 10}<small>°</small>` : '--<small>°</small>';
+    $('#wx').textContent = 'Outside' + (h.weather ? ' · ' + h.weather.replace(/[-_]/g, ' ') : '');
+    $('#c-out').lastElementChild.textContent = h.outside != null ? Math.round(h.outside) + '°' : '--°';
+    const chosen = settings.temps && settings.temps.length ? settings.temps : h.temps.slice(0, 3).map(t => t.id);
+    $('#temps').innerHTML = h.temps.filter(t => chosen.includes(t.id)).map(t => `<div><span>${t.name}</span><b>${t.value.toFixed(1)}°</b></div>`).join('');
+    const m = h.media || {}; $('#np-t').textContent = m.title || (m.state === 'idle' ? 'Nothing playing' : '—');
+    $('#np-a').textContent = m.artist || ''; $('#np-pp').textContent = m.state === 'playing' ? '⏸' : '▶';
+    const art = m.art ? `url(/api/art?k=${encodeURIComponent(m.art_key)})` : '';
+    if ($('#art').style.backgroundImage !== art) { $('#art').style.backgroundImage = art; $('#np-bg').style.backgroundImage = art; }
+  } else {
+    $('#temps').innerHTML = $('#np-a').innerHTML = '';
+    $('#temps').innerHTML = '<div class="connect">Connect Home Assistant for live data. <button data-open>Connect</button></div>';
+  }
+}
+/* lab panel state: breadcrumb, last command, camera popup -> live overlay.
+   The overlay has two owners: the lab panel popup (camSource 'lab') and the Home camera card ('home');
+   labPoll() only opens/closes it for the lab popup and never closes one the card opened. */
+let camKey = null, camDismissed = null, camSource = null, camTimer;
+async function labPoll() {
+  if (document.visibilityState !== 'visible') return;
+  let st; try { st = await api('/api/lab/state'); } catch { return; }
+  $('#crumbs').innerHTML = (st.crumbs || ['Overview']).map((c, i, a) => i === a.length - 1 ? `<b>${esc(c)}</b>` : `<span>${esc(c)}</span><i>›</i>`).join('');
+  const l = st.last;
+  if (l) $('#result').innerHTML = `<i class="dot ${l.ok ? 'ok' : 'bad'}" style="margin-top:6px;flex:none"></i><div><b>${esc(l.key.split(':')[0])}</b> · ${esc(l.msg)}
+    <div class="sub">${esc(l.where || '')} · ${new Date(l.at * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div></div>`;
+  const key = st.entity ? st.entity + '|' + st.stream : null;
+  if (!st.entity) { camDismissed = null; }
+  if (key !== camKey) {                                   // popup opened, switched camera, or closed
+    camKey = key;
+    if (st.entity && camDismissed !== st.entity) {          // a lab popup takes over the overlay
+      openOverlay('Camera · ' + st.camera, st.stream, 'lab');
+    } else if (camSource === 'lab') hideOverlay();
+    $('#camside').hidden = !st.entity; $('#camside-name').textContent = st.camera || '';
+  }
+  if (camSource === 'lab') $('#cam-left').textContent = st.entity ? `closes in ${st.closes_in} s` : '';
+}
+function openOverlay(name, src, source) {
+  clearTimeout(camTimer); camSource = source;
+  $('#cam-name').textContent = name; $('#cam-left').textContent = source === 'home' ? 'live' : '';
+  $('#cam-img').src = src; $('#cam').classList.add('open');
+  if (source === 'home') camTimer = setTimeout(hideOverlay, 590 * 1000);   // the server ends streams after 10 min
+}
+function hideOverlay() {
+  clearTimeout(camTimer); camSource = null;
+  $('#cam').classList.remove('open'); $('#cam-img').src = '';            // dropping src stops the MJPEG stream
+}
+async function closeCam() {
+  const src = camSource; hideOverlay();
+  if (src !== 'lab') return snap();
+  camDismissed = camKey && camKey.split('|')[0];
+  try { await api('/api/lab/close', {}); } catch (e) { toast('Lab panel: ' + e.message); }
+  setTimeout(labPoll, 300);
+}
+document.addEventListener('pointerdown', e => { if (e.target.closest('[data-camclose]')) { e.preventDefault(); closeCam(); } });
+document.addEventListener('click', e => { if (e.detail === 0 && e.target.closest('[data-camclose]')) closeCam(); });
+
+/* Home camera card: light snapshots every 2.5 s (only while Home is visible and the overlay is closed);
+   tap = live MJPEG in the overlay, ‹ › cycle cameras. */
+function curCam() { return (cams.find(c => c.entity === settings.camera) || cams.find(c => c.name === 'Front') || cams[0] || {}).entity; }
+function setCam(entity, save) {
+  settings.camera = entity; const c = cams.find(x => x.entity === entity) || {};
+  $('#cp-name').textContent = c.name || '—'; snapBusy = false; snap();
+  if (save) api('/api/settings', { camera: entity }).catch(() => {});
+}
+function snap() {
+  const e = curCam();
+  if (!e || snapBusy || view !== 'home' || document.visibilityState !== 'visible' || $('#cam').classList.contains('open')) return;
+  snapBusy = true;
+  const img = new Image();                               // load off-screen, swap when complete (no flicker)
+  img.onload = () => { $('#cp-img').src = img.src; snapBusy = false; snapFails = 0; $('#cp-err').hidden = true; };
+  img.onerror = () => { snapBusy = false; if (++snapFails >= 3) { $('#cp-err').hidden = false; $('#cp-err').textContent = 'Camera not answering'; } };
+  img.src = `/api/cam/${e}/snap?w=${Math.min(1280, Math.round($('#cp-img').clientWidth * (devicePixelRatio || 1)) || 640)}&t=${Date.now()}`;
+}
+async function loadCams() {
+  try { cams = await api('/api/cams'); } catch { cams = []; }
+  $('#cp-nav').hidden = cams.length < 2; $('#campreview').hidden = !cams.length;
+  if (cams.length) setCam(curCam());
+}
+tap($('#campreview'), e => {
+  const step = e.target.closest('[data-cp]');
+  if (step) { const i = cams.findIndex(c => c.entity === curCam()); setCam(cams[(i + +step.dataset.cp + cams.length) % cams.length].entity, true); return; }
+  const c = cams.find(x => x.entity === curCam()); if (!c) return;
+  openOverlay('Camera · ' + c.name, `/api/cam/${c.entity}/stream?t=${Date.now()}`, 'home');
+});
+setInterval(snap, 2500);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#cam').classList.contains('open')) closeCam(); });
+setInterval(labPoll, 600); labPoll();
+
+loadSettings().then(loadCams).then(poll); setInterval(poll, 5000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { poll(); snap(); } });
+</script>
+<script src="/start.js" defer></script>
+<script src="/cam.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+/* Home Deck shared look for the ring panels (Pulse, Today, Rooms, Control, Atlas).
+   Dark glass on a deep background; tokens on :root; safe areas for iPhone/iPad home-screen apps. */
+:root {
+  --bg: #07080f; --ink: #f3f4fb; --mute: rgba(243,244,251,.58); --faint: rgba(243,244,251,.3); --line: rgba(255,255,255,.09);
+  --card: rgba(255,255,255,.045); --card-hi: rgba(255,255,255,.08); --accent: #38bdf8; --ok: #34d399; --warn: #fbbf24; --bad: #fb7185;
+  --cyan: #22d3ee; --amber: #f59e0b; --pink: #f472b6; --blue: #60a5fa; --r: 24px;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Inter, Roboto, sans-serif;
+  --sl: env(safe-area-inset-left); --sr: env(safe-area-inset-right); --st: env(safe-area-inset-top); --sb: env(safe-area-inset-bottom);
+}
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: 180ms ease both vt-out; }
+::view-transition-new(root) { animation: 260ms ease both vt-in; }
+@keyframes vt-out { to { opacity: 0; transform: scale(.985); } }
+@keyframes vt-in { from { opacity: 0; transform: scale(1.015); } }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: var(--bg); }
+html, body { margin: 0; min-height: 100%; color: var(--ink); font-family: var(--font); -webkit-tap-highlight-color: transparent; touch-action: manipulation; overscroll-behavior-y: none; }
+body { background: var(--bg); }
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(60% 45% at 15% -5%, color-mix(in srgb, var(--hue, #38bdf8) 26%, transparent), transparent 70%),
+              radial-gradient(50% 40% at 100% 100%, color-mix(in srgb, var(--hue2, #22d3ee) 14%, transparent), transparent 70%); }
+button, input, select { font: inherit; color: inherit; }
+button { background: none; border: 0; padding: 0; cursor: pointer; -webkit-user-select: none; user-select: none; }
+a { color: inherit; text-decoration: none; }
+.num { font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1400px; margin: 0 auto;
+  padding: calc(var(--st) + 20px) calc(var(--sr) + 22px) calc(var(--sb) + 110px) calc(var(--sl) + 22px); }
+@media (max-width: 700px) { .wrap { padding: calc(var(--st) + 14px) calc(var(--sr) + 14px) calc(var(--sb) + 104px) calc(var(--sl) + 14px); } }
+.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+.head h1 { margin: 0; font-size: 34px; font-weight: 780; letter-spacing: -.03em; line-height: 1; }
+.head .sub { color: var(--mute); font-size: 14px; margin-top: 6px; }
+.head .right { text-align: right; color: var(--mute); font-size: 13px; }
+.head .clock { font-size: 40px; font-weight: 250; letter-spacing: -.02em; color: var(--ink); line-height: 1; }
+@media (max-width: 700px) { .head h1 { font-size: 28px; } .head .clock { font-size: 28px; } }
+.cap { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); font-weight: 680; margin: 26px 2px 10px;
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.cap small { letter-spacing: 0; text-transform: none; font-weight: 500; color: var(--faint); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; position: relative; min-width: 0; }
+a.card:active, button.card:active { transform: scale(.985); }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px; background: var(--card-hi); border: 1px solid var(--line);
+  font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; display: inline-block; }
+.dot.ok { background: var(--ok); box-shadow: 0 0 8px color-mix(in srgb, var(--ok) 70%, transparent); }
+.dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); box-shadow: 0 0 8px color-mix(in srgb, var(--bad) 70%, transparent); }
+.mute { color: var(--mute); } .faint { color: var(--faint); }
+.empty { color: var(--mute); font-size: 14px; padding: 6px 2px; }
+.toast { position: fixed; left: 50%; bottom: calc(var(--sb) + 92px); transform: translateX(-50%); z-index: 70; padding: 11px 18px; border-radius: 999px;
+  background: #1b1830; border: 1px solid var(--line); font-size: 14px; font-weight: 600; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: calc(100% - 32px); }
+.toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { *, ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; transition: none !important; } }

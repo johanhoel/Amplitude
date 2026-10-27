@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#101418">
+<title>Lab</title>
+<style>
+/* Lab panel: one live view of the cluster. No backdrop-filter, no animated wallpaper: every tap paints
+   in one frame. Data arrives pushed (server-sent events) and is patched into existing elements. */
+:root {
+  --bg: #101418; --ink: #f2f3f9; --mute: rgba(242,243,249,.55); --faint: rgba(242,243,249,.14);
+  --line: rgba(255,255,255,.08); --accent: #38bdf8; --ok: #34d399; --warn: #fbbf24; --bad: #f87171;
+  --turbo: #6f8fe0; --edvin: #7dd3fc; --prippen: #4fb3a8;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--font);
+  -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+body { background:
+  radial-gradient(60% 50% at 8% 0%, rgba(56,189,248,.20), transparent 70%),
+  radial-gradient(50% 45% at 100% 100%, rgba(79,179,168,.14), transparent 70%), var(--bg); background-attachment: fixed; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.num { font-variant-numeric: tabular-nums; }
+.cap { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); font-weight: 650; }
+
+/* ---------- top ---------- */
+header { display: flex; align-items: center; gap: 22px; padding: calc(env(safe-area-inset-top) + 18px) 28px 8px; }
+.clock { font-size: 44px; font-weight: 200; letter-spacing: -.03em; line-height: 1; }
+.orb { width: 14px; height: 14px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 6px rgba(52,211,153,.12), 0 0 24px var(--ok);
+  flex: none; transition: background .2s, box-shadow .2s; }
+.orb.bad { background: var(--bad); box-shadow: 0 0 0 6px rgba(248,113,113,.14), 0 0 24px var(--bad); }
+.headline { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.headline b { font-size: 20px; font-weight: 600; white-space: nowrap; }
+.headline span { color: var(--mute); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+nav { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--line); }
+nav a { color: var(--mute); text-decoration: none; padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+nav a.on { background: rgba(255,255,255,.12); color: var(--ink); }
+.live { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
+.live.on { background: var(--ok); }
+
+/* ---------- layout ---------- */
+main { display: grid; gap: 26px 34px; padding: 8px 28px calc(env(safe-area-inset-bottom) + 28px);
+  grid-template-columns: minmax(0, 1fr) 330px; grid-template-areas: "nodes side" "vitals side" "lanes side"; }
+@media (max-width: 980px) { main { grid-template-columns: 1fr; grid-template-areas: "nodes" "vitals" "lanes" "side"; padding: 8px 16px 28px; }
+  header { padding: 16px; flex-wrap: wrap; } .clock { font-size: 34px; } }
+
+/* node rings */
+.nodes { grid-area: nodes; display: flex; gap: 18px; justify-content: space-between; flex-wrap: wrap; }
+.node { display: flex; align-items: center; gap: 16px; padding: 6px 18px 6px 6px; border-radius: 999px; flex: 1 1 250px; text-align: left;
+  background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.015)); border: 1px solid var(--line);
+  transition: transform .08s; }
+.node:active, .cap-g:active { transform: scale(.97); }
+.ring { width: 112px; height: 112px; flex: none; position: relative; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-linecap: round; transition: stroke-dashoffset .5s ease; }
+.ring .mid { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; line-height: 1.1; }
+.ring .mid b { font-size: 22px; font-weight: 300; } .ring .mid i { font-style: normal; font-size: 10px; color: var(--mute); letter-spacing: .12em; }
+.node h2 { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -.01em; }
+.node .meta { color: var(--mute); font-size: 13px; margin-top: 3px; line-height: 1.5; }
+.node .legend { display: flex; gap: 12px; font-size: 12px; margin-top: 6px; color: var(--mute); }
+.node .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+.node.off { opacity: .55; } .node.off h2::after { content: " · offline"; color: var(--bad); font-weight: 500; font-size: 15px; }
+
+/* vitals: one flowing strip, no boxes */
+.vitals { grid-area: vitals; display: flex; flex-wrap: wrap; align-items: stretch; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.v { flex: 1 1 140px; padding: 16px 18px; position: relative; }
+.v + .v::before { content: ""; position: absolute; left: 0; top: 18px; bottom: 18px; width: 1px; background: var(--line); }
+.v .big { font-size: 34px; font-weight: 250; letter-spacing: -.02em; line-height: 1.1; margin-top: 6px; }
+.v .big small { font-size: 14px; color: var(--mute); font-weight: 400; margin-left: 3px; }
+.v .sub { color: var(--mute); font-size: 12.5px; margin-top: 4px; white-space: nowrap; }
+.v .sub.warn { color: var(--warn); } .v .sub.bad { color: var(--bad); }
+
+/* lanes of guest capsules */
+.lanes { grid-area: lanes; display: grid; gap: 16px; align-content: start; }
+.lane { display: grid; grid-template-columns: 92px 1fr; gap: 12px; align-items: start; }
+.lane > .cap { padding-top: 15px; display: flex; align-items: center; gap: 8px; }
+.lane > .cap i { width: 10px; height: 10px; border-radius: 3px; transform: rotate(45deg); }
+.caps { display: flex; flex-wrap: wrap; gap: 10px; }
+.cap-g { --c: var(--accent); position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 10px;
+  padding: 10px 18px 12px 14px; border-radius: 999px; min-width: 150px;
+  background: rgba(255,255,255,.045); border: 1px solid var(--line); transition: transform .08s, border-color .2s; }
+.cap-g .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; transition: width .6s ease;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c) 34%, transparent), color-mix(in srgb, var(--c) 10%, transparent)); }
+.cap-g .mem { position: absolute; left: 18px; right: 18px; bottom: 5px; height: 2px; border-radius: 2px; background: var(--faint); }
+.cap-g .mem i { display: block; height: 100%; width: 0; border-radius: 2px; background: var(--c); transition: width .6s ease; }
+.cap-g > :not(.fill):not(.mem) { position: relative; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); flex: none; box-shadow: 0 0 10px var(--ok); }
+.cap-g b { font-size: 15px; font-weight: 620; white-space: nowrap; }
+.cap-g small { color: var(--mute); font-size: 11.5px; }
+.cap-g .pct { margin-left: auto; color: var(--mute); font-size: 12px; }
+.cap-g.stopped { border-style: dashed; background: transparent; } .cap-g.stopped .dot { background: var(--faint); box-shadow: none; }
+.cap-g.stopped b { color: var(--mute); }
+.cap-g.busy { border-color: var(--warn); } .cap-g.busy .dot { background: var(--warn); box-shadow: 0 0 10px var(--warn); animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: .25; } }
+
+/* side: quick actions, services, activity */
+.side { grid-area: side; display: grid; gap: 26px; align-content: start; }
+.quick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 8px; margin-top: 12px; }
+.qa { display: grid; justify-items: center; gap: 8px; font-size: 12px; color: var(--mute); text-align: center; line-height: 1.25; }
+.svc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.svc span { display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px; font-size: 12.5px;
+  background: rgba(255,255,255,.04); border: 1px solid var(--line); white-space: nowrap; }
+.svc span i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+.svc span.down { border-color: var(--bad); } .svc span.down i { background: var(--bad); }
+.svc span em { font-style: normal; color: var(--mute); font-size: 11px; }
+.feed { margin: 12px 0 0; padding: 0 0 0 18px; list-style: none; position: relative; }
+.feed::before { content: ""; position: absolute; left: 4px; top: 6px; bottom: 6px; width: 1px; background: var(--line); }
+.feed li { position: relative; padding: 0 0 14px; font-size: 13.5px; line-height: 1.4; }
+.feed li::before { content: ""; position: absolute; left: -18px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--ok); }
+.feed li.bad::before { background: var(--bad); } .feed li.run::before { background: var(--warn); animation: blink 1s infinite; }
+.feed li small { display: block; color: var(--mute); font-size: 12px; }
+.empty { color: var(--mute); font-size: 13px; }
+
+/* hold-to-run round button */
+.hb { --t: var(--accent); width: 68px; height: 68px; border-radius: 50%; position: relative; display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--t) 30%, #151622), #10111a 75%);
+  border: 1px solid color-mix(in srgb, var(--t) 45%, transparent); transition: transform .08s; touch-action: none; }
+.hb:active { transform: scale(.94); }
+.hb svg.ic { width: 26px; height: 26px; stroke: var(--t); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.hb svg.pr { position: absolute; inset: -5px; width: calc(100% + 10px); height: calc(100% + 10px); transform: rotate(-90deg); pointer-events: none; }
+.hb svg.pr circle { fill: none; stroke: var(--t); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 239; stroke-dashoffset: 239; }
+.hb svg.pr circle.trk { stroke: color-mix(in srgb, var(--t) 22%, transparent); stroke-dasharray: 3 7; stroke-dashoffset: 0; stroke-width: 2; }
+.hb.done { background: var(--t); } .hb.done svg.ic { stroke: #0b0c12; }
+.hb[disabled] { opacity: .3; pointer-events: none; }
+.t-ok { --t: var(--ok); } .t-warn { --t: var(--warn); } .t-bad { --t: var(--bad); } .t-accent { --t: var(--accent); }
+.hint { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 26px); transform: translate(-50%, 20px); opacity: 0;
+  padding: 11px 18px; border-radius: 999px; background: #1a1b26; border: 1px solid var(--line); font-size: 14px; z-index: 30;
+  transition: opacity .15s, transform .15s; pointer-events: none; white-space: nowrap; }
+.hint.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* detail drawer */
+#scrim { position: fixed; inset: 0; background: rgba(3,4,8,.62); opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 20; }
+#drawer { position: fixed; z-index: 21; top: 0; right: 0; bottom: 0; width: min(460px, 100vw); background: #0d0e16;
+  border-left: 1px solid var(--line); transform: translateX(102%); transition: transform .18s cubic-bezier(.2,.8,.2,1);
+  padding: calc(env(safe-area-inset-top) + 24px) 26px 30px; overflow-y: auto; }
+body.open #scrim { opacity: 1; pointer-events: auto; } body.open #drawer { transform: none; }
+#drawer .x { position: absolute; top: calc(env(safe-area-inset-top) + 20px); right: 20px; width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,.06); font-size: 18px; }
+#drawer h1 { margin: 6px 0 4px; font-size: 34px; font-weight: 650; letter-spacing: -.02em; }
+#drawer .meta { color: var(--mute); font-size: 14px; line-height: 1.6; }
+.gauges { display: flex; gap: 22px; margin: 24px 0 8px; }
+.gauge { display: grid; justify-items: center; gap: 6px; font-size: 12px; color: var(--mute); }
+.gauge .ring { width: 86px; height: 86px; } .gauge .ring .mid b { font-size: 18px; }
+.note { margin: 18px 0 0; padding: 12px 14px; border-radius: 16px; background: rgba(251,191,36,.08); color: #fde68a; font-size: 13.5px; }
+.acts { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 20px 8px; margin-top: 26px; }
+#drawer .cap { margin-top: 26px; }
+</style>
+<link rel="stylesheet" href="/wall.css">
+</head>
+<body>
+<header>
+  <div class="clock num" id="clock">--:--</div>
+  <div class="headline"><i class="orb" id="orb"></i><div style="min-width:0"><b id="head">Connecting…</b><br><span id="headsub"></span></div></div>
+  <nav><a href="/">Deck</a><a href="/living">Home</a><a href="/ops" class="on">Lab</a></nav>
+  <i class="live" id="live" title="live updates"></i>
+</header>
+
+<main>
+  <section class="nodes" id="nodes"></section>
+  <section class="vitals" id="vitals">
+    <div class="v"><div class="cap">Internet</div><div class="big num" id="v-down">–<small>Mbit/s</small></div><div class="sub" id="v-down-s"></div></div>
+    <div class="v"><div class="cap">Traffic now</div><div class="big num" id="v-wan">–</div><div class="sub" id="v-wan-s"></div></div>
+    <div class="v"><div class="cap">DNS blocked</div><div class="big num" id="v-dns">–</div><div class="sub" id="v-dns-s"></div></div>
+    <div class="v"><div class="cap">Last backup</div><div class="big num" id="v-bak">–</div><div class="sub" id="v-bak-s"></div></div>
+    <div class="v"><div class="cap">Certificates</div><div class="big num" id="v-cert">–</div><div class="sub" id="v-cert-s"></div></div>
+    <div class="v"><div class="cap">Home Assistant</div><div class="big num" id="v-ha">–</div><div class="sub" id="v-ha-s"></div></div>
+  </section>
+  <section class="lanes" id="lanes"></section>
+  <aside class="side">
+    <div><div class="cap">Quick</div><div class="quick" id="quick"></div></div>
+    <div><div class="cap" id="svc-cap">Services</div><div class="svc" id="svc"></div></div>
+    <div><div class="cap">Activity</div><ul class="feed" id="feed"><li class="empty" style="list-style:none">Nothing run yet.</li></ul></div>
+  </aside>
+</main>
+
+<div id="scrim"></div>
+<aside id="drawer" aria-hidden="true"><button class="x" id="close" aria-label="Close">✕</button><div id="dbody"></div></aside>
+<div class="hint" id="hint"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const NODE_C = { turbo: 'var(--turbo)', edvin: 'var(--edvin)', prippen: 'var(--prippen)' };
+const ICON = {
+  start: '<path d="M8 5l11 7-11 7z"/>', resume: '<path d="M8 5l11 7-11 7z"/>',
+  reboot: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>', restartdns: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>',
+  svc: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>', ha_restart: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>',
+  nreboot: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>', reload_auto: '<path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/>',
+  shutdown: '<path d="M12 3v8"/><path d="M6.4 6.4a8 8 0 1 0 11.2 0"/>', nshutdown: '<path d="M12 3v8"/><path d="M6.4 6.4a8 8 0 1 0 11.2 0"/>',
+  stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+  pause5: '<path d="M9 5v14M15 5v14"/>', pause30: '<path d="M9 5v14M15 5v14"/>',
+  gravity: '<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/>', ha_update: '<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/>',
+  backup: '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>',
+  flushlogs: '<path d="M5 7h14M10 11v6M14 11v6M7 7l1 13h8l1-13M9 7V4h6v3"/>',
+  speed: '<path d="M4 16a8 8 0 1 1 16 0"/><path d="M12 16l4-5"/>', gotify: '<path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+  prune: '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M8.5 7.5L20 18M8.5 16.5L20 6"/>',
+  verify: '<path d="M12 3l8 3v6c0 5-3.4 8-8 9-4.6-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+};
+let S = null, openId = null;
+const pending = {};                       // key -> until (ms): keeps a capsule "busy" right after a tap
+
+/* ---------- formatting ---------- */
+const pct = (a, b) => b ? 100 * a / b : 0;
+const gb = b => b >= 1 << 30 ? (b / (1 << 30)).toFixed(b >= 10 * (1 << 30) ? 0 : 1) + ' GB' : Math.round(b / (1 << 20)) + ' MB';
+const mbit = b => b == null ? '–' : b >= 1e9 ? (b / 1e9).toFixed(1) + ' Gbit/s' : b >= 1e6 ? (b / 1e6).toFixed(b >= 1e7 ? 0 : 1) + ' Mbit/s' : Math.round(b / 1e3) + ' kbit/s';
+function dur(s) { s = s | 0; if (s <= 0) return '–'; const d = s / 86400 | 0, h = s % 86400 / 3600 | 0, m = s % 3600 / 60 | 0; return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`; }
+function ago(t) { if (!t) return 'never'; const s = Date.now() / 1000 - t; return s < 90 ? 'just now' : s < 5400 ? `${s / 60 | 0} min` : s < 172800 ? `${s / 3600 | 0} h` : `${s / 86400 | 0} d`; }
+const lvl = (p, w, b) => p >= b ? 'var(--bad)' : p >= w ? 'var(--warn)' : null;
+
+/* ---------- ring svg ---------- */
+function ring(size, rings, mid) {          // rings: [{r, w, p, c}]
+  return `<div class="ring" style="width:${size}px;height:${size}px"><svg viewBox="0 0 100 100">` + rings.map(x => {
+    const C = 2 * Math.PI * x.r;
+    return `<circle cx="50" cy="50" r="${x.r}" stroke="rgba(255,255,255,.08)" stroke-width="${x.w}"/>` +
+           `<circle data-p cx="50" cy="50" r="${x.r}" stroke="${x.c}" stroke-width="${x.w}" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - Math.min(1, x.p / 100))).toFixed(1)}"/>`;
+  }).join('') + `</svg><div class="mid">${mid}</div></div>`;
+}
+function setRing(el, values) {             // patch existing ring arcs without rebuilding (keeps the CSS transition)
+  el.querySelectorAll('circle[data-p]').forEach((c, i) => {
+    const C = 2 * Math.PI * c.r.baseVal.value; c.style.stroke = values[i].c; c.style.strokeDashoffset = (C * (1 - Math.min(1, values[i].p / 100))).toFixed(1);
+  });
+}
+
+/* ---------- render (patching, not rebuilding) ---------- */
+function render(s) {
+  S = s;
+  const probs = s.problems || [];
+  $('#orb').classList.toggle('bad', probs.length > 0 || !!s.pve_err);
+  $('#head').textContent = s.pve_err ? 'Proxmox not answering' : probs.length ? `${probs.length} thing${probs.length > 1 ? 's' : ''} need${probs.length > 1 ? '' : 's'} attention` : 'All systems normal';
+  const run = s.guests.filter(g => g.status === 'running').length;
+  $('#headsub').textContent = probs.length ? probs.join(' · ') : `${s.nodes.length} nodes · ${run}/${s.guests.length} guests running`;
+
+  // nodes
+  const nodes = $('#nodes');
+  s.nodes.forEach(n => {
+    let el = nodes.querySelector(`[data-node="${n.node}"]`);
+    const cpu = 100 * (n.cpu || 0), mem = pct(n.mem, n.maxmem), c = NODE_C[n.node] || 'var(--accent)';
+    const vals = [{ p: cpu, c: lvl(cpu, 60, 85) || c }, { p: mem, c: lvl(mem, 80, 92) || 'rgba(255,255,255,.75)' }];
+    const gs = s.guests.filter(g => g.node === n.node), gr = gs.filter(g => g.status === 'running').length;
+    if (!el) {
+      el = document.createElement('button'); el.className = 'node'; el.dataset.node = n.node;
+      el.innerHTML = ring(112, [{ r: 44, w: 7, ...vals[0] }, { r: 33, w: 5, ...vals[1] }], '<div><b class="num" data-cpu></b><br><i>CPU</i></div>') +
+        `<div><h2>${esc(n.node)}</h2><div class="meta" data-meta></div><div class="legend"><span><i style="background:${c}"></i>CPU</span><span><i style="background:rgba(255,255,255,.75)"></i>RAM <b class="num" data-mem></b></span></div></div>`;
+      tapOpen(el, () => openNode(n.node)); nodes.appendChild(el);
+    }
+    setRing(el, vals);
+    el.classList.toggle('off', n.status !== 'online');
+    el.querySelector('[data-cpu]').textContent = Math.round(cpu) + '%';
+    el.querySelector('[data-mem]').textContent = Math.round(mem) + '%';
+    el.querySelector('[data-meta]').innerHTML = n.status === 'online'
+      ? `up ${dur(n.uptime)} · ${n.maxcpu} cores<br>${gr}/${gs.length} guests · ${gb(n.mem)} / ${gb(n.maxmem)}` : 'not reachable';
+  });
+
+  // vitals
+  const N = s.net || {}, D = s.dns || {}, B = s.backups || {};
+  $('#v-down').innerHTML = N.down != null ? `${Math.round(N.down / 1e6)}<small>Mbit/s</small>` : '–';
+  $('#v-down-s').textContent = N.up != null ? `↑ ${Math.round(N.up / 1e6)} · ${(N.ping * 1000).toFixed(0)} ms · ${ago(N.speed_at)} ago` : '';
+  $('#v-wan').innerHTML = N.wan_in != null ? mbit(N.wan_in).replace(' ', '<small>') + '</small>' : '–';
+  $('#v-wan-s').textContent = N.wan_out != null ? `↑ ${mbit(N.wan_out)}` : '';
+  $('#v-dns').innerHTML = D.blocked_pct != null ? `${Math.round(D.blocked_pct)}<small>%</small>` : '–';
+  const hosts = Object.entries(D.hosts || {}), paused = hosts.filter(([, v]) => v.ok && !v.blocking);
+  const dnsDown = Object.values(D.probes || {}).some(v => v < 1);
+  $('#v-dns-s').className = 'sub' + (dnsDown ? ' bad' : paused.length ? ' warn' : '');
+  $('#v-dns-s').textContent = dnsDown ? 'a Pi-hole is down' : paused.length
+    ? `paused ${paused[0][1].timer ? Math.ceil(paused[0][1].timer / 60) + ' min left' : ''}` : `${Math.round((D.queries || 0) / 1000)}k queries · both up`;
+  $('#v-bak').innerHTML = B.newest ? ago(B.newest).replace(/ (min|h|d)$/, '<small>$1</small>').replace('just now', 'now') : '–';
+  $('#v-bak-s').className = 'sub' + (B.stale ? ' bad' : '');
+  $('#v-bak-s').textContent = B.count ? `${B.count} guests · disk ${Math.round(100 * (B.used || 0))}%` : '';
+  const c0 = (s.certs || [])[0];
+  $('#v-cert').innerHTML = c0 ? `${Math.round(c0.days)}<small>days</small>` : '–';
+  $('#v-cert-s').className = 'sub' + (c0 && c0.days < 14 ? ' warn' : ''); $('#v-cert-s').textContent = c0 ? c0.name : '';
+  const H = s.ha || {};
+  $('#v-ha').innerHTML = H.up ? `${H.updates || 0}<small>updates</small>` : '<small>offline</small>';
+  $('#v-ha-s').textContent = H.up ? `${H.unavailable || 0} entities unavailable` : '';
+
+  // lanes
+  const lanes = $('#lanes'), now = Date.now();
+  s.nodes.forEach(n => {
+    let lane = lanes.querySelector(`[data-lane="${n.node}"]`);
+    if (!lane) {
+      lane = document.createElement('div'); lane.className = 'lane'; lane.dataset.lane = n.node;
+      lane.innerHTML = `<div class="cap"><i style="background:${NODE_C[n.node] || 'var(--accent)'}"></i>${esc(n.node)}</div><div class="caps"></div>`;
+      lanes.appendChild(lane);
+    }
+    const box = lane.querySelector('.caps'), ids = [];
+    s.guests.filter(g => g.node === n.node).forEach(g => {
+      ids.push(String(g.vmid));
+      let el = box.querySelector(`[data-vm="${g.vmid}"]`);
+      if (!el) {                                           // a guest that just migrated here moves its capsule
+        el = document.querySelector(`[data-vm="${g.vmid}"]`) || Object.assign(document.createElement('button'), { className: 'cap-g' });
+        el.dataset.vm = g.vmid;
+        if (!el.innerHTML) {
+          el.innerHTML = '<span class="fill"></span><span class="mem"><i></i></span><i class="dot"></i><span><b></b><br><small></small></span><span class="pct num"></span>';
+          tapOpen(el, () => openGuest(g.vmid));
+        }
+        box.appendChild(el);
+      }
+      const runG = g.status === 'running', cpu = 100 * (g.cpu || 0), mem = pct(g.mem, g.maxmem);
+      const busy = g.pending || Object.entries(pending).some(([k, t]) => t > now && k.endsWith(':' + g.vmid));
+      el.style.setProperty('--c', lvl(cpu, 60, 85) || NODE_C[n.node] || 'var(--accent)');
+      el.classList.toggle('stopped', !runG); el.classList.toggle('busy', !!busy);
+      el.querySelector('b').textContent = g.name;
+      el.querySelector('small').textContent = busy ? (g.pending || 'working…') : `${g.type === 'qemu' ? 'VM' : 'CT'} ${g.vmid}${runG ? ' · ' + dur(g.uptime) : ' · ' + g.status}`;
+      el.querySelector('.pct').textContent = runG ? Math.round(cpu) + '%' : '';
+      el.querySelector('.fill').style.width = runG ? Math.max(4, Math.min(100, cpu)) + '%' : '0';
+      el.querySelector('.mem i').style.width = runG ? Math.min(100, mem) + '%' : '0';
+    });
+    box.querySelectorAll('[data-vm]').forEach(el => { if (!ids.includes(el.dataset.vm)) el.remove(); });
+  });
+
+  // quick actions (built once)
+  const q = $('#quick');
+  if (!q.children.length) (s.lab_commands || []).forEach(c => q.appendChild(actButton(c)));
+
+  // services
+  const svc = s.services || [], up = svc.filter(x => x.up).length;
+  $('#svc-cap').textContent = `Services · ${up}/${svc.length} up`;
+  $('#svc').innerHTML = svc.slice().sort((a, b) => a.up - b.up).map(x =>
+    `<span class="${x.up ? '' : 'down'}"><i></i>${esc(short(x.name))} <em>${x.up ? x.ms + ' ms' : 'down'}</em></span>`).join('');
+
+  // activity
+  const f = s.feed || [];
+  if (f.length) $('#feed').innerHTML = f.map(x => `<li class="${x.state === 'running' ? 'run' : x.ok ? '' : 'bad'}">${esc(x.label)} · <b>${esc(nameOf(x.target))}</b>
+    <small>${esc(x.msg)} · ${new Date(x.at * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small></li>`).join('');
+
+  if (openId) refreshDrawer();
+}
+const SHORT = { 'Home Assistant (direct .70)': 'HA direct', 'Home Assistant (via edge :8123)': 'HA via edge',
+  'Proxmox Backup Server': 'PBS', 'winrepo public (8443)': 'winrepo :8443', 'Pi-hole admin (HTTPS)': 'Pi-hole TLS', 'Public site (edge)': 'Public site' };
+const short = n => SHORT[n] || n;
+function nameOf(t) { if (t === 'all') return 'both Pi-holes'; const g = S && S.guests.find(x => x.vmid === t); return g ? g.name : t; }
+
+/* ---------- taps ---------- */
+function tapOpen(el, fn) {      // open on lift, only if the finger did not travel (lanes can scroll on phones)
+  let d = null;
+  el.addEventListener('pointerdown', e => { d = { x: e.clientX, y: e.clientY }; });
+  el.addEventListener('pointerup', e => { if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 12) fn(); d = null; });
+  el.addEventListener('pointercancel', () => d = null);
+}
+function hint(t) { const h = $('#hint'); h.textContent = t; h.classList.add('show'); clearTimeout(h._t); h._t = setTimeout(() => h.classList.remove('show'), 1600); }
+
+/* round action button: single-step commands run on touch-down; disruptive ones run after a 0.7 s hold */
+const HOLD = 700;
+function actButton(c) {
+  const w = document.createElement('div'); w.className = 'qa';
+  const b = document.createElement('button'); b.className = `hb t-${c.tone || 'accent'}`; b.disabled = !!c.disabled;
+  const kind = (c.key || '').split(':')[0];
+  b.innerHTML = `<svg class="ic" viewBox="0 0 24 24">${ICON[kind] || ICON.start}</svg>` + (c.two ? '<svg class="pr" viewBox="0 0 80 80"><circle class="trk" cx="40" cy="40" r="38"/><circle cx="40" cy="40" r="38"/></svg>' : '');
+  w.appendChild(b); w.insertAdjacentHTML('beforeend', `<span>${esc(c.label)}${c.disabled ? '<br><small>' + esc(c.hint || '') + '</small>' : ''}</span>`);
+  let raf = 0, t0 = 0;
+  const arc = b.querySelector('.pr circle:not(.trk)');
+  const cancel = () => { cancelAnimationFrame(raf); raf = 0; if (arc) { arc.style.transition = 'stroke-dashoffset .15s'; arc.style.strokeDashoffset = 239; } };
+  let down = null;                      // single-step: fire on lift, only if the finger did not move (a scroll
+  b.addEventListener('pointerdown', e => {  // that starts on a button must never press it)
+    if (e.button > 0) return;
+    down = { x: e.clientX, y: e.clientY };
+    if (!c.two) return;
+    e.preventDefault();
+    b.setPointerCapture(e.pointerId); t0 = performance.now(); arc.style.transition = 'none'; hint('Keep holding to ' + c.label.toLowerCase());
+    const step = now => {
+      const p = Math.min(1, (now - t0) / HOLD); arc.style.strokeDashoffset = 239 * (1 - p);
+      if (p < 1) raf = requestAnimationFrame(step); else { raf = 0; fire(c, b); }
+    };
+    raf = requestAnimationFrame(step);
+  });
+  b.addEventListener('pointerup', e => {
+    if (!c.two) { if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 10) fire(c, b); down = null; return; }
+    if (raf) { cancel(); hint('Released – nothing sent'); } });
+  b.addEventListener('pointercancel', () => { down = null; cancel(); });
+  b.addEventListener('contextmenu', e => e.preventDefault());
+  return w;
+}
+async function fire(c, b) {
+  navigator.vibrate && navigator.vibrate(30);
+  b.classList.add('done'); setTimeout(() => { b.classList.remove('done'); const a = b.querySelector('.pr circle:not(.trk)'); if (a) { a.style.transition = 'stroke-dashoffset .3s'; a.style.strokeDashoffset = 239; } }, 450);
+  pending[c.key] = Date.now() + 15000; if (S) render(S);               // capsule shows "working…" this frame
+  hint(c.label + ' · sent');
+  try {
+    const r = await fetch('/api/ops/act', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: c.key }) });
+    const j = await r.json().catch(() => ({}));
+    hint(r.ok ? `${c.label} · ${j.msg || 'done'}` : `✗ ${c.label}: ${j.msg || j.error || r.status}`);
+    if (!r.ok) delete pending[c.key];
+  } catch (e) { hint('✗ ' + e.message); delete pending[c.key]; }
+}
+
+/* ---------- drawer ---------- */
+function openGuest(id) { openId = 'g' + id; refreshDrawer(true); }
+function openNode(n) { openId = 'n' + n; refreshDrawer(true); }
+function closeDrawer() { document.body.classList.remove('open'); openId = null; }
+$('#close').addEventListener('pointerdown', e => { e.preventDefault(); closeDrawer(); });
+$('#scrim').addEventListener('pointerdown', e => { e.preventDefault(); closeDrawer(); });
+addEventListener('keydown', e => e.key === 'Escape' && closeDrawer());
+function gaugesFor(r) {
+  const cpu = 100 * (r.cpu || 0), mem = pct(r.mem, r.maxmem), disk = pct(r.disk, r.maxdisk);
+  const g = (p, label, sub, c) => `<div class="gauge">${ring(86, [{ r: 42, w: 7, p, c }], `<div><b class="num">${Math.round(p)}%</b></div>`)}${label}<small>${sub}</small></div>`;
+  return `<div class="gauges">${g(cpu, 'CPU', (r.maxcpu || '?') + ' cores', lvl(cpu, 60, 85) || 'var(--accent)')}${g(mem, 'Memory', gb(r.mem || 0) + ' / ' + gb(r.maxmem || 0), lvl(mem, 80, 92) || 'var(--ok)')}` +
+    (r.disk ? g(disk, 'Disk', gb(r.disk) + ' / ' + gb(r.maxdisk), lvl(disk, 80, 92) || 'var(--prippen)') : '') + '</div>';
+}
+let drawerSig = '';
+function refreshDrawer(first) {
+  if (!S || !openId) return;
+  let html, cmds;
+  if (openId[0] === 'g') {
+    const g = S.guests.find(x => x.vmid === +openId.slice(1)); if (!g) return closeDrawer();
+    const runG = g.status === 'running';
+    html = `<div class="cap">${g.type === 'qemu' ? 'Virtual machine' : 'Container'} ${g.vmid} · ${esc(g.node)}</div><h1>${esc(g.name)}</h1>
+      <div class="meta">${runG ? `<span style="color:var(--ok)">● running</span> · up ${dur(g.uptime)}` : `<span style="color:var(--bad)">● ${esc(g.status)}</span>`}${g.ip ? ' · ' + esc(g.ip) : ''}<br>
+      Last backup: ${g.backup ? ago(g.backup) + ' ago' : 'none'}</div>${runG ? gaugesFor(g) : ''}${g.note ? `<div class="note">${esc(g.note)}</div>` : ''}`;
+    cmds = g.commands;
+  } else {
+    const n = S.nodes.find(x => x.node === openId.slice(1)); if (!n) return closeDrawer();
+    html = `<div class="cap">Proxmox node</div><h1>${esc(n.node)}</h1><div class="meta">${n.status === 'online' ? `<span style="color:var(--ok)">● online</span> · up ${dur(n.uptime)}` : '<span style="color:var(--bad)">● offline</span>'}</div>
+      ${gaugesFor(n)}${n.note ? `<div class="note">${esc(n.note)}</div>` : ''}`;
+    cmds = n.commands;
+  }
+  // rebuild the buttons only when the command set changes, so a hold in progress is never interrupted
+  const sig = openId + JSON.stringify(cmds.map(c => [c.key, c.disabled]));
+  const body = $('#dbody');
+  if (first || sig !== drawerSig || !body.querySelector('.acts')) {
+    body.innerHTML = `<div data-info>${html}</div><div class="cap">Actions <span style="text-transform:none;letter-spacing:0;font-weight:400">· hold the ringed ones</span></div><div class="acts"></div>`;
+    const a = body.querySelector('.acts'); cmds.forEach(c => a.appendChild(actButton(c))); drawerSig = sig;
+  } else body.querySelector('[data-info]').innerHTML = html;
+  if (first) document.body.classList.add('open');
+}
+
+/* ---------- clock + live data ---------- */
+function tick() { $('#clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); }
+tick(); setInterval(tick, 1000);
+let es;
+function connect() {
+  es = new EventSource('/api/ops/events');
+  es.onmessage = e => { $('#live').classList.add('on'); try { render(JSON.parse(e.data)); } catch (err) { console.error(err); } };
+  es.onerror = () => { $('#live').classList.remove('on'); };      // EventSource reconnects by itself
+}
+fetch('/api/ops/snapshot').then(r => r.json()).then(render).catch(() => {}).finally(connect);
+setInterval(() => { if (S) render(S); }, 15000);                 // ages ("3 min") tick on even when nothing changes
+</script>
+<script src="/panels.js"></script>
+<script src="/start.js" defer></script>
+<script src="/cam.js" defer></script>
+<script src="/adminlock.js" defer></script></body>
+</html>

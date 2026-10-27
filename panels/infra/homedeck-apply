@@ -1,0 +1,56 @@
+#!/bin/bash
+# homedeck-apply - restart Home Deck safely after changing homedeck.toml or homedeck/*.py.
+#   1. checks every module and every setting (python3 -m homedeck.check); a problem -> nothing is restarted
+#   2. restarts panel-wrapper and waits for the panels to answer (/api/health + /start)
+#   3. answering -> this version is kept as a snapshot (last 20 in /opt/panel-wrapper/.snapshots)
+#      not answering -> the previous good snapshot is put back and restarted (the failed files are kept as failed-*.tgz)
+# Usage: homedeck-apply [--no-rollback]      (list snapshots: ls /opt/panel-wrapper/.snapshots)
+set -u
+ROOT=/opt/panel-wrapper
+PY=$ROOT/venv/bin/python3
+SNAP=$ROOT/.snapshots
+WAIT=25
+mkdir -p "$SNAP"
+cd "$ROOT" || exit 9
+
+answering() {
+  for _ in $(seq 1 "$WAIT"); do
+    sleep 1
+    if curl -fs -m 3 -o /dev/null http://127.0.0.1/api/health && curl -fs -m 5 -o /dev/null http://127.0.0.1/start; then return 0; fi
+  done
+  return 1
+}
+
+echo "1/3  Checking code and settings ..."
+if ! STATE_DIRECTORY=/var/lib/panel-wrapper "$PY" -m homedeck.check; then
+  echo
+  echo "Nothing was restarted - the panels keep running the previous version."
+  echo "Fix what is listed above, then run homedeck-apply again."
+  exit 1
+fi
+prev=$(ls -1t "$SNAP"/good-*.tgz 2>/dev/null | head -1)
+
+echo "2/3  Restarting panel-wrapper ..."
+systemctl reset-failed panel-wrapper 2>/dev/null; systemctl restart panel-wrapper
+echo "3/3  Waiting for the panels to answer ..."
+if answering; then
+  tar czf "$SNAP/good-$(date +%Y%m%d-%H%M%S).tgz" -C "$ROOT" homedeck homedeck.toml server.py
+  ls -1t "$SNAP"/good-*.tgz | tail -n +21 | xargs -r rm -f
+  curl -s http://127.0.0.1/api/health | python3 -c 'import json,sys; s=json.load(sys.stdin)["settings"]; print("" if s["ok"] else "WARNING: settings problems, running on " + s["using"] + ":\n  " + "\n  ".join(s["problems"]))'
+  echo "OK - Home Deck restarted and answering."
+  exit 0
+fi
+
+echo "The panels did not answer within $WAIT s. Last log lines:"
+journalctl -u panel-wrapper -n 15 --no-pager
+if [ "${1:-}" = "--no-rollback" ] || [ -z "$prev" ]; then
+  echo "No automatic rollback (${prev:+asked not to}${prev:-no earlier snapshot}). Snapshots: ls $SNAP"
+  exit 2
+fi
+failed="$SNAP/failed-$(date +%Y%m%d-%H%M%S).tgz"
+tar czf "$failed" -C "$ROOT" homedeck homedeck.toml server.py
+echo "Rolling back to $(basename "$prev") (your changed files are kept in $(basename "$failed")) ..."
+rm -rf "$ROOT/homedeck" && tar xzf "$prev" -C "$ROOT"
+systemctl reset-failed panel-wrapper 2>/dev/null; systemctl restart panel-wrapper
+if answering; then echo "Rolled back - the previous version is running again."; else echo "Still not answering after the rollback - check: journalctl -u panel-wrapper"; fi
+exit 2

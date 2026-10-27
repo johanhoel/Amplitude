@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Setup | Home Deck</title>
+<style>
+:root { --accent: #7c5cff; --glass: rgba(18,20,30,.55); --line: rgba(255,255,255,.11); --text: #f4f5fb; --mute: rgba(244,245,251,.6);
+  --ok: #34d399; --warn: #fbbf24; --bad: #f87171; --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
+* { box-sizing: border-box; }
+html { background: #06070c; }
+body { margin: 0; min-height: 100vh; color: var(--text); font: 15px/1.55 var(--font); padding: calc(env(safe-area-inset-top) + 28px) 18px 40px;
+  background: radial-gradient(50% 40% at 12% 8%, rgba(91,60,255,.5), transparent 70%), radial-gradient(40% 35% at 90% 5%, rgba(0,160,220,.3), transparent 70%), #06070c; }
+main { max-width: 680px; margin: 0 auto; }
+h1 { font-weight: 250; font-size: clamp(34px, 8vw, 48px); letter-spacing: -.02em; margin: 0 0 4px; }
+.lead { color: var(--mute); margin: 0 0 22px; }
+.card { background: var(--glass); border: 1px solid var(--line); border-radius: 22px; padding: 18px 20px; margin-bottom: 14px;
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+.card h2 { margin: 0 0 8px; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); font-weight: 600;
+  display: flex; gap: 10px; align-items: center; }
+.n { width: 24px; height: 24px; border-radius: 12px; background: var(--accent); color: #fff; display: inline-grid; place-items: center; font-size: 12px; letter-spacing: 0; }
+.n.done { background: var(--ok); }
+ol { margin: 6px 0 4px; padding-left: 20px; } li { margin: 4px 0; }
+a { color: #b9a9ff; }
+code { background: rgba(255,255,255,.08); padding: 1px 6px; border-radius: 6px; font-size: 13px; }
+input { width: 100%; padding: 13px 14px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.06);
+  color: var(--text); font: inherit; margin: 10px 0; }
+button, .btn { display: inline-block; padding: 12px 18px; border-radius: 14px; border: 0; background: var(--accent); color: #fff; font: inherit;
+  font-weight: 650; cursor: pointer; text-decoration: none; }
+.btn.ghost { background: rgba(255,255,255,.08); }
+.msg { min-height: 1.4em; margin-top: 8px; } .msg.ok { color: var(--ok); } .msg.bad { color: var(--bad); }
+.found { display: grid; gap: 8px; margin-top: 6px; }
+.found div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding: 6px 0; }
+.found span:first-child { color: var(--mute); } .found b { font-weight: 600; text-align: right; }
+.tip { color: var(--mute); font-size: 13.5px; margin-top: 10px; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--mute); margin-right: 6px; }
+.dot.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); } .dot.bad { background: var(--bad); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Home Deck setup</h1>
+  <p class="lead">Connect the panels to your Home Assistant. Takes about two minutes.</p>
+
+  <section class="card"><h2><span class="n" id="n1">1</span>Your Home Assistant</h2>
+    <div><span class="dot" id="hadot"></span><b id="haurl">–</b></div>
+    <div class="tip">This is the address the installer saved. To change it, edit <code>[homeassistant] url</code> in the panel editor.</div>
+  </section>
+
+  <section class="card"><h2><span class="n" id="n2">2</span>Make a token in Home Assistant</h2>
+    <ol>
+      <li>Open <a id="profile" href="#" target="_blank" rel="noopener">your Home Assistant profile → Security</a> (log in as an administrator).</li>
+      <li>Scroll to <b>Long-lived access tokens</b> → <b>Create token</b>, name it <code>Home Deck</code>.</li>
+      <li>Copy the long code it shows (it is shown only once) and paste it below.</li>
+    </ol>
+    <input type="password" id="tok" placeholder="Paste the token here" autocomplete="off">
+    <button id="save">Save and test</button>
+    <div class="msg" id="msg"></div>
+    <div class="tip">The token is kept privately on this server and never shown on the panels.</div>
+  </section>
+
+  <section class="card" id="foundcard" hidden><h2><span class="n done">3</span>What Home Deck found</h2>
+    <div class="found" id="found"></div>
+    <div class="tip" id="tips"></div>
+    <p style="margin:14px 0 0"><a class="btn" href="/start">Open the panels</a> <a class="btn ghost" href="/living">Home page</a></p>
+  </section>
+
+  <section class="card" id="notifycard" hidden><h2><span class="n">4</span>Phone notices (optional)</h2>
+    <div>Home Deck tells you when everyone has left and the front door is not locked. Install the <b>ntfy</b> app and subscribe to
+      <code id="topic">–</code> (server ntfy.sh).</div>
+  </section>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function show(s) {
+  $('#haurl').textContent = s.ha_url; $('#profile').href = s.ha_url + '/profile/security';
+  $('#hadot').className = 'dot ' + (s.connected ? 'ok' : s.token_set ? 'bad' : '');
+  $('#n1').classList.toggle('done', !!s.connected); $('#n2').classList.toggle('done', !!s.connected);
+  if (s.token_set && !s.connected) { $('#msg').className = 'msg bad'; $('#msg').textContent = 'Not connected: ' + (s.error || 'Home Assistant did not answer'); }
+  if (s.ntfy_topic) { $('#notifycard').hidden = false; $('#topic').textContent = s.ntfy_topic; }
+  const f = s.found; $('#foundcard').hidden = !f; if (!f) return;
+  const lights = f.rooms.reduce((n, r) => n + r.lights, 0), other = f.rooms.find(r => r.room === 'Other');
+  $('#found').innerHTML = [
+    ['Rooms', f.rooms.length ? f.rooms.map(r => `${esc(r.room)} (${r.lights})`).join(', ') : 'none'],
+    ['Lights', lights], ['People', f.people.length ? f.people.map(esc).join(', ') : 'none'],
+    ['Media players', f.players.length ? f.players.map(esc).join(', ') : 'none'],
+    ['Front door lock', f.lock ? esc(f.lock) : 'none (the lock button stays hidden)'], ['Weather', f.weather ? esc(f.weather) : 'none']]
+    .map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('');
+  const tips = [];
+  if (other) tips.push(`${other.lights} light(s) have no area yet, so they show under "Other". In Home Assistant: Settings → Areas → pick a room → add the devices.`);
+  if (!f.people.length) tips.push('No people in Home Assistant: add them under Settings → People, with the Home Assistant app on their phones, to see who is home.');
+  if (!f.weather) tips.push('No weather: add the "Meteorologisk institutt (Met.no)" integration in Home Assistant.');
+  if (f.areas_error) tips.push('Areas could not be read (' + esc(f.areas_error) + '). Is the token from an administrator account?');
+  $('#tips').innerHTML = tips.map(t => '• ' + t).join('<br>');
+}
+async function load() { try { show(await (await fetch('/api/setup', { cache: 'no-store' })).json()); } catch (e) { $('#msg').textContent = e.message; } }
+$('#save').onclick = async () => {
+  const t = $('#tok').value.trim(); if (!t) return;
+  $('#msg').className = 'msg'; $('#msg').textContent = 'Testing…';
+  await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ha_token: t }) });
+  $('#tok').value = '';
+  const s = await (await fetch('/api/setup', { cache: 'no-store' })).json();
+  show(s);
+  if (s.connected) { $('#msg').className = 'msg ok'; $('#msg').textContent = 'Connected to Home Assistant.'; }
+};
+load();
+</script>
+</body>
+</html>

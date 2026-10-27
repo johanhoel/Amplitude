@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101418">
+<link rel="icon" type="image/png" href="/admin-icon.png">
+<title>Studio | Home Deck</title>
+<style>
+/* Home Deck Studio: set up devices, people, boards and screens. Admin page (PIN). Built for a computer screen; works on a phone.
+   Sections (#hash): overview, devices, boards, people, wizards, guide, changes. Data: /api/studio/* (studio.py), /api/boards,
+   /api/devices (paired phones), /api/layout/board_<name>. System changes go into a draft and are applied together. */
+:root { --bg: #101418; --ink: #eef2f6; --mute: #8b98a8; --faint: #5d6b7b; --line: #2a333d; --card: #1a2027; --card-hi: #222a33;
+  --accent: #38bdf8; --ok: #22c55e; --warn: #f59e0b; --bad: #ef4444;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; color: var(--ink); font: 15px/1.5 var(--font); display: grid; grid-template-columns: 230px 1fr; min-height: 100vh; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: #7dd3fc; }
+nav { position: sticky; top: 0; height: 100vh; padding: 18px 12px; border-right: 1px solid var(--line); background: #0d1115; display: flex; flex-direction: column; gap: 2px; }
+nav .brand { font-size: 19px; font-weight: 750; padding: 4px 12px 14px; } nav .brand small { display: block; font-size: 12px; color: var(--mute); font-weight: 500; }
+nav a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; color: var(--ink); text-decoration: none; font-weight: 600; }
+nav a:hover { background: var(--card); } nav a.on { background: var(--card-hi); box-shadow: inset 3px 0 0 var(--accent); }
+nav a .n { margin-left: auto; min-width: 22px; height: 22px; border-radius: 11px; background: var(--warn); color: #1f1300; font-size: 12px; display: grid; place-items: center; padding: 0 6px; }
+nav .sp { flex: 1; } nav .ext a { font-weight: 500; color: var(--mute); padding: 6px 12px; font-size: 13.5px; }
+main { padding: 26px 30px 60px; max-width: 1280px; width: 100%; }
+h1 { margin: 0 0 4px; font-size: 28px; } .lead { color: var(--mute); margin: 0 0 20px; }
+h2 { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); margin: 26px 0 10px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; }
+.card b.big { display: block; font-size: 30px; font-weight: 300; } .card .m { color: var(--mute); font-size: 13.5px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card-hi);
+  color: var(--ink); font-weight: 650; text-decoration: none; }
+.btn.go { background: var(--accent); border-color: var(--accent); color: #062033; } .btn.bad { color: #fecaca; border-color: rgba(239,68,68,.5); }
+.btn:disabled { opacity: .4; cursor: default; }
+.bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.chip { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-weight: 600; font-size: 13.5px; }
+.chip.on { background: var(--accent); border-color: var(--accent); color: #062033; }
+input[type=search], .in { min-height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); min-width: 220px; }
+table { width: 100%; border-collapse: collapse; } th { text-align: left; font-size: 12px; color: var(--mute); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; } tr.row { cursor: pointer; } tr.row:hover td { background: var(--card); }
+td .s { color: var(--mute); font-size: 13px; } .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--faint); }
+.dot.ok { background: var(--ok); } .dot.bad { background: var(--bad); }
+.tag { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; background: var(--card-hi); color: var(--mute); margin-right: 4px; }
+.tag.add { background: rgba(34,197,94,.16); color: #86efac; } .tag.pres { background: rgba(56,189,248,.16); color: #7dd3fc; } .tag.miss { background: rgba(239,68,68,.16); color: #fecaca; }
+.empty { color: var(--mute); padding: 20px 0; }
+.wz { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.wz button { text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px; min-height: 130px; }
+.wz button:hover { border-color: var(--accent); } .wz b { display: block; font-size: 18px; margin: 6px 0 4px; } .wz .i { font-size: 30px; } .wz span { color: var(--mute); font-size: 14px; }
+.step { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 20px 22px; max-width: 860px; }
+.step h3 { margin: 0 0 4px; font-size: 21px; } .step .no { color: var(--accent); font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.step ol, .step ul { padding-left: 20px; } .step li { margin: 5px 0; }
+.step .nav { display: flex; gap: 8px; margin-top: 18px; } .step .nav .sp { flex: 1; }
+.pick { max-height: 360px; overflow: auto; border: 1px solid var(--line); border-radius: 14px; margin: 10px 0; }
+.pick label { display: flex; gap: 12px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.pick label:hover { background: var(--card-hi); } .pick input { width: 18px; height: 18px; accent-color: var(--accent); }
+.pick .s { color: var(--mute); font-size: 13px; margin-left: auto; text-align: right; }
+.form { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px 14px; margin: 10px 0; }
+.form label { font-size: 12.5px; color: var(--mute); font-weight: 600; display: flex; flex-direction: column; gap: 4px; }
+.form input, .form select, .form textarea { min-height: 42px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font-size: 15px; }
+.form .tog { flex-direction: row; align-items: center; gap: 10px; font-size: 14px; color: var(--ink); } .form .tog input { width: 20px; height: 20px; min-height: 0; accent-color: var(--accent); }
+.qr { background: #fff; border-radius: 14px; padding: 10px; width: 200px; height: 200px; } .qr svg { width: 100%; height: 100%; }
+.code { font: 700 34px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .12em; }
+.prev { display: flex; gap: 18px; align-items: flex-start; overflow-x: auto; padding-bottom: 10px; }
+.prev figure { margin: 0; flex: none; } .prev figcaption { color: var(--mute); font-size: 13px; margin-bottom: 6px; }
+.prev .fr { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #000; }
+.prev iframe { border: 0; transform-origin: 0 0; display: block; }
+.guide article { max-width: 820px; } .guide h3 { font-size: 22px; margin: 26px 0 4px; } .guide ol li { margin: 6px 0; }
+.guide details { margin-top: 8px; color: var(--mute); font-size: 14px; } .guide summary { cursor: pointer; color: #7dd3fc; }
+.toc { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.ch li { margin: 6px 0; } .hist { color: var(--mute); font-size: 14px; }
+#tour { position: fixed; inset: 0; z-index: 70; background: rgba(4,6,10,.55); display: none; }
+#tour.on { display: block; } #tour .tip { position: absolute; width: 330px; background: #17202a; border: 1px solid var(--accent); border-radius: 16px; padding: 16px 18px; box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+#tour .tip b { display: block; font-size: 17px; margin-bottom: 4px; } #tour .tip .row { display: flex; gap: 8px; margin-top: 12px; } #tour .tip .row .sp { flex: 1; }
+.hl { position: relative; z-index: 71; box-shadow: 0 0 0 3px var(--accent) !important; border-radius: 12px; background: var(--card-hi); }
+[hidden] { display: none !important; }
+@media (max-width: 860px) { body { grid-template-columns: 1fr; } nav { position: static; height: auto; flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--line); }
+  nav .brand, nav .sp, nav .ext { display: none; } main { padding: 18px 14px 50px; } }
+@media print { nav, .bar, .noprint, #tour { display: none !important; } body { display: block; background: #fff; color: #111; } main { padding: 0; }
+  .guide details { color: #444; } .guide details[open] summary, .guide summary { color: #0369a1; } a { color: #0369a1; } }
+</style>
+<link rel="stylesheet" href="/wall.css">
+</head>
+<body>
+<nav id="nav">
+  <div class="brand">Home Deck Studio<small>set up your home</small></div>
+  <a href="#overview" data-s="overview">🏠 Overview</a>
+  <a href="#devices" data-s="devices">🔌 Devices</a>
+  <a href="#people" data-s="people">👪 People</a>
+  <a href="#boards" data-s="boards">🧩 Boards</a>
+  <a href="#wizards" data-s="wizards">🪄 Wizards</a>
+  <a href="#guide" data-s="guide">📖 Guide</a>
+  <a href="#changes" data-s="changes">📝 Changes<span class="n" id="ndraft" hidden></span></a>
+  <div class="sp"></div>
+  <div class="ext" id="ext"></div>
+</nav>
+<main id="main"></main>
+<div id="tour"><div class="tip" id="tip"></div></div>
+<script src="/wallkit.js"></script>
+<script src="/edit.js"></script>
+<script src="/pin.js"></script>
+<script src="/qrcode.js"></script>
+<script src="/modules.js"></script>
+<script src="/studio-guide.js"></script>
+<script>
+const $ = s => document.querySelector(s), esc = Wall.esc, main = $('#main');
+const S = { inv: [], rooms: [], sum: {}, boards: [], draft: [], filt: { src: 'all', q: '', tab: 'discover' } };
+const SRC = { ha: 'Home Assistant', net: 'Network', pve: 'Proxmox', man: 'By hand' };
+const KIND_ICON = { light: '💡', switch: '🔘', lock: '🔒', player: '🎵', vacuum: '🧹', camera: '📷', climate: '🌡️', cover: '🪟', fan: '🌀', person: '🧑', sensor: '📟',
+  network: '📶', phone: '📱', tablet: '📱', computer: '💻', tv: '📺', speaker: '🔊', printer: '🖨️', iot: '🔌', server: '🖥️', vm: '🖥️', container: '📦', other: '•' };
+const KINDS = Object.keys(KIND_ICON);
+const host = location.hostname, LAN = location.origin;
+const ago = t => { if (!t) return '–'; const s = Date.now() / 1000 - t; return s < 90 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' d ago'; };
+
+// ---------- data ----------
+async function api(path, body) {
+  const r = await fetch(path, body !== undefined ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { cache: 'no-store' });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401 && j.admin) { deckPin.open({ onOk: () => location.reload() }); throw new Error('admin PIN needed'); }
+  if (!r.ok || j.error) throw new Error(j.error || 'HTTP ' + r.status);
+  return j;
+}
+async function loadInv(force) { if (force || !S.inv.length) { const j = await api('/api/studio/inventory'); S.inv = j.items; S.rooms = j.rooms; } }
+async function loadDraft() { S.draft = (await api('/api/studio/draft')).draft; const n = $('#ndraft'); n.hidden = !S.draft.length; n.textContent = S.draft.length; }
+async function loadBoards() { S.boards = (await api('/api/boards')).boards; }
+async function addChange(change, msg) { try { S.draft = (await api('/api/studio/draft', { change })).draft; await loadDraft(); Edit.toast(msg || 'Added to Changes'); return true; }
+  catch (e) { Edit.toast('✗ ' + e.message); return false; } }
+const people = () => [...new Set([...(S.sum.people || []), ...S.inv.filter(i => i.kind === 'person').map(i => i.name.toLowerCase())])].sort();
+const nameOf = i => i.reg?.name || i.name;
+
+// ---------- sections ----------
+const SECTIONS = {
+  async overview() {
+    S.sum = await api('/api/studio/summary'); await loadDraft();
+    const c = S.sum.counts || {};
+    main.innerHTML = `<h1>Overview</h1><p class="lead">Your home at a glance: what Home Deck knows, what you have added, and what needs attention.</p>
+      <div class="cards">
+        <div class="card"><b class="big">${c.ha || 0}</b><span class="m">Home Assistant devices</span></div>
+        <div class="card"><b class="big">${c.net || 0}</b><span class="m">devices on the network</span></div>
+        <div class="card"><b class="big">${c.pve || 0}</b><span class="m">Proxmox servers (VMs / containers)</span></div>
+        <div class="card"><b class="big">${S.sum.added}</b><span class="m">added by you · ${S.sum.watched} watched</span></div>
+      </div>
+      <h2>Needs attention</h2>
+      ${S.sum.down.length ? `<div class="card">${S.sum.down.map(d => `<div><span class="dot bad"></span> <b>${esc(d.name)}</b> is offline${d.since ? ' since ' + ago(d.since).replace(' ago', '') : ''}</div>`).join('')}</div>`
+        : `<div class="card">✓ All watched devices are online.</div>`}
+      ${S.sum.draft ? `<div class="card" style="margin-top:10px">📝 ${S.sum.draft} change${S.sum.draft > 1 ? 's are' : ' is'} waiting. <a href="#changes">Review and apply</a></div>` : ''}
+      <h2>Start here</h2>
+      <div class="wz">${WIZ.map(w => `<button data-w="${w.id}"><span class="i">${w.icon}</span><b>${esc(w.title)}</b><span>${esc(w.desc)}</span></button>`).join('')}</div>
+      <p class="noprint" style="margin-top:22px"><button class="btn" id="retour">Show the tour again</button></p>`;
+    main.querySelectorAll('[data-w]').forEach(b => b.onclick = () => go('wizards/' + b.dataset.w));
+    $('#retour').onclick = () => tour(true);
+  },
+
+  async devices() {
+    await Promise.all([loadInv(), loadDraft()]); if (!S.sum.people) S.sum = await api('/api/studio/summary');
+    const f = S.filt;
+    main.innerHTML = `<h1>Devices</h1><p class="lead">Everything Home Deck can find. <b>Discover</b> to add devices; <b>Added</b> are the ones you named and watch.</p>
+      <div class="bar"><button class="chip ${f.tab === 'discover' ? 'on' : ''}" data-tab="discover">Discover</button><button class="chip ${f.tab === 'added' ? 'on' : ''}" data-tab="added">Added (${S.inv.filter(i => i.added).length})</button>
+        <span style="width:14px"></span>${['all', 'ha', 'net', 'pve', 'man'].map(s => `<button class="chip ${f.src === s ? 'on' : ''}" data-src="${s}">${s === 'all' ? 'All' : SRC[s]}</button>`).join('')}
+        <input type="search" id="q" placeholder="Search name, IP, MAC…" value="${esc(f.q)}"><label class="m"><input type="checkbox" id="newonly" ${f.newonly ? 'checked' : ''}> new on the network (7 days)</label>
+        <span style="flex:1"></span><button class="btn" id="manual">+ Add a device by hand</button><button class="btn" id="reload" title="Look again">↻</button></div>
+      <table><thead><tr><th></th><th>Name</th><th>Details</th><th>Source</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table>`;
+    const rows = () => {
+      const q = f.q.toLowerCase(), week = Date.now() / 1000 - 7 * 86400;
+      const list = S.inv.filter(i => (f.tab === 'added' ? i.added : true) && (f.src === 'all' || i.source === f.src) && (!f.newonly || (i.first && i.first > week))
+        && (!q || [nameOf(i), i.name, i.id, i.detail, i.vendor, ...(i.ips || [])].join(' ').toLowerCase().includes(q)))
+        .sort((a, b) => (b.added - a.added) || (b.online === true) - (a.online === true) || /^0x[0-9a-f]/i.test(nameOf(a)) - /^0x[0-9a-f]/i.test(nameOf(b)) || nameOf(a).localeCompare(nameOf(b))).slice(0, 400);
+      $('#rows').innerHTML = list.map(i => `<tr class="row" data-k="${esc(i.key)}"><td>${KIND_ICON[i.reg?.kind || i.kind] || '•'}</td>
+        <td><b>${esc(nameOf(i))}</b>${i.reg?.name && i.reg.name !== i.name ? `<div class="s">${esc(i.name)}</div>` : ''}</td>
+        <td class="s">${esc(i.source === 'net' ? `${i.id} · ${(i.ips || []).join(', ')}${i.vendor ? ' · ' + i.vendor.split(',')[0] : ''}` : i.detail || i.id)}${i.reg?.room ? ' · ' + esc(i.reg.room) : ''}</td>
+        <td class="s">${SRC[i.source] || i.source}</td>
+        <td><span class="dot ${i.online ? 'ok' : i.online === false ? 'bad' : ''}"></span> ${i.added ? '<span class="tag add">added</span>' : ''}${i.reg?.watch ? '<span class="tag">watched</span>' : ''}
+          ${i.presence ? `<span class="tag pres">${esc(i.presence)}'s phone</span>` : ''}${i.missing ? '<span class="tag miss">not found</span>' : ''}</td></tr>`).join('')
+        || `<tr><td colspan="5" class="empty">Nothing matches.</td></tr>`;
+      $('#rows').querySelectorAll('tr.row').forEach(tr => tr.onclick = () => deviceSheet(S.inv.find(i => i.key === tr.dataset.k)));
+    };
+    rows();
+    main.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { f.tab = b.dataset.tab; SECTIONS.devices(); });
+    main.querySelectorAll('[data-src]').forEach(b => b.onclick = () => { f.src = b.dataset.src; SECTIONS.devices(); });
+    $('#q').oninput = e => { f.q = e.target.value; rows(); }; $('#newonly').onchange = e => { f.newonly = e.target.checked; rows(); };
+    $('#reload').onclick = async () => { await loadInv(true); SECTIONS.devices(); };
+    $('#manual').onclick = manualSheet;
+  },
+
+  async people() {
+    await loadInv(); S.sum = await api('/api/studio/summary');
+    const paired = await api('/api/devices').then(j => j.devices).catch(() => []);
+    main.innerHTML = `<h1>People</h1><p class="lead">Who lives here, which phone tells Home Deck they are home, and which of their devices are paired for the app.</p>
+      <div class="cards">${(S.sum.people || []).map(p => { const ph = S.inv.filter(i => i.presence === p), pd = paired.filter(d => (d.person || '').toLowerCase() === p);
+        return `<div class="card"><b style="font-size:19px;text-transform:capitalize">${esc(p)}</b>
+          <div class="m" style="margin-top:6px">Presence phone${ph.length > 1 ? 's' : ''}:</div>${ph.map(i => `<div><span class="dot ${i.online ? 'ok' : 'bad'}"></span> ${esc(nameOf(i))} <span class="s">${esc(i.id)}</span></div>`).join('') || '<div class="m">none</div>'}
+          <div class="m" style="margin-top:6px">Paired for the app:</div>${pd.map(d => `<div>📱 ${esc(d.name)} <span class="s">seen ${ago(d.last_seen)}</span></div>`).join('') || '<div class="m">none</div>'}</div>`; }).join('')}</div>
+      ${(() => { const other = S.inv.filter(i => i.kind === 'person' && !(S.sum.people || []).includes(i.name.toLowerCase())).map(i => i.name);
+        return other.length ? `<p class="m" style="margin-top:14px">Also in Home Assistant, without a presence phone: ${esc(other.join(', '))}.</p>` : ''; })()}
+      <p style="margin-top:18px"><button class="btn go" id="addp">+ New phone or family member</button> <a class="btn" href="/devices">Paired devices (app)</a></p>`;
+    $('#addp').onclick = () => go('wizards/phone');
+  },
+
+  async boards() {
+    await loadBoards();
+    main.innerHTML = `<h1>Boards</h1><p class="lead">Your own dashboards. Design one on this computer, and see how it looks on every kind of screen.</p>
+      <div class="bar"><a class="btn go" href="/boards">+ New board</a></div>
+      <table><thead><tr><th>Board</th><th>Address</th><th>Modules</th><th></th></tr></thead><tbody>${S.boards.map(b => `<tr><td><b>${esc(b.title)}</b></td>
+        <td class="s">/board/${esc(b.name)}</td><td class="s">${b.count}</td><td style="text-align:right"><button class="btn" data-pv="${esc(b.name)}">Preview</button>
+        <a class="btn" href="/board/${esc(b.name)}?edit" target="_blank">✎ Design</a></td></tr>`).join('')}</tbody></table>
+      <div id="pv"></div>`;
+    main.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => preview(b.dataset.pv));
+    if (S.pv) preview(S.pv);
+  },
+
+  async wizards(sub) {
+    if (sub && WIZ.find(w => w.id === sub)) return runWizard(WIZ.find(w => w.id === sub));
+    main.innerHTML = `<h1>Wizards</h1><p class="lead">Step by step through the common jobs. Each wizard checks things for you and puts the changes in Changes, ready to apply.</p>
+      <div class="wz">${WIZ.map(w => `<button data-w="${w.id}"><span class="i">${w.icon}</span><b>${esc(w.title)}</b><span>${esc(w.desc)}</span></button>`).join('')}</div>`;
+    main.querySelectorAll('[data-w]').forEach(b => b.onclick = () => go('wizards/' + b.dataset.w));
+  },
+
+  async guide(sub) {
+    const G = window.STUDIO_GUIDE;
+    main.innerHTML = `<div class="guide"><h1>Guide</h1><p class="lead">Plain steps for every part of Home Deck Studio. "Technical details" has the background for the curious.</p>
+      <div class="toc noprint">${G.map(g => `<a class="chip" href="#guide/${g.id}">${esc(g.title)}</a>`).join('')} <button class="chip" id="pdf">🖨️ Handbook (PDF / print)</button></div>
+      ${G.map(g => `<article id="g-${g.id}"><h3>${esc(g.title)}</h3><p>${esc(g.intro)}</p><ol>${g.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
+        <details><summary>Technical details</summary><p>${esc(g.tech)}</p></details></article>`).join('')}</div>`;
+    $('#pdf').onclick = () => { main.querySelectorAll('details').forEach(d => d.open = true); print(); };
+    if (sub) document.getElementById('g-' + sub)?.scrollIntoView();
+  },
+
+  async changes() {
+    await loadDraft();
+    const hist = (await api('/api/studio/history')).history;
+    main.innerHTML = `<h1>Changes</h1><p class="lead">What you changed, waiting to be applied. Nothing happens until you press Apply; Undo puts the last apply back.</p>
+      ${S.draft.length ? `<div class="card"><ol class="ch">${S.draft.map((c, i) => `<li>${esc(describe(c))} <button class="btn" data-rm="${i}" style="min-height:30px;margin-left:8px">remove</button></li>`).join('')}</ol>
+        <div class="bar" style="margin:12px 0 0"><button class="btn go" id="apply">Apply ${S.draft.length} change${S.draft.length > 1 ? 's' : ''}</button><button class="btn bad" id="clear">Throw away all</button></div></div>`
+        : `<div class="card">No changes waiting.</div>`}
+      <h2>Applied before</h2>${hist.length ? `<div class="card hist">${hist.map((h, i) => `<div>${new Date(h.at * 1000).toLocaleString()} · ${esc(h.changes.join('; '))}${i === 0 ? ' <button class="btn" id="undo" style="min-height:30px;margin-left:8px">Undo this</button>' : ''}</div>`).join('')}</div>` : '<div class="m">Nothing yet.</div>'}`;
+    main.querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => { await api('/api/studio/draft', { remove: +b.dataset.rm }); SECTIONS.changes(); loadDraft(); });
+    $('#apply')?.addEventListener('click', async () => { try { const r = await api('/api/studio/apply', {}); Edit.toast(`Applied ${r.applied} change(s)`); S.inv = []; SECTIONS.changes(); loadDraft(); } catch (e) { Edit.toast('✗ ' + e.message); } });
+    $('#clear')?.addEventListener('click', async () => { if (!confirm('Throw away every waiting change?')) return; await api('/api/studio/draft', { clear: true }); SECTIONS.changes(); loadDraft(); });
+    $('#undo')?.addEventListener('click', async () => { if (!confirm('Put back what the last apply changed?')) return; await api('/api/studio/undo', {}); Edit.toast('Undone'); S.inv = []; SECTIONS.changes(); });
+  },
+};
+function describe(c) {
+  const f = c.fields || {};
+  if (c.op === 'add') return `Add ${f.name || c.label}${f.room ? ' in ' + f.room : ''}${f.owner ? ' (' + f.owner + ')' : ''}${f.watch ? ', watched' : ''}`;
+  if (c.op === 'update') return `Change ${f.name || c.label}${f.room ? ' · room ' + f.room : ''}${f.watch ? ' · watched' : ''}`;
+  if (c.op === 'remove') return `Remove ${c.label}`;
+  if (c.op === 'presence') return c.on ? `Use ${c.label} as ${c.person}'s phone for who-is-home` : `Stop using ${c.label} for who-is-home`;
+  return c.op + ' ' + c.label;
+}
+
+// ---------- device sheet ----------
+function guessKind(i) {
+  if (i.source !== 'net') return i.kind;
+  const t = (i.name + ' ' + (i.vendor || '')).toLowerCase();
+  return /iphone|pixel|galaxy|fold|android|phone/.test(t) ? 'phone' : /ipad|tab/.test(t) ? 'tablet' : /tv|bravia|chromecast|apple tv|roku/.test(t) ? 'tv'
+    : /sonos|genelec|speaker|google home|nest/.test(t) ? 'speaker' : /print|epson|canon|brother|hp /.test(t) ? 'printer' : /proxmox|server|nas|synology/.test(t) ? 'server'
+    : /win|desktop|laptop|macbook|imac|asrock|lenovo|dell/.test(t) ? 'computer' : 'iot';
+}
+async function deviceSheet(i) {
+  const r0 = i.reg || {}, ps = people();
+  const fields = [
+    { key: 'name', label: 'Name', type: 'text', value: r0.name || i.name },
+    { key: 'room', label: 'Room (e.g. ' + (S.rooms.slice(0, 3).join(', ') || 'Kitchen') + ')', type: 'text', value: r0.room || '' },
+    { key: 'owner', label: 'Belongs to', type: 'select', value: r0.owner || '', options: [['', 'Everyone / nobody'], ...ps.map(p => [p, p])] },
+    { key: 'kind', label: 'Type', type: 'select', value: r0.kind || guessKind(i), options: KINDS.map(k => [k, KIND_ICON[k] + ' ' + k]) },
+    { key: 'watch', label: 'Watch it: phone notice when offline for 10 minutes', type: 'toggle', value: !!r0.watch },
+    { key: 'notes', label: 'Notes (optional)', type: 'textarea', value: r0.notes || '' }];
+  if (i.source === 'net') fields.push({ key: 'presence', label: 'Use as a phone for who-is-home', type: 'select', value: i.presence || '', options: [['', 'No'], ...ps.map(p => [p, p + "'s phone"])],
+    hint: i.private_mac ? 'This device uses a private (random) Wi-Fi address. For who-is-home set the phone to a fixed address first (see Guide → Phones).' : '' });
+  const buttons = i.added ? [{ id: 'remove', label: 'Remove', tone: 'bad' }, { id: 'board', label: 'Put on a board…', side: true }, { id: 'save', label: 'Save change' }]
+    : [{ id: 'board', label: 'Put on a board…', side: true }, { id: 'save', label: 'Add to changes' }];
+  const det = i.source === 'net' ? `${i.id} · ${(i.ips || []).join(', ')} · ${i.vendor || ''} · last seen ${ago(i.last)}` : `${SRC[i.source]} · ${i.id}${i.state ? ' · ' + i.state : ''}`;
+  const r = await Edit.sheet({ title: (KIND_ICON[r0.kind || i.kind] || '') + ' ' + nameOf(i) + '  ·  ' + det, fields, buttons });
+  if (!r) return;
+  if (r.action === 'board') return putOnBoard(i, r.values);
+  if (r.action === 'remove') { await addChange({ op: 'remove', key: i.key, label: nameOf(i) }, 'Removal added to Changes'); return; }
+  const v = r.values;
+  await addChange({ op: i.added ? 'update' : 'add', key: i.key, ...v, label: v.name });
+  if (i.source === 'net' && (v.presence || '') !== (i.presence || '')) await addChange({ op: 'presence', key: i.key, person: v.presence || i.presence, on: !!v.presence, label: v.name });
+}
+async function manualSheet() {
+  const r = await Edit.sheet({ title: 'Add a device by hand', fields: [
+    { key: 'name', label: 'Name', type: 'text', value: '' }, { key: 'address', label: 'Address (IP or web address, optional)', type: 'url', value: '' },
+    { key: 'room', label: 'Room', type: 'text', value: '' }, { key: 'kind', label: 'Type', type: 'select', value: 'other', options: KINDS.map(k => [k, KIND_ICON[k] + ' ' + k]) },
+    { key: 'notes', label: 'Notes', type: 'textarea', value: '' }], buttons: [{ id: 'ok', label: 'Add to changes' }] });
+  if (r && r.values.name) addChange({ op: 'manual', ...r.values, label: r.values.name });
+}
+// device -> a sensible card on a board (saved straight into the board; boards have their own undo)
+function moduleFor(i, v = {}) {
+  const k = v.kind || i.reg?.kind || i.kind, room = v.room || i.reg?.room;
+  if (k === 'light' || k === 'switch') return { type: 'room', size: 'l', cfg: { room: room || '' } };
+  if (k === 'lock') return { type: 'door', size: 's', cfg: {} };
+  if (k === 'camera') return { type: 'camera', size: 'l', cfg: { layout: 'photo' } };
+  if (k === 'player' || k === 'speaker' || k === 'tv') return { type: 'media', size: 'm', cfg: { player: i.source === 'ha' ? i.id : '' } };
+  if (k === 'vacuum') return { type: 'vacuum', size: 's', cfg: {} };
+  if (k === 'sensor') return { type: 'temps', size: 'm', cfg: { filter: (v.name || nameOf(i)).split(' ')[0] } };
+  if (k === 'person') return { type: 'people', size: 'm', cfg: {} };
+  return { type: 'devices', size: 'm', cfg: { only: i.key } };
+}
+async function putOnBoard(i, v) {
+  await loadBoards();
+  const mod = moduleFor(i, v), def = Deck.MODULES[mod.type];
+  const r = await Edit.sheet({ title: `Put ${v?.name || nameOf(i)} on a board`, fields: [
+    { key: 'board', label: 'Board', type: 'select', options: S.boards.map(b => [b.name, b.title]), value: S.boards[0]?.name },
+    { key: 'size', label: 'Size', type: 'select', value: mod.size, options: Object.entries(Deck.SIZES).filter(([k]) => k !== 'x').map(([k, s]) => [k, s[0]]) }],
+    buttons: [{ id: 'ok', label: `Add ${def.icon} ${def.name}` }] });
+  if (!r || !r.values.board) return;
+  if (mod.type === 'devices' && !i.reg?.watch) Edit.toast('Tip: turn on Watch for this device and apply, so the card can show it');
+  const L = await api('/api/layout/board_' + r.values.board);
+  L.modules = L.modules || []; L.modules.push({ id: 'm' + Date.now().toString(36), type: mod.type, size: r.values.size, cfg: mod.cfg });
+  try { await api('/api/layout/board_' + r.values.board, { layout: L }); Edit.toast(`Added to ${r.values.board} ✓`); } catch (e) { Edit.toast('✗ ' + e.message); }
+}
+
+// ---------- board preview: the same board on four screens ----------
+function preview(name) {
+  S.pv = name;
+  const SCR = [['Phone', 390, 844, .45], ['Tablet', 1280, 800, .33], ['Wall panel (standing)', 1080, 1920, .2], ['Computer', 1920, 1080, .22]];
+  $('#pv').innerHTML = `<h2>Preview: /board/${esc(name)} <button class="btn" id="pvx" style="min-height:30px;margin-left:10px">close</button> <button class="btn" id="pvr" style="min-height:30px">↻ reload</button></h2>
+    <div class="prev">${SCR.map(([t, w, h, sc]) => `<figure><figcaption>${t} · ${w}×${h}</figcaption><div class="fr" style="width:${w * sc}px;height:${h * sc}px">
+      <iframe src="/board/${esc(name)}?preview" style="width:${w}px;height:${h}px;transform:scale(${sc})" loading="lazy"></iframe></div></figure>`).join('')}</div>`;
+  $('#pvx').onclick = () => { S.pv = null; $('#pv').innerHTML = ''; };
+  $('#pvr').onclick = () => $('#pv').querySelectorAll('iframe').forEach(f => f.src = f.src);
+}
+
+// ---------- wizards ----------
+const WIZ = [
+  { id: 'phone', icon: '📱', title: 'New phone or family member', desc: 'Who-is-home, the app, and their own board' },
+  { id: 'smart', icon: '💡', title: 'New smart-home device', desc: 'A light, lock, sensor or speaker from Home Assistant onto your boards' },
+  { id: 'screen', icon: '🖥️', title: 'New screen', desc: 'A tablet, wall panel, phone or PC wallpaper showing a board' },
+  { id: 'camserver', icon: '📷', title: 'New camera or server', desc: 'Watch it, get offline alerts, show it on a board' },
+];
+function stepUI(w, steps) {
+  let n = 0; const st = {};
+  const show = async () => {
+    const s = steps[n];
+    main.innerHTML = `<p class="noprint"><a href="#wizards">‹ Wizards</a></p><div class="step"><div class="no">${w.icon} ${esc(w.title)} · step ${n + 1} of ${steps.length}</div>
+      <h3>${esc(s.title)}</h3><div id="sb"></div><div class="nav">${n ? '<button class="btn" id="back">Back</button>' : ''}<span class="sp"></span>
+      <button class="btn go" id="next">${n === steps.length - 1 ? 'Finish' : 'Next'}</button></div></div>`;
+    await s.show($('#sb'), st);
+    $('#back')?.addEventListener('click', () => { n--; show(); });
+    $('#next').onclick = async () => { try { if (s.next && (await s.next($('#sb'), st)) === false) return; } catch (e) { return Edit.toast('✗ ' + e.message); }
+      if (n < steps.length - 1) { n++; show(); } else go('changes'); };
+  };
+  show();
+}
+const val = (root, sel) => root.querySelector(sel)?.value?.trim() || '';
+const pickList = (items, name, label) => `<div class="pick">${items.map((i, k) => `<label><input type="radio" name="${name}" value="${k}"><span>${KIND_ICON[i.reg?.kind || i.kind] || '•'} <b>${esc(nameOf(i))}</b></span><span class="s">${label(i)}</span></label>`).join('')
+  || '<div class="empty" style="padding:14px">Nothing found yet. Check the step before, then press ↻ Look again.</div>'}</div>`;
+async function pairBox(el, name, person) {
+  const p = await api('/api/devices/pair', { name, person });
+  const q = qrcode(0, 'M'); q.addData(p.url); q.make();
+  el.innerHTML = `<div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap"><div class="qr">${q.createSvgTag({ cellSize: 4, margin: 0, scalable: true })}</div>
+    <div><div class="m">Code</div><div class="code">${esc(p.code)}</div><div class="m">Valid ${Math.round((p.expires - Date.now() / 1000) / 60)} minutes. The phone must be on the home Wi-Fi.</div></div></div>`;
+}
+async function runWizard(w) {
+  await Promise.all([loadInv(), loadDraft()]); if (!S.sum.people) S.sum = await api('/api/studio/summary');
+  if (w.id === 'phone') return stepUI(w, [
+    { title: 'Who is it for?', show: (el, st) => { el.innerHTML = `<p>Pick a person, or type a new name.</p><div class="form"><label>Person<select id="pp"><option value="">— new person —</option>
+        ${people().map(p => `<option ${st.person === p ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select></label><label>New person's name<input id="pn" value="${esc(st.newp || '')}" placeholder="e.g. Alva"></label></div>`; },
+      next: (el, st) => { st.person = (val(el, '#pp') || val(el, '#pn')).toLowerCase(); st.newp = val(el, '#pn'); if (!st.person) { Edit.toast('Pick or type a person'); return false; } } },
+    { title: 'Connect the phone to the home Wi-Fi', show: el => { el.innerHTML = `<ol><li>On the phone, join the home Wi-Fi.</li>
+        <li><b>iPhone:</b> Settings → Wi-Fi → ⓘ next to the home network → <b>Private Wi-Fi Address: Fixed</b> (or Off).</li>
+        <li><b>Android:</b> Settings → Wi-Fi → the home network → Privacy → <b>Use device MAC</b>.</li>
+        <li>Open a web page on the phone once, so it shows up on the network.</li></ol>
+        <details><summary>Why?</summary><p class="m">Home Deck sees the phone by its Wi-Fi address. A "rotating" private address changes now and then, and the person would suddenly look away.</p></details>`; } },
+    { title: 'Find the phone', show: (el, st) => {
+        const draw = () => { const day = Date.now() / 1000 - 86400;
+          const phoney = i => /phone|iphone|android|galaxy|pixel|fold|ipad|samsung|apple|oneplus|xiaomi/i.test(i.name + ' ' + (i.vendor || '')) || i.private_mac;
+          st.cands = S.inv.filter(i => i.source === 'net' && !i.presence && i.online)
+            .sort((a, b) => (phoney(b) - phoney(a)) || ((b.first || 0) > day) - ((a.first || 0) > day) || (b.last || 0) - (a.last || 0)).slice(0, 40);
+          el.innerHTML = `<p>Phones on the Wi-Fi right now, newest first. Pick the new one.</p>${pickList(st.cands, 'ph', i => `${esc(i.id)} · ${esc((i.ips || []).join(', '))}<br>first seen ${ago(i.first)}${i.private_mac ? ' · ⚠ private address' : ''}`)}
+            <button class="btn" id="again">↻ Look again</button>`;
+          el.querySelector('#again').onclick = async () => { await loadInv(true); draw(); }; };
+        draw(); },
+      next: (el, st) => { const k = el.querySelector('input[name=ph]:checked'); if (!k) { Edit.toast('Pick the phone'); return false; } st.phone = st.cands[+k.value]; } },
+    { title: 'Name it', show: (el, st) => { el.innerHTML = `<div class="form"><label>Name<input id="nm" value="${esc(st.person[0].toUpperCase() + st.person.slice(1))}'s phone"></label>
+        <label class="tog"><input type="checkbox" id="wt"> Watch it (notice when it is offline)</label></div>
+        ${st.phone.private_mac ? '<p>⚠ This phone still uses a private (random) address. Go back to step 2 and set it to Fixed, then look again.</p>' : ''}`; },
+      next: async (el, st) => { st.name = val(el, '#nm');
+        await addChange({ op: 'add', key: st.phone.key, name: st.name, owner: st.person, kind: 'phone', watch: el.querySelector('#wt').checked, label: st.name });
+        await addChange({ op: 'presence', key: st.phone.key, person: st.person, on: true, label: st.name }, 'Who-is-home change added'); } },
+    { title: 'The app (optional)', show: (el, st) => { el.innerHTML = `<p><b>Android:</b> on the phone open <a href="/app" target="_blank">${esc(LAN)}/app</a> and install Home Deck. Then show a pairing code and scan it in the app.<br>
+        <b>iPhone:</b> scan the code with the Camera, then Share → Add to Home Screen.</p><button class="btn go" id="pair">Show a pairing code</button><div id="pb" style="margin-top:14px"></div>`;
+        el.querySelector('#pair').onclick = () => pairBox(el.querySelector('#pb'), st.name, st.person).catch(e => Edit.toast('✗ ' + e.message)); } },
+    { title: 'Their own board (optional)', show: (el, st) => { el.innerHTML = `<p>Make a board for ${esc(st.person)} with the essentials (who's home, door, lights, buses, weather). You can change it later.</p>
+        <label class="tog"><input type="checkbox" id="mk" checked> Make the board <b>/board/${esc(st.person)}</b></label>`; },
+      next: async (el, st) => { if (!el.querySelector('#mk').checked) return;
+        const ex = await api('/api/layout/board_' + st.person).catch(() => ({})); if (ex.modules) return Edit.toast('That board already exists');
+        const m = (type, size, cfg = {}) => ({ id: 'm' + Math.random().toString(36).slice(2, 9), type, size, cfg });
+        await api('/api/layout/board_' + st.person, { layout: { title: st.person[0].toUpperCase() + st.person.slice(1), density: 'normal', layout: 'grid',
+          modules: [m('people', 'm'), m('door', 's'), m('lights', 's'), m('bus', 'm', { n: '3', then: true }), m('weather', 'm')] } }); Edit.toast('Board made'); } },
+    { title: 'Apply', show: el => { el.innerHTML = `<p>Done. Your changes are in <b>Changes</b>: press <b>Apply</b> there, and ${'the person shows as home within a minute'}.</p>`; } },
+  ]);
+  if (w.id === 'smart') return stepUI(w, [
+    { title: 'Add it in Home Assistant first', show: el => { el.innerHTML = `<ol><li>Open Home Assistant → Settings → Devices &amp; services.</li><li>Add the device the way its maker describes (often it is found automatically: press <b>Configure</b>).</li>
+        <li>Give it an area (room) there if you like.</li></ol><p><a class="btn" href="/ha" target="_blank">Open Home Assistant</a></p>`; } },
+    { title: 'Pick it', show: (el, st) => { const draw = () => {
+        st.cands = S.inv.filter(i => i.source === 'ha' && !i.added && i.kind !== 'person').sort((a, b) => new Date(b.changed || 0) - new Date(a.changed || 0)).slice(0, 60);
+        el.innerHTML = `<p>Home Assistant devices you have not added yet, most recently changed first.</p>${pickList(st.cands, 'sd', i => `${esc(i.id)}<br>${esc(i.state || '')}`)}<button class="btn" id="again">↻ Look again</button>`;
+        el.querySelector('#again').onclick = async () => { await loadInv(true); draw(); }; }; draw(); },
+      next: (el, st) => { const k = el.querySelector('input[name=sd]:checked'); if (!k) { Edit.toast('Pick the device'); return false; } st.dev = st.cands[+k.value]; } },
+    { title: 'Name and room', show: (el, st) => { el.innerHTML = `<div class="form"><label>Name<input id="nm" value="${esc(st.dev.name)}"></label><label>Room<input id="rm" list="rooms" placeholder="${esc(S.rooms[0] || 'Kitchen')}">
+        <datalist id="rooms">${S.rooms.map(r => `<option>${esc(r)}`).join('')}</datalist></label><label class="tog"><input type="checkbox" id="wt"> Watch it</label></div>`; },
+      next: async (el, st) => { st.v = { name: val(el, '#nm'), room: val(el, '#rm'), kind: st.dev.kind, watch: el.querySelector('#wt').checked };
+        await addChange({ op: 'add', key: st.dev.key, ...st.v, label: st.v.name }); } },
+    { title: 'Show it on a board (optional)', show: (el, st) => { const mod = moduleFor(st.dev, st.v), d = Deck.MODULES[mod.type];
+        el.innerHTML = `<p>Suggested card: <b>${d.icon} ${esc(d.name)}</b>.</p><button class="btn go" id="pob">Put it on a board…</button>`; el.querySelector('#pob').onclick = () => putOnBoard(st.dev, st.v); } },
+    { title: 'Apply', show: el => { el.innerHTML = '<p>Open <b>Changes</b> and press <b>Apply</b>.</p>'; } },
+  ]);
+  if (w.id === 'screen') return stepUI(w, [
+    { title: 'What kind of screen?', show: (el, st) => { el.innerHTML = `<div class="pick">${[['android', '🤖 Android phone or tablet (the Home Deck app)'], ['ios', ' iPhone or iPad'], ['kiosk', '🖼️ Wall tablet / panel (kiosk browser)'], ['pc', '🖥️ Windows wallpaper (Lively)']]
+        .map(([k, t]) => `<label><input type="radio" name="ty" value="${k}" ${st.type === k ? 'checked' : ''}>${t}</label>`).join('')}</div>`; },
+      next: (el, st) => { st.type = el.querySelector('input[name=ty]:checked')?.value; if (!st.type) { Edit.toast('Pick one'); return false; } } },
+    { title: 'Which board?', show: async (el, st) => { await loadBoards(); el.innerHTML = `<div class="form"><label>Board<select id="bd">${S.boards.map(b => `<option value="${esc(b.name)}">${esc(b.title)}</option>`).join('')}</select></label></div>
+        <p class="m">Want a new one? <a href="/boards" target="_blank">Make it on Boards</a> (the "Desktop wallpaper" template suits a PC, "Wall panel" a wall tablet), then come back.</p>`; },
+      next: (el, st) => { st.board = val(el, '#bd'); if (!st.board) { Edit.toast('Make a board first'); return false; } } },
+    { title: 'Set up the screen', show: async (el, st) => {
+        const remote = await api('/api/devices').then(j => j.public_url).catch(() => ''), lan = `${LAN}/board/${st.board}`, rem = remote ? `${remote}/board/${st.board}` : '';
+        const T = { android: `<ol><li>On the device open <b>${esc(LAN)}/app</b> on the home Wi-Fi and install Home Deck.</li><li>Open the app and pair it (code below).</li><li>In the app, the board is at <b>${esc(rem || lan)}</b>.</li></ol>`,
+          ios: `<ol><li>Pair it (code below): scan the QR code with the Camera on the home Wi-Fi.</li><li>Open <b>${esc(rem || lan)}</b> in Safari.</li><li>Share → <b>Add to Home Screen</b>.</li></ol>`,
+          kiosk: `<ol><li>Install a kiosk browser (for example Fully Kiosk Browser) on the tablet.</li><li>Start URL: <b>${esc(lan)}</b></li><li>Turn on: keep screen on, start on boot, hide the address bar.</li><li>At home no pairing is needed.</li></ol>`,
+          pc: `<ol><li>Install <b>Lively Wallpaper</b> (Microsoft Store).</li><li>Lively → <b>+ Add wallpaper</b> → enter the URL <b>${esc(lan)}</b>.</li><li>Pick it as the wallpaper. Use a board with the "wallpaper column" layout (Board settings).</li></ol>` };
+        el.innerHTML = T[st.type] + (st.type === 'android' || st.type === 'ios' ? `<button class="btn go" id="pair">Show a pairing code</button><div id="pb" style="margin-top:14px"></div>` : '')
+          + `<p><a class="btn" href="/board/${esc(st.board)}" target="_blank">Open the board</a></p>`;
+        el.querySelector('#pair')?.addEventListener('click', () => pairBox(el.querySelector('#pb'), st.type === 'ios' ? 'iPhone / iPad' : 'Android', '').catch(e => Edit.toast('✗ ' + e.message))); } },
+  ]);
+  if (w.id === 'camserver') return stepUI(w, [
+    { title: 'Camera or server?', show: (el, st) => { el.innerHTML = `<div class="pick"><label><input type="radio" name="ty" value="cam" ${st.type === 'cam' ? 'checked' : ''}>📷 A camera</label>
+        <label><input type="radio" name="ty" value="srv" ${st.type === 'srv' ? 'checked' : ''}>🖥️ A server, NAS, VM or container</label></div>`; },
+      next: (el, st) => { st.type = el.querySelector('input[name=ty]:checked')?.value; if (!st.type) { Edit.toast('Pick one'); return false; } } },
+    { title: 'Before you start', show: (el, st) => { el.innerHTML = st.type === 'cam'
+        ? `<ol><li>Give the camera a fixed address in the router (DHCP reservation).</li><li>Add it to the video bridge (Scrypted) and to Home Assistant, so it shows up as a camera there.</li>
+           <li>For recording and person detection, add it to camwatch (see Guide → technical details).</li></ol>`
+        : `<ol><li>Create the VM or container in Proxmox, or plug in the device and give it a fixed address in the router.</li><li>It shows up here by itself: Proxmox guests at once, network devices after their first name lookup.</li></ol>`; } },
+    { title: 'Pick it', show: (el, st) => { const draw = () => {
+        st.cands = S.inv.filter(i => st.type === 'cam' ? i.kind === 'camera' : (i.source === 'pve' || (i.source === 'net' && i.online))).filter(i => !i.added).slice(0, 80);
+        el.innerHTML = `${pickList(st.cands, 'cs', i => `${esc(SRC[i.source])}<br>${esc(i.detail || i.id)}`)}<button class="btn" id="again">↻ Look again</button> <button class="btn" id="man">Not in the list: add by hand</button>`;
+        el.querySelector('#again').onclick = async () => { await loadInv(true); draw(); }; el.querySelector('#man').onclick = manualSheet; }; draw(); },
+      next: (el, st) => { const k = el.querySelector('input[name=cs]:checked'); if (!k) { Edit.toast('Pick it, or add it by hand'); return false; } st.dev = st.cands[+k.value]; } },
+    { title: 'Name it and watch it', show: (el, st) => { el.innerHTML = `<div class="form"><label>Name<input id="nm" value="${esc(st.dev.name)}"></label><label>Room / place<input id="rm"></label>
+        <label class="tog"><input type="checkbox" id="wt" checked> Watch it: notice when offline for 10 minutes</label></div>`; },
+      next: async (el, st) => { st.v = { name: val(el, '#nm'), room: val(el, '#rm'), kind: st.type === 'cam' ? 'camera' : st.dev.kind === 'network' ? 'server' : st.dev.kind, watch: el.querySelector('#wt').checked };
+        await addChange({ op: 'add', key: st.dev.key, ...st.v, label: st.v.name }); } },
+    { title: 'Show it on a board (optional)', show: (el, st) => { el.innerHTML = `<button class="btn go" id="pob">Put it on a board…</button>`; el.querySelector('#pob').onclick = () => putOnBoard(st.dev, st.v); } },
+    { title: 'Apply', show: el => { el.innerHTML = '<p>Open <b>Changes</b> and press <b>Apply</b>. From then on you get a notice if it goes offline.</p>'; } },
+  ]);
+}
+
+// ---------- first-run tour ----------
+const TOUR = [['overview', 'Overview', 'What needs attention: offline devices and changes waiting to be applied.'],
+  ['devices', 'Devices', 'Everything Home Deck can find. Click one to name it, give it a room and owner, watch it or put it on a board.'],
+  ['people', 'People', 'Who lives here, which phone says they are home, and which devices are paired for the app.'],
+  ['boards', 'Boards', 'Your own dashboards. Design them, and preview them on a phone, tablet, wall panel and computer at once.'],
+  ['wizards', 'Wizards', 'Step-by-step help for a new phone, a smart-home device, a screen, or a camera or server.'],
+  ['guide', 'Guide', 'Plain how-to pages, with technical details for the curious. Also prints as a handbook.'],
+  ['changes', 'Changes', 'Changes wait here until you press Apply, and Undo puts the last apply back.']];
+function tour(force) {
+  try { if (!force && localStorage.getItem('studio_tour')) return; } catch {}
+  let k = 0; const el = $('#tour'), tip = $('#tip');
+  const show = () => { document.querySelectorAll('.hl').forEach(x => x.classList.remove('hl'));
+    if (k >= TOUR.length) { el.classList.remove('on'); try { localStorage.setItem('studio_tour', '1'); } catch {} return; }
+    const [s, t, d] = TOUR[k], a = document.querySelector(`nav a[data-s="${s}"]`); a.classList.add('hl'); const r = a.getBoundingClientRect();
+    tip.style.left = Math.min(innerWidth - 350, r.right + 16) + 'px'; tip.style.top = Math.min(innerHeight - 180, r.top) + 'px';
+    if (innerWidth < 860) { tip.style.left = '12px'; tip.style.top = (r.bottom + 12) + 'px'; }
+    tip.innerHTML = `<b>${esc(t)}</b>${esc(d)}<div class="row"><button class="btn" id="tx">Skip</button><span class="sp"></span><span class="m">${k + 1}/${TOUR.length}</span><button class="btn go" id="tn">${k === TOUR.length - 1 ? 'Done' : 'Next'}</button></div>`;
+    $('#tn').onclick = () => { k++; show(); }; $('#tx').onclick = () => { k = TOUR.length; show(); }; };
+  el.classList.add('on'); show();
+}
+
+// ---------- routing ----------
+function go(h) { location.hash = h; }
+async function route() {
+  const [s, sub] = (location.hash.slice(1) || 'overview').split('/');
+  document.querySelectorAll('nav a[data-s]').forEach(a => a.classList.toggle('on', a.dataset.s === s));
+  try { await (SECTIONS[s] || SECTIONS.overview)(sub); } catch (e) { main.innerHTML = `<h1>Studio</h1><p class="lead">${esc(e.message)}</p>`; }
+  scrollTo(0, 0);
+}
+addEventListener('hashchange', route);
+$('#ext').innerHTML = [['/start', 'Start'], ['/admin', 'Admin'], ['/devices', 'Paired devices'], ['/boards', 'All boards'], ['/ops', 'Lab panel'], ['/ha', 'Home Assistant'],
+  [`${location.protocol}//${host}:8088/`, 'Code editor']].map(([u, t]) => `<a href="${u}" target="_blank">${t} ↗</a>`).join('');
+(async () => {
+  const s = await fetch('/api/pin/status', { cache: 'no-store' }).then(r => r.json()).catch(() => ({}));
+  const startUp = () => { route(); loadDraft().catch(() => {}); setTimeout(() => tour(false), 600); };
+  if (s.admin) startUp(); else deckPin.open({ onOk: startUp });
+  if (/[?&]print\b/.test(location.search)) { location.hash = 'guide'; }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#07080f">
+<meta name="apple-mobile-web-app-title" content="Rooms"><meta name="nav-related" content="/living,/control,/pulse">
+<title>Rooms</title>
+<link rel="stylesheet" href="/deck.css">
+<style>
+/* Rooms: every room as a card with its lights as glowing pills. Tap = on/off; slide sideways on a dimmable light = brightness
+   (live preview, sent on release). Room "All off". Lit rooms glow. Data: /api/home/state; actions: /api/home/do */
+:root { --hue: #f59e0b; --hue2: #38bdf8; }
+.sumbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.sumbar .big { font-size: 15px; color: var(--mute); } .sumbar .big b { color: var(--ink); font-size: 22px; font-weight: 700; margin-right: 4px; }
+.plan { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); align-items: start; }
+@media (max-width: 640px) { .plan { grid-template-columns: 1fr; } }
+.room { padding: 14px 14px 12px; transition: background .3s, border-color .3s, box-shadow .3s; }
+.room.lit { background: linear-gradient(160deg, rgba(245,158,11,.16), rgba(245,158,11,.03) 60%), var(--card); border-color: rgba(245,158,11,.35);
+  box-shadow: 0 10px 40px rgba(245,158,11,.08); }
+.room header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.room h2 { margin: 0; font-size: 18px; font-weight: 700; } .room h2 small { display: block; font-size: 12px; color: var(--mute); font-weight: 500; margin-top: 2px; }
+.room .off { padding: 8px 13px; border-radius: 999px; background: var(--card-hi); border: 1px solid var(--line); font-size: 12.5px; font-weight: 650; }
+.room .off:disabled { opacity: .35; }
+.lights { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 8px; }
+.lt { position: relative; overflow: hidden; height: 58px; border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid var(--line);
+  text-align: left; padding: 9px 12px; touch-action: pan-y; transition: border-color .2s; }
+.lt .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, rgba(251,191,36,.55), rgba(253,224,71,.35)); transition: width .25s; }
+.lt.on { border-color: rgba(251,191,36,.55); } .lt.on .fill { width: var(--b, 100%); }
+.lt.drag .fill { transition: none; }
+.lt span { position: relative; display: block; font-size: 13.5px; font-weight: 650; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lt small { position: relative; display: block; font-size: 11.5px; color: var(--mute); margin-top: 3px; font-variant-numeric: tabular-nums; }
+.lt.on small { color: #fde68a; }
+.lt.busy { opacity: .6; }
+.media { margin-top: 10px; display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 14px; background: rgba(244,114,182,.1); font-size: 13px; }
+.media b { font-weight: 650; }
+.hint { color: var(--faint); font-size: 12px; margin-top: 16px; text-align: center; }
+</style>
+<link rel="stylesheet" href="/wall.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="head"><div><h1>Rooms</h1><div class="sub" id="sub">–</div></div><div class="right"><div class="clock num" id="clock">–</div></div></header>
+  <div class="sumbar" id="sum"></div>
+  <main class="plan" id="plan"><div class="empty">Loading rooms…</div></main>
+  <div class="hint">Tap a light to switch it · slide sideways on a dimmable light to set brightness</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ROOM_MEDIA = { 'Vardagsrum': 'media_player.vardagsrum', 'Uterum': null };
+let H = null, hold = {};                                // hold[entity] = until: keep the optimistic state while HA catches up
+const toast = t => { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2200); };
+const post = b => fetch('/api/home/do', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })
+  .then(r => r.json().then(j => { if (!r.ok || j.error) throw new Error(j.error || r.status); return j; }));
+function render() {
+  if (typeof touching !== 'undefined' && touching) return;
+  $('#clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  if (!H || !H.configured) return;
+  const on = H.rooms.reduce((a, r) => a + r.lights.filter(l => l.on).length, 0), all = H.rooms.reduce((a, r) => a + r.lights.length, 0);
+  const lit = H.rooms.filter(r => r.lights.some(l => l.on)).length;
+  $('#sub').textContent = `${H.rooms.length} rooms · ${all} lights`;
+  $('#sum').innerHTML = `<span class="big"><b class="num">${on}</b>lights on</span><span class="chip">${lit} lit room${lit === 1 ? '' : 's'}</span>
+    ${H.people ? `<span class="chip">${H.people.filter(p => p.home).length} people home</span>` : ''}`;
+  const plan = $('#plan');
+  if (plan.querySelector('.empty')) plan.innerHTML = '';
+  H.rooms.forEach(r => {
+    const id = 'r-' + r.room.replace(/\W+/g, '_');
+    let el = document.getElementById(id);
+    if (!el) { el = document.createElement('section'); el.className = 'card room'; el.id = id; plan.appendChild(el); }
+    const n = r.lights.filter(l => l.on).length;
+    const mp = ROOM_MEDIA[r.room] && (H.players || []).concat(H.appletv ? [H.appletv] : []).find(p => p.id === ROOM_MEDIA[r.room] && p.state === 'playing');
+    if (el.querySelector('.lt.drag')) return;            // never redraw under a finger
+    el.classList.toggle('lit', n > 0);
+    el.innerHTML = `<header><h2>${esc(r.room)}<small>${n ? `${n} of ${r.lights.length} on` : `${r.lights.length} light${r.lights.length === 1 ? '' : 's'} · all off`}</small></h2>
+      <button class="off" data-room="${esc(r.room)}" ${n ? '' : 'disabled'}>All off</button></header>
+      <div class="lights">${r.lights.map(l => { const st = hold[l.id] && hold[l.id].until > Date.now() ? { ...l, ...hold[l.id] } : l;
+        return `<button class="lt ${st.on ? 'on' : ''}" data-id="${esc(l.id)}" data-dim="${l.dim ? 1 : 0}" style="--b:${st.on ? (st.bri ?? 100) : 0}%">
+          <i class="fill"></i><span>${esc(l.name === 'All' ? 'Whole room' : l.name)}</span><small>${st.on ? (l.dim && st.bri != null ? st.bri + '%' : 'On') : 'Off'}</small></button>`; }).join('')}</div>
+      ${mp ? `<div class="media">♫ <span><b>${esc(mp.title || 'Playing')}</b> ${esc(mp.app || mp.artist || '')}</span></div>` : ''}`;
+  });
+}
+// tap = toggle; horizontal slide on a dimmable light = brightness
+let drag = null, slidAt = 0, touching = false;            // touching: never redraw under a finger (a redraw would swallow the tap)
+addEventListener('pointerdown', () => touching = true, true); ['pointerup', 'pointercancel'].forEach(ev => addEventListener(ev, () => { touching = false; setTimeout(render, 50); }, true));                       // slidAt: a slide just ended -> ignore the click it produces
+$('#plan').addEventListener('pointerdown', e => {
+  const b = e.target.closest('.lt'); if (!b) return;
+  drag = { b, x: e.clientX, y: e.clientY, moved: false, dim: b.dataset.dim === '1', rect: b.getBoundingClientRect(), id: e.pointerId };
+});
+$('#plan').addEventListener('pointermove', e => {
+  if (!drag || !drag.dim) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (!drag.moved && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) { drag.moved = true; drag.b.classList.add('drag', 'on'); try { drag.b.setPointerCapture(drag.id); } catch {} }
+  if (drag.moved) {
+    const v = Math.max(1, Math.min(100, Math.round((e.clientX - drag.rect.left) / drag.rect.width * 100)));
+    drag.v = v; drag.b.style.setProperty('--b', v + '%'); drag.b.querySelector('small').textContent = v + '%';
+  }
+});
+const end = () => {
+  if (!drag) return; const d = drag; drag = null;
+  const id = d.b.dataset.id;
+  if (d.moved) slidAt = Date.now();
+  if (d.moved && d.v) {
+    d.b.classList.remove('drag'); hold[id] = { on: true, bri: d.v, until: Date.now() + 4000 };
+    post({ do: 'bri', entity: id, value: d.v }).then(() => setTimeout(load, 900)).catch(err => { toast('✗ ' + err.message); delete hold[id]; render(); });
+  }
+};
+$('#plan').addEventListener('pointerup', end); $('#plan').addEventListener('pointercancel', () => { if (drag) { drag.b.classList.remove('drag'); drag = null; render(); } });
+$('#plan').addEventListener('click', e => {
+  const off = e.target.closest('.off');
+  if (off) { const r = H.rooms.find(x => x.room === off.dataset.room); r?.lights.forEach(l => hold[l.id] = { on: false, until: Date.now() + 4000 }); render();
+    post({ do: 'room_off', entity: off.dataset.room }).then(() => { toast(`${off.dataset.room}: all off`); setTimeout(load, 900); }).catch(err => toast('✗ ' + err.message)); return; }
+  const b = e.target.closest('.lt'); if (!b || b.classList.contains('drag') || Date.now() - slidAt < 400) return;
+  const id = b.dataset.id, l = H.rooms.flatMap(r => r.lights).find(x => x.id === id), was = hold[id]?.until > Date.now() ? hold[id].on : l?.on;
+  hold[id] = { on: !was, until: Date.now() + 4000 }; render();
+  post({ do: 'toggle', entity: id }).then(() => setTimeout(load, 900)).catch(err => { toast('✗ ' + err.message); delete hold[id]; render(); });
+});
+async function load() {
+  if (document.visibilityState !== 'visible' || drag) return;
+  try { const j = await (await fetch('/api/home/state', { cache: 'no-store' })).json(); if (!j.error) H = j; } catch {}
+  render();
+}
+load(); setInterval(load, 4000); setInterval(render, 30000);
+document.addEventListener('visibilitychange', load);
+</script>
+<script src="/nav.js" defer></script>
+</body>
+</html>

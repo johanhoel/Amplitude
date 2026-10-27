@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#101418">
+<title>Design 3 · Wall</title>
+<style>
+/* Design 3 "Wall" v2: a wall tablet seen from a metre away. Every view fills the screen without scrolling: Home is a fixed
+   3 x 2 board; Lights = room column on the left + square icon buttons for that room; Actions = two separated rows.
+   Side rail with big labelled icons (bottom bar on phones). Reversible = instant + Undo; disruptive = arm (red, 3 s), then tap again. */
+:root { --bg: #101418; --tile: #1a2027; --tile2: #222a33; --ink: #eef2f6; --mute: #8b98a8; --line: #2a333d; --acc: #38bdf8; --amber: #f59e0b; --red: #ef4444; --ok: #22c55e;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; --toast-bg: #243040; }
+* { box-sizing: border-box; } html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--font); -webkit-tap-highlight-color: transparent; }
+body { display: flex; flex-direction: column; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+.app { flex: 1; min-height: 0; display: grid; grid-template-columns: 108px 1fr; }
+.rail { display: flex; flex-direction: column; gap: 10px; padding: 18px 12px; border-right: 1px solid var(--line); background: #0c1014; }
+.rail button { min-height: 80px; border-radius: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 13px; font-weight: 700; color: var(--mute); }
+.rail button span { font-size: 28px; } .rail button.on { background: var(--tile2); color: var(--ink); box-shadow: inset 4px 0 0 var(--acc); }
+.rail .rgap { flex: 1; min-height: 24px; } .rail .adm { border: 1px dashed #3a4654; } .rail .adm.unlocked { border-style: solid; border-color: var(--ok); color: var(--ink); }
+.adhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; } .adhead h1 { margin: 0 0 14px; }
+.lockadm { min-height: 56px; padding: 0 22px; border-radius: 18px; background: var(--tile); border: 1px solid var(--line); font-size: 16px; font-weight: 700; }
+.adgrid { flex: 1; min-height: 0; display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); grid-auto-rows: minmax(120px, 1fr); }
+.adt { border-radius: 28px; background: var(--tile); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 20px; text-decoration: none; color: var(--ink); }
+.adt b { font-size: 22px; } .adt span { color: var(--mute); font-size: 14px; } .adt i { font-style: normal; font-size: clamp(34px, 4vw, 56px); }
+.rail .clock { margin-top: 10px; text-align: center; font-size: 24px; font-weight: 300; color: var(--ink); }
+main { padding: 18px; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.v { display: none; flex: 1; min-height: 0; flex-direction: column; } .v.on { display: flex; }
+h1 { margin: 0 0 14px; font-size: 30px; font-weight: 750; }
+.board { flex: 1; min-height: 0; display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+.t { border-radius: 28px; background: var(--tile); border: 1px solid var(--line); padding: 22px; display: flex; flex-direction: column; justify-content: space-between; min-height: 0; overflow: hidden; }
+.t .mid { flex: 1; display: flex; align-items: center; gap: 16px; } .t .ic { font-size: clamp(30px, 4vw, 52px); opacity: .9; }
+.t .k { font-size: 15px; color: var(--mute); font-weight: 650; } .t .val { font-size: clamp(30px, 4.4vw, 56px); font-weight: 300; line-height: 1.05; }
+.t .val small { font-size: 18px; color: var(--mute); margin-left: 4px; } .t.ok .val { color: var(--ok); } .t .val.s { font-size: clamp(20px, 2.4vw, 30px); font-weight: 600; }
+.people { display: flex; gap: 12px; flex-wrap: wrap; } .pp { display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 650; font-size: 14px; }
+.pp i { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 23px; background: var(--acc); color: #04202d; font-weight: 800; } .pp.away { opacity: .35; }
+.split { flex: 1; min-height: 0; display: grid; grid-template-columns: 260px 1fr; gap: 16px; }
+.rooms { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; min-height: 0; padding-right: 4px; }
+.rm { min-height: 64px; border-radius: 18px; background: var(--tile); border: 1px solid var(--line); padding: 0 18px; text-align: left; font-size: 17px; font-weight: 650; display: flex; align-items: center; justify-content: space-between; flex: none; }
+.rm.on { background: var(--tile2); border-color: var(--acc); } .rm i { font-style: normal; font-size: 13px; color: var(--amber); font-weight: 700; }
+.sq { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); grid-auto-rows: 170px; align-content: start; overflow-y: auto; min-height: 0; }
+.lb { border-radius: 28px; background: var(--tile); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-size: 17px; font-weight: 650; padding: 10px; text-align: center; transition: transform .1s; }
+.lb .ic { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-size: 28px; background: rgba(255,255,255,.06); }
+.lb small { font-size: 13px; color: var(--mute); font-weight: 600; } .lb.on { background: linear-gradient(160deg, #6b4a10, #3b2a0c); border-color: var(--amber); } .lb.on .ic { background: var(--amber); }
+.lb.on small { color: #fde68a; }
+.kdown { transform: scale(.97); }
+.arow { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); flex: 1; min-height: 0; } .arow + .lbl { margin-top: 22px; }
+.lbl { color: var(--mute); font-size: 14px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin: 0 0 12px; }
+.act { border-radius: 28px; background: var(--tile); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; font-size: 19px; font-weight: 700; padding: 14px; text-align: center; min-height: 120px; }
+.act .ic { font-size: 34px; } .act.risky { border: 2px dashed #4b5563; }
+.act.karmed { background: #4a1212; border: 2px solid var(--red); animation: pulse 1s ease infinite; } .act.karmed .klabel { color: #fecaca; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(239,68,68,.25); } }
+@media (max-width: 760px) { .app { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; } .rail { order: 2; flex-direction: row; border-right: 0; border-top: 1px solid var(--line); padding: 8px 10px calc(env(safe-area-inset-bottom) + 8px); }
+  .rail button { flex: 1; min-height: 64px; } .rail .clock, .rail .rgap { display: none; } .adgrid { grid-template-columns: 1fr 1fr; gap: 10px; grid-auto-rows: minmax(124px, auto); } .adt { padding: 16px; gap: 4px; } .adt b { font-size: 18px; } .adt span { font-size: 13px; } .board { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .split { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } .rooms { flex-direction: row; overflow-x: auto; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 30px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 30px), transparent); } .rm { min-width: 140px; }
+  .sq { grid-template-columns: 1fr 1fr; grid-auto-rows: 140px; gap: 10px; } .arow { grid-template-columns: 1fr; gap: 10px; } .act { min-height: 72px; flex-direction: row; } .t { padding: 16px; } }
+</style></head><body>
+<div class="app">
+  <nav class="rail" aria-label="Sections"><button data-go="home" class="on"><span>⌂</span>Home</button><button data-go="rooms"><span>💡</span>Lights</button>
+    <button data-go="actions"><span>⚡</span>Actions</button><div class="rgap"></div><button id="adminbtn" class="adm"><span id="admic">🔐</span>Admin</button><div class="clock" id="clock"></div></nav>
+  <main>
+    <section class="v on" data-v="home"><div class="board" id="home"></div></section>
+    <section class="v" data-v="rooms"><div class="split"><div class="rooms" id="rooms"></div><div class="sq" id="sq"></div></div></section>
+    <section class="v" data-v="admin"><div class="adhead"><h1>Admin</h1><button class="lockadm" id="lockadm">🔒 Lock admin</button></div>
+      <div class="lbl">Unlocked on this device · admin pages open without asking again until you lock</div><div class="adgrid" id="adgrid"></div></section>
+    <section class="v" data-v="actions"><div class="lbl">One tap</div><div class="arow" id="a1"></div><div class="lbl">Tap twice · first tap arms, second confirms</div><div class="arow" id="a2"></div></section>
+  </main>
+</div>
+<script src="/designs/kit.js"></script><script src="/pin.js"></script>
+<script>
+const $ = s => document.querySelector(s), { esc } = Kit; let S = null, room = null;
+const show = v => { document.querySelectorAll('.rail button').forEach(x => x.classList.toggle('on', x.dataset.go === v || (v === 'admin' && x.id === 'adminbtn')));
+  document.querySelectorAll('.v').forEach(x => x.classList.toggle('on', x.dataset.v === v)); };
+document.querySelectorAll('.rail button[data-go]').forEach(b => Kit.press(b, () => show(b.dataset.go)));
+// admin: the keypad (server-checked PIN) first, then the admin hub; while unlocked the button shows an open lock
+const ADMIN = [['⚙', 'Admin', 'Health, tasks, every console', '/admin'], ['⛁', 'Lab', 'Nodes, guests, commands', '/ops'], ['▦', 'Lab 6×6', 'The Buttons lab grid', '/lab'],
+               ['⌬', 'Network', 'Internet, DNS, devices', '/net'], ['✦', 'Atlas', 'Every endpoint, live', '/atlas'], ['⛶', 'Network map', 'Document', '/network.html']];
+$('#adgrid').innerHTML = ADMIN.map(([i, t, d, h]) => `<a class="adt" href="${h}"><i>${i}</i><b>${t}</b><span>${d}</span></a>`).join('');
+const admState = async () => { try { const s = await deckPin.status(); $('#adminbtn').classList.toggle('unlocked', !!s.admin); $('#admic').textContent = s.admin ? '🔓' : '🔐'; return s.admin; } catch { return false; } };
+Kit.press($('#adminbtn'), () => deckPin.open({ onOk: () => { admState(); show('admin'); } }));
+Kit.press($('#lockadm'), async () => { await deckPin.logout(); await admState(); show('home'); Kit.toast('Admin locked on this device'); });
+admState();
+function render() {
+  $('#clock').textContent = Kit.hm(Date.now());
+  if (!S) return;
+  const on = S.rooms.reduce((a, r) => a + r.lights.filter(Kit.isOn).length, 0);
+  $('#home').innerHTML = `<div class="t"><span class="k">Who is home</span><div class="people">${S.people.map(p => `<span class="pp ${p.home ? '' : 'away'}"><i>${esc(p.name[0])}</i>${esc(p.name)}</span>`).join('')}</div></div>
+    <div class="t ${S.door === 'locked' ? 'ok' : ''}"><span class="k">Front door</span><div class="mid"><span class="ic">${S.door === 'locked' ? '🔒' : '🔓'}</span><span class="val">${S.door === 'locked' ? 'Locked' : esc(S.door || '–')}</span></div></div>
+    <div class="t"><span class="k">Lights on</span><div class="mid"><span class="ic">💡</span><span class="val">${on}</span></div></div>
+    <div class="t"><span class="k">Outside</span><div class="mid"><span class="ic">${Kit.WX[S.wx?.condition] || '·'}</span><span class="val">${S.wx?.temperature != null ? Math.round(S.wx.temperature) + '°' : '–'}</span></div></div>
+    <div class="t"><span class="k">Next bus${S.bus && !S.bus.none ? ' · ' + esc(S.bus.line) + ' to ' + esc(S.bus.to) : ''}</span><div class="mid"><span class="ic">🚌</span><span class="val ${S.bus?.none ? 's' : ''}">${S.bus?.none ? 'None this hour' : S.bus ? (S.bus.min < 1 ? 'Now' : S.bus.min + '<small>min</small>') : '–'}</span></div></div>
+    <div class="t"><span class="k">Now playing</span><div class="mid"><span class="ic">♫</span><span class="val s">${esc(S.playing?.title || 'Nothing playing')}</span></div></div>`;
+  if (!room || !S.rooms.find(r => r.room === room)) room = (S.rooms.find(r => r.lights.some(Kit.isOn)) || S.rooms[0])?.room;
+  $('#rooms').innerHTML = S.rooms.map(r => { const n = r.lights.filter(Kit.isOn).length;
+    return `<button class="rm ${r.room === room ? 'on' : ''}" data-r="${esc(r.room)}">${esc(r.room)}${n ? `<i>${n} on</i>` : ''}</button>`; }).join('');
+  document.querySelectorAll('.rm').forEach(b => Kit.press(b, () => { room = b.dataset.r; render(); }));
+  const R = S.rooms.find(r => r.room === room);
+  $('#sq').innerHTML = (R?.lights || []).map(l => `<button class="lb ${Kit.isOn(l) ? 'on' : ''}" data-id="${esc(l.id)}"><span class="ic">💡</span>${esc(l.name === 'All' ? 'Whole room' : l.name)}<small>${Kit.isOn(l) ? 'On' : 'Off'}</small></button>`).join('');
+  document.querySelectorAll('.lb').forEach(b => Kit.press(b, () => Kit.flip(S.rooms.flatMap(r => r.lights).find(l => l.id === b.dataset.id), render)));
+}
+$('#a1').innerHTML = [['🧹', 'Start the vacuum'], ['⏻', 'Wake the PC'], ['◎', 'Camera alerts']].map(([i, t]) => `<button class="act" data-t="${t}"><span class="ic">${i}</span><span>${t}</span></button>`).join('');
+$('#a2').innerHTML = [['🔒', 'Lock the front door'], ['💡', 'All lights off'], ['☾', 'Sleep the PC']].map(([i, t]) => `<button class="act risky" data-t="${t}"><span class="ic">${i}</span><span class="klabel">${t}</span></button>`).join('');
+document.querySelectorAll('#a1 .act').forEach(b => Kit.press(b, () => Kit.toast('Demo: would ' + b.dataset.t.toLowerCase())));
+document.querySelectorAll('#a2 .act').forEach(b => Kit.arm(b, () => { b.querySelector('.klabel').textContent = b.dataset.t; Kit.toast('Demo: would ' + b.dataset.t.toLowerCase()); }));
+Kit.data(D => { S = Kit.summary(D); render(); }); setInterval(render, 30000);
+</script></body></html>

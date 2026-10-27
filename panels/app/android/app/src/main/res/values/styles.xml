@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="HomeDeck" parent="@android:style/Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:colorAccent">#38bdf8</item>
+    </style>
+    <color name="bg">#101418</color>
+    <color name="icon_bg">#0f2a3a</color>
+</resources>

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#000000">
+<title>Design 4 · Night</title>
+<style>
+/* Design 4 "Night" v2: OLED black and warm amber, almost no light. The clock is home. Lights: folding room sections with big
+   one-handed rows; a lit light glows, an off light is a dim outline, so on/off is obvious in the dark.
+   Dims after 30 s; the first touch on a dimmed screen only wakes it. Reversible = instant + Undo; disruptive = hold 2 s. */
+:root { --bg: #000; --ink: #f5c888; --mute: rgba(245,200,136,.52); --faint: rgba(245,200,136,.2); --line: rgba(245,200,136,.13); --glow: #ffb648;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; --toast-bg: #1d140a; --toast-ink: #f5c888; }
+* { box-sizing: border-box; } html, body { margin: 0; background: #000; color: var(--ink); font-family: var(--font); -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+main { max-width: 760px; margin: 0 auto; padding: 26px 20px calc(env(safe-area-inset-bottom) + 140px); transition: opacity .8s, filter .8s; }
+body.dim main, body.dim nav { opacity: .26; filter: saturate(.6); }
+.clock { font-size: clamp(76px, 22vw, 140px); font-weight: 200; letter-spacing: -.04em; line-height: 1; text-align: center; margin-top: 18px; font-variant-numeric: tabular-nums; }
+.date { text-align: center; color: var(--mute); margin-top: 10px; font-size: 16px; }
+.line { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 34px auto 0; max-width: 440px; }
+.line div { border: 1px solid var(--line); border-radius: 18px; padding: 12px 14px; color: var(--mute); font-size: 13px; } .line b { display: block; color: var(--ink); font-size: 19px; font-weight: 500; margin-top: 2px; }
+.v { display: none; } .v.on { display: block; animation: fade .4s ease; } @keyframes fade { from { opacity: 0; } }
+h1 { font-weight: 300; font-size: 30px; margin: 0 0 18px; }
+.sec { border: 1px solid var(--line); border-radius: 22px; margin-bottom: 12px; overflow: hidden; }
+.sec > .hd { width: 100%; min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 18px; font-size: 18px; font-weight: 500; text-align: left; }
+.sec > .hd i { font-style: normal; color: var(--mute); font-size: 14px; display: flex; align-items: center; gap: 10px; } .sec > .hd i::after { content: "⌄"; font-size: 18px; transition: transform .2s; }
+.sec.open > .hd i::after { transform: rotate(180deg); } .sec .bd { display: none; padding: 0 10px 10px; } .sec.open .bd { display: grid; gap: 8px; }
+.it { width: 100%; display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 0 16px; border-radius: 16px; border: 1px solid var(--line); text-align: left; font-size: 17px; position: relative; overflow: hidden; }
+.it .bulb { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--faint); flex: none; }
+.it.on { border-color: rgba(255,182,72,.45); color: #ffe2b0; } .it.on .bulb { background: var(--glow); border-color: var(--glow); box-shadow: 0 0 14px 4px rgba(255,182,72,.55); }
+.it .st { margin-left: auto; color: var(--mute); font-size: 14px; } .it.on .st { color: #ffd28a; }
+.kdown { background: rgba(245,200,136,.07); }
+.kfill { position: absolute; inset: 0 auto 0 0; width: 0; background: rgba(245,200,136,.16); pointer-events: none; }
+.hint { color: var(--mute); font-size: 13.5px; margin: 18px 6px 8px; }
+nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; gap: 10px; padding: 18px 14px calc(env(safe-area-inset-bottom) + 14px); transition: opacity .8s;
+  background: linear-gradient(transparent, #000 30%); }
+nav button { flex: 1; min-width: 0; max-width: 128px; min-height: 54px; border-radius: 27px; color: var(--mute); font-size: 15px; font-weight: 600; } nav button.on { color: var(--ink); background: rgba(245,200,136,.1); }
+.wakeveil { position: fixed; inset: 0; z-index: 70; display: none; } body.dim .wakeveil { display: block; }
+</style></head><body>
+<div class="wakeveil" aria-hidden="true"></div>
+<main>
+  <section class="v on" data-v="now"><div class="clock" id="clock">–</div><div class="date" id="date"></div><div class="line" id="line"></div></section>
+  <section class="v" data-v="lights"><h1>Lights</h1><div id="lights"></div></section>
+  <section class="v" data-v="actions"><h1>Before sleep</h1><div id="acts" style="display:grid;gap:10px"></div><div class="hint">Hold for two seconds. Letting go early cancels.</div></section>
+</main>
+<nav aria-label="Sections"><button data-go="now" class="on">Now</button><button data-go="lights">Lights</button><button data-go="actions">Actions</button></nav>
+<script src="/designs/kit.js"></script>
+<script>
+const $ = s => document.querySelector(s), { esc } = Kit; let S = null, idle, open = new Set();
+document.querySelectorAll('nav button').forEach(b => Kit.press(b, () => { document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.v').forEach(v => v.classList.toggle('on', v.dataset.v === b.dataset.go)); }));
+const wake = () => { document.body.classList.remove('dim'); clearTimeout(idle); idle = setTimeout(() => document.body.classList.add('dim'), 30000); };
+document.querySelector('.wakeveil').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); wake(); });
+['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (!document.body.classList.contains('dim')) wake(); }, true)); wake();
+function render() {
+  $('#clock').textContent = Kit.hm(Date.now());
+  $('#date').textContent = new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
+  if (!S) return;
+  const on = S.rooms.reduce((a, r) => a + r.lights.filter(Kit.isOn).length, 0);
+  $('#line').innerHTML = `<div>Front door<b>${S.door === 'locked' ? 'Locked' : esc(S.door || '–')}</b></div><div>Lights<b>${on} on</b></div>
+    <div>Home<b>${S.people.filter(p => p.home).length} of ${S.people.length}</b></div><div>Outside<b>${Kit.WX[S.wx?.condition] || ''} ${S.wx?.temperature != null ? Math.round(S.wx.temperature) + '°' : '–'}</b></div>`;
+  if (!open.size) S.rooms.filter(r => r.lights.some(Kit.isOn)).forEach(r => open.add(r.room));
+  $('#lights').innerHTML = S.rooms.map(r => { const n = r.lights.filter(Kit.isOn).length;
+    return `<div class="sec ${open.has(r.room) ? 'open' : ''}"><button class="hd" data-r="${esc(r.room)}">${esc(r.room)}<i>${n ? n + ' on' : 'off'}</i></button><div class="bd">${r.lights.map(l =>
+      `<button class="it ${Kit.isOn(l) ? 'on' : ''}" data-id="${esc(l.id)}"><span class="bulb"></span><span>${esc(l.name === 'All' ? 'Whole room' : l.name)}</span><span class="st">${Kit.isOn(l) ? 'On' : 'Off'}</span></button>`).join('')}</div></div>`; }).join('');
+  document.querySelectorAll('.sec .hd').forEach(b => Kit.press(b, () => { const r = b.dataset.r; open.has(r) ? open.delete(r) : open.add(r); render(); }));
+  document.querySelectorAll('#lights .it').forEach(b => Kit.press(b, () => Kit.flip(S.rooms.flatMap(r => r.lights).find(l => l.id === b.dataset.id), render)));
+}
+$('#acts').innerHTML = ['Lock the front door', 'Turn off every light', 'Put the PC to sleep'].map(t => `<button class="it" data-t="${t}"><i class="kfill"></i><span>${t}</span><span class="st">hold</span></button>`).join('');
+document.querySelectorAll('#acts .it').forEach(b => Kit.hold(b, 2000, () => Kit.toast('Demo: would ' + b.dataset.t.toLowerCase())));
+Kit.data(D => { S = Kit.summary(D); render(); }); setInterval(render, 15000);
+</script></body></html>

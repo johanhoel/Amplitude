@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#101418">
+<title>Network</title>
+<style>
+/* Network: the internet line and the LAN at a glance. Traffic as a mirrored live wave (download above,
+   upload below), DNS as a pulse, every device that is online now as a dot in its group. */
+:root { --bg: #101418; --ink: #eef4fb; --mute: rgba(238,244,251,.55); --faint: rgba(238,244,251,.12); --line: rgba(255,255,255,.08);
+  --dl: #22d3ee; --ul: #38bdf8; --dns: #ff6fb5; --ok: #34d399; --warn: #fbbf24;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font-family: var(--font); -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+body { background: radial-gradient(60% 40% at 15% 0%, rgba(34,211,238,.16), transparent 70%), radial-gradient(60% 40% at 100% 30%, rgba(56,189,248,.14), transparent 70%), var(--bg); background-attachment: fixed; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.num { font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1440px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 22px) 28px calc(env(safe-area-inset-bottom) + 40px); }
+h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
+.sub { color: var(--mute); font-size: 15px; margin-top: 6px; }
+.cap { font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); font-weight: 650; margin: 0 0 12px; }
+.grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); gap: 28px 36px; margin-top: 24px; }
+@media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+
+/* traffic wave */
+.wave { position: relative; }
+.wave svg { width: 100%; height: 300px; display: block; }
+.readout { display: flex; gap: 34px; align-items: baseline; margin-bottom: 8px; flex-wrap: wrap; }
+.readout b { font-size: 54px; font-weight: 200; letter-spacing: -.03em; }
+.readout small { font-size: 15px; color: var(--mute); margin-left: 4px; }
+.readout .dl b { color: var(--dl); } .readout .ul b { color: #7dd3fc; }
+.axis { display: flex; justify-content: space-between; color: var(--mute); font-size: 11.5px; margin-top: 4px; }
+
+/* speed gauge + dns */
+.side { display: grid; gap: 26px; align-content: start; }
+.gauge { display: grid; justify-items: center; }
+.gauge svg { width: 260px; height: 150px; }
+.gauge .val { margin-top: -74px; text-align: center; }
+.gauge .val b { font-size: 40px; font-weight: 250; } .gauge .val small { display: block; color: var(--mute); font-size: 12.5px; }
+.pulse { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; }
+.donut { width: 104px; height: 104px; position: relative; }
+.donut svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.donut div { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; line-height: 1.1; }
+.donut b { font-size: 24px; font-weight: 300; } .donut small { font-size: 10.5px; color: var(--mute); display: block; }
+.pulse svg.spark { width: 100%; height: 70px; }
+.holes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.hole { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--line); font-size: 13px; }
+.hole i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 10px var(--ok); }
+.hole.off i { background: var(--warn); box-shadow: 0 0 10px var(--warn); }
+.pause { position: relative; padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(251,191,36,.5); color: var(--warn); font-size: 13.5px; font-weight: 650; overflow: hidden; touch-action: none; }
+.pause .fill { position: absolute; inset: 0; width: 0; background: rgba(251,191,36,.22); }
+.pause span { position: relative; }
+
+/* devices */
+.groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px 26px; }
+.g h3 { margin: 0 0 10px; font-size: 14px; font-weight: 650; display: flex; justify-content: space-between; } .g h3 span { color: var(--mute); font-weight: 500; }
+.dots { display: flex; flex-wrap: wrap; gap: 8px; }
+.d { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px 6px 8px; border-radius: 999px; background: rgba(255,255,255,.045); border: 1px solid var(--line); font-size: 12.5px; white-space: nowrap; }
+.d i { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); }
+.d.on i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.d.new { border-color: rgba(251,191,36,.55); } .d.new::after { content: "new"; font-size: 10px; color: var(--warn); font-weight: 700; margin-left: 2px; }
+.d small { color: var(--mute); }
+.blocked { display: grid; gap: 8px; }
+.b { display: grid; grid-template-columns: 1fr auto; gap: 10px; font-size: 13.5px; }
+.b .bar { grid-column: 1 / -1; height: 5px; border-radius: 5px; background: rgba(255,255,255,.06); overflow: hidden; }
+.b .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--dns), #fbbf24); }
+.hint { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 24px); transform: translate(-50%, 16px); opacity: 0; z-index: 40; padding: 10px 16px;
+  border-radius: 999px; background: #18202c; border: 1px solid var(--line); font-size: 14px; transition: opacity .15s, transform .15s; pointer-events: none; }
+.hint.show { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 700px) { .wrap { padding: 18px 16px 40px; } h1 { font-size: 32px; } .readout b { font-size: 40px; } .wave svg { height: 210px; } }
+#sw { position: fixed; top: calc(env(safe-area-inset-top) + 16px); right: 18px; z-index: 30; width: 46px; height: 46px; border-radius: 50%;
+  background: rgba(255,255,255,.08); border: 1px solid var(--line); display: grid; place-items: center; }
+#sw svg { width: 20px; height: 20px; fill: currentColor; }
+#swp { position: fixed; inset: 0; z-index: 29; display: none; background: rgba(4,6,10,.84); padding: 90px 22px; }
+#swp.open { display: block; }
+#swp nav { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+#swp a { display: block; padding: 16px 18px; border-radius: 999px; background: rgba(255,255,255,.07); border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-weight: 600; }
+#swp a small { display: block; color: var(--mute); font-weight: 400; font-size: 12px; } #swp a.on { background: #0e7490; border-color: transparent; }
+</style>
+<link rel="stylesheet" href="/wall.css">
+</head>
+<body>
+<button id="sw" aria-label="All panels"><svg viewBox="0 0 24 24"><circle cx="5" cy="5" r="2.2"/><circle cx="12" cy="5" r="2.2"/><circle cx="19" cy="5" r="2.2"/><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="12" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/></svg></button>
+<div id="swp"><nav id="swnav"></nav></div>
+<div class="wrap">
+  <h1>Network</h1><div class="sub" id="sub">–</div>
+  <div class="grid">
+    <section>
+      <div class="cap">Internet right now · last 2 hours</div>
+      <div class="readout"><div class="dl"><b class="num" id="dl">–</b><small>Mbit/s ↓</small></div><div class="ul"><b class="num" id="ul">–</b><small>Mbit/s ↑</small></div></div>
+      <div class="wave"><svg id="wave" viewBox="0 0 1000 300" preserveAspectRatio="none"></svg></div>
+      <div class="axis"><span id="ax0"></span><span>download above · upload below</span><span>now</span></div>
+    </section>
+    <section class="side">
+      <div class="gauge"><div class="cap">Last speed test</div><svg viewBox="0 0 260 150" id="gauge"></svg><div class="val"><b class="num" id="sp">–</b><small id="spx"></small></div></div>
+      <div><div class="cap">DNS · Pi-hole</div>
+        <div class="pulse"><div class="donut"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="10"/>
+          <circle id="donut" cx="50" cy="50" r="42" fill="none" stroke="#ff6fb5" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 264"/></svg>
+          <div><div><b class="num" id="bp">–</b><small>blocked</small></div></div></div>
+          <div><svg class="spark" id="spark" viewBox="0 0 300 70" preserveAspectRatio="none"></svg><div class="sub" style="margin:0;font-size:12.5px" id="dnsx"></div></div></div>
+        <div class="holes" id="holes"></div></div>
+    </section>
+  </div>
+  <div class="grid" style="margin-top:34px">
+    <section><div class="cap" id="devcap">Devices</div><div class="groups" id="groups"></div></section>
+    <section><div class="cap">Blocked in the last hour</div><div class="blocked" id="blocked"></div></section>
+  </div>
+</div>
+<div class="hint" id="hint"></div>
+<script>
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const PANELS = [['/', 'Deck', 'wall panel'], ['/living', 'Home', 'lights, music, door'], ['/family', 'Family', "who's home"], ['/security', 'Security', 'camera, visits'],
+  ['/media', 'Media', 'music, speakers, TV'], ['/net', 'Network', 'internet, devices'], ['/ops', 'Lab', 'Proxmox'], ['/ambient', 'Ambient', 'night clock'],
+  ['/remote', 'Remote', 'phone'], ['/network.html', 'Network map', 'document']];
+$('#swnav').innerHTML = PANELS.map(([u, t, s]) => `<a href="${u}" class="${location.pathname.replace(/\/$/, '') === u ? 'on' : ''}">${t}<small>${s}</small></a>`).join('');
+$('#sw').addEventListener('click', () => $('#swp').classList.toggle('open'));
+$('#swp').addEventListener('click', e => { if (e.target.id === 'swp') $('#swp').classList.remove('open'); });
+function hint(t) { const h = $('#hint'); h.textContent = t; h.classList.add('show'); clearTimeout(h._t); h._t = setTimeout(() => h.classList.remove('show'), 1800); }
+
+const mb = b => b == null ? '–' : b / 1e6 >= 100 ? Math.round(b / 1e6) : (b / 1e6).toFixed(1);
+const hm = t => new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+function smooth(pts) { if (pts.length < 2) return ''; let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], cx = (x0 + x1) / 2; d += ` C${cx},${y0} ${cx},${y1} ${x1},${y1}`; } return d; }
+
+function wave(d) {
+  const din = d.wan_in, dout = d.wan_out; if (!din.length) return;
+  const t0 = din[0][0], t1 = din[din.length - 1][0], max = Math.max(1e6, ...din.map(p => p[1]), ...dout.map(p => p[1] * 2));
+  const X = t => (t - t0) / (t1 - t0) * 1000, mid = 175, up = 165, dn = 115;
+  const top = din.map(([t, v]) => [X(t), mid - Math.sqrt(v / max) * up]), bot = dout.map(([t, v]) => [X(t), mid + Math.sqrt(v / max) * dn]);
+  const area = (pts, base) => smooth(pts) + ` L1000,${base} L0,${base} Z`;
+  $('#wave').innerHTML = `<defs><linearGradient id="gd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22d3ee" stop-opacity=".75"/><stop offset="1" stop-color="#22d3ee" stop-opacity=".05"/></linearGradient>
+    <linearGradient id="gu" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#38bdf8" stop-opacity=".7"/><stop offset="1" stop-color="#38bdf8" stop-opacity=".05"/></linearGradient></defs>
+    ${[50, 100].map(m => { const y = mid - Math.sqrt(m * 1e6 / max) * up; return y > 8 ? `<line x1="0" x2="1000" y1="${y}" y2="${y}" stroke="rgba(255,255,255,.07)" stroke-dasharray="4 6"/><text x="6" y="${y - 4}" font-size="12" fill="rgba(238,244,251,.4)">${m} Mbit/s</text>` : ''; }).join('')}
+    <path d="${area(top, mid)}" fill="url(#gd)"/><path d="${smooth(top)}" fill="none" stroke="#22d3ee" stroke-width="2.4"/>
+    <path d="${area(bot, mid)}" fill="url(#gu)"/><path d="${smooth(bot)}" fill="none" stroke="#7dd3fc" stroke-width="2"/>
+    <line x1="0" x2="1000" y1="${mid}" y2="${mid}" stroke="rgba(255,255,255,.18)"/>
+    <circle cx="${top[top.length - 1][0]}" cy="${top[top.length - 1][1]}" r="6" fill="#22d3ee"><animate attributeName="r" values="5;9;5" dur="2s" repeatCount="indefinite"/></circle>`;
+  $('#dl').textContent = mb(din[din.length - 1][1]); $('#ul').textContent = mb(dout[dout.length - 1][1]); $('#ax0').textContent = hm(t0);
+}
+function gauge(s) {
+  const v = s.down || 0, f = Math.min(1, v / 1e9), R = 105, a = Math.PI * (1 - f);
+  const arc = (from, to, col, w) => { const x1 = 130 + R * Math.cos(Math.PI * (1 - from)), y1 = 135 - R * Math.sin(Math.PI * (1 - from)), x2 = 130 + R * Math.cos(Math.PI * (1 - to)), y2 = 135 - R * Math.sin(Math.PI * (1 - to));
+    return `<path d="M${x1},${y1} A${R},${R} 0 0 1 ${x2},${y2}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round"/>`; };
+  $('#gauge').innerHTML = `<defs><linearGradient id="gg" x1="0" x2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs>
+    ${arc(0, 1, 'rgba(255,255,255,.08)', 14)}${f > 0 ? arc(0, f, 'url(#gg)', 14) : ''}
+    <text x="22" y="148" font-size="11" fill="rgba(238,244,251,.4)">0</text><text x="238" y="148" font-size="11" fill="rgba(238,244,251,.4)" text-anchor="end">1 Gbit/s</text>`;
+  $('#sp').textContent = s.down ? Math.round(s.down / 1e6) : '–';
+  $('#spx').textContent = s.down ? `Mbit/s ↓ · ${Math.round(s.up / 1e6)} ↑ · ${(s.ping * 1000).toFixed(0)} ms · ${hm(s.at)}` : '';
+}
+function dns(d) {
+  const pts = d.dns, bl = d.blocked; if (pts.length) {
+    const t0 = pts[0][0], t1 = pts[pts.length - 1][0], max = Math.max(1, ...pts.map(p => p[1]));
+    const X = t => (t - t0) / (t1 - t0) * 300, Y = v => 66 - v / max * 60;
+    $('#spark').innerHTML = `<path d="${smooth(pts.map(([t, v]) => [X(t), Y(v)]))} L300,70 L0,70 Z" fill="rgba(255,111,181,.16)"/>
+      <path d="${smooth(pts.map(([t, v]) => [X(t), Y(v)]))}" fill="none" stroke="#ff6fb5" stroke-width="2"/>
+      <path d="${smooth(bl.map(([t, v]) => [X(t), Y(v)]))}" fill="none" stroke="#fbbf24" stroke-width="1.6" stroke-dasharray="3 4"/>`;
+    const last = pts[pts.length - 1][1];
+    $('#dnsx').textContent = `${Math.round(last)} lookups/min now · ${Math.round((d.queries_today || 0) / 1000)}k today · dashed = blocked`;
+  }
+  const p = d.blocked_pct || 0; $('#bp').textContent = Math.round(p) + '%';
+  $('#donut').setAttribute('stroke-dasharray', `${(264 * p / 100).toFixed(1)} 264`);
+  const holes = Object.entries(d.blocking || {});
+  $('#holes').innerHTML = holes.map(([h, v]) => `<span class="hole ${v && v.blocking === 'enabled' ? '' : 'off'}"><i></i>.${h.split('.').pop()} ${v ? (v.blocking === 'enabled' ? 'blocking' : 'paused' + (v.timer ? ' ' + Math.ceil(v.timer / 60) + ' min' : '')) : 'down'}</span>`).join('')
+    + (holes.every(([, v]) => v && v.blocking === 'enabled') ? '<button class="pause" id="pause"><span class="fill"></span><span>Hold to pause ads 5 min</span></button>'
+       : '<button class="pause" id="resume" style="border-color:rgba(52,211,153,.5);color:#34d399"><span class="fill" style="background:rgba(52,211,153,.2)"></span><span>Hold to resume blocking</span></button>');
+  const btn = $('#pause') || $('#resume'); holdButton(btn, btn.id === 'pause' ? 'pause5:all' : 'resume:all');
+}
+function holdButton(b, key) {      // 0.8 s hold; releasing early sends nothing
+  let raf = 0; const fill = b.querySelector('.fill');
+  const cancel = () => { cancelAnimationFrame(raf); raf = 0; fill.style.width = '0'; };
+  b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture(e.pointerId); const t0 = performance.now();
+    const step = now => { const p = Math.min(1, (now - t0) / 800); fill.style.width = p * 100 + '%';
+      if (p < 1) raf = requestAnimationFrame(step); else { raf = 0; navigator.vibrate && navigator.vibrate(30);
+        fetch('/api/ops/act', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) })
+          .then(r => r.json()).then(j => { hint(j.msg || 'Done'); setTimeout(load, 1500); }).catch(e => hint('✗ ' + e.message)); } };
+    raf = requestAnimationFrame(step); });
+  b.addEventListener('pointerup', () => { if (raf) { cancel(); hint('Released – nothing sent'); } });
+  b.addEventListener('pointercancel', cancel);
+}
+const KIND = d => d.kind || 'Computers & phones';
+function devices(d) {
+  const groups = {}; d.devices.forEach(x => (groups[KIND(x)] = groups[KIND(x)] || []).push(x));
+  const order = ['People', 'Computers & phones', 'Home & media', 'Servers', 'Network'];
+  const label = x => x.owner ? `${x.owner}` : x.label || x.name || 'Unknown device';
+  $('#devcap').textContent = `Devices · ${d.online} online now · ${d.devices.length} seen this week`;
+  $('#groups').innerHTML = order.filter(g => groups[g]).map(g => `<div class="g"><h3>${g}<span>${groups[g].filter(x => x.online).length}/${groups[g].length}</span></h3><div class="dots">${
+    groups[g].sort((a, b) => b.online - a.online).map(x => `<span class="d ${x.online ? 'on' : ''} ${x.new && !x.owner && !/^bc:24:11/.test(x.mac) ? 'new' : ''}" title="${esc(x.mac)} ${esc(x.ip)}"><i></i>${esc(label(x))}${x.ip ? `<small>.${esc(x.ip.split('.').pop())}</small>` : ''}</span>`).join('')}</div></div>`).join('');
+  const maxB = Math.max(1, ...d.top_blocked.map(b => b.n));
+  $('#blocked').innerHTML = d.top_blocked.map(b => `<div class="b"><span>${esc(b.domain)}</span><b class="num">${b.n}</b><div class="bar"><i style="width:${b.n / maxB * 100}%"></i></div></div>`).join('') || '<span class="sub">Nothing blocked.</span>';
+}
+async function load() {
+  if (document.visibilityState !== 'visible') return;
+  try { const d = await (await fetch('/api/net')).json(); if (d.error) return;
+    $('#sub').textContent = `${d.online} devices online · ${d.services_up ?? '–'}/${d.services_total ?? '–'} services up · Pi-hole ${Math.round(d.blocked_pct || 0)}% blocked today`;
+    wave(d); gauge(d.speed); dns(d); devices(d); } catch (e) { console.error(e); }
+}
+load(); setInterval(load, 20000); document.addEventListener('visibilitychange', load);
+</script>
+<script src="/start.js" defer></script>
+<script src="/cam.js" defer></script>
+<script src="/adminlock.js" defer></script></body>
+</html>

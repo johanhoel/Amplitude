@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#101418">
+<title>Boards</title>
+<style>
+/* Boards: your own dashboards. Each one is /board/<name>, built from modules (modules.js) in its edit mode.
+   New board = a name + a starting template; creating or deleting one needs the admin PIN. Data: GET /api/boards. */
+:root { --bg: #101418; --ink: #eef2f6; --mute: #8b98a8; --line: #2a333d; --card: #1a2027; --card-hi: #222a33; --accent: #38bdf8;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; min-height: 100vh; color: var(--ink); font: 15px/1.45 var(--font);
+  padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 30px); }
+main { max-width: 900px; margin: 0 auto; }
+header { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+header h1 { flex: 1; margin: 0; font-size: 30px; font-weight: 700; }
+header a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card);
+  color: var(--ink); text-decoration: none; font-weight: 650; font-size: 14px; }
+.lead { color: var(--mute); margin: 0 0 18px; }
+.list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.b { display: flex; flex-direction: column; gap: 4px; min-height: 120px; padding: 16px 18px; border-radius: 22px; background: var(--card); border: 1px solid var(--line);
+  text-decoration: none; color: var(--ink); }
+.b b { font-size: 19px; } .b span { color: var(--mute); font-size: 13.5px; } .b .ic { font-size: 22px; margin-top: auto; letter-spacing: 4px; }
+.new { border: 1.5px dashed rgba(56,189,248,.6); background: rgba(56,189,248,.08); color: #bae6fd; font: 650 16px var(--font); cursor: pointer; justify-content: center; align-items: center; }
+</style>
+<link rel="stylesheet" href="/wall.css">
+</head>
+<body>
+<main>
+  <header><a href="/start" class="start-link">‹ Start</a><h1>Boards</h1></header>
+  <p class="lead">Your own dashboards, built from modules: lights, people, buses, weather, camera, media, buttons and more.</p>
+  <div class="list" id="list"></div>
+</main>
+<script src="/wallkit.js"></script>
+<script src="/edit.js"></script>
+<script src="/pin.js"></script>
+<script src="/modules.js"></script>
+<script>
+const esc = Wall.esc, { MODULES } = Deck;
+const m = (type, size, cfg = {}) => ({ id: 'm' + Math.random().toString(36).slice(2, 9), type, size, cfg });
+const TEMPLATES = {
+  empty: ['Empty board', () => []],
+  phone: ['Phone: the essentials', () => [m('people', 'm'), m('door', 's'), m('lights', 's'), m('bus', 'm', { n: '3' }), m('weather', 'm'),
+    m('button', 's', { action: 'wake_pc' }), m('button', 's', { action: 'vac_start' })]],
+  kitchen: ['Kitchen tablet', () => [m('clock', 'm'), m('weather', 'm'), m('bus', 'l', { n: '6' }), m('people', 'm'), m('lights', 's'), m('door', 's'),
+    m('media', 'm'), m('note', 'm', { title: 'Shopping', text: '' })]],
+  wall: ['Wall panel (big cards)', () => [m('clock', 'l'), m('weather', 'l'), m('people', 'm'), m('door', 's'), m('lights', 's'), m('camera', 'l'), m('bus', 'l', { n: '4' })]],
+  desktop: ['Desktop wallpaper (like /desktop)', () => [m('deskclock', 'c'), m('home', 'm'), m('camera', 'm', { layout: 'row' }), m('labfull', 'm'),
+    m('media', 'm', { player: '', hide_idle: true }), m('bus', 'm', { n: '2', then: true })]],
+  lab: ['Lab / desk', () => [m('lab', 's'), m('temps', 'm'), m('camera', 'm'), m('media', 'm'), m('news', 'w', { n: '5' }), m('button', 's', { action: 'wake_pc' })]],
+};
+
+async function load() {
+  const r = await fetch('/api/boards', { cache: 'no-store' }).then(x => x.json()).catch(() => ({ boards: [] }));
+  document.getElementById('list').innerHTML = r.boards.map(b => `<a class="b" href="/board/${esc(b.name)}"><b>${esc(b.title || b.name)}</b>
+      <span>${b.count} module${b.count === 1 ? '' : 's'} · /board/${esc(b.name)}</span><span class="ic">${b.icons.map(t => MODULES[t]?.icon || '').join('')}</span></a>`).join('')
+    + `<button class="b new" id="new">+ New board</button>`;
+  document.getElementById('new').onclick = newBoard;
+}
+async function create() {
+  const r = await Edit.sheet({ title: 'New board', fields: [
+    { key: 'title', label: 'Name', type: 'text', value: '', hint: 'e.g. Kitchen, Sam, Garage' },
+    { key: 'tpl', label: 'Start from', type: 'select', options: Object.entries(TEMPLATES).map(([k, t]) => [k, t[0]]), value: 'phone' }],
+    buttons: [{ id: 'ok', label: 'Create' }] });
+  if (!r || !r.values.title) return;
+  const name = r.values.title.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 30) || 'board';
+  const exists = await fetch('/api/layout/board_' + name, { cache: 'no-store' }).then(x => x.json()).catch(() => ({}));
+  if (exists.modules) return Edit.toast(`A board called "${name}" already exists`);
+  const layout = { title: r.values.title, density: r.values.tpl === 'wall' ? 'large' : 'normal', modules: TEMPLATES[r.values.tpl][1]() };
+  if (r.values.tpl === 'desktop') Object.assign(layout, { layout: 'left', bg: 'aurora', glass: true, scale: 1, clear_left: 10, clear_bottom: 64 });
+  const res = await fetch('/api/layout/board_' + name, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ layout }) });
+  if (!res.ok) return Edit.toast('Could not create: ' + ((await res.json().catch(() => ({}))).error || res.status));
+  location.href = '/board/' + name + '?edit';
+}
+async function newBoard() {
+  const s = await fetch('/api/pin/status', { cache: 'no-store' }).then(r => r.json()).catch(() => ({}));
+  if (s.admin) create(); else deckPin.open({ onOk: create });
+}
+load();
+</script>
+</body>
+</html>

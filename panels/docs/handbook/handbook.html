@@ -1,0 +1,29 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Home Deck Studio handbook</title>
+<style>
+@page { size: A4; margin: 16mm 16mm 18mm; }
+body { font: 11pt/1.5 "Segoe UI", Inter, Roboto, Arial, sans-serif; color: #18202a; }
+.cover { height: 250mm; display: flex; flex-direction: column; justify-content: center; page-break-after: always; }
+.cover h1 { font-size: 34pt; margin: 0; color: #0b3a55; } .cover p { font-size: 13pt; color: #475569; max-width: 140mm; }
+.cover .bar { width: 60mm; height: 4px; background: #38bdf8; margin: 8mm 0; }
+h2 { font-size: 17pt; color: #0b3a55; margin: 0 0 2mm; padding-top: 2mm; border-top: 2px solid #38bdf8; }
+section { page-break-inside: avoid; margin-bottom: 9mm; } .intro { color: #334155; }
+ol li { margin: 1.5mm 0; } .tech { background: #f1f5f9; border-left: 3px solid #94a3b8; padding: 3mm 4mm; font-size: 9.5pt; color: #334155; border-radius: 2mm; }
+.tech b { display: block; font-size: 8.5pt; letter-spacing: .08em; text-transform: uppercase; color: #64748b; margin-bottom: 1mm; }
+figure { margin: 4mm 0; page-break-inside: avoid; } figure img { width: 100%; border: 1px solid #cbd5e1; border-radius: 2mm; } figcaption { font-size: 9pt; color: #64748b; margin-top: 1mm; }
+.toc li { margin: 1mm 0; } .pb { page-break-before: always; }
+</style></head><body>
+<div class="cover"><h1>Home Deck Studio</h1><div class="bar"></div><p>Set up the devices in your home, who is home, your own dashboards and the screens that show them.</p>
+  <p style="font-size:10.5pt">Open Studio on a computer at <b>/studio</b> on the Home Deck server. It asks for the admin PIN.</p></div>
+<h2>Contents</h2><ol class="toc" id="toc"></ol>
+<div id="pages"></div>
+<script src="studio-guide.js"></script>
+<script>
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const FIG = { devices: ['s2-devices.png', 'Devices: everything Home Deck can find, with filters and search.'], boards: ['d3-boxes-edit.png', 'Designing a board on the free canvas: drag cards, drag the blue corner to resize, add headings, coloured boxes and images.'],
+  screens: ['s5-boards.png', 'Boards: preview one board on a phone, a tablet, a standing wall panel and a computer at the same time.'], presence: ['s6-wizard.png', 'The wizard for a new phone or family member.'],
+  start: ['s9-guide.png', 'The Guide inside Studio has these same pages.'] };
+document.getElementById('toc').innerHTML = STUDIO_GUIDE.map(g => `<li>${esc(g.title)}</li>`).join('');
+document.getElementById('pages').innerHTML = STUDIO_GUIDE.map((g, i) => `<section class="${i === 0 ? 'pb' : ''}"><h2>${i + 1}. ${esc(g.title)}</h2><p class="intro">${esc(g.intro)}</p>
+  <ol>${g.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>${FIG[g.id] ? `<figure><img src="${FIG[g.id][0]}"><figcaption>${esc(FIG[g.id][1])}</figcaption></figure>` : ''}
+  <div class="tech"><b>Technical details</b>${esc(g.tech)}</div></section>`).join('');
+</script></body></html>

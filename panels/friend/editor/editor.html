@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor | Home Deck</title>
+<style>
+:root { --bg: #0b0c12; --panel: #12131c; --panel2: #171926; --line: rgba(255,255,255,.09); --text: #eceefa; --mute: rgba(236,238,250,.55);
+  --accent: #7c5cff; --ok: #34d399; --warn: #fbbf24; --bad: #f87171;
+  --font: "Segoe UI Variable Text", "Segoe UI", -apple-system, Inter, Roboto, sans-serif; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13.5px/1.4 var(--font); overflow: hidden; }
+button, select, input { font: inherit; color: inherit; }
+button { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 6px 12px; cursor: pointer; }
+button:hover { border-color: rgba(255,255,255,.22); }
+button.pri { background: var(--accent); border-color: transparent; font-weight: 600; }
+button.pri:disabled { opacity: .45; cursor: default; }
+button.ghost { background: none; }
+select, input[type=text], input[type=password] { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 6px 10px; }
+#app { display: grid; grid-template-rows: 48px 1fr 26px; height: 100%; }
+header { display: flex; align-items: center; gap: 10px; padding: 0 12px; border-bottom: 1px solid var(--line); background: var(--panel); }
+header .brand { font-weight: 600; letter-spacing: .02em; margin-right: 8px; }
+header .brand i { color: var(--accent); font-style: normal; }
+header .file { font-weight: 600; } header .dirty { color: var(--warn); }
+header .sp { flex: 1; }
+main { display: grid; grid-template-columns: 230px 1fr 6px var(--pw, 42%); min-height: 0; }
+main.nopreview { grid-template-columns: 230px 1fr 0 0; }
+aside { border-right: 1px solid var(--line); background: var(--panel); overflow: auto; padding: 10px 8px; }
+aside h4 { margin: 12px 6px 6px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
+aside .f { display: flex; justify-content: space-between; gap: 6px; padding: 6px 8px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+aside .f:hover { background: var(--panel2); } aside .f.on { background: rgba(124,92,255,.22); }
+aside .f small { color: var(--mute); }
+aside .new { margin: 10px 6px; width: calc(100% - 12px); }
+#ed { min-height: 0; }
+#split { cursor: col-resize; background: var(--line); }
+#split:hover { background: var(--accent); }
+#pv { display: grid; grid-template-rows: 40px 1fr; min-height: 0; background: #07080d; }
+#pv .bar { display: flex; gap: 6px; align-items: center; padding: 0 10px; border-bottom: 1px solid var(--line); background: var(--panel); }
+#pv .bar .sp { flex: 1; }
+#stage { position: relative; overflow: hidden; display: grid; place-items: start center; padding: 14px; }
+#frame { border: 0; background: #000; transform-origin: 0 0; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+#framebox { position: relative; }
+#pvnote { color: var(--mute); padding: 30px; text-align: center; line-height: 1.7; }
+footer { display: flex; gap: 14px; align-items: center; padding: 0 12px; font-size: 12px; color: var(--mute); border-top: 1px solid var(--line); background: var(--panel); }
+footer .msg.ok { color: var(--ok); } footer .msg.bad { color: var(--bad); } footer .msg.warn { color: var(--warn); }
+/* drawers + dialogs */
+.drawer { position: fixed; top: 48px; right: 0; bottom: 26px; width: min(980px, 92vw); background: var(--panel); border-left: 1px solid var(--line);
+  display: none; grid-template-rows: auto 1fr; z-index: 20; box-shadow: -20px 0 50px rgba(0,0,0,.5); }
+.drawer.open { display: grid; }
+.drawer .top { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.drawer .top .sp { flex: 1; }
+.hist { display: grid; grid-template-columns: 290px 1fr; min-height: 0; }
+.hist ul { list-style: none; margin: 0; padding: 8px; overflow: auto; border-right: 1px solid var(--line); }
+.hist li { padding: 7px 9px; border-radius: 8px; cursor: pointer; } .hist li:hover { background: var(--panel2); } .hist li.on { background: rgba(124,92,255,.22); }
+.hist li small { display: block; color: var(--mute); }
+.hist li .tag { font-size: 10.5px; padding: 0 6px; border-radius: 99px; border: 1px solid var(--line); color: var(--mute); margin-left: 6px; }
+#diff { min-height: 0; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; place-items: center; z-index: 30; }
+.modal.open { display: grid; }
+.modal .box { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; width: min(440px, 92vw); }
+.modal h2 { margin: 0 0 6px; font-size: 18px; } .modal p { color: var(--mute); margin: 0 0 14px; }
+.modal input { width: 100%; margin-bottom: 10px; } .modal .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; }
+.modal pre { max-height: 300px; overflow: auto; background: #07080d; padding: 10px; border-radius: 8px; font-size: 11.5px; white-space: pre-wrap; }
+.err { color: var(--bad); min-height: 1.2em; font-size: 12.5px; }
+kbd { font: 11px var(--font); padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel2); }
+</style>
+</head>
+<body>
+<div id="app" hidden>
+  <header>
+    <span class="brand">Home Deck <i>editor</i></span>
+    <span class="file" id="fname">–</span><span class="dirty" id="dirty"></span>
+    <span class="sp"></span>
+    <button id="bHist" title="Earlier versions, compare, restore">History</button>
+    <button id="bPv" title="Show or hide the live preview">Preview</button>
+    <button id="bOpen" title="Open the live page in a new tab">Open page ↗</button>
+    <button class="pri" id="bSave" disabled title="Save (Ctrl+S)">Save</button>
+    <button class="ghost" id="bMenu" title="Password, log out">⋯</button>
+  </header>
+  <main id="main">
+    <aside id="files"></aside>
+    <div id="ed"></div>
+    <div id="split"></div>
+    <section id="pv">
+      <div class="bar">
+        <select id="dev" title="Preview size">
+          <option value="390x844">Phone 390×844</option><option value="820x1180">iPad 820×1180</option>
+          <option value="1180x820">iPad landscape</option><option value="1280x800">Laptop 1280×800</option>
+          <option value="1920x1080" selected>Desktop 1920×1080</option><option value="2560x1440">Desktop 2560×1440</option>
+        </select>
+        <select id="pvpage" title="Page to preview through the changed backend" hidden>
+          <option>/media</option><option>/</option><option>/start</option><option>/admin</option><option>/familyinfo</option><option>/living</option>
+          <option>/remote</option><option>/family</option><option>/net</option><option>/security</option><option>/desktop</option><option>/ops</option><option>/ambient</option>
+        </select>
+        <label style="display:flex;gap:6px;align-items:center;color:var(--mute)"><input type="checkbox" id="live" checked> live</label>
+        <span class="sp"></span><button id="bReload" title="Reload the preview">↻</button>
+      </div>
+      <div id="stage"><div id="framebox"><iframe id="frame" title="Preview"></iframe></div><div id="pvnote" hidden></div></div>
+    </section>
+  </main>
+  <footer><span class="msg" id="msg">Ready</span><span class="sp" style="flex:1"></span>
+    <span><kbd>Ctrl</kbd>+<kbd>S</kbd> save · <kbd>Ctrl</kbd>+<kbd>F</kbd> find · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>F1</kbd> all commands</span></footer>
+</div>
+
+<div class="drawer" id="hist">
+  <div class="top"><b id="hTitle">History</b><span class="sp"></span>
+    <span style="color:var(--mute)" id="hHint">Left: the chosen version · right: the file now</span>
+    <button class="pri" id="bRestore" disabled>Restore this version</button><button id="bHClose">Close</button></div>
+  <div class="hist"><ul id="hList"></ul><div id="diff"></div></div>
+</div>
+
+<div class="modal" id="login"><div class="box">
+  <h2 id="lTitle">Home Deck editor</h2><p id="lText">Log in to edit the panels.</p>
+  <input type="password" id="pw1" placeholder="Password" autocomplete="current-password">
+  <input type="password" id="pw2" placeholder="Repeat the password" autocomplete="new-password" hidden>
+  <div class="err" id="lErr"></div><div class="row"><button class="pri" id="bLogin">Log in</button></div>
+</div></div>
+
+<div class="modal" id="dlg"><div class="box" style="width:min(640px,94vw)">
+  <h2 id="dTitle"></h2><p id="dText"></p><pre id="dPre" hidden></pre><input type="text" id="dIn" hidden>
+  <input type="password" id="dIn2" hidden><input type="password" id="dIn3" hidden>
+  <div class="err" id="dErr"></div><div class="row" id="dRow"></div>
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs/loader.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const DECK = 'http://' + location.hostname;                    // the Home Deck itself (port 80): live pages + drafts
+const MONACO = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/';
+let ed, diffEd, cur = null, files = [], models = {}, pvTimer = null, histSel = null;
+
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Deck-Editor': '1' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401 && j.error === 'login') { showLogin(false); throw new Error('Please log in again.'); }
+  if (!r.ok) { const e = new Error(j.message || j.error || r.status); e.status = r.status; e.data = j; throw e; }
+  return j;
+}
+function msg(t, kind = '') { const m = $('#msg'); m.textContent = t; m.className = 'msg ' + kind; }
+
+/* ---------------- login ---------------- */
+async function showLogin(setup) {
+  $('#login').classList.add('open'); $('#app').hidden = true;
+  $('#lTitle').textContent = setup ? 'Set the editor password' : 'Home Deck editor';
+  $('#lText').textContent = setup ? 'First visit: choose a password (at least 8 characters). Only you, from this PC, can open the editor.' : 'Log in to edit the panels.';
+  $('#pw2').hidden = !setup; $('#bLogin').textContent = setup ? 'Set password' : 'Log in'; $('#bLogin').dataset.setup = setup ? 1 : '';
+  setTimeout(() => $('#pw1').focus(), 50);
+}
+async function doLogin() {
+  const setup = !!$('#bLogin').dataset.setup, p1 = $('#pw1').value;
+  $('#lErr').textContent = '';
+  if (setup && p1 !== $('#pw2').value) return $('#lErr').textContent = 'The two passwords differ.';
+  try { await api(setup ? '/api/setup' : '/api/login', { password: p1 }); $('#pw1').value = $('#pw2').value = '';
+    $('#login').classList.remove('open'); start(); }
+  catch (e) { $('#lErr').textContent = e.message; }
+}
+$('#bLogin').onclick = doLogin;
+$('#pw1').onkeydown = $('#pw2').onkeydown = e => { if (e.key === 'Enter') doLogin(); };
+
+/* ---------------- files ---------------- */
+const LABEL = { 'www/start.html': 'Start', 'www/index.html': 'Deck', 'www/living.html': 'Home', 'www/remote.html': 'Remote', 'www/media.html': 'Media',
+  'www/family.html': 'Family', 'www/familyinfo.html': 'Family info', 'www/security.html': 'Security', 'www/ambient.html': 'Ambient',
+  'www/desktop.html': 'Desktop', 'www/admin.html': 'Admin', 'www/ops.html': 'Lab', 'www/net.html': 'Network', 'www/network.html': 'Network map',
+  'server.py': 'Home Deck server' };
+async function loadFiles() {
+  files = await api('/api/files');
+  const pages = files.filter(f => f.kind === 'html'), other = files.filter(f => f.kind === 'js' || f.kind === 'css'), srv = files.filter(f => f.kind === 'server');
+  const row = f => `<div class="f ${cur && cur.path === f.path ? 'on' : ''}" data-p="${f.path}"><span>${LABEL[f.path] || f.path.replace('www/', '')}</span><small>${f.path.replace('www/', '')}</small></div>`;
+  $('#files').innerHTML = `<h4>Panels</h4>${pages.map(row).join('')}<button class="new" id="bNew">+ New page</button>`
+    + (other.length ? `<h4>Shared scripts</h4>${other.map(row).join('')}` : '') + `<h4>Server</h4>${srv.map(row).join('')}`;
+  $('#bNew').onclick = newPage;
+}
+$('#files').onclick = e => { const f = e.target.closest('[data-p]'); if (f) openFile(f.dataset.p); };
+
+async function openFile(path) {
+  if (cur && cur.path === path) return;
+  const f = await api('/api/file?path=' + encodeURIComponent(path));
+  const lang = path.endsWith('.toml') ? 'ini' : path.endsWith('.py') ? 'python' : path.endsWith('.js') ? 'javascript' : path.endsWith('.css') ? 'css' : 'html';
+  if (!models[path]) {
+    models[path] = { model: monaco.editor.createModel(f.content, lang), sha: f.sha, saved: f.content, view: null };
+    models[path].model.onDidChangeContent(() => { markDirty(); schedulePreview(); });
+  } else if (models[path].model.getValue() === models[path].saved && models[path].sha !== f.sha) {
+    models[path].model.setValue(f.content); models[path].saved = f.content; models[path].sha = f.sha;       // changed elsewhere, nothing unsaved here
+  }
+  if (cur) models[cur.path].view = ed.saveViewState();
+  cur = { path, url: path === 'server.py' ? null : '/' + path.replace('www/', '').replace(/^index\.html$/, '') };
+  ed.setModel(models[path].model); if (models[path].view) ed.restoreViewState(models[path].view); ed.focus();
+  $('#fname').textContent = (LABEL[path] ? LABEL[path] + ' · ' : '') + path;
+  document.title = (LABEL[path] || path) + ' | Editor';
+  $$('.f').forEach(x => x.classList.toggle('on', x.dataset.p === path));
+  $('#bOpen').disabled = !cur.url;
+  markDirty(); preview(true);
+  history.replaceState(null, '', '#' + path);
+}
+const $$ = s => [...document.querySelectorAll(s)];
+function isDirty(p = cur && cur.path) { return p && models[p] && models[p].model.getValue() !== models[p].saved; }
+function markDirty() { const d = isDirty(); $('#dirty').textContent = d ? ' ● unsaved' : ''; $('#bSave').disabled = !d; }
+
+/* ---------------- save ---------------- */
+async function save(force = false) {
+  if (!cur || !isDirty()) return;
+  const m = models[cur.path], content = m.model.getValue(), isServer = cur.path === 'server.py';
+  $('#bSave').disabled = true;
+  msg(isServer ? 'Checking, saving and restarting the Home Deck server…' : 'Saving…', 'warn');
+  try {
+    const r = await api('/api/save', { path: cur.path, content, sha: m.sha, force });
+    m.saved = content; m.sha = r.sha; markDirty();
+    msg(isServer ? `Saved. Server restarted and answering after ${r.seconds} s.` : `Saved ${new Date().toLocaleTimeString()}. Live now.`, 'ok');
+    monaco.editor.setModelMarkers(m.model, 'save', []);
+    preview(true);
+  } catch (e) {
+    markDirty();
+    if (e.status === 409) return dialog('Changed elsewhere', 'Someone (or another tool) changed this file after you opened it. Overwrite their change with yours, '
+      + 'or reload theirs (your edits are lost; copy them first if needed)?', null,
+      [['Cancel'], ['Reload theirs', async () => { delete models[cur.path]; const p = cur.path; cur = null; await openFile(p); }], ['Overwrite', () => save(true), 'pri']]);
+    if (e.data && e.data.error === 'syntax') {
+      monaco.editor.setModelMarkers(m.model, 'save', [{ startLineNumber: e.data.line || 1, endLineNumber: e.data.line || 1, startColumn: e.data.col || 1,
+        endColumn: 200, message: e.data.message, severity: monaco.MarkerSeverity.Error }]);
+      ed.revealLineInCenter(e.data.line || 1);
+      return msg('Not saved: ' + e.message + ' (the running server was not touched)', 'bad');
+    }
+    if (e.data && e.data.error === 'rollback') return dialog('Rolled back', e.message, e.data.log, [['OK', null, 'pri']]), msg('Not saved: rolled back', 'bad');
+    msg('Not saved: ' + e.message, 'bad');
+  }
+}
+$('#bSave').onclick = () => save();
+
+/* ---------------- preview ---------------- */
+/* backend files (server.py, homedeck/*.py, homedeck.toml): unsaved edits run in a preview copy of the Home Deck on its
+   own port (status refresh only, no presence or notices); the chosen page is shown through it. Saved = live page. */
+async function previewBackend(note, box) {
+  const page = $('#pvpage').value || '/media';
+  if (!isDirty()) { box.hidden = false; note.hidden = true; $('#frame').src = DECK + page + (page.includes('?') ? '&' : '?') + '_t=' + Date.now(); fit(); return; }
+  box.hidden = true; note.hidden = false; note.textContent = 'Starting a preview copy of the Home Deck with your change …';
+  try {
+    const r = await api('/api/preview-backend', { path: cur.path, content: models[cur.path].model.getValue() });
+    box.hidden = false; note.hidden = true;
+    $('#frame').src = 'http://' + location.hostname + ':' + r.port + page + (page.includes('?') ? '&' : '?') + '_t=' + Date.now(); fit();
+    msg('Preview: your unsaved change running in a copy (port ' + r.port + '). Presence and notices are off there. Save makes it live.', 'warn');
+  } catch (e) {
+    box.hidden = true; note.hidden = false;
+    note.innerHTML = '<b>The preview copy would not start - this change would break the panels:</b><pre style="text-align:left;white-space:pre-wrap">'
+      + String(e.data?.message || e.message).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])) + '</pre>';
+  }
+}
+function schedulePreview() { if (!$('#live').checked) return; clearTimeout(pvTimer); pvTimer = setTimeout(() => preview(false), cur && !cur.url ? 2000 : 700); }
+async function preview(fromFile) {
+  const note = $('#pvnote'), box = $('#framebox');
+  if (!cur) return;
+  $('#pvpage').hidden = !!cur.url;
+  if (!cur.url) return previewBackend(note, box);
+  if (!cur.path.endsWith('.html')) { box.hidden = true; note.hidden = false; note.textContent = 'Shared script: save, then open a page that uses it.'; return; }
+  box.hidden = false; note.hidden = true;
+  let src = DECK + cur.url;
+  if (isDirty()) { try { src = DECK + (await api('/api/draft', { path: cur.path, content: models[cur.path].model.getValue() })).url; } catch (e) { msg('Preview: ' + e.message, 'bad'); } }
+  $('#frame').src = src + (src.includes('?') ? '&' : '?') + '_t=' + Date.now();
+  fit();
+}
+function fit() {
+  const [w, h] = $('#dev').value.split('x').map(Number), st = $('#stage');
+  const s = Math.min((st.clientWidth - 28) / w, (st.clientHeight - 28) / h, 1);
+  const f = $('#frame'); f.style.width = w + 'px'; f.style.height = h + 'px'; f.style.transform = `scale(${s})`;
+  $('#framebox').style.width = w * s + 'px'; $('#framebox').style.height = h * s + 'px';
+}
+$('#dev').onchange = () => { localStorage.setItem('edDev', $('#dev').value); fit(); };
+$('#bReload').onclick = () => preview(false);
+$('#pvpage').onchange = () => preview(false);
+$('#bPv').onclick = () => { $('#main').classList.toggle('nopreview'); setTimeout(() => { ed.layout(); fit(); }, 30); };
+$('#bOpen').onclick = () => cur && cur.url && window.open(DECK + cur.url, '_blank');
+addEventListener('resize', fit);
+(() => { let drag = false; $('#split').onmousedown = () => { drag = true; document.body.style.userSelect = 'none'; $('#frame').style.pointerEvents = 'none'; };
+  addEventListener('mouseup', () => { if (drag) { drag = false; document.body.style.userSelect = ''; $('#frame').style.pointerEvents = ''; ed && ed.layout(); fit(); } });
+  addEventListener('mousemove', e => { if (!drag) return; const pw = Math.max(18, Math.min(75, 100 * (innerWidth - e.clientX) / innerWidth));
+    $('#main').style.setProperty('--pw', pw + '%'); localStorage.setItem('edPw', pw); }); })();
+
+/* ---------------- history ---------------- */
+async function openHistory() {
+  if (!cur) return;
+  $('#hist').classList.add('open'); $('#hTitle').textContent = 'History · ' + (LABEL[cur.path] || cur.path);
+  const list = await api('/api/history?path=' + encodeURIComponent(cur.path));
+  $('#hList').innerHTML = list.length ? list.map(v => `<li data-id="${v.id}">${v.when}<span class="tag">${v.source === 'editor' ? 'editor' : 'backup'}</span>`
+    + `<small>${v.note || ''} · ${(v.size / 1024).toFixed(1)} kB</small></li>`).join('') : '<li>No earlier versions yet. Every save keeps the previous one here.</li>';
+  histSel = null; $('#bRestore').disabled = true;
+  if (!diffEd) diffEd = monaco.editor.createDiffEditor($('#diff'), { theme: 'vs-dark', readOnly: true, automaticLayout: true, renderSideBySide: true });
+  diffEd.setModel(null);
+}
+$('#hList').onclick = async e => {
+  const li = e.target.closest('[data-id]'); if (!li) return;
+  $$('#hList li').forEach(x => x.classList.toggle('on', x === li));
+  const v = await api(`/api/version?path=${encodeURIComponent(cur.path)}&id=${encodeURIComponent(li.dataset.id)}`);
+  const lang = models[cur.path].model.getLanguageId();
+  diffEd.setModel({ original: monaco.editor.createModel(v.content, lang), modified: monaco.editor.createModel(models[cur.path].model.getValue(), lang) });
+  histSel = v.content; $('#bRestore').disabled = false;
+};
+$('#bRestore').onclick = () => { if (histSel == null) return;
+  models[cur.path].model.pushEditOperations([], [{ range: models[cur.path].model.getFullModelRange(), text: histSel }], () => null);
+  $('#hist').classList.remove('open'); msg('Version loaded into the editor: check the preview, then Save to make it live (Ctrl+Z undoes).', 'warn'); };
+$('#bHist').onclick = openHistory;
+$('#bHClose').onclick = () => $('#hist').classList.remove('open');
+
+/* ---------------- dialogs ---------------- */
+function dialog(title, text, pre, buttons, input) {
+  $('#dTitle').textContent = title; $('#dText').textContent = text; $('#dErr').textContent = '';
+  $('#dPre').hidden = !pre; $('#dPre').textContent = pre || '';
+  ['#dIn', '#dIn2', '#dIn3'].forEach((s, i) => { const el = $(s); el.hidden = !(input && input[i]); el.value = ''; if (input && input[i]) el.placeholder = input[i]; });
+  $('#dRow').innerHTML = '';
+  for (const [label, fn, cls] of buttons) {
+    const b = document.createElement('button'); b.textContent = label; if (cls) b.className = cls;
+    b.onclick = async () => { try { if (fn && (await fn()) === false) return; $('#dlg').classList.remove('open'); } catch (e) { $('#dErr').textContent = e.message; } };
+    $('#dRow').appendChild(b);
+  }
+  $('#dlg').classList.add('open'); if (input) setTimeout(() => $('#dIn').hidden ? $('#dIn2').focus() : $('#dIn').focus(), 50);
+}
+function newPage() {
+  dialog('New page', 'Short name in lowercase (letters, digits, hyphen). It opens at http://192.168.1.52/<name>.html.', null,
+    [['Cancel'], ['Create', async () => { const n = $('#dIn').value.trim().toLowerCase();
+      if (!/^[a-z0-9][a-z0-9_-]{0,40}$/.test(n)) { $('#dErr').textContent = 'Letters, digits, - and _ only.'; return false; }
+      const r = await api('/api/new', { name: n }); await loadFiles(); openFile(r.path); }, 'pri']], ['page-name']);
+}
+$('#bMenu').onclick = () => dialog('Editor', 'Change the editor password, or log out.', null,
+  [['Close'], ['Log out', async () => { await api('/api/logout', {}); location.reload(); }],
+   ['Change password', async () => { if ($('#dIn3').hidden) { $('#dIn2').hidden = $('#dIn3').hidden = false; $('#dIn2').placeholder = 'Current password';
+       $('#dIn3').placeholder = 'New password (8+ characters)'; $('#dIn2').focus(); return false; }
+     await api('/api/password', { old: $('#dIn2').value, new: $('#dIn3').value }); msg('Password changed.', 'ok'); }, 'pri']]);
+
+/* ---------------- start ---------------- */
+addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); save(); }
+  if (e.key === 'Escape') { $('#hist').classList.remove('open'); $('#dlg').classList.remove('open'); } });
+addEventListener('beforeunload', e => { if (Object.keys(models).some(p => isDirty(p))) { e.preventDefault(); e.returnValue = ''; } });
+
+let monacoReady = null;
+function loadMonaco() {
+  if (monacoReady) return monacoReady;
+  window.MonacoEnvironment = { getWorkerUrl: () => 'data:text/javascript;charset=utf-8,' + encodeURIComponent(
+    `self.MonacoEnvironment={baseUrl:'${MONACO}'};importScripts('${MONACO}vs/base/worker/workerMain.js');`) };
+  require.config({ paths: { vs: MONACO + 'vs' } });
+  return monacoReady = new Promise(res => require(['vs/editor/editor.main'], res));
+}
+async function start() {
+  $('#app').hidden = false;
+  await loadMonaco();
+  if (!ed) {
+    ed = monaco.editor.create($('#ed'), { theme: 'vs-dark', automaticLayout: true, fontSize: 13.5, minimap: { enabled: true }, wordWrap: 'off',
+      smoothScrolling: true, scrollBeyondLastLine: false, bracketPairColorization: { enabled: true }, tabSize: 2 });
+  }
+  const dv = localStorage.getItem('edDev'); if (dv) $('#dev').value = dv;
+  const pw = localStorage.getItem('edPw'); if (pw) $('#main').style.setProperty('--pw', pw + '%');
+  await loadFiles();
+  const want = decodeURIComponent(location.hash.slice(1));
+  await openFile(files.some(f => f.path === want) ? want : 'www/start.html');
+  setInterval(loadFiles, 60000);
+}
+api('/api/me').then(m => m.in ? start() : showLogin(m.setup)).catch(e => { document.body.innerHTML = '<p style="padding:30px">' + e.message + '</p>'; });
+</script>
+</body>
+</html>

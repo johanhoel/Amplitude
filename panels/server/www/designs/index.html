@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0b0b12">
+<title>Design gallery</title>
+<style>
+/* Design gallery: 5 complete design directions for the panels, each a working prototype on live data (demo actions only).
+   Every card: the idea, how you navigate, how accidental presses are prevented, what it is best for, and the improvement log. */
+:root { --bg: #0b0b12; --card: #14141f; --line: #262636; --ink: #f1f1f7; --mute: #9a9ab0; --acc: #8b7cff;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
+* { box-sizing: border-box; } html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); }
+main { max-width: 1320px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 34px) 20px 60px; }
+h1 { font-size: 34px; margin: 0; letter-spacing: -.02em; } .lead { color: var(--mute); margin: 8px 0 22px; max-width: 760px; line-height: 1.5; }
+.rules { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 26px; } .rules span { padding: 7px 12px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); font-size: 13px; color: var(--mute); }
+.rules b { color: var(--ink); }
+.d { display: grid; grid-template-columns: 300px 1fr; gap: 22px; background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 18px; margin-bottom: 18px; }
+@media (max-width: 900px) { .d { grid-template-columns: 1fr; } }
+.shot { position: relative; width: 300px; height: 560px; border-radius: 30px; overflow: hidden; border: 6px solid #2a2a3a; background: #000; justify-self: center; }
+.shot iframe { width: 390px; height: 727px; border: 0; transform: scale(.7385); transform-origin: 0 0; pointer-events: none; }
+.info h2 { margin: 4px 0 2px; font-size: 24px; } .info .tag { color: var(--mute); margin-bottom: 14px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.facts div { background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; font-size: 13.5px; line-height: 1.45; }
+.facts b { display: block; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); margin-bottom: 3px; }
+details { border-top: 1px solid var(--line); padding-top: 10px; } summary { cursor: pointer; color: var(--mute); font-weight: 600; font-size: 14px; }
+ol { margin: 10px 0 0; padding-left: 20px; color: var(--mute); font-size: 13.5px; line-height: 1.55; } ol b { color: var(--ink); }
+.open { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 20px; border-radius: 14px; background: var(--acc); color: #fff; text-decoration: none; font-weight: 700; margin-right: 8px; }
+.open.sec { background: transparent; border: 1px solid var(--line); color: var(--ink); }
+.btns { margin: 4px 0 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+</style></head><body>
+<main>
+  <h1>Design gallery</h1>
+  <p class="lead">Five complete directions for the whole panel system. Each one is a working prototype on live data from the house, with the same content
+  (home, lights, media, actions), so they are easy to compare. Buttons are demo-only: nothing in the house is switched. Pick one (or mix) and it becomes the look of every panel.</p>
+  <div class="rules"><span><b>Release-only presses</b> · cancelled if your finger moves</span><span><b>Reversible = instant + Undo</b></span><span><b>Disruptive = deliberate gesture</b></span>
+    <span><b>Targets ≥ 48 px</b> (wall ≥ 96)</span><span><b>Risky actions separated</b>, never at swipe edges</span><span><b>No double fire</b></span></div>
+  <div id="list"></div>
+</main>
+<script>
+const D = [
+  { f: 'calm', n: '1 · Calm', t: 'Dark glass, one column on the phone, everything in thumb reach.', nav: '4 big labelled tabs at the bottom (58 px), always visible.',
+    safe: 'Lights: instant + Undo. Lock, all off, PC sleep: press-and-hold 1.2 s with a filling ring; letting go early cancels and says so.',
+    best: 'Phones; the everyday family panel.', log: [] },
+  { f: 'paper', n: '2 · Paper', t: 'Light, editorial and quiet; serif headings, hairline cards, lots of air.', nav: 'Sticky segmented control at the top (48 px): four clear choices.',
+    safe: 'Lights: instant + Undo. Risky: slide-to-confirm across a 64 px track; a tap does nothing, only a full slide.', best: 'iPad and daytime; kitchen or hallway.', log: [] },
+  { f: 'wall', n: '3 · Wall', t: 'Readable from a metre away: huge tiles, big numbers, high contrast.', nav: 'Fixed side rail with 76 px labelled icons (bottom bar on phones).',
+    safe: 'Tiles ≥ 96 px, 16 px apart. Risky: first tap arms (red, pulsing, "Tap again to confirm"), disarms after 3 s.', best: 'Wall-mounted tablet.', log: [] },
+  { f: 'night', n: '4 · Night', t: 'OLED black and dim amber: almost no light in a dark room.', nav: 'Three quiet tabs at the bottom; the clock is the home screen.',
+    safe: 'Dims after 30 s; the first touch on a dimmed screen only wakes it. Risky: hold 2 s.', best: 'Bedside, evenings, the Ambient panel.', log: [] },
+  { f: 'pro', n: '5 · Pro', t: 'Dense and keyboard-first: tables, counts, filters.', nav: 'Left sidebar with sections + counts; keys 1–4, / to filter (top bar on phones).',
+    safe: 'Risky actions live in a separate Danger zone and open a dialog whose default button is Cancel; a reflex Enter never runs them.', best: 'Mac and PC; Admin and Lab.', log: [] },
+];
+fetch('/designs/log.json', { cache: 'no-store' }).then(r => r.ok ? r.json() : {}).catch(() => ({})).then(L => {
+  document.getElementById('list').innerHTML = D.map(d => `<section class="d"><div class="shot"><iframe src="/designs/${d.f}.html" title="${d.n} preview" loading="lazy" tabindex="-1"></iframe></div>
+    <div class="info"><h2>${d.n}</h2><div class="tag">${d.t}</div><div class="btns"><a class="open" href="/designs/${d.f}.html">Open ${d.n.split('·')[1].trim()} →</a></div>
+      <div class="facts"><div><b>Navigation</b>${d.nav}</div><div><b>Accidental presses</b>${d.safe}</div><div><b>Best for</b>${d.best}</div></div>
+      <details><summary>5 rounds of "how could this be better?" (${(L[d.f] || []).length} improvements made)</summary><ol>${(L[d.f] || []).map(x => `<li><b>${x[0]}</b> ${x[1]}</li>`).join('')}</ol></details></div></section>`).join('');
+});
+</script><script src="/refresh.js"></script><script>window.deckRefresh?.standalone && window.deckRefresh.button();</script></body></html>

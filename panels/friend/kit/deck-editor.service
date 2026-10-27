@@ -1,0 +1,24 @@
+[Unit]
+Description=Home Deck editor - edit the panels in the browser (port 8088, home network, password)
+After=network-online.target panel-wrapper.service
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/deck-editor/editor.py
+Environment=EDITOR_ALLOW=127.0.0.1
+Environment=EDITOR_ALLOW_PRIVATE=1
+StateDirectory=deck-editor
+StateDirectoryMode=0700
+Restart=always
+ProtectSystem=strict
+ReadWritePaths=/opt/panel-wrapper
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+
+[Install]
+WantedBy=multi-user.target

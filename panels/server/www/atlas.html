@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#07080f">
+<meta name="apple-mobile-web-app-title" content="Atlas"><meta name="nav-related" content="/admin,/ops,/net,/start">
+<title>Atlas</title>
+<link rel="stylesheet" href="/deck.css">
+<style>
+/* Atlas: every Home Deck endpoint and the services behind it, live. Read endpoints are probed from this browser (status, time,
+   size; tap for a data summary); action endpoints are listed, never called. The graph shows Home Deck and its upstreams by health. */
+:root { --hue: #60a5fa; --hue2: #7dd3fc; }
+.kp { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 6px; }
+@media (max-width: 760px) { .kp { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.kp .card { padding: 12px 14px; } .kp b { display: block; font-size: 26px; font-weight: 700; } .kp span { color: var(--mute); font-size: 12.5px; }
+.kp .bad b { color: var(--bad); } .kp .ok b { color: var(--ok); }
+.layout { display: grid; gap: 0 20px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1080px) { .layout { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); } }
+.graph { padding: 8px; } .graph svg { width: 100%; height: auto; display: block; }
+.tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 4px 0 8px; }
+.tools input { flex: 1; min-width: 180px; height: 42px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); padding: 0 14px; font-size: 15px; outline: none; }
+.tools input:focus { border-color: rgba(96,165,250,.6); }
+.tools button { height: 42px; padding: 0 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); font-size: 13.5px; font-weight: 650; }
+.tools button.on { background: var(--ink); color: #141a20; }
+.eps { display: grid; gap: 6px; }
+.ep { border-radius: 16px; background: var(--card); border: 1px solid var(--line); overflow: hidden; }
+.ep > button { width: 100%; display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; text-align: left; }
+.ep .m { font: 700 10.5px ui-monospace, SFMono-Regular, Menlo, monospace; padding: 4px 0; border-radius: 7px; text-align: center; background: rgba(96,165,250,.15); color: #93c5fd; }
+.ep .m.post { background: rgba(251,191,36,.14); color: #fcd34d; }
+.ep code { font: 600 13.5px ui-monospace, SFMono-Regular, Menlo, monospace; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ep .d { color: var(--mute); font-size: 12.5px; display: block; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ep .st { text-align: right; font-size: 12px; color: var(--mute); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ep .st b { display: block; font-size: 13px; color: var(--ink); } .ep .st b.ok { color: var(--ok); } .ep .st b.bad { color: var(--bad); } .ep .st b.warn { color: var(--warn); }
+.ep .more { display: none; padding: 0 14px 14px 76px; font-size: 13px; color: var(--mute); }
+.ep.open .more { display: block; }
+.ep .more .row { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; } .ep .more .chip { font-size: 11.5px; padding: 4px 9px; }
+.ep .more pre { margin: 8px 0 0; padding: 10px 12px; border-radius: 12px; background: rgba(0,0,0,.35); color: #cbd5e1; font: 11.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap; word-break: break-word; max-height: 260px; overflow: auto; }
+@media (max-width: 640px) { .ep .more { padding-left: 14px; } .ep > button { grid-template-columns: 46px minmax(0, 1fr) auto; } }
+.svc { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px; }
+.svc div { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); font-size: 13px; font-weight: 600; }
+.svc div span { margin-left: auto; color: var(--faint); font-weight: 500; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.hidden { display: none !important; }
+</style>
+<link rel="stylesheet" href="/wall.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="head"><div><h1>Atlas</h1><div class="sub">Every endpoint and service behind the panels, checked live</div></div><div class="right"><div class="clock num" id="clock">–</div><div id="when">–</div></div></header>
+  <div class="kp" id="kp"></div>
+  <div class="layout">
+    <div>
+      <div class="cap">Endpoints <small id="epcount"></small></div>
+      <div class="tools"><input id="q" type="search" placeholder="Filter: path, source, panel…" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button data-m="all" class="on">All</button><button data-m="GET">Read</button><button data-m="POST">Actions</button><button data-m="issues">Issues</button><button id="recheck">↻ Re-check</button></div>
+      <div class="eps" id="eps"></div>
+    </div>
+    <div>
+      <div class="cap">Service graph <small>Home Deck and its upstreams</small></div>
+      <section class="card graph" id="graph"></section>
+      <div class="cap">Consoles <small id="svcsum"></small></div>
+      <div class="svc" id="svc"></div>
+    </div>
+  </div>
+</div>
+<script>
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// endpoint registry: path (probe URL), method, what it is, upstream source(s), panels that use it, kind of response
+const EP = [
+  ['/api/health', 'GET', 'Server and settings health (homedeck.toml)', ['Home Deck'], ['admin', 'pulse', 'atlas']],
+  ['/api/status', 'GET', 'Wall-panel status: internet, PC, HA summary, Genelec, Dante', ['Home Assistant', 'Genelec', 'Dante', 'PC'], ['deck', 'living', 'media', 'remote', 'desktop', 'pulse', 'control']],
+  ['/api/settings', 'GET', 'Panel settings (secrets only as set / not set)', ['Home Deck'], ['deck', 'living']],
+  ['/api/home/state', 'GET', 'Rooms, lights, door, people, players, Apple TV, sun, weather', ['Home Assistant'], ['living', 'media', 'remote', 'security', 'ambient', 'desktop', 'pulse', 'rooms', 'control', 'today']],
+  ['/api/presence', 'GET', 'Who is on the home Wi-Fi (per person)', ['Pi-holes', 'ARP'], ['desktop', 'pulse']],
+  ['/api/presence/unassigned', 'GET', 'Unknown phones that arrived with a camera event', ['Pi-holes', 'camwatch'], ['atlas']],
+  ['/api/family', 'GET', "Today's presence timeline, online activity, camera arrivals", ['Prometheus', 'camwatch'], ['family', 'ambient', 'today']],
+  ['/api/net', 'GET', 'Internet + DNS series, devices, blocking state', ['Prometheus', 'Pi-holes'], ['net', 'pulse']],
+  ['/api/sec/visits?days=1&limit=5', 'GET', 'Recent camera visits', ['camwatch'], ['security', 'desktop', 'pulse', 'today']],
+  ['/api/bus', 'GET', 'Departures, arrivals, disruptions at the home stop', ['Västtrafik'], ['familyinfo', 'desktop', 'pulse', 'today']],
+  ['/api/bus/stops?q=frim', 'GET', 'Stop search (Family info editor)', ['Västtrafik'], ['familyinfo']],
+  ['/api/weather', 'GET', 'Now + 24 h + 6 days forecast', ['Home Assistant'], ['familyinfo', 'desktop', 'pulse', 'today']],
+  ['/api/leave', 'GET', 'Last-one-home state for the viewer', ['Home Assistant', 'Pi-holes'], ['familyinfo']],
+  ['/api/news?f=vast', 'GET', 'SVT Väst headlines', ['SVT'], ['start', 'today']],
+  ['/api/news?f=all', 'GET', 'SVT national headlines', ['SVT'], ['start']],
+  ['/api/links', 'GET', 'Status of every console (fixed list)', ['Home Deck'], ['start', 'admin', 'atlas']],
+  ['/api/ops/snapshot', 'GET', 'Lab: nodes, guests, health, commands', ['Lab service'], ['ops', 'admin', 'desktop', 'pulse', 'control', 'today']],
+  ['/api/ops/events', 'SSE', 'Lab state pushed live (server-sent events)', ['Lab service'], ['ops']],
+  ['/api/lab/state', 'GET', 'Lab 6×6 grid breadcrumb + popup', ['Lab service'], ['deck']],
+  ['/api/cams', 'GET', 'Cameras the lab service knows', ['Lab service', 'Home Assistant'], ['deck', 'living']],
+  ['CAMSNAP', 'IMG', 'Camera snapshot (JPEG)', ['Lab service', 'Home Assistant'], ['deck', 'living', 'security', 'remote']],
+  ['VISITTHUMB', 'IMG', 'Camera visit thumbnail (JPEG)', ['camwatch'], ['security', 'family', 'desktop', 'pulse', 'today']],
+  ['/api/art?e=media_player.spotify_alex', 'IMG', 'Album / show art of what is playing', ['Home Assistant'], ['media', 'deck', 'living', 'remote', 'pulse', 'control']],
+  ['/api/layout/admin', 'GET', 'Saved Admin layout (edit mode)', ['Home Deck'], ['admin']],
+  ['/api/layout/start/history', 'GET', 'Older saves of the Start layout', ['Home Deck'], ['start']],
+  ['/metrics', 'TEXT', 'Presence metrics for Prometheus', ['Home Deck'], ['Prometheus']],
+  ['/api/home/do', 'POST', 'Light toggle/brightness, room off, lock (never unlock), vacuum, alerts, charger, media, Apple TV', ['Home Assistant'], ['living', 'media', 'remote', 'security', 'admin', 'familyinfo', 'rooms', 'control']],
+  ['/api/genelec', 'POST', 'Speaker volume, mute, power', ['Genelec'], ['deck', 'living', 'media', 'remote', 'control']],
+  ['/api/dante/source', 'POST', 'Speaker source: PC or Bluetooth', ['Dante'], ['deck', 'living', 'media', 'remote', 'control']],
+  ['/api/media', 'POST', 'Spotify play/pause/next/previous', ['Home Assistant'], ['deck']],
+  ['/api/pc/do', 'POST', 'PC actions (fixed list) via deck-listener', ['PC'], ['remote', 'admin', 'control']],
+  ['/api/pc/mic', 'POST', 'PC mic toggle (Home Assistant only)', ['PC'], ['Home Assistant']],
+  ['/api/ops/act', 'POST', 'Run a lab command (hold-to-confirm on pages)', ['Lab service'], ['ops', 'admin', 'net', 'control']],
+  ['/api/lab/close', 'POST', 'Close the lab grid camera popup', ['Lab service'], ['deck']],
+  ['/api/layout/<page>', 'POST', 'Save / undo / reset a page layout', ['Home Deck'], ['admin', 'start', 'familyinfo']],
+  ['/api/settings', 'POST', 'Save panel settings and secrets', ['Home Deck'], ['deck', 'living']],
+  ['/api/wallpaper', 'POST', 'Upload a wallpaper image', ['Home Deck'], ['deck']],
+];
+const UP = ['Home Assistant', 'Prometheus', 'Pi-holes', 'camwatch', 'Lab service', 'Västtrafik', 'SVT', 'Genelec', 'Dante', 'PC', 'ARP'];
+let R = {}, mode = 'all', LINKS = {};
+const fmtB = n => n == null ? '' : n < 1024 ? n + ' B' : (n / 1024).toFixed(n < 10240 ? 1 : 0) + ' kB';
+function summarize(x, depth = 0) {      // readable shape of a JSON answer: keys, counts, a few values
+  if (Array.isArray(x)) return `[${x.length} item${x.length === 1 ? '' : 's'}]` + (x.length && depth < 2 ? '\n' + '  '.repeat(depth + 1) + 'first: ' + summarize(x[0], depth + 1) : '');
+  if (x && typeof x === 'object') return '{\n' + Object.entries(x).slice(0, 18).map(([k, v]) => '  '.repeat(depth + 1) + k + ': ' +
+    (v && typeof v === 'object' ? (depth < 1 ? summarize(v, depth + 1) : Array.isArray(v) ? `[${v.length}]` : '{…}') : JSON.stringify(v)?.slice(0, 60))).join('\n')
+    + (Object.keys(x).length > 18 ? '\n' + '  '.repeat(depth + 1) + `… ${Object.keys(x).length - 18} more` : '') + '\n' + '  '.repeat(depth) + '}';
+  return JSON.stringify(x)?.slice(0, 80);
+}
+async function probe(e) {
+  const [path, m] = e;
+  if (m === 'POST') return;
+  let url = path;
+  if (path === 'CAMSNAP') { const c = (R['/api/cams']?.json || [])[0]; if (!c) { R[path] = { code: 0, note: 'no camera listed' }; return; } url = `/api/cam/${c.entity}/snap?w=320`; }
+  if (path === 'VISITTHUMB') { const v = (R['/api/sec/visits?days=1&limit=5']?.json || [])[0]; if (!v) { R[path] = { code: 0, note: 'no visit today' }; return; } url = `/api/sec/thumb/${v.day}/${v.stem}.jpg?w=160`; }
+  if (path.startsWith('/api/art')) {                // only ask for art while something plays (otherwise it is a normal 404)
+    const H = R['/api/home/state']?.json, pl = [...(H?.players || []), ...(H?.appletv ? [H.appletv] : [])].find(p => p.state === 'playing' && p.art);
+    if (!pl) { R[path] = { code: 0, note: 'nothing playing now' }; return; }
+    url = `/api/art?e=${encodeURIComponent(pl.id)}&k=${encodeURIComponent(pl.art_key)}`;
+  }
+  const t0 = performance.now();
+  if (m === 'SSE') {
+    R[path] = await new Promise(res => { let done = false; const es = new EventSource(path);
+      const fin = r => { if (done) return; done = true; es.close(); res(r); };
+      es.onmessage = ev => fin({ code: 200, ms: Math.round(performance.now() - t0), size: ev.data.length, text: 'first event: ' + ev.data.slice(0, 300) });
+      es.addEventListener('snapshot', ev => fin({ code: 200, ms: Math.round(performance.now() - t0), size: ev.data.length, text: 'first event: ' + ev.data.slice(0, 300) }));
+      es.onerror = () => fin({ code: 502, ms: Math.round(performance.now() - t0), note: 'stream failed' });
+      setTimeout(() => fin({ code: 200, ms: Math.round(performance.now() - t0), note: 'stream open, no event within 8 s' }), 8000); });
+    return;
+  }
+  try {
+    const r = await fetch(url, { cache: 'no-store' }); const buf = await r.arrayBuffer(); const ms = Math.round(performance.now() - t0);
+    const res = { code: r.status, ms, size: buf.byteLength, url };
+    if ((r.headers.get('Content-Type') || '').includes('json')) { try { res.json = JSON.parse(new TextDecoder().decode(buf)); if (res.json?.error) res.err = res.json.error; } catch {} }
+    else if (m === 'TEXT') res.text = new TextDecoder().decode(buf).split('\n').filter(l => l && !l.startsWith('#')).slice(0, 8).join('\n');
+    else if (m === 'IMG') res.text = r.ok ? `${r.headers.get('Content-Type')} image` : (path.startsWith('/api/art') ? 'no art right now (nothing playing)' : 'not available');
+    R[path] = res;
+  } catch (err) { R[path] = { code: 0, ms: Math.round(performance.now() - t0), err: String(err) }; }
+}
+const state = e => { const r = R[e[0]]; if (e[1] === 'POST') return 'action'; if (!r) return 'wait';
+  if (r.code === 404 && e[0].startsWith('/api/art')) return 'ok'; if (r.code >= 200 && r.code < 300 && !r.err) return r.ms > 3000 ? 'slow' : 'ok'; if (r.code === 0 && r.note) return 'na'; return 'bad'; };
+function upHealth() {
+  const h = {}; UP.forEach(u => h[u] = []);
+  EP.forEach(e => { const s = state(e); if (s === 'action' || s === 'wait' || s === 'na') return; e[3].forEach(u => h[u] && h[u].push(s)); });
+  if (R['/api/status']?.json) { const j = R['/api/status'].json; h['PC'] = [j.pc_online ? 'ok' : 'off']; h['Genelec'] = [j.genelec?.auth_failed ? 'bad' : j.genelec?.configured ? 'ok' : 'off']; h['Dante'] = [j.dante?.ok ? 'ok' : 'bad']; }
+  return Object.fromEntries(Object.entries(h).map(([k, v]) => [k, !v.length ? 'wait' : v.includes('bad') ? 'bad' : v.includes('off') ? 'off' : v.includes('slow') ? 'slow' : 'ok']));
+}
+const COLOR = { ok: '#34d399', slow: '#fbbf24', bad: '#fb7185', off: '#64748b', wait: '#475569' };
+function graph() {
+  const h = upHealth(), W = 520, Hh = 400, cx = W / 2, cy = Hh / 2, R1 = 150;
+  const nodes = UP.map((u, i) => { const a = -Math.PI / 2 + i / UP.length * Math.PI * 2; return { u, x: cx + Math.cos(a) * R1 * 1.25, y: cy + Math.sin(a) * R1 }; });
+  const counts = {}; EP.forEach(e => e[3].forEach(u => counts[u] = (counts[u] || 0) + 1));
+  $('#graph').innerHTML = `<svg viewBox="0 0 ${W} ${Hh}" font-family="-apple-system, Segoe UI, Inter, sans-serif">
+    ${nodes.map(n => `<line x1="${cx}" y1="${cy}" x2="${n.x}" y2="${n.y}" stroke="${COLOR[h[n.u]]}" stroke-opacity=".5" stroke-width="${1 + Math.min(4, (counts[n.u] || 1) / 2)}"/>`).join('')}
+    <circle cx="${cx}" cy="${cy}" r="48" fill="#1e1b3a" stroke="#7dd3fc" stroke-width="2"/><text x="${cx}" y="${cy - 2}" fill="#fff" font-size="14" font-weight="700" text-anchor="middle">Home Deck</text>
+    <text x="${cx}" y="${cy + 15}" fill="#a5b4fc" font-size="10.5" text-anchor="middle">${EP.length} endpoints</text>
+    ${nodes.map(n => `<g><circle cx="${n.x}" cy="${n.y}" r="27" fill="#12111f" stroke="${COLOR[h[n.u]]}" stroke-width="2.5"/>
+      <circle cx="${n.x + 19}" cy="${n.y - 19}" r="5" fill="${COLOR[h[n.u]]}"/>
+      <text x="${n.x}" y="${n.y + 3}" fill="#f3f4fb" font-size="${n.u.length > 10 ? 8.5 : 9.5}" font-weight="650" text-anchor="middle">${esc(n.u)}</text>
+      <text x="${n.x}" y="${n.y + 42}" fill="#94a3b8" font-size="9" text-anchor="middle">${counts[n.u] || 0} endpoint${counts[n.u] === 1 ? '' : 's'}</text></g>`).join('')}
+  </svg>`;
+}
+function render() {
+  $('#clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  const q = $('#q').value.trim().toLowerCase();
+  const reads = EP.filter(e => e[1] !== 'POST'), done = reads.filter(e => R[e[0]]);
+  const ok = reads.filter(e => state(e) === 'ok').length, bad = reads.filter(e => state(e) === 'bad').length, slow = reads.filter(e => state(e) === 'slow').length;
+  const ms = done.map(e => R[e[0]].ms).filter(x => x != null).sort((a, b) => a - b);
+  const lup = Object.values(LINKS).filter(x => x.up).length, lall = Object.keys(LINKS).length;
+  $('#kp').innerHTML = `<div class="card ${bad ? 'bad' : 'ok'}"><b class="num">${ok}/${reads.length}</b><span>read endpoints healthy</span></div>
+    <div class="card"><b class="num">${EP.length - reads.length}</b><span>action endpoints (not probed)</span></div>
+    <div class="card ${slow ? '' : 'ok'}"><b class="num">${ms.length ? ms[Math.floor(ms.length / 2)] + ' ms' : '–'}</b><span>median response${slow ? ` · ${slow} slow` : ''}</span></div>
+    <div class="card ${bad ? 'bad' : ''}"><b class="num">${bad}</b><span>failing now</span></div>
+    <div class="card ${lall && lup < lall ? 'bad' : 'ok'}"><b class="num">${lall ? lup + '/' + lall : '–'}</b><span>consoles answering</span></div>`;
+  const list = EP.filter(e => {
+    const s = state(e);
+    if (mode === 'GET' && e[1] === 'POST') return false; if (mode === 'POST' && e[1] !== 'POST') return false; if (mode === 'issues' && !['bad', 'slow'].includes(s)) return false;
+    return !q || q.split(/\s+/).every(w => [e[0], e[2], ...e[3], ...e[4]].join(' ').toLowerCase().includes(w));
+  });
+  $('#epcount').textContent = `${list.length} of ${EP.length}`;
+  const open = new Set([...document.querySelectorAll('.ep.open')].map(x => x.dataset.p));
+  $('#eps').innerHTML = list.map(e => {
+    const [p, m, d, src, used] = e, r = R[p], s = state(e);
+    const label = p === 'CAMSNAP' ? '/api/cam/<camera>/snap' : p === 'VISITTHUMB' ? '/api/sec/thumb/<day>/<clip>.jpg' : p;
+    const st = s === 'action' ? '<b>action</b>listed only' : s === 'wait' ? '<b>…</b>checking' : s === 'na' ? `<b>–</b>${esc(r.note)}`
+      : `<b class="${s === 'ok' ? 'ok' : s === 'slow' ? 'warn' : 'bad'}">${r.code || 'ERR'}${p.startsWith('/api/art') && r.code === 404 ? ' (idle)' : ''}</b>${r.ms != null ? r.ms + ' ms' : ''}${r.size != null ? ' · ' + fmtB(r.size) : ''}`;
+    const body = r?.json !== undefined ? summarize(r.json) : r?.text || r?.err || '';
+    return `<div class="ep ${open.has(p) ? 'open' : ''}" data-p="${esc(p)}"><button><span class="m ${m === 'POST' ? 'post' : ''}">${m}</span>
+      <span style="min-width:0"><code>${esc(label)}</code><span class="d">${esc(d)}</span></span><span class="st">${st}</span></button>
+      <div class="more"><div class="row">${src.map(x => `<span class="chip">⇠ ${esc(x)}</span>`).join('')}</div>
+      <div class="row">${used.map(x => `<span class="chip">${/^[a-z]+$/.test(x) ? `<a href="/${x === 'deck' ? '' : x}">${esc(x)}</a>` : esc(x)}</span>`).join('')}</div>
+      ${body ? `<pre>${esc(body)}</pre>` : ''}</div></div>`;
+  }).join('') || '<div class="empty">No endpoint matches.</div>';
+  graph();
+  $('#svc').innerHTML = Object.entries(LINKS).sort((a, b) => a[1].up - b[1].up || a[0].localeCompare(b[0])).map(([k, v]) => `<div><i class="dot ${v.up ? 'ok' : 'bad'}"></i>${esc(k)}<span>${v.ms} ms</span></div>`).join('');
+  $('#svcsum').textContent = lall ? `${lup} of ${lall} answering` : '';
+}
+$('#eps').addEventListener('click', e => { const b = e.target.closest('.ep > button'); if (b) b.parentElement.classList.toggle('open'); });
+$('#q').addEventListener('input', render);
+document.querySelector('.tools').addEventListener('click', e => { const b = e.target.closest('button[data-m]'); if (!b) return; mode = b.dataset.m;
+  document.querySelectorAll('.tools button[data-m]').forEach(x => x.classList.toggle('on', x === b)); render(); });
+let running = false;
+async function sweep() {
+  if (running || document.visibilityState !== 'visible') return; running = true;
+  const order = EP.filter(e => !['CAMSNAP', 'VISITTHUMB'].includes(e[0]));
+  for (let i = 0; i < order.length; i += 4) { await Promise.all(order.slice(i, i + 4).map(probe)); render(); }
+  await Promise.all(EP.filter(e => ['CAMSNAP', 'VISITTHUMB'].includes(e[0])).map(probe));
+  try { LINKS = await (await fetch('/api/links', { cache: 'no-store' })).json(); } catch {}
+  $('#when').textContent = 'checked ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  running = false; render();
+}
+$('#recheck').addEventListener('click', () => { R = {}; render(); sweep(); });
+render(); sweep(); setInterval(sweep, 90000);
+document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && sweep());
+</script>
+<script src="/nav.js" defer></script>
+<script src="/adminlock.js" data-into=".head .right" defer></script></body>
+</html>

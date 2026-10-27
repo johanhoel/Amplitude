@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#07080f">
+<meta name="apple-mobile-web-app-title" content="Control"><meta name="nav-related" content="/media,/rooms,/admin,/remote">
+<title>Control</title>
+<link rel="stylesheet" href="/deck.css">
+<style>
+/* Control: a Control Center for the house. Square tiles show live state; risky ones need a press-and-hold (the fill shows
+   progress). Speaker volume is a big drag slider. Data: /api/home/state, /api/status, /api/ops/snapshot;
+   actions: /api/home/do, /api/genelec, /api/dante/source, /api/pc/do, /api/ops/act */
+:root { --hue: #34d399; --hue2: #38bdf8; }
+.cc { display: grid; gap: 12px; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-auto-rows: auto; }
+@media (max-width: 1100px) { .cc { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .cc { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; } .tl { min-height: 86px; } }
+.grp { grid-column: 1 / -1; margin-top: 6px; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); font-weight: 700; padding: 10px 2px 0; min-height: 0; }
+.tl { position: relative; overflow: hidden; border-radius: 22px; background: var(--card); border: 1px solid var(--line); padding: 12px; text-align: left;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 6px; transition: background .2s, border-color .2s, transform .08s; grid-column: span 2; min-height: 96px; }
+.tl:active { transform: scale(.97); }
+.tl .ic { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 17px; background: rgba(255,255,255,.08); }
+.tl b { font-size: 14px; font-weight: 650; line-height: 1.2; } .tl small { display: block; font-size: 12px; color: var(--mute); margin-top: 2px; }
+.tl.on { background: rgba(255,255,255,.92); color: #141a20; border-color: transparent; } .tl.on small { color: rgba(12,11,22,.6); } .tl.on .ic { background: var(--c, #34d399); color: #fff; }
+.tl.warn { border-color: rgba(251,191,36,.35); } .tl.bad { border-color: rgba(251,113,133,.4); }
+.tl .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: rgba(56,189,248,.35); pointer-events: none; }
+.tl.busy { opacity: .55; } .tl.done { border-color: var(--ok); } .tl.fail { border-color: var(--bad); }
+.tl .hold { position: absolute; top: 10px; right: 12px; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); font-weight: 700; }
+.tl.on .hold { color: rgba(12,11,22,.4); }
+.vol { grid-column: span 2; grid-row: span 3; padding: 0; display: flex; flex-direction: column; min-height: 0; }
+.vol .sl { position: relative; flex: 1; margin: 10px; border-radius: 20px; background: rgba(255,255,255,.07); overflow: hidden; touch-action: none; cursor: ns-resize; min-height: 200px; }
+.vol .sl i { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: linear-gradient(0deg, #f472b6, #7dd3fc); transition: height .2s; }
+.vol .sl.drag i { transition: none; }
+.vol .sl span { position: absolute; left: 0; right: 0; top: 14px; text-align: center; font-size: 26px; font-weight: 300; font-variant-numeric: tabular-nums; mix-blend-mode: difference; }
+.vol .sl em { position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; font-size: 22px; font-style: normal; mix-blend-mode: difference; }
+.vol .sl.off { opacity: .4; cursor: not-allowed; }
+.vol footer { display: flex; gap: 6px; padding: 0 10px 10px; } .vol footer button { flex: 1; padding: 9px 0; border-radius: 14px; background: rgba(255,255,255,.07); font-size: 12.5px; font-weight: 650; }
+.vol footer button.on { background: #fff; color: #141a20; }
+.mp { grid-column: span 4; display: grid; grid-template-columns: 64px 1fr auto; gap: 12px; align-items: center; }
+.mp .art { width: 64px; height: 64px; border-radius: 14px; background: #1a1630 center/cover; display: grid; place-items: center; font-size: 22px; }
+.mp b { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .mp small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mp .bt { display: flex; gap: 4px; } .mp .bt button { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.08); font-size: 15px; }
+.mp .bt button.pp { background: #fff; color: #141a20; }
+@media (max-width: 700px) { .mp { grid-column: span 4; } .vol { grid-row: span 3; } }
+.legend { color: var(--faint); font-size: 12px; margin-top: 16px; text-align: center; }
+</style>
+<link rel="stylesheet" href="/wall.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="head"><div><h1>Control</h1><div class="sub" id="sub">Every switch in the house</div></div><div class="right"><div class="clock num" id="clock">–</div></div></header>
+  <main class="cc" id="cc"><div class="empty grp">Loading…</div></main>
+  <div class="legend">Tiles marked HOLD need a press-and-hold · the door can only be locked here, never unlocked</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let H = null, S = null, SNAP = null, hold = {}, volDrag = false, touching = false;   // touching: never redraw under a finger
+addEventListener('pointerdown', () => touching = true, true); ['pointerup', 'pointercancel'].forEach(ev => addEventListener(ev, () => { touching = false; setTimeout(render, 50); }, true));
+const toast = t => { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2400); };
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })
+  .then(r => r.json().catch(() => ({})).then(j => { if (!r.ok || j.error || j.ok === false) throw new Error(j.error || j.msg || 'HTTP ' + r.status); return j; }));
+const home = (b) => post('/api/home/do', b);
+// tile definitions: id, group, icon, title, state(), action, hold?
+function tiles() {
+  const door = H?.door?.state, g = S?.genelec, gon = g?.power === 'ACTIVE';
+  const T = [
+    ['g-home', 'grp', 'House'],
+    { id: 'lock', ic: door === 'locked' ? '🔒' : '🔓', t: 'Front door', s: door === 'locked' ? 'Locked' : (door || '–') + ' · hold to lock', on: door === 'locked', c: '#34d399', cls: door === 'locked' ? '' : 'bad', hold: true, run: () => home({ do: 'lock' }), ok: 'Locking…' },
+    { id: 'alloff', ic: '💡', t: 'All lights off', s: `${H ? H.rooms.reduce((a, r) => a + r.lights.filter(l => l.on).length, 0) : '–'} on now`, hold: true, run: () => home({ do: 'all_off' }), ok: 'All lights off' },
+    { id: 'detect', ic: '◎', t: 'Camera alerts', s: H?.detect ? 'On' : 'Off', on: !!H?.detect, c: '#fb7185', hold: true, run: () => home({ do: 'detect' }), ok: 'Camera alerts switched' },
+    { id: 'charger', ic: '⚡', t: 'EV charger', s: H?.charger_on ? 'Enabled' : 'Paused', on: !!H?.charger_on, c: '#fbbf24', hold: true, run: () => home({ do: 'charger' }), ok: 'Charger switched' },
+    { id: 'vac', ic: '🧹', t: H?.vacuum?.state === 'cleaning' ? 'Vacuum: dock' : 'Vacuum: start', s: (H?.vacuum?.state || '–').replace(/_/g, ' '), on: H?.vacuum?.state === 'cleaning', c: '#22d3ee',
+      run: () => home({ do: 'vacuum', value: H?.vacuum?.state === 'cleaning' ? 'return_to_base' : 'start' }), ok: 'Vacuum told' },
+    { id: 'wake', ic: '⏻', t: 'Wake PC', s: S?.pc_online ? 'PC is on' : 'PC is off', on: !!S?.pc_online, c: '#60a5fa', run: () => home({ do: 'wake_pc' }), ok: 'Wake-on-LAN sent' },
+    ['g-audio', 'grp', 'Speakers & media'],
+    'VOL',
+    { id: 'spk', ic: '🔈', t: 'Speakers', s: gon ? 'Active' : g?.power ? 'Standby' : '–', on: gon, c: '#7dd3fc', run: () => post('/api/genelec', { action: 'power', value: !gon }), ok: gon ? 'Speakers to standby' : 'Waking speakers' },
+    { id: 'mute', ic: g?.mute ? '🔇' : '🔊', t: g?.mute ? 'Unmute' : 'Mute', s: g?.mute ? 'Muted' : 'Sound on', on: !!g?.mute, c: '#fb7185', run: () => post('/api/genelec', { action: 'mute', value: !g?.mute }), ok: 'Mute switched' },
+    { id: 'srcpc', ic: '🖥', t: 'Source: PC', s: S?.dante?.source === 'pc' ? 'Playing from PC' : 'Switch to PC', on: S?.dante?.source === 'pc', c: '#60a5fa', run: () => post('/api/dante/source', { source: 'pc' }), ok: 'Source: PC' },
+    { id: 'srcbt', ic: 'ᛒ', t: 'Source: Bluetooth', s: S?.dante?.source === 'bt' ? 'Playing from Bluetooth' : 'Switch to Bluetooth', on: S?.dante?.source === 'bt', c: '#22d3ee', run: () => post('/api/dante/source', { source: 'bt' }), ok: 'Source: Bluetooth' },
+    'MEDIA',
+    ['g-pc', 'grp', 'Computer'],
+    { id: 'pclock', ic: '⌘', t: 'Lock PC', s: 'Windows lock screen', hold: true, run: () => post('/api/pc/do', { action: 'lock' }), ok: 'PC locked' },
+    { id: 'mic', ic: '🎙', t: 'Mic mute', s: 'Toggle default mic', run: () => post('/api/pc/do', { action: 'mic' }), ok: 'Mic toggled' },
+    { id: 'game', ic: '🎮', t: 'Game mode', s: 'Power plan', run: () => post('/api/pc/do', { action: 'gamemode' }), ok: 'Game mode toggled' },
+    { id: 'sleep', ic: '☾', t: 'Sleep PC', s: 'Hold to sleep', hold: true, run: () => post('/api/pc/do', { action: 'sleep' }), ok: 'PC going to sleep' },
+    ['g-lab', 'grp', 'Network'],
+    ...(SNAP?.lab_commands || []).filter(c => !c.two).map(c => ({ id: 'lab-' + c.key, ic: c.key.startsWith('speed') ? '⇅' : c.key.startsWith('resume') ? '▶' : '⏸', t: c.label, s: 'Pi-hole ×2',
+      run: () => post('/api/ops/act', { key: c.key }), ok: c.label })),
+  ];
+  return T;
+}
+function mediaTile(p, label) {
+  if (!p) return '';
+  const art = p.art ? `/api/art?e=${encodeURIComponent(p.id)}&k=${encodeURIComponent(p.art_key)}` : '';
+  return `<div class="card tl mp" data-mp="${esc(p.id)}"><div class="art" style="${art ? `background-image:url('${art}')` : ''}">${art ? '' : '♫'}</div>
+    <div style="min-width:0"><b>${esc(p.title || label)}</b><small>${esc(p.title ? [p.artist, p.app, label].filter(Boolean).join(' · ') : (p.state || 'off'))}</small></div>
+    <div class="bt">${p.id.startsWith('media_player.spotify') ? '<button data-m="media_previous_track" aria-label="Previous">⏮</button>' : ''}
+      <button class="pp" data-m="media_play_pause" aria-label="Play or pause">${p.state === 'playing' ? '⏸' : '▶'}</button>
+      ${p.id.startsWith('media_player.spotify') ? '<button data-m="media_next_track" aria-label="Next">⏭</button>' : ''}</div></div>`;
+}
+function volTile() {
+  const g = S?.genelec || {}, on = g.power === 'ACTIVE', lv = g.level;
+  const pct = lv == null ? 0 : Math.max(0, Math.min(100, (lv + 60) / 60 * 100));
+  return `<div class="card tl vol"><div class="sl ${on && lv != null ? '' : 'off'}" id="vol" style="--p:${pct}"><i style="height:${pct}%"></i>
+    <span id="voltxt">${lv != null ? Math.round(lv) + ' dB' : on ? '–' : 'Standby'}</span>${!on ? '<em style="bottom:40%;font-size:13px;mix-blend-mode:normal;color:var(--mute)">Tap Speakers to wake</em>' : ''}<em>${g.mute ? '🔇' : '🔊'}</em></div>
+    <footer><button data-vol="-2">−2</button><button data-vol="2">+2</button></footer></div>`;
+}
+function render() {
+  $('#clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  if (!H) return;
+  if (volDrag || touching) return;
+  const players = H.players || [], sp = players.find(p => p.id.includes('spotify')), sonos = players.find(p => p.id === 'media_player.tv_rum');
+  $('#cc').innerHTML = tiles().map(t => {
+    if (t === 'VOL') return volTile();
+    if (t === 'MEDIA') return mediaTile(sp, 'Spotify') + mediaTile(H.appletv, 'Apple TV') + mediaTile(sonos, 'TV room');
+    if (Array.isArray(t)) return `<div class="grp">${esc(t[2])}</div>`;
+    const busy = hold[t.id];
+    return `<button class="tl ${t.on ? 'on' : ''} ${t.cls || ''} ${busy || ''}" data-id="${t.id}" style="--c:${t.c || '#34d399'}"><i class="fill"></i>
+      ${t.hold ? '<span class="hold">hold</span>' : ''}<span class="ic">${esc(t.ic)}</span><span><b>${esc(t.t)}</b><small>${esc(t.s)}</small></span></button>`;
+  }).join('');
+}
+const byId = id => tiles().find(t => t && t.id === id);
+async function run(id) {
+  const t = byId(id); if (!t) return;
+  hold[id] = 'busy'; render();
+  try { await t.run(); hold[id] = 'done'; toast('✓ ' + t.ok); } catch (e) { hold[id] = 'fail'; toast('✗ ' + t.t + ': ' + e.message); }
+  render(); setTimeout(() => { delete hold[id]; load(true); }, 1500);
+}
+// press-and-hold for risky tiles; tap for the rest
+let pressing = null; const HOLD_MS = 1000;
+$('#cc').addEventListener('pointerdown', e => {
+  const b = e.target.closest('button.tl[data-id]'); if (!b) return;
+  const t = byId(b.dataset.id); if (!t?.hold) return;
+  const f = b.querySelector('.fill'); f.style.transition = `width ${HOLD_MS}ms linear`; f.style.width = '100%';
+  pressing = { b, timer: setTimeout(() => { pressing = null; navigator.vibrate?.(25); run(t.id); }, HOLD_MS) };
+});
+const cancelPress = () => { if (!pressing) return; clearTimeout(pressing.timer); const f = pressing.b.querySelector('.fill'); f.style.transition = 'width .2s'; f.style.width = 0; pressing = null; };
+['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => $('#cc').addEventListener(ev, cancelPress));
+$('#cc').addEventListener('contextmenu', e => e.preventDefault());
+$('#cc').addEventListener('click', e => {
+  const m = e.target.closest('[data-m]');
+  if (m) { const id = m.closest('[data-mp]').dataset.mp;
+    return (id === H.appletv?.id ? home({ do: 'atv', value: 'play_pause' }) : home({ do: 'mp', entity: id, value: m.dataset.m })).then(() => setTimeout(() => load(true), 900)).catch(err => toast('✗ ' + err.message)); }
+  const v = e.target.closest('[data-vol]');
+  if (v) { const lv = S?.genelec?.level; if (lv == null) return toast('Speakers are in standby');
+    const nv = Math.max(-60, Math.min(0, lv + +v.dataset.vol)); S.genelec.level = nv; render();
+    return post('/api/genelec', { action: 'volume', value: nv }).catch(err => toast('✗ ' + err.message)); }
+  const b = e.target.closest('button.tl[data-id]'); if (!b) return;
+  const t = byId(b.dataset.id); if (!t) return;
+  if (t.hold) return toast('Press and hold to run');
+  run(t.id);
+});
+// volume slider: drag up/down, sent on release (-60..0 dB)
+$('#cc').addEventListener('pointerdown', e => {
+  const sl = e.target.closest('#vol'); if (!sl || sl.classList.contains('off')) return;
+  volDrag = true; sl.classList.add('drag'); try { sl.setPointerCapture(e.pointerId); } catch {}
+  const set = ev => { const r = sl.getBoundingClientRect(), p = Math.max(0, Math.min(1, (r.bottom - ev.clientY) / r.height));
+    const db = Math.round(-60 + p * 60); sl.dataset.db = db; sl.querySelector('i').style.height = (p * 100) + '%'; $('#voltxt').textContent = db + ' dB'; };
+  set(e);
+  const mv = ev => set(ev), up = () => { sl.removeEventListener('pointermove', mv); sl.removeEventListener('pointerup', up); sl.removeEventListener('pointercancel', up);
+    sl.classList.remove('drag'); volDrag = false; const db = +sl.dataset.db; if (S?.genelec) S.genelec.level = db;
+    post('/api/genelec', { action: 'volume', value: db }).then(() => toast(`Volume ${db} dB`)).catch(err => toast('✗ ' + err.message)); };
+  sl.addEventListener('pointermove', mv); sl.addEventListener('pointerup', up); sl.addEventListener('pointercancel', up);
+});
+let lastS = 0, lastSnap = 0;
+async function load(force) {
+  if (document.visibilityState !== 'visible' || volDrag || pressing) return;
+  const jobs = [fetch('/api/home/state', { cache: 'no-store' }).then(r => r.json()).then(j => { if (!j.error) H = j; }).catch(() => {})];
+  if (force || Date.now() - lastS > 8000) jobs.push(fetch('/api/status', { cache: 'no-store' }).then(r => r.json()).then(j => { S = j; lastS = Date.now(); }).catch(() => {}));
+  if (!SNAP || Date.now() - lastSnap > 120000) jobs.push(fetch('/api/ops/snapshot', { cache: 'no-store' }).then(r => r.json()).then(j => { if (!j.error) { SNAP = j; lastSnap = Date.now(); } }).catch(() => {}));
+  await Promise.all(jobs); render();
+}
+load(true); setInterval(load, 4000);
+document.addEventListener('visibilitychange', () => load(true));
+</script>
+<script src="/nav.js" defer></script>
+</body>
+</html>

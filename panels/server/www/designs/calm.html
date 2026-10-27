@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0b0b14">
+<title>Design 1 · Calm</title>
+<style>
+/* Design 1 "Calm" v2: one status sentence on top, then a few large cards. Lights: one room at a time, picked with room chips
+   (no endless list). Buttons are big rounded pill toggles. Navigation: 4 labelled tabs at the bottom (thumb zone).
+   Reversible = instant + Undo; disruptive = press-and-hold 1.2 s with a filling ring, kept below a separator. */
+:root { --bg: #0b0b14; --card: rgba(255,255,255,.055); --line: rgba(255,255,255,.09); --ink: #f2f2f8; --mute: rgba(242,242,248,.62); --acc: #8b7cff; --ok: #4ade80; --warn: #fbbf24;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, Roboto, sans-serif; --toast-bg: #24223a; }
+* { box-sizing: border-box; } html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); -webkit-tap-highlight-color: transparent; }
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: radial-gradient(70% 40% at 20% -10%, rgba(139,124,255,.22), transparent 70%), radial-gradient(60% 40% at 100% 110%, rgba(74,222,128,.08), transparent 70%); }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+main { max-width: 760px; margin: 0 auto; padding: 22px 18px calc(env(safe-area-inset-bottom) + 120px); overflow-x: clip; }
+h1 { font-size: 30px; margin: 0; font-weight: 750; letter-spacing: -.02em; } .sub { color: var(--mute); margin: 4px 0 16px; font-size: 15px; }
+.v { display: none; } .v.on { display: block; animation: fade .25s ease; } @keyframes fade { from { opacity: 0; transform: translateY(6px); } }
+.status { font-size: 21px; line-height: 1.4; font-weight: 500; margin: 0 0 18px; color: var(--mute); } .status b { color: var(--ink); font-weight: 650; } .status .good { color: var(--ok); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 26px; padding: 18px 20px; margin-bottom: 12px; }
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .duo .card { margin: 0; } .duo + .card, .duo + .duo { margin-top: 12px; }
+.k { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); font-weight: 700; }
+.big { font-size: 32px; font-weight: 300; margin-top: 6px; letter-spacing: -.01em; } .big small { font-size: 15px; color: var(--mute); margin-left: 4px; } .big.s { font-size: 20px; font-weight: 500; }
+.note { color: var(--mute); font-size: 13.5px; margin-top: 4px; } .ok { color: var(--ok); }
+.people { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.pp { display: flex; align-items: center; gap: 8px; padding: 5px 13px 5px 5px; border-radius: 999px; background: rgba(255,255,255,.06); font-size: 14px; font-weight: 600; }
+.pp i { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-weight: 750; background: var(--acc); } .pp.away { opacity: .45; }
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 14px; margin: 0 -18px; padding-left: 18px; padding-right: 18px; scrollbar-width: none; scroll-snap-type: x proximity;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, transparent, #000 18px, #000 calc(100% - 28px), transparent); }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; min-height: 48px; padding: 0 18px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); font-weight: 650; font-size: 15px; scroll-snap-align: start; display: flex; align-items: center; gap: 8px; }
+.chip.on { background: var(--ink); color: #0b0b14; } .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+.pills { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.pill { min-height: 64px; display: flex; align-items: center; gap: 14px; padding: 0 10px 0 18px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); font-size: 16px; font-weight: 650; text-align: left; transition: background .15s, transform .1s; }
+.pill .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pill .st { min-width: 64px; height: 44px; border-radius: 999px; display: grid; place-items: center; font-size: 13px; font-weight: 750; background: rgba(255,255,255,.08); color: var(--mute); }
+.pill.on { background: linear-gradient(90deg, rgba(251,191,36,.28), rgba(251,191,36,.08)); border-color: rgba(251,191,36,.45); } .pill.on .st { background: var(--warn); color: #1c1300; }
+.kdown { transform: scale(.98); }
+.act { width: 100%; display: flex; align-items: center; gap: 14px; min-height: 72px; padding: 0 16px 0 10px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); margin-bottom: 10px; text-align: left; }
+.act .ic { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 21px; background: rgba(255,255,255,.08); flex: none; }
+.act b { display: block; font-size: 16px; } .act small { color: var(--mute); font-size: 13px; } .act > span:nth-child(2) { flex: 1; min-width: 0; }
+.act .ring { width: 38px; height: 38px; flex: none; } .act .ring circle { fill: none; stroke-width: 4; } .act .ring .bg { stroke: rgba(255,255,255,.12); }
+.act .ring .fg { stroke: var(--warn); stroke-dasharray: 100; stroke-dashoffset: 100; transform: rotate(-90deg); transform-origin: center; }
+.act.kdown .ring .fg { stroke-dashoffset: 0; transition: stroke-dashoffset 1.2s linear; }
+.sep { display: flex; align-items: center; gap: 10px; margin: 26px 4px 14px; color: var(--mute); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
+.sep::before, .sep::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; justify-content: center; padding: 8px 12px calc(env(safe-area-inset-bottom) + 10px);
+  background: rgba(11,11,20,.88); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border-top: 1px solid var(--line); }
+nav .tabs { display: flex; gap: 6px; width: 100%; max-width: 520px; }
+nav button { flex: 1; min-height: 58px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 12px; font-weight: 650; color: var(--mute); }
+nav button span { font-size: 21px; line-height: 1; } nav button.on { color: var(--ink); background: rgba(139,124,255,.22); }
+@media (min-width: 900px) { main { max-width: 1100px; } .homegrid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; } .homegrid .card, .homegrid .duo { margin: 0; } .homegrid .duo { grid-column: span 2; } .status { font-size: 24px; } }
+</style></head><body>
+<main>
+  <section class="v on" data-v="home"><h1 id="greet">Home</h1><div class="sub" id="date"></div><p class="status" id="status"></p><div class="homegrid" id="home"></div></section>
+  <section class="v" data-v="rooms"><h1>Lights</h1><div class="sub">Pick a room, tap a light. Undo is one tap away.</div><div class="chips" id="chips"></div><div class="pills" id="pills"></div></section>
+  <section class="v" data-v="media"><h1>Media</h1><div class="sub">What is playing</div><div id="media"></div></section>
+  <section class="v" data-v="actions"><h1>Actions</h1><div class="sub">Everyday actions run on a tap.</div><div id="actions"></div></section>
+</main>
+<nav aria-label="Sections"><div class="tabs">
+  <button data-go="home" class="on"><span>⌂</span>Home</button><button data-go="rooms"><span>💡</span>Lights</button>
+  <button data-go="media"><span>♫</span>Media</button><button data-go="actions"><span>⚡</span>Actions</button></div></nav>
+<script src="/designs/kit.js"></script>
+<script>
+const $ = s => document.querySelector(s), { esc } = Kit; let S = null, room = null;
+try { room = localStorage.getItem('calmRoom'); } catch {}
+document.querySelectorAll('nav button').forEach(b => Kit.press(b, () => { document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.v').forEach(v => v.classList.toggle('on', v.dataset.v === b.dataset.go)); scrollTo({ top: 0 }); }));
+function render() {
+  if (!S) return; const h = new Date().getHours();
+  $('#greet').textContent = h < 5 ? 'Good night' : h < 10 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 22 ? 'Good evening' : 'Good night';
+  $('#date').textContent = new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
+  const on = S.rooms.reduce((a, r) => a + r.lights.filter(Kit.isOn).length, 0), home = S.people.filter(p => p.home).length;
+  const okDoor = S.door === 'locked';
+  $('#status').innerHTML = `${okDoor && home ? '<b class="good">All good.</b> ' : ''}Door <b>${okDoor ? 'locked' : esc(S.door || 'unknown')}</b> · <b>${on}</b> light${on === 1 ? '' : 's'} on · <b>${home}</b> of ${S.people.length} home`;
+  $('#home').innerHTML = `<div class="card"><div class="k">People</div><div class="people">${S.people.map(p => `<span class="pp ${p.home ? '' : 'away'}"><i>${esc(p.name[0])}</i>${esc(p.name)}</span>`).join('')}</div></div>
+    <div class="duo"><div class="card"><div class="k">Outside</div><div class="big">${Kit.WX[S.wx?.condition] || ''} ${S.wx?.temperature != null ? Math.round(S.wx.temperature) + '°' : '–'}</div></div>
+      <div class="card"><div class="k">Next bus</div><div class="big ${S.bus?.none ? 's' : ''}">${S.bus?.none ? 'None this hour' : esc(Kit.busText(S.bus))}</div>${S.bus && !S.bus.none ? `<div class="note">${esc(S.bus.line)} to ${esc(S.bus.to)} · ${S.bus.at}</div>` : ''}</div></div>
+    <div class="card"><div class="k">Now playing</div><div class="big s">${esc(S.playing?.title || 'Nothing playing')}</div><div class="note">${esc(S.playing ? (S.playing.app || S.playing.label) : 'Quiet house')}</div></div>`;
+  if (!room || !S.rooms.find(r => r.room === room)) room = (S.rooms.find(r => r.lights.some(Kit.isOn)) || S.rooms[0])?.room;
+  $('#chips').innerHTML = S.rooms.map(r => `<button class="chip ${r.room === room ? 'on' : ''}" data-r="${esc(r.room)}">${r.lights.some(Kit.isOn) ? '<span class="dot"></span>' : ''}${esc(r.room)}</button>`).join('');
+  document.querySelectorAll('.chip').forEach(c => Kit.press(c, () => { room = c.dataset.r; try { localStorage.setItem('calmRoom', room); } catch {} render(); }));
+  const R = S.rooms.find(r => r.room === room);
+  $('#pills').innerHTML = (R?.lights || []).map(l => `<button class="pill ${Kit.isOn(l) ? 'on' : ''}" data-id="${esc(l.id)}"><span class="nm">${esc(l.name === 'All' ? 'Whole room' : l.name)}</span><span class="st">${Kit.isOn(l) ? 'ON' : 'OFF'}</span></button>`).join('');
+  document.querySelectorAll('.pill').forEach(b => Kit.press(b, () => Kit.flip(S.rooms.flatMap(r => r.lights).find(l => l.id === b.dataset.id), render)));
+  const pl = (S.H.players || []).concat(S.H.appletv ? [S.H.appletv] : []);
+  $('#media').innerHTML = pl.map(p => `<div class="card"><div class="k">${esc(p.label)}</div><div class="big s">${esc(p.title || p.state)}</div></div>`).join('');
+}
+const A = [['🧹', 'Start the vacuum', 'Roborock', 0], ['⏻', 'Wake the PC', 'Wake-on-LAN', 0], ['◎', 'Camera alerts', 'Switch on or off', 0],
+           ['🔒', 'Lock the front door', 'Hold · never unlocks', 1], ['💡', 'All lights off', 'Hold · every light', 1], ['☾', 'Put the PC to sleep', 'Hold to confirm', 1]];
+const btn = (a) => `<button class="act" data-i="${A.indexOf(a)}"><span class="ic">${a[0]}</span><span><b>${a[1]}</b><small>${a[2]}</small></span>
+  ${a[3] ? '<svg class="ring" viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="15.9"/><circle class="fg" cx="18" cy="18" r="15.9" pathLength="100"/></svg>' : ''}</button>`;
+$('#actions').innerHTML = A.filter(a => !a[3]).map(btn).join('') + '<div class="sep">Press and hold</div>' + A.filter(a => a[3]).map(btn).join('');
+document.querySelectorAll('.act').forEach(b => { const a = A[+b.dataset.i];
+  a[3] ? Kit.hold(b, 1200, () => Kit.toast(`Demo: would ${a[1].toLowerCase()}`)) : Kit.press(b, () => Kit.toast(`Demo: would ${a[1].toLowerCase()}`)); });
+Kit.data(D => { S = Kit.summary(D); render(); });
+</script></body></html>

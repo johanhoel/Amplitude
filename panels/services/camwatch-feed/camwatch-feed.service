@@ -1,0 +1,16 @@
+[Unit]
+Description=camwatch-feed - read-only visits JSON for Home Deck panels (port 8091, only .52)
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/camwatch-feed/feed.py
+DynamicUser=yes
+SupplementaryGroups=root
+ReadOnlyPaths=/srv/camwatch/recordings
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,20 @@
+# secrets and per-house state: never in git
+signing
+app/signing
+**/secrets.json
+**/admin_sessions.json
+**/devices.json
+*.jks
+# build output and caches
+**/__pycache__/
+server/www/app/
+app/android/app/build/
+app/android/.gradle/
+app/cache
+app/dist/
+friend/dist/
+tests/out/
+# backups made on the servers, local runtime state
+**/*.bak-*
+.staging-state/
+.deployed.md5

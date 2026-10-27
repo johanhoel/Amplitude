@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#101418">
+<meta name="apple-mobile-web-app-title" content="Home Deck">
+<link rel="apple-touch-icon" href="/familyinfo-icon.png">
+<title>Pair this device</title>
+<style>
+/* Pair: the page a phone opens from the QR code on /devices (?s=<secret>), or where the code is typed.
+   Open from the internet (the edge lets only this page and its API through without a key), but the claim itself
+   only works from the home network. On success the server sets this device's key as a cookie; the app also
+   receives it in the answer and keeps it. */
+:root { --bg: #101418; --ink: #f6f4fb; --mute: rgba(246,244,251,.6); --line: rgba(255,255,255,.1); --accent: #38bdf8; --ok: #34d399; --bad: #fb7185;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; color: var(--ink); font: 16px/1.5 var(--font); background: var(--bg);
+  padding: calc(env(safe-area-inset-top) + 20px) 18px calc(env(safe-area-inset-bottom) + 20px); }
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: radial-gradient(70% 45% at 50% -10%, rgba(56,189,248,.26), transparent 70%); }
+main { width: min(400px, 100%); text-align: center; }
+h1 { font-size: 30px; font-weight: 700; margin: 0 0 6px; }
+p { color: var(--mute); margin: 0 0 20px; }
+input { width: 100%; min-height: 64px; border-radius: 16px; border: 1px solid var(--line); background: rgba(255,255,255,.05); color: var(--ink);
+  font: 700 32px ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .3em; text-align: center; }
+button, .btn { display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 52px; margin-top: 14px; border-radius: 999px; border: 0;
+  background: var(--accent); color: #062033; font: 700 16px var(--font); cursor: pointer; text-decoration: none; }
+.msg { min-height: 1.5em; margin-top: 14px; } .msg.bad { color: var(--bad); } .msg.ok { color: var(--ok); }
+.big { font-size: 64px; line-height: 1; margin-bottom: 10px; }
+.tip { font-size: 14px; color: var(--mute); margin-top: 18px; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <section id="ask">
+    <div class="big">🔗</div>
+    <h1>Pair this device</h1>
+    <p>On the home Wi-Fi, type the 6-digit code shown on the Devices page.</p>
+    <input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" aria-label="Pairing code">
+    <button id="go">Pair</button>
+    <div class="msg" id="msg"></div>
+  </section>
+  <section id="ok" hidden>
+    <div class="big">✓</div>
+    <h1 id="okname">Paired</h1>
+    <p>This device can now open Home Deck at home and away.</p>
+    <a class="btn" href="/start">Open Home Deck</a>
+    <div class="tip" id="hs">Tip: add this page to the home screen (Share → Add to Home Screen) so it opens like an app.</div>
+  </section>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const qs = new URLSearchParams(location.search);
+const app = window.HomeDeckApp;                     // set by the Android app's WebView
+function done(j) {
+  $('#ask').hidden = true; $('#ok').hidden = false; $('#okname').textContent = '✓ ' + (j.name || 'Paired');
+  if (app) { $('#hs').hidden = true; try { app.paired(j.token, j.id, j.name, j.public_url); } catch {} }
+  history.replaceState(null, '', '/pair');          // the one-time secret leaves the address bar
+}
+async function claim(body) {
+  $('#msg').className = 'msg'; $('#msg').textContent = 'Pairing…';
+  const ua = navigator.userAgent, model = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : (ua.match(/Android [\d.]+; ([^;)]+)/) || [])[1] || '';
+  try {
+    const r = await fetch('/api/pair/claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+      body: JSON.stringify({ ...body, platform: app ? 'android' : 'browser', model: app?.model?.() || model }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'Pairing failed (' + r.status + ')');
+    done(j);
+  } catch (e) { $('#msg').className = 'msg bad'; $('#msg').textContent = e.message; }
+}
+$('#go').onclick = () => { const c = $('#code').value.replace(/\D/g, ''); if (c.length === 6) claim({ code: c }); else $('#code').focus(); };
+$('#code').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6); if (e.target.value.length === 6) $('#go').click(); });
+if (location.protocol === 'http:' && !/^(localhost|127\.)/.test(location.hostname))
+  $('#msg').textContent = 'Open this page through the https address (the QR code on the Devices page) so the pairing is kept.';
+if (qs.get('s')) claim({ secret: qs.get('s') });
+else fetch('/api/pair/check', { credentials: 'same-origin' }).then(r => { if (r.status === 204) { $('#ask').hidden = true; $('#ok').hidden = false; $('#okname').textContent = '✓ Already paired'; } });
+</script>
+</body>
+</html>

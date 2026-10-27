@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#101418">
+<title>Media</title>
+<style>
+/* Media: what's playing, big, over its own album colours; the living room Apple TV (what's on, time left, remote, apps); then the Genelec speakers and every room's player.
+   The background is one static blurred image (no animation, cheap on tablets). */
+:root { --ink: #fbf9fe; --mute: rgba(251,249,254,.6); --faint: rgba(251,249,254,.14); --line: rgba(255,255,255,.12); --accent: #38bdf8;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: #101418; color: var(--ink); font-family: var(--font); -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+#bg { position: fixed; inset: -60px; background: #1a1430 center/cover; filter: blur(60px) saturate(1.4) brightness(.55); transform: scale(1.1); transition: background-image .6s; z-index: -2; }
+#shade { position: fixed; inset: 0; background: linear-gradient(180deg, rgba(10,8,16,.2), rgba(10,8,16,.85) 70%); z-index: -1; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.num { font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1300px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 22px) 28px calc(env(safe-area-inset-bottom) + 40px); }
+h1 { margin: 0 0 26px; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
+.cap { font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); font-weight: 650; margin: 40px 0 14px; }
+.now { display: grid; grid-template-columns: minmax(220px, 360px) 1fr; gap: 40px; align-items: center; }
+@media (max-width: 780px) { .now { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 22px; } }
+.art { width: 100%; max-width: 360px; aspect-ratio: 1; border-radius: 50%; position: relative; background-color: #15111f; background-position: center; background-size: cover;
+  background-image: repeating-radial-gradient(circle at center, rgba(255,255,255,.05) 0 1px, transparent 1px 5px), radial-gradient(circle at 35% 30%, #3a2d63, #15111f 70%);
+  box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 10px rgba(255,255,255,.04); }
+.art::after { content: ""; position: absolute; inset: 41%; border-radius: 50%; background: #101418; box-shadow: inset 0 0 0 6px rgba(255,255,255,.08); }
+.art.spin { animation: spin 14s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }
+.meta .src { color: var(--mute); font-size: 14px; letter-spacing: .04em; }
+.meta h2 { margin: 10px 0 6px; font-size: clamp(30px, 4vw, 52px); font-weight: 750; letter-spacing: -.02em; line-height: 1.05; }
+.meta .ar { font-size: 20px; color: var(--mute); }
+.prog { margin: 26px 0 8px; height: 6px; border-radius: 6px; background: var(--faint); overflow: hidden; max-width: 560px; }
+.prog i { display: block; height: 100%; width: 0; background: #fff; border-radius: 6px; }
+.times { display: flex; justify-content: space-between; max-width: 560px; color: var(--mute); font-size: 12.5px; }
+.ctl { display: flex; gap: 22px; align-items: center; margin-top: 22px; }
+@media (max-width: 780px) { .ctl { justify-content: center; } .prog, .times { margin-left: auto; margin-right: auto; } }
+.ctl button { width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.1); transition: transform .08s; }
+.ctl button.main { width: 86px; height: 86px; background: #fff; color: #101418; }
+.ctl button:active { transform: scale(.92); }
+.ctl svg { width: 26px; height: 26px; fill: currentColor; } .ctl .main svg { width: 34px; height: 34px; }
+
+/* living room TV (Apple TV) */
+.tv { display: grid; grid-template-columns: minmax(200px, 320px) 1fr auto; gap: 30px; align-items: center; padding: 22px; border-radius: 30px; background: rgba(255,255,255,.06); border: 1px solid var(--line); }
+.tvart { aspect-ratio: 16/9; border-radius: 18px; background: #15111f center/cover; display: grid; place-items: center; font-size: 44px; box-shadow: 0 18px 50px rgba(0,0,0,.5); }
+.tvart.has span { display: none; }
+.tvm h3 { margin: 8px 0 0; font-size: clamp(24px, 3vw, 38px); font-weight: 750; letter-spacing: -.02em; line-height: 1.1; }
+.tvm .prog { margin-top: 18px; } .tv.off .tvm, .tv.off .tvart { opacity: .5; }
+.ctl.sm { margin-top: 16px; gap: 16px; } .ctl.sm button { width: 52px; height: 52px; } .ctl.sm button.main { width: 68px; height: 68px; }
+.ctl.sm svg { width: 22px; height: 22px; } .ctl.sm .main svg { width: 28px; height: 28px; }
+.pad { display: grid; grid-template-columns: repeat(3, 58px); grid-template-rows: repeat(3, 58px) auto; gap: 6px; justify-content: center; }
+.pad button { border-radius: 50%; background: rgba(255,255,255,.1); font-size: 16px; color: var(--ink); transition: transform .08s; }
+.pad button:active { transform: scale(.9); background: rgba(255,255,255,.22); }
+.pad .u { grid-area: 1 / 2; } .pad .l { grid-area: 2 / 1; } .pad .ok { grid-area: 2 / 2; background: #fff; color: #101418; font-weight: 750; } .pad .r { grid-area: 2 / 3; } .pad .d { grid-area: 3 / 2; }
+.padrow { grid-column: 1 / 4; display: flex; gap: 6px; margin-top: 6px; }
+.padrow button { flex: 1; border-radius: 999px; height: 40px; font-size: 13px; font-weight: 650; }
+.apps { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.apps button, .apps select { padding: 10px 16px; border-radius: 999px; background: rgba(255,255,255,.08); border: 1px solid var(--line); font: 600 14px var(--font); color: var(--ink); }
+.apps button.on { background: #fff; color: #101418; }
+.apps select { -webkit-appearance: none; appearance: none; padding-right: 30px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ccc' stroke-width='2.4'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; background-size: 14px; }
+@media (max-width: 900px) { .tv { grid-template-columns: 1fr; text-align: center; gap: 18px; } .tvart { max-width: 420px; width: 100%; margin: 0 auto; }
+  .tv .ctl { justify-content: center; } .tv .prog, .tv .times { margin-left: auto; margin-right: auto; } .apps { justify-content: center; } }
+
+/* speakers */
+.spk { display: grid; grid-template-columns: auto 1fr; gap: 26px; align-items: center; }
+@media (max-width: 780px) { .spk { grid-template-columns: 1fr; justify-items: center; } }
+.arc { width: 230px; height: 140px; position: relative; touch-action: none; }
+.arc svg { width: 100%; height: 100%; }
+.arc .v { position: absolute; left: 0; right: 0; bottom: 4px; text-align: center; }
+.arc .v b { font-size: 40px; font-weight: 200; } .arc .v small { color: var(--mute); font-size: 12px; display: block; }
+.arc.off { opacity: .4; }
+.chips { display: flex; gap: 10px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 999px; background: rgba(255,255,255,.08); border: 1px solid var(--line); font-size: 14px; font-weight: 600; }
+.chip.on { background: #fff; color: #101418; } .chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); } .chip.on i { background: #10b981; }
+.spk .sub { color: var(--mute); font-size: 13px; margin-top: 10px; }
+
+/* rooms */
+.rooms { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px; }
+.room { display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; align-items: center; padding: 12px 16px 12px 12px; border-radius: 999px;
+  background: rgba(255,255,255,.07); border: 1px solid var(--line); }
+.room .ra { width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,.08) center/cover; display: grid; place-items: center; }
+.room .ra svg { width: 26px; height: 26px; fill: none; stroke: var(--mute); stroke-width: 1.8; }
+.room b { display: block; font-size: 15px; } .room span { color: var(--mute); font-size: 12.5px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room input { width: 100%; margin-top: 6px; }
+.room .pp { width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,.12); display: grid; place-items: center; }
+.room .pp svg { width: 18px; height: 18px; fill: currentColor; }
+.room.off { opacity: .45; }
+input[type=range] { -webkit-appearance: none; appearance: none; height: 22px; background: transparent; }
+input[type=range]::-webkit-slider-runnable-track { height: 5px; border-radius: 5px; background: linear-gradient(90deg, #fff var(--p, 30%), rgba(255,255,255,.18) var(--p, 30%)); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -6.5px; border-radius: 50%; background: #fff; }
+input[type=range]::-moz-range-track { height: 5px; border-radius: 5px; background: rgba(255,255,255,.18); }
+input[type=range]::-moz-range-progress { height: 5px; border-radius: 5px; background: #fff; }
+.hint { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 24px); transform: translate(-50%, 16px); opacity: 0; z-index: 40; padding: 10px 16px;
+  border-radius: 999px; background: #1c1728; border: 1px solid var(--line); font-size: 14px; transition: opacity .15s, transform .15s; pointer-events: none; }
+.hint.show { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 700px) { .wrap { padding: 18px 16px 40px; } h1 { font-size: 32px; } .art { max-width: 260px; } }
+#sw { position: fixed; top: calc(env(safe-area-inset-top) + 16px); right: 18px; z-index: 30; width: 46px; height: 46px; border-radius: 50%;
+  background: rgba(255,255,255,.1); border: 1px solid var(--line); display: grid; place-items: center; }
+#sw svg { width: 20px; height: 20px; fill: currentColor; }
+#swp { position: fixed; inset: 0; z-index: 29; display: none; background: rgba(8,6,12,.88); padding: 90px 22px; }
+#swp.open { display: block; }
+#swp nav { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+#swp a { display: block; padding: 16px 18px; border-radius: 999px; background: rgba(255,255,255,.07); border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-weight: 600; }
+#swp a small { display: block; color: var(--mute); font-weight: 400; font-size: 12px; } #swp a.on { background: var(--accent); border-color: transparent; }
+</style>
+<link rel="stylesheet" href="/wall.css">
+</head>
+<body>
+<div id="bg"></div><div id="shade"></div>
+<button id="sw" aria-label="All panels"><svg viewBox="0 0 24 24"><circle cx="5" cy="5" r="2.2"/><circle cx="12" cy="5" r="2.2"/><circle cx="19" cy="5" r="2.2"/><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="12" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/></svg></button>
+<div id="swp"><nav id="swnav"></nav></div>
+<div class="wrap">
+  <h1>Media</h1>
+  <section class="now">
+    <div class="art" id="art"></div>
+    <div class="meta"><div class="src" id="src">SPOTIFY</div><h2 id="title">Nothing playing</h2><div class="ar" id="artist"></div>
+      <div class="prog"><i id="bar"></i></div><div class="times num"><span id="pos"></span><span id="len"></span></div>
+      <div class="ctl"><button data-m="media_previous_track" aria-label="Previous"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+        <button class="main" data-m="media_play_pause" id="pp" aria-label="Play or pause"><svg viewBox="0 0 24 24" id="ppi"><path d="M8 5v14l11-7z"/></svg></button>
+        <button data-m="media_next_track" aria-label="Next"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button></div></div>
+  </section>
+  <div class="cap">Living room TV</div>
+  <section class="tv" id="tv">
+    <div class="tvart" id="tvart"><span>📺</span></div>
+    <div class="tvm"><div class="src" id="tvsrc">APPLE TV</div><h3 id="tvtitle">–</h3>
+      <div class="prog"><i id="tvbar"></i></div><div class="times num"><span id="tvpos"></span><span id="tvleft"></span></div>
+      <div class="ctl sm"><button data-atv="skip_backward" aria-label="Back 10 seconds"><svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg></button>
+        <button class="main" data-atv="play_pause" aria-label="Play or pause"><svg viewBox="0 0 24 24" id="tvppi"><path d="M8 5v14l11-7z"/></svg></button>
+        <button data-atv="skip_forward" aria-label="Forward 10 seconds"><svg viewBox="0 0 24 24"><path d="M12 5V2l5 4-5 4V7a6 6 0 1 0 6 6h2a8 8 0 1 1-8-8z"/></svg></button></div></div>
+    <div class="pad">
+      <button data-atv="up" class="u" aria-label="Up">▲</button><button data-atv="left" class="l" aria-label="Left">◀</button>
+      <button data-atv="select" class="ok">OK</button><button data-atv="right" class="r" aria-label="Right">▶</button><button data-atv="down" class="d" aria-label="Down">▼</button>
+      <div class="padrow"><button data-atv="menu">Back</button><button data-atv="home">Home</button><button id="tvpower">Turn off</button></div>
+    </div>
+  </section>
+  <div class="apps" id="tvapps"></div>
+  <div class="cap">Genelec speakers</div>
+  <section class="spk"><div class="arc" id="arc"><svg viewBox="0 0 230 140" id="arcsvg"></svg><div class="v"><b class="num" id="db">--</b><small>dB · drag the arc</small></div></div>
+    <div><div class="chips"><button class="chip" id="mute"><i></i>Mute</button><button class="chip" id="power"><i></i>Speakers on</button>
+      <button class="chip" data-s="pc"><i></i>PC</button><button class="chip" data-s="bt"><i></i>Bluetooth</button></div><div class="sub" id="spks"></div></div></section>
+  <div class="cap">Rooms</div>
+  <section class="rooms" id="rooms"></section>
+</div>
+<div class="hint" id="hint"></div>
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const PANELS = [['/', 'Deck', 'wall panel'], ['/living', 'Home', 'lights, music, door'], ['/family', 'Family', "who's home"], ['/security', 'Security', 'camera, visits'],
+  ['/media', 'Media', 'music, speakers, TV'], ['/net', 'Network', 'internet, devices'], ['/ops', 'Lab', 'Proxmox'], ['/ambient', 'Ambient', 'night clock'],
+  ['/remote', 'Remote', 'phone'], ['/network.html', 'Network map', 'document']];
+$('#swnav').innerHTML = PANELS.map(([u, t, s]) => `<a href="${u}" class="${location.pathname.replace(/\/$/, '') === u ? 'on' : ''}">${t}<small>${s}</small></a>`).join('');
+$('#sw').addEventListener('click', () => $('#swp').classList.toggle('open'));
+$('#swp').addEventListener('click', e => { if (e.target.id === 'swp') $('#swp').classList.remove('open'); });
+function hint(t) { const h = $('#hint'); h.textContent = t; h.classList.add('show'); clearTimeout(h._t); h._t = setTimeout(() => h.classList.remove('show'), 1600); }
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(r => r.json().then(j => { if (!r.ok) throw new Error(j.error || r.status); return j; }));
+function tap(el, fn) { let d = null; el.addEventListener('pointerdown', e => d = { x: e.clientX, y: e.clientY });
+  el.addEventListener('pointerup', e => { if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 10) fn(e); d = null; }); el.addEventListener('pointercancel', () => d = null); }
+const PLAY = '<path d="M8 5v14l11-7z"/>', PAUSE = '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>';
+const SPOTIFY = 'media_player.spotify_alex', ATV = 'media_player.vardagsrum';
+let H = null, G = null, hold = {}, cur = null;
+const mmss = s => s == null ? '' : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const artUrl = p => p.art ? `/api/art?e=${encodeURIComponent(p.id)}&k=${encodeURIComponent(p.art_key)}` : '';
+
+function pickNow() {   // the player to feature: Spotify if it has a song, else the first playing one (the Apple TV has its own card)
+  const ps = (H.players || []).filter(p => p.id !== ATV);
+  return ps.find(p => p.id === SPOTIFY && p.title) || ps.find(p => p.state === 'playing') || ps.find(p => p.id === SPOTIFY);
+}
+function renderNow() {
+  const p = cur = pickNow(); if (!p) return;
+  const playing = p.state === 'playing';
+  $('#src').textContent = (p.label + (p.app && p.id !== SPOTIFY ? ' · ' + p.app : '')).toUpperCase();
+  $('#title').textContent = p.title || (playing ? 'Playing' : 'Nothing playing'); $('#artist').textContent = [p.artist, p.album].filter(Boolean).join(' — ');
+  const a = artUrl(p); const css = a ? `url(${a})` : '';
+  if ($('#art').style.backgroundImage !== css) { $('#art').style.backgroundImage = css; $('#bg').style.backgroundImage = css; }
+  $('#art').classList.toggle('spin', playing);
+  if (!(hold.pp > Date.now())) $('#ppi').innerHTML = playing ? PAUSE : PLAY;
+}
+// ---------- living room TV ----------
+const FAV_APPS = ['SVT Play', 'TV4 Play', 'Telia Play', 'Netflix', 'YouTube', 'Disney+', 'HBO Max', 'Prime Video'];
+let tv = null;
+function renderTV() {
+  const t = tv = H.appletv; if (!t) return;
+  const off = ['off', 'standby', 'unavailable'].includes(t.state), playing = t.state === 'playing';
+  $('#tv').classList.toggle('off', off);
+  $('#tvsrc').textContent = ('Apple TV' + (t.app ? ' · ' + t.app : '') + (off ? ' · ' + t.state : '')).toUpperCase();
+  $('#tvtitle').textContent = t.title || (off ? 'TV is off' : t.app ? 'In ' + t.app : t.state === 'idle' ? 'Home screen' : 'Nothing playing');
+  const a = artUrl(t), css = a ? `url(${a})` : '';
+  if ($('#tvart').style.backgroundImage !== css) $('#tvart').style.backgroundImage = css;
+  $('#tvart').classList.toggle('has', !!a);
+  if (!(hold.tv > Date.now())) $('#tvppi').innerHTML = playing ? PAUSE : PLAY;
+  $('#tvpower').textContent = off ? 'Turn on' : 'Turn off';
+  const apps = t.apps || [], favs = FAV_APPS.filter(x => apps.includes(x));
+  const html = favs.map(x => `<button data-app="${esc(x)}" class="${t.app === x ? 'on' : ''}">${esc(x)}</button>`).join('')
+    + `<select id="tvall" aria-label="All apps"><option value="">All apps…</option>${apps.map(x => `<option>${esc(x)}</option>`).join('')}</select>`;
+  if ($('#tvapps').dataset.h !== html) { $('#tvapps').innerHTML = html; $('#tvapps').dataset.h = html; }
+}
+function progressTV() {
+  const t = tv; if (!t || !t.duration) { $('#tvbar').style.width = '0'; $('#tvpos').textContent = ''; $('#tvleft').textContent = ''; return; }
+  let pos = t.position || 0; if (t.state === 'playing' && t.position_at) pos += (Date.now() - new Date(t.position_at).getTime()) / 1000;
+  pos = Math.min(t.duration, pos); const left = t.duration - pos;
+  const ends = new Date(Date.now() + left * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  $('#tvbar').style.width = (pos / t.duration * 100) + '%'; $('#tvpos').textContent = `${mmss(pos)} / ${mmss(t.duration)}`;
+  $('#tvleft').textContent = left < 1 ? 'ending' : `${mmss(left)} left${t.state === 'playing' ? ' · ends ' + ends : ''}`;
+}
+const atv = (v, what = 'atv') => post('/api/home/do', { do: what, value: v }).then(() => setTimeout(loadHome, 900)).catch(e => hint('✗ ' + e.message));
+$$('[data-atv]').forEach(b => tap(b, () => {
+  if (b.dataset.atv === 'play_pause') { hold.tv = Date.now() + 3000; $('#tvppi').innerHTML = tv?.state === 'playing' ? PLAY : PAUSE; }
+  navigator.vibrate?.(10); atv(b.dataset.atv);
+}));
+tap($('#tvpower'), () => { const off = ['off', 'standby', 'unavailable'].includes(tv?.state); atv(off ? 'turn_on' : 'turn_off', 'atv_power'); hint(off ? 'Turning the TV on…' : 'Turning the TV off…'); });
+$('#tvapps').addEventListener('click', e => { const b = e.target.closest('[data-app]'); if (b) { atv(b.dataset.app, 'atv_app'); hint('Opening ' + b.dataset.app + '…'); } });
+$('#tvapps').addEventListener('change', e => { if (e.target.id === 'tvall' && e.target.value) { atv(e.target.value, 'atv_app'); hint('Opening ' + e.target.value + '…'); e.target.value = ''; } });
+
+function progress() {
+  progressTV();
+  const p = cur; if (!p || !p.duration) { $('#bar').style.width = '0'; $('#pos').textContent = ''; $('#len').textContent = ''; return; }
+  let pos = p.position || 0; if (p.state === 'playing' && p.position_at) pos += (Date.now() - new Date(p.position_at).getTime()) / 1000;
+  pos = Math.min(p.duration, pos);
+  $('#bar').style.width = (pos / p.duration * 100) + '%'; $('#pos').textContent = mmss(pos); $('#len').textContent = mmss(p.duration);
+}
+$$('.ctl [data-m]').forEach(b => tap(b, () => {
+  if (!cur) return;
+  if (b.dataset.m === 'media_play_pause') { hold.pp = Date.now() + 3000; $('#ppi').innerHTML = cur.state === 'playing' ? PLAY : PAUSE; cur.state = cur.state === 'playing' ? 'paused' : 'playing'; $('#art').classList.toggle('spin', cur.state === 'playing'); }
+  post('/api/home/do', { do: 'mp', entity: cur.id, value: b.dataset.m }).then(() => setTimeout(loadHome, 700)).catch(e => hint('✗ ' + e.message));
+}));
+
+function renderRooms() {
+  const ICO = '<svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="3"/><circle cx="12" cy="14" r="3"/><circle cx="12" cy="7.5" r="1"/></svg>';
+  const box = $('#rooms');
+  (H.players || []).filter(p => p.id !== SPOTIFY && p.id !== ATV).forEach(p => {
+    let el = box.querySelector(`[data-id="${p.id}"]`);
+    if (!el) {
+      el = document.createElement('div'); el.className = 'room'; el.dataset.id = p.id;
+      el.innerHTML = `<div class="ra">${ICO}</div><div style="min-width:0"><b>${esc(p.label)}</b><span class="st"></span>${p.volume != null ? '<input type="range" min="0" max="100" step="1">' : ''}</div>
+        <button class="pp" aria-label="Play or pause"><svg viewBox="0 0 24 24">${PLAY}</svg></button>`;
+      box.appendChild(el);
+      tap(el.querySelector('.pp'), () => { hold[p.id] = Date.now() + 3000; const on = el.dataset.state === 'playing'; el.querySelector('.pp svg').innerHTML = on ? PLAY : PAUSE;
+        post('/api/home/do', { do: 'mp', entity: p.id, value: 'media_play_pause' }).then(() => setTimeout(loadHome, 700)).catch(e => hint('✗ ' + e.message)); });
+      const r = el.querySelector('input');
+      if (r) { r.addEventListener('input', () => { hold[p.id + 'v'] = Date.now() + 4000; r.style.setProperty('--p', r.value + '%'); });
+        r.addEventListener('change', () => post('/api/home/do', { do: 'mp', entity: p.id, value: 'volume_set', level: r.value / 100 }).catch(e => hint('✗ ' + e.message))); }
+    }
+    el.dataset.state = p.state; el.classList.toggle('off', ['off', 'unavailable'].includes(p.state));
+    el.querySelector('.st').textContent = p.title ? `${p.title}${p.artist ? ' · ' + p.artist : ''}` : p.state === 'unavailable' ? 'not reachable' : p.state;
+    if (!(hold[p.id] > Date.now())) el.querySelector('.pp svg').innerHTML = p.state === 'playing' ? PAUSE : PLAY;
+    const r = el.querySelector('input'); if (r && p.volume != null && !(hold[p.id + 'v'] > Date.now())) { r.value = Math.round(p.volume * 100); r.style.setProperty('--p', r.value + '%'); }
+    const a = artUrl(p); el.querySelector('.ra').style.backgroundImage = a ? `url(${a})` : '';
+  });
+}
+async function loadHome() { try { H = await (await fetch('/api/home/state')).json(); } catch { return; } if (!H.configured || H.error) return; renderNow(); renderTV(); renderRooms(); }
+
+/* Genelec arc: drag along a 180° arc, -60..0 dB */
+let vol = null, volBusy = 0, muted = false;
+function paintArc(v) {
+  vol = v; const f = (v + 60) / 60, R = 95, cx = 115, cy = 120, pt = t => [cx - R * Math.cos(Math.PI * t), cy - R * Math.sin(Math.PI * t)];
+  const [x1, y1] = pt(0), [x2, y2] = pt(1), [xf, yf] = pt(Math.max(.001, f));
+  $('#arcsvg').innerHTML = `<defs><linearGradient id="ag" x1="0" x2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#38bdf8"/></linearGradient></defs>
+    <path d="M${x1},${y1} A${R},${R} 0 0 1 ${x2},${y2}" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="14" stroke-linecap="round"/>
+    <path d="M${x1},${y1} A${R},${R} 0 0 1 ${xf},${yf}" fill="none" stroke="${muted ? 'rgba(255,255,255,.3)' : 'url(#ag)'}" stroke-width="14" stroke-linecap="round"/>
+    <circle cx="${xf}" cy="${yf}" r="11" fill="#fff"/>`;
+  $('#db').textContent = Math.round(v);
+}
+(() => { const el = $('#arc'); let drag = false, last = 0;
+  const val = e => { const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 230 - 115, y = 120 - (e.clientY - r.top) / r.height * 140;
+    let a = Math.atan2(Math.max(0, y), x); return Math.round(-60 + 60 * (1 - a / Math.PI)); };
+  el.addEventListener('pointerdown', e => { if (el.classList.contains('off')) return; drag = true; el.setPointerCapture(e.pointerId); volBusy = Date.now(); paintArc(val(e)); });
+  el.addEventListener('pointermove', e => { if (!drag) return; volBusy = Date.now(); paintArc(val(e)); if (Date.now() - last > 200) { last = Date.now(); post('/api/genelec', { action: 'volume', value: vol }).catch(() => {}); } });
+  el.addEventListener('pointerup', () => { if (drag) { drag = false; post('/api/genelec', { action: 'volume', value: vol }).catch(e => hint('✗ ' + e.message)); } });
+})();
+tap($('#mute'), () => { muted = !muted; $('#mute').classList.toggle('on', muted); paintArc(vol ?? -40); post('/api/genelec', { action: 'mute', value: muted }).catch(e => hint('✗ ' + e.message)); });
+tap($('#power'), () => { const on = !$('#power').classList.contains('on'); $('#power').classList.toggle('on', on); post('/api/genelec', { action: 'power', value: on }).catch(e => hint('✗ ' + e.message)); });
+$$('[data-s]').forEach(b => tap(b, () => { $$('[data-s]').forEach(x => x.classList.toggle('on', x === b)); hint('Switching source…');
+  post('/api/dante/source', { source: b.dataset.s }).then(() => hint('Source: ' + b.textContent.trim())).catch(e => hint('✗ ' + e.message)); }));
+async function loadStatus() {
+  try { const s = await (await fetch('/api/status')).json(); G = s.genelec || {};
+    $('#arc').classList.toggle('off', G.level == null);
+    if (Date.now() - volBusy > 4000) { muted = !!G.mute; $('#mute').classList.toggle('on', muted); paintArc(G.level != null ? Math.max(-60, G.level) : -40); if (G.level == null) $('#db').textContent = G.power === 'ACTIVE' ? '--' : 'zzz'; }
+    $('#power').classList.toggle('on', G.power === 'ACTIVE');
+    $('#spks').textContent = G.power && G.power !== 'ACTIVE' ? 'In standby — tap "Speakers on" to wake them' : (G.speakers || []).map((x, i) => `${['4430 L', '4430 R', '3440 sub'][i]} ${x.ok ? (x.power === 'ACTIVE' ? 'on' : 'asleep') : 'offline'}`).join(' · ');
+    const d = s.dante || {}; if (d.ok) $$('[data-s]').forEach(x => x.classList.toggle('on', x.dataset.s === d.source));
+  } catch {}
+}
+loadHome(); loadStatus(); paintArc(-40);
+setInterval(loadHome, 4000); setInterval(loadStatus, 5000); setInterval(progress, 1000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { loadHome(); loadStatus(); } });
+</script>
+<script src="/start.js" defer></script>
+<script src="/cam.js" defer></script>
+</body>
+</html>

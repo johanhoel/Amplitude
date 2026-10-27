@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0e1116">
+<title>Design 5 · Pro</title>
+<style>
+/* Design 5 "Pro" v2: for Mac/PC first. Left sidebar with sections and counts; keys 1-4, / filters. Content as a grid of compact
+   cards (KPIs, then one card per room with rows) instead of one long table. Buttons: small outline buttons with a state pill.
+   On phones the sidebar becomes a 2 x 2 section bar. Disruptive actions sit in a Danger zone behind a dialog whose default is Cancel. */
+:root { --bg: #0e1116; --side: #0a0c10; --card: #151a21; --line: #232a33; --ink: #e8ecf2; --mute: #8792a2; --acc: #7aa2ff; --red: #f87171; --ok: #4ade80; --amber: #fbbf24;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, Roboto, sans-serif; --mono: ui-monospace, SFMono-Regular, Menlo, monospace; --toast-bg: #1f2633; }
+* { box-sizing: border-box; } html, body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 var(--font); -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; -webkit-user-select: none; user-select: none; }
+.app { display: grid; grid-template-columns: 228px 1fr; min-height: 100vh; }
+aside { position: sticky; top: 0; height: 100vh; background: var(--side); border-right: 1px solid var(--line); padding: 18px 12px; display: flex; flex-direction: column; gap: 4px; }
+aside .brand { font-weight: 750; font-size: 15px; padding: 0 10px 14px; display: flex; justify-content: space-between; } aside .brand span { color: var(--mute); font-weight: 500; }
+aside button { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 12px; border-radius: 10px; color: var(--mute); font-weight: 600; text-align: left; }
+aside button kbd { margin-left: auto; font: 600 11px var(--mono); color: var(--mute); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; }
+aside button .n { font-size: 12px; color: var(--amber); } aside button.on { background: #1b2230; color: var(--ink); }
+aside .foot { margin-top: auto; color: #5b6574; font-size: 12px; padding: 0 12px; line-height: 1.6; }
+main { padding: 24px 28px 60px; min-width: 0; }
+.top { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; } .top h1 { margin: 0; font-size: 24px; font-weight: 750; flex: 1; }
+.top input { width: 260px; max-width: 45vw; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 0 12px; font: inherit; outline: none; }
+.top input:focus { border-color: var(--acc); }
+.v { display: none; } .v.on { display: block; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; } .kpi span { color: var(--mute); font-size: 12px; } .kpi b { display: block; font-size: 20px; font-weight: 650; margin-top: 2px; }
+.kpi .ok { color: var(--ok); }
+.cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); align-items: start; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.card h3 { margin: 0; padding: 11px 14px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; }
+.card h3 span { color: var(--amber); letter-spacing: 0; text-transform: none; }
+.r { display: flex; align-items: center; gap: 10px; min-height: 50px; padding: 6px 10px 6px 14px; border-bottom: 1px solid var(--line); } .r:last-child { border-bottom: 0; }
+.r .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .r .nm small { color: var(--mute); margin-left: 6px; }
+.pillst { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: #1f2630; color: var(--mute); }
+.pillst.on { background: rgba(251,191,36,.16); color: #fde68a; } .pillst.ok { background: rgba(74,222,128,.14); color: var(--ok); }
+.ob { min-height: 44px; min-width: 72px; padding: 0 12px; border-radius: 9px; border: 1px solid #2e3743; font-weight: 650; font-size: 13px; color: var(--ink); }
+.ob:hover { border-color: #46526a; } .ob.red { color: var(--red); border-color: rgba(248,113,113,.45); } .kdown { background: #1d2430; }
+.acts { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.zone { margin-top: 24px; border: 1px solid rgba(248,113,113,.4); border-radius: 12px; background: rgba(248,113,113,.04); }
+.zone h2 { margin: 0; padding: 12px 16px 2px; font-size: 15px; color: var(--red); } .zone p { margin: 0; padding: 0 16px 10px; color: var(--mute); }
+.zone .r { border-color: rgba(248,113,113,.18); } .zone .r small { display: block; color: var(--mute); margin-left: 0; }
+dialog { border: 1px solid var(--line); border-radius: 14px; background: #161b23; color: var(--ink); padding: 22px; width: min(420px, calc(100% - 32px)); }
+dialog::backdrop { background: rgba(0,0,0,.6); } dialog h3 { margin: 0 0 6px; font-size: 17px; } dialog p { margin: 0 0 18px; color: var(--mute); }
+dialog .bt { display: flex; gap: 10px; justify-content: flex-end; } dialog .ob { min-height: 44px; } dialog .ob:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.hidden { display: none !important; }
+@media (max-width: 760px) { .app { grid-template-columns: 1fr; } aside { position: sticky; top: 0; z-index: 30; height: auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 8px; border-right: 0; border-bottom: 1px solid var(--line); }
+  aside .brand, aside .foot, aside kbd, aside button .n { display: none; } aside button { min-height: 48px; justify-content: center; padding: 0 4px; font-size: 13px; flex-direction: column; gap: 0; }
+  main { padding: 16px 12px 40px; } .top input { display: none; } .cards { grid-template-columns: 1fr; } }
+</style></head><body>
+<div class="app">
+  <aside aria-label="Sections"><div class="brand">Home Deck <span id="clock"></span></div>
+    <button data-go="home" class="on">⌂ Overview <kbd>1</kbd></button><button data-go="rooms">💡 Lights <span class="n" id="nl"></span><kbd>2</kbd></button>
+    <button data-go="media">♫ Media <kbd>3</kbd></button><button data-go="actions">⚡ Actions <kbd>4</kbd></button>
+    <div class="foot">1–4 switch section<br>/ filter · Esc clear</div></aside>
+  <main>
+    <div class="top"><h1 id="title">Overview</h1><input id="q" placeholder="Filter (/)" autocomplete="off"></div>
+    <section class="v on" data-v="home"><div class="kpis" id="kpis"></div><div class="cards"><div class="card" id="ppl"></div></div></section>
+    <section class="v" data-v="rooms"><div class="cards" id="rooms"></div></section>
+    <section class="v" data-v="media"><div class="cards"><div class="card" id="media"></div></div></section>
+    <section class="v" data-v="actions"><div class="acts" id="acts"></div>
+      <div class="zone"><h2>Danger zone</h2><p>These open a confirmation; Cancel is the default.</p><div id="zone"></div></div></section>
+  </main>
+</div>
+<dialog id="dlg"><h3 id="dt"></h3><p id="dp"></p><div class="bt"><button class="ob red" id="dok">Confirm</button><button class="ob" id="dno" autofocus>Cancel</button></div></dialog>
+<script src="/designs/kit.js"></script>
+<script>
+const $ = s => document.querySelector(s), { esc } = Kit; let S = null;
+const TITLES = { home: 'Overview', rooms: 'Lights', media: 'Media', actions: 'Actions' };
+const go = v => { document.querySelectorAll('aside button[data-go]').forEach(x => x.classList.toggle('on', x.dataset.go === v)); document.querySelectorAll('.v').forEach(x => x.classList.toggle('on', x.dataset.v === v)); $('#title').textContent = TITLES[v]; filter(); };
+document.querySelectorAll('aside button[data-go]').forEach(b => Kit.press(b, () => go(b.dataset.go)));
+document.addEventListener('keydown', e => { if ($('#dlg').open) return; const typing = document.activeElement === $('#q');
+  if (!typing && '1234'.includes(e.key) && e.key.length === 1 && !e.metaKey && !e.ctrlKey) go(Object.keys(TITLES)[+e.key - 1]);
+  if (!typing && e.key === '/') { e.preventDefault(); $('#q').focus(); } if (typing && e.key === 'Escape') { $('#q').value = ''; filter(); $('#q').blur(); } });
+const filter = () => { const q = $('#q').value.trim().toLowerCase(); document.querySelectorAll('.cards .card').forEach(c => { const rows = [...c.querySelectorAll('.r')];
+  rows.forEach(r => r.classList.toggle('hidden', !!q && !(r.textContent + ' ' + c.querySelector('h3')?.textContent).toLowerCase().includes(q))); c.classList.toggle('hidden', !!q && rows.length && rows.every(r => r.classList.contains('hidden'))); }); };
+$('#q').addEventListener('input', filter);
+function render() {
+  $('#clock').textContent = Kit.hm(Date.now()); if (!S) return;
+  const on = S.rooms.reduce((a, r) => a + r.lights.filter(Kit.isOn).length, 0); $('#nl').textContent = on ? on + ' on' : '';
+  $('#kpis').innerHTML = [['Front door', S.door === 'locked' ? '<span class="ok">Locked</span>' : esc(S.door || '–')], ['Lights on', on], ['People home', `${S.people.filter(p => p.home).length} / ${S.people.length}`],
+    ['Outside', S.wx?.temperature != null ? Math.round(S.wx.temperature) + '° ' + esc(S.wx.condition || '') : '–'], ['Next bus', S.bus?.none ? 'none soon' : S.bus ? `${esc(S.bus.line)} · ${esc(Kit.busText(S.bus))}` : '–'],
+    ['Now playing', esc(S.playing?.title || '—')]].map(([k, v]) => `<div class="kpi"><span>${k}</span><b>${v}</b></div>`).join('');
+  $('#ppl').innerHTML = `<h3>People</h3>${S.people.map(p => `<div class="r"><span class="nm">${esc(p.name)}</span><span class="pillst ${p.home ? 'ok' : ''}">${p.home ? 'home' : 'away'}</span></div>`).join('')}`;
+  $('#rooms').innerHTML = S.rooms.map(r => { const n = r.lights.filter(Kit.isOn).length;
+    return `<div class="card"><h3>${esc(r.room)}<span>${n ? n + ' on' : ''}</span></h3>${r.lights.map(l => `<div class="r"><span class="nm">${esc(l.name === 'All' ? 'Whole room' : l.name)}${l.bri != null && Kit.isOn(l) ? `<small>${l.bri}%</small>` : ''}</span>
+      <span class="pillst ${Kit.isOn(l) ? 'on' : ''}">${Kit.isOn(l) ? 'on' : 'off'}</span><button class="ob tg" data-id="${esc(l.id)}">${Kit.isOn(l) ? 'Turn off' : 'Turn on'}</button></div>`).join('')}</div>`; }).join('');
+  document.querySelectorAll('.tg').forEach(b => Kit.press(b, () => Kit.flip(S.rooms.flatMap(r => r.lights).find(l => l.id === b.dataset.id), render)));
+  $('#media').innerHTML = `<h3>Players</h3>${(S.H.players || []).concat(S.H.appletv ? [S.H.appletv] : []).map(p => `<div class="r"><span class="nm">${esc(p.label)}<small>${esc(p.title || '')}</small></span><span class="pillst ${p.state === 'playing' ? 'on' : ''}">${esc(p.state)}</span></div>`).join('')}`;
+  filter();
+}
+$('#acts').innerHTML = ['Start the vacuum', 'Wake the PC', 'Switch camera alerts'].map(t => `<button class="ob" style="min-height:48px" data-t="${t}">${t}</button>`).join('');
+document.querySelectorAll('#acts .ob').forEach(b => Kit.press(b, () => Kit.toast('Demo: would ' + b.dataset.t.toLowerCase())));
+const RISK = [['Lock the front door', 'Locks the door. Unlocking stays in the lock app.'], ['Turn off every light', 'Every light in the house goes off.'], ['Put the PC to sleep', 'Programs keep running; the PC wakes with Wake-on-LAN.']];
+$('#zone').innerHTML = RISK.map(([t, d], i) => `<div class="r"><span class="nm">${t}<small>${d}</small></span><button class="ob red" data-i="${i}">${t.split(' ')[0]}…</button></div>`).join('');
+let pending = null;
+document.querySelectorAll('#zone .ob').forEach(b => Kit.press(b, () => { const [t, d] = RISK[+b.dataset.i]; pending = t; $('#dt').textContent = t + '?'; $('#dp').textContent = d; $('#dlg').showModal(); $('#dno').focus(); }));
+$('#dno').addEventListener('click', () => { $('#dlg').close(); pending = null; });
+$('#dok').addEventListener('click', () => { $('#dlg').close(); Kit.toast('Demo: would ' + pending.toLowerCase()); pending = null; });
+Kit.data(D => { S = Kit.summary(D); render(); }); setInterval(render, 30000);
+</script></body></html>

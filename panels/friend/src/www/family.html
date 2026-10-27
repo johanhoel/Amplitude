@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0b0912">
+<title>Family</title>
+<style>
+/* Family: who is home, since when, and how the day went. Each person wears a 24-hour ring: coloured where
+   they were home today, a dot at "now". Data: Wi-Fi presence (Home Deck), camera recognitions (camwatch). */
+:root { --bg: #0b0912; --ink: #f6f4fb; --mute: rgba(246,244,251,.56); --faint: rgba(246,244,251,.12); --line: rgba(255,255,255,.08);
+  --accent: #7c5cff; --ok: #34d399; --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font-family: var(--font); -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+body { background: radial-gradient(70% 50% at 50% -10%, rgba(124,92,255,.28), transparent 70%), radial-gradient(60% 40% at 100% 100%, rgba(52,211,153,.10), transparent 70%), var(--bg); background-attachment: fixed; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.num { font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1400px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 22px) 28px calc(env(safe-area-inset-bottom) + 40px); }
+header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
+.sub { color: var(--mute); font-size: 15px; margin-top: 6px; }
+.cap { font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); font-weight: 650; margin: 34px 0 14px; }
+
+/* people with 24h rings */
+.people { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 18px; margin-top: 26px; }
+.p { display: grid; justify-items: center; text-align: center; gap: 10px; padding: 8px 0; }
+.ring { width: 190px; height: 190px; position: relative; }
+.ring svg { width: 100%; height: 100%; }
+.ring .face { position: absolute; inset: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 58px; font-weight: 700; color: #fff;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 92%, #fff), var(--c) 55%, color-mix(in srgb, var(--c) 55%, #000));
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--c) 35%, transparent); transition: filter .3s, opacity .3s; }
+.p.away .face { filter: grayscale(.85) brightness(.55); box-shadow: none; }
+.p h2 { margin: 0; font-size: 22px; font-weight: 700; }
+.state { font-size: 14px; color: var(--mute); }
+.state b { color: var(--ok); font-weight: 650; } .p.away .state b { color: var(--mute); }
+.chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.chip { font-size: 12px; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--line); color: var(--mute); }
+
+/* day timeline */
+.tl { position: relative; padding-left: 110px; }
+.tl .hours { position: relative; height: 20px; margin-bottom: 8px; color: var(--mute); font-size: 11.5px; }
+.tl .hours span { position: absolute; transform: translateX(-50%); }
+.lane { position: relative; height: 34px; margin-bottom: 10px; }
+.lane .who { position: absolute; left: -110px; top: 7px; width: 100px; font-weight: 650; font-size: 14.5px; display: flex; gap: 8px; align-items: center; }
+.lane .who i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+.lane .track { position: absolute; inset: 0; border-radius: 999px; background: rgba(255,255,255,.045); overflow: hidden; }
+.lane .seg { position: absolute; top: 0; bottom: 0; border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c) 75%, transparent), color-mix(in srgb, var(--c) 45%, transparent)); }
+.lane .cam { position: absolute; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: #fff; border: 3px solid var(--c);
+  box-shadow: 0 0 0 4px rgba(0,0,0,.35); display: grid; place-items: center; }
+.lane .cam svg { width: 11px; height: 11px; stroke: #111; fill: none; stroke-width: 2.4; }
+.nowline { position: absolute; top: -6px; bottom: -4px; width: 2px; background: #fff; opacity: .7; border-radius: 2px; }
+.nowline::after { content: "now"; position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 10.5px; color: var(--mute); }
+
+/* activity */
+.acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.act { padding: 16px 18px; border-radius: 26px; background: rgba(255,255,255,.04); border: 1px solid var(--line); }
+.act header { align-items: baseline; }
+.act b { font-size: 16px; } .act .big { font-size: 30px; font-weight: 250; }
+.act .big small { font-size: 13px; color: var(--mute); margin-left: 4px; }
+.bars { display: flex; gap: 3px; align-items: flex-end; height: 64px; margin-top: 12px; }
+.bars i { flex: 1; border-radius: 4px 4px 2px 2px; background: color-mix(in srgb, var(--c) 70%, transparent); min-height: 2px; }
+.bars i.now { opacity: 1; background: var(--c); }
+.fun { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 13px; color: var(--mute); }
+.fun .meter { flex: 1; height: 8px; border-radius: 8px; background: rgba(255,255,255,.07); overflow: hidden; }
+.fun .meter i { display: block; height: 100%; background: linear-gradient(90deg, #ff7ac6, #fbbf24); border-radius: 8px; }
+.door { display: flex; gap: 12px; flex-wrap: wrap; }
+.dv { display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 8px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--line); }
+.dv img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #222; }
+.dv small { display: block; color: var(--mute); font-size: 12px; }
+.empty { color: var(--mute); font-size: 14px; }
+@media (max-width: 700px) { .wrap { padding: 18px 16px 40px; } h1 { font-size: 32px; } .ring { width: 150px; height: 150px; } .ring .face { inset: 21px; font-size: 44px; }
+  .people { grid-template-columns: 1fr 1fr; gap: 10px; } .tl { padding-left: 82px; } .lane .who { left: -82px; width: 76px; font-size: 13px; } }
+/* panel switcher */
+#sw { position: fixed; top: calc(env(safe-area-inset-top) + 16px); right: 18px; z-index: 30; width: 46px; height: 46px; border-radius: 50%;
+  background: rgba(255,255,255,.08); border: 1px solid var(--line); display: grid; place-items: center; }
+#sw svg { width: 20px; height: 20px; fill: currentColor; }
+#swp { position: fixed; inset: 0; z-index: 29; display: none; background: rgba(5,4,10,.82); padding: 90px 22px; }
+#swp.open { display: block; }
+#swp nav { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+#swp a { display: block; padding: 16px 18px; border-radius: 999px; background: rgba(255,255,255,.07); border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-weight: 600; }
+#swp a small { display: block; color: var(--mute); font-weight: 400; font-size: 12px; }
+#swp a.on { background: var(--accent); border-color: transparent; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<button id="sw" aria-label="All panels"><svg viewBox="0 0 24 24"><circle cx="5" cy="5" r="2.2"/><circle cx="12" cy="5" r="2.2"/><circle cx="19" cy="5" r="2.2"/><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="12" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/></svg></button>
+<div id="swp"><nav id="swnav"></nav></div>
+<div class="wrap">
+  <header><div><h1>Family</h1><div class="sub" id="sub">–</div></div></header>
+  <section class="people" id="people"></section>
+  <div class="cap">Today</div>
+  <section class="tl" id="tl"><div class="hours" id="hours"></div></section>
+  <section class="door" id="door" hidden></section>
+  <section class="acts" id="acts" hidden></section>
+</div>
+<script>
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const PALETTE = ['#7c5cff', '#34d399', '#ff6fb5', '#fbbf24', '#22d3ee', '#f97316', '#a78bfa', '#fb7185'], COL = {};
+const PANELS = [['/start', 'Start', 'all panels'], ['/living', 'Home', 'lights, music, door'], ['/media', 'Media', 'music, players'], ['/family', 'Family', "who's home"], ['/familyinfo', 'Family info', 'weather, buses'], ['/ambient', 'Ambient', 'night clock'], ['/desktop', 'Desktop', 'wallpaper']];
+$('#swnav').innerHTML = PANELS.map(([u, t, s]) => `<a href="${u}" class="${location.pathname.replace(/\/$/, '') === u ? 'on' : ''}">${t}<small>${s}</small></a>`).join('');
+$('#sw').addEventListener('click', () => $('#swp').classList.toggle('open'));
+$('#swp').addEventListener('click', e => { if (e.target.id === 'swp') $('#swp').classList.remove('open'); });
+
+const hm = t => new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+const dur = s => { s = Math.max(0, s | 0); const h = s / 3600 | 0, m = s % 3600 / 60 | 0; return h ? `${h} h ${m} min` : `${m} min`; };
+const CAMI = '<svg viewBox="0 0 24 24"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+
+function ringSvg(p, d) {    // 24 h ring from local midnight: home arcs + a "now" dot
+  const R = 86, C = 2 * Math.PI * R, day = 86400, a0 = d.midnight;
+  const arc = (t1, t2) => { const f1 = Math.max(0, (t1 - a0) / day), f2 = Math.min(1, (t2 - a0) / day); if (f2 <= f1) return '';
+    return `<circle cx="95" cy="95" r="${R}" fill="none" stroke="${COL[p.name] || '#7c5cff'}" stroke-width="9" stroke-linecap="round"
+      stroke-dasharray="${(C * (f2 - f1)).toFixed(1)} ${C}" stroke-dashoffset="${(-C * f1).toFixed(1)}" transform="rotate(-90 95 95)"/>`; };
+  const fn = (d.now - a0) / day, ang = fn * 2 * Math.PI - Math.PI / 2;
+  const ticks = [0, 6, 12, 18].map(h => { const a = h / 24 * 2 * Math.PI - Math.PI / 2; return `<text x="${95 + 76 * Math.cos(a)}" y="${95 + 76 * Math.sin(a) + 3.5}" font-size="9" fill="rgba(246,244,251,.45)" text-anchor="middle">${h}</text>`; }).join('');
+  return `<svg viewBox="0 0 190 190"><circle cx="95" cy="95" r="${R}" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="9"/>
+    ${p.segments.filter(s => s.home).map(s => arc(s.from, s.to)).join('')}${ticks}
+    <circle cx="${95 + R * Math.cos(ang)}" cy="${95 + R * Math.sin(ang)}" r="6" fill="#fff" stroke="${COL[p.name] || '#7c5cff'}" stroke-width="3"/></svg>`;
+}
+
+function render(d) {
+  d.people.forEach((p, i) => { COL[p.name] = COL[p.name] || PALETTE[i % PALETTE.length]; });
+  const home = d.people.filter(p => p.home);
+  $('#sub').textContent = new Date().toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' +
+    (home.length === d.people.length ? 'everyone is home' : home.length ? home.map(p => p.name).join(', ') + ' home' : 'nobody home');
+  $('#people').innerHTML = d.people.map(p => {
+    const since = p.since ? `${p.home ? 'home' : 'away'} since <b class="num">${hm(p.since)}</b>` : `<b>${p.home ? 'home' : 'away'}</b> all day`;
+    const homeToday = p.segments.filter(s => s.home).reduce((a, s) => a + Math.max(0, s.to - Math.max(s.from, d.midnight)), 0);
+    return `<div class="p ${p.home ? '' : 'away'}" style="--c:${COL[p.name] || '#7c5cff'}"><div class="ring">${ringSvg(p, d)}<div class="face">${esc(p.name[0])}</div></div>
+      <h2>${esc(p.name)}</h2><div class="state">${since}</div>
+      <div class="chips"><span class="chip">${dur(homeToday)} home today</span>${p.home && p.silent_s > 600 ? '<span class="chip">phone resting</span>' : ''}</div></div>`;
+  }).join('');
+  // timeline from midnight (or 6 h back early in the morning)
+  const t0 = d.start, t1 = d.now, span = t1 - t0, pct = t => Math.max(0, Math.min(100, (t - t0) / span * 100));
+  const every = Math.max(1, Math.ceil((span / 3600) / Math.max(2, ($('#tl').clientWidth - 110) / 64)));   // ~64 px per label
+  const hrs = []; for (let h = Math.ceil(t0 / 3600) * 3600; h <= t1 - 1800; h += 3600 * every) hrs.push(`<span style="left:${pct(h)}%">${hm(h)}</span>`);
+  const cam = {}; d.camera.forEach(c => (cam[c.name] = cam[c.name] || []).push(c));
+  $('#tl').innerHTML = `<div class="hours">${hrs.join('')}</div>` + d.people.map(p => `<div class="lane" style="--c:${COL[p.name] || '#7c5cff'}">
+    <div class="who"><i></i>${esc(p.name)}</div><div class="track">${p.segments.filter(s => s.home).map(s => `<div class="seg" style="left:${pct(s.from)}%;width:${pct(s.to) - pct(s.from)}%"></div>`).join('')}</div>
+    ${(cam[p.name] || []).map(c => { const t = new Date(c.at).getTime() / 1000; return t >= t0 ? `<div class="cam" style="left:${pct(t)}%" title="camera ${hm(t)}">${CAMI}</div>` : ''; }).join('')}
+    </div>`).join('') + `<div class="nowline" style="left:calc(100% - 1px)"></div>`;
+  // door recognitions
+  $('#door').innerHTML = d.camera.length ? d.camera.slice(0, 12).map(c => `<div class="dv" style="--c:${COL[c.name]}"><img src="/api/sec/thumb/${c.day}/${c.stem}.jpg?w=160" alt="">
+    <div><b>${esc(c.name)}</b><small>${new Date(c.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })} · front door</small></div></div>`).join('')
+    : '<span class="empty">Nobody recognised by the camera yet today.</span>';
+  // activity per hour
+  const maxH = Math.max(1, ...d.people.flatMap(p => p.hourly));
+  $('#acts').innerHTML = d.people.map(p => `<div class="act" style="--c:${COL[p.name] || '#7c5cff'}"><header><b>${esc(p.name)}</b>
+    <span class="big num">${p.lookups_today.toLocaleString()}<small>lookups</small></span></header>
+    <div class="bars">${p.hourly.map((v, i, a) => `<i class="${i === a.length - 1 ? 'now' : ''}" style="height:${Math.max(3, v / maxH * 100)}%" title="${v}"></i>`).join('') || '<span class="empty">quiet</span>'}</div>
+    <div class="fun"><span>Social · video · games</span><span class="meter"><i style="width:${p.lookups_today ? Math.min(100, p.fun_today / p.lookups_today * 100) : 0}%"></i></span><span class="num">${p.lookups_today ? Math.round(p.fun_today / p.lookups_today * 100) : 0}%</span></div></div>`).join('');
+}
+async function load() { if (document.visibilityState !== 'visible') return; try { const r = await fetch('/api/family'); const d = await r.json(); if (!d.error) render(d); } catch {} }
+load(); setInterval(load, 30000);
+document.addEventListener('visibilitychange', load);
+</script>
+<script src="/start.js" defer></script>
+</body>
+</html>

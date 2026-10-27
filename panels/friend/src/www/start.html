@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Start">
+<meta name="theme-color" content="#05060a">
+<title>Start | Home Deck</title>
+<style>
+:root {
+  --accent: #7c5cff; --glass: rgba(18, 20, 30, .5); --glass-hi: rgba(255,255,255,.06); --line: rgba(255,255,255,.11);
+  --text: #f4f5fb; --mute: rgba(244,245,251,.58); --faint: rgba(244,245,251,.32);
+  --ok: #34d399; --warn: #fbbf24; --bad: #f87171; --r: 24px;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+html { background: #05060a; }
+body { margin: 0; min-height: 100vh; color: var(--text); font-family: var(--font); -webkit-tap-highlight-color: transparent; }
+a { color: inherit; text-decoration: none; }
+#wall { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: #05060a; }
+#wall::before, #wall::after { content: ""; position: absolute; inset: -10%; filter: blur(70px); opacity: .75;
+  background: radial-gradient(38% 34% at 18% 18%, #5b3cff, transparent 70%), radial-gradient(34% 30% at 85% 14%, #00b4e6, transparent 70%),
+              radial-gradient(40% 36% at 55% 100%, #c2185b, transparent 70%); animation: drift 30s ease-in-out infinite alternate; }
+#wall::after { opacity: .35; background: radial-gradient(30% 28% at 80% 75%, #19c48f, transparent 70%), radial-gradient(28% 24% at 15% 85%, #ffb020, transparent 70%);
+  animation-duration: 40s; animation-direction: alternate-reverse; }
+@keyframes drift { to { transform: translate(3%, -2%) scale(1.06); } }
+@media (prefers-reduced-motion: reduce) { #wall::before, #wall::after { animation: none; } }
+.shade { position: fixed; inset: 0; z-index: -1; background: radial-gradient(120% 80% at 50% 0%, rgba(0,0,0,.15), rgba(0,0,0,.6)); }
+
+main { max-width: 1240px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 22px) calc(env(safe-area-inset-right) + 16px)
+  calc(env(safe-area-inset-bottom) + 32px) calc(env(safe-area-inset-left) + 16px); }
+header { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; padding: 0 4px; }
+.clock { font-size: clamp(44px, 10vw, 68px); font-weight: 200; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.date { color: var(--mute); font-size: 14px; margin-top: 6px; }
+.summary { display: inline-flex; align-items: center; gap: 8px; padding: 8px 13px; border-radius: 999px; font-size: 13px;
+  background: var(--glass-hi); border: 1px solid var(--line); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+
+section { margin-top: 26px; }
+section h2 { margin: 0 4px 12px; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); font-weight: 600;
+  display: flex; gap: 10px; align-items: baseline; }
+section h2 small { letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--faint); font-size: 13px; }
+.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.card { position: relative; display: grid; grid-template-columns: 46px 1fr; gap: 14px; align-items: center; padding: 16px 16px 16px 14px;
+  background: var(--glass); border: 1px solid var(--line); border-radius: var(--r); min-height: 86px;
+  backdrop-filter: blur(22px) saturate(150%); -webkit-backdrop-filter: blur(22px) saturate(150%);
+  box-shadow: 0 10px 34px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.05); transition: transform .15s, border-color .2s, background .2s; }
+.card:hover { border-color: rgba(255,255,255,.22); background: rgba(28,30,44,.6); }
+.card:active { transform: scale(.98); }
+.card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ic { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 35%, transparent); color: var(--c); }
+.ic svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.t, .d, .u { display: block; }
+.t { font-weight: 600; font-size: 15.5px; display: flex !important; align-items: center; gap: 8px; }
+.d { color: var(--mute); font-size: 13px; margin-top: 3px; line-height: 1.35; }
+.u { color: var(--faint); font-size: 11.5px; margin-top: 4px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; margin-left: auto; }
+.dot.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); } .dot.bad { background: var(--bad); box-shadow: 0 0 8px var(--bad); }
+.tag { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); padding: 2px 7px;
+  border-radius: 999px; border: 1px solid var(--line); }
+.feat { grid-column: span 2; }
+@media (max-width: 520px) { .feat { grid-column: auto; } .grid { grid-template-columns: 1fr; } }
+/* SVT news under the clock: two scrolling lists (tabs on phones); a headline opens the article in a popup window */
+.news { margin-top: 4px; }
+.ntabs { display: none; gap: 6px; margin: 0 4px 10px; }
+.ntabs button { font: 600 14px var(--font); color: var(--text); padding: 8px 16px; border-radius: 999px; background: var(--glass-hi); border: 1px solid var(--line); cursor: pointer; }
+.ntabs button.on { background: var(--accent); border-color: transparent; }
+.ncols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ncol { background: var(--glass); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 6px 8px 14px; min-width: 0;
+  backdrop-filter: blur(22px) saturate(150%); -webkit-backdrop-filter: blur(22px) saturate(150%); }
+.ncol h3 { margin: 0 8px 8px 2px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); font-weight: 600; display: flex; justify-content: space-between; gap: 8px; }
+.ncol h3 small { letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--faint); }
+.nlist { max-height: 300px; overflow-y: auto; padding-right: 8px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin;
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 26px), transparent); mask-image: linear-gradient(#000 calc(100% - 26px), transparent); padding-bottom: 20px; }
+.ni { display: block; padding: 10px 10px 10px 12px; border-radius: 14px; border-left: 3px solid transparent; cursor: pointer; }
+.ni:hover { background: rgba(255,255,255,.06); border-left-color: var(--accent); } .ni:active { background: rgba(255,255,255,.1); }
+.ni b { display: block; font-size: 15px; font-weight: 600; line-height: 1.3; }
+.ni span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--mute); font-size: 13px; line-height: 1.4; margin-top: 3px; }
+.ni small { display: block; color: var(--faint); font-size: 11.5px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.ni.new small::before { content: "● "; color: #f87171; }
+.nempty { display: block; color: var(--faint); font-size: 13px; padding: 10px 4px; }
+@media (max-width: 760px) { .ntabs { display: flex; } .ncols { grid-template-columns: 1fr; } .ncol { display: none; } .ncol.on { display: block; } .nlist { max-height: 340px; } }
+footer { margin-top: 30px; text-align: center; color: var(--faint); font-size: 12.5px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div id="wall"></div><div class="shade"></div>
+<main>
+  <header>
+    <div><div class="clock" id="clock">--:--</div><div class="date" id="date"></div></div>
+    <span class="summary" id="summary"><i class="dot"></i><span>Checking…</span></span>
+  </header>
+  <section class="news" id="news" aria-label="SVT news">
+    <div class="ntabs"><button data-f="vast" class="on">Väst</button><button data-f="all">Sverige</button></div>
+    <div class="ncols">
+      <div class="ncol on" data-col="vast"><h3>SVT · Lokalt Väst <small id="nupd-vast"></small></h3><div class="nlist" id="n-vast"><span class="nempty">Loading news…</span></div></div>
+      <div class="ncol" data-col="all"><h3>SVT · Alla nyheter <small id="nupd-all"></small></h3><div class="nlist" id="n-all"><span class="nempty">Loading news…</span></div></div>
+    </div>
+  </section>
+  <div id="groups"></div>
+  <footer data-edit="foot" id="foot">Home Deck · rooms, lights and people come from Home Assistant (put lights in areas there).<br>
+    Add this page to the home screen of phones and tablets.</footer>
+</main>
+
+<script src="/edit.js"></script>
+<script>fetch('/api/info').then(r => r.json()).then(i => { if (!i.news) document.getElementById('news')?.remove();
+  if (i.title) document.title = i.title; }).catch(() => {});</script>
+<script>
+/* id = key in the server's /api/links check list (server.py LINK_CHECKS); same-origin panels are checked too */
+const I = {
+  deck: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 4v16M3 10h5M3 15h5"/>',
+  home: '<path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/>',
+  phone: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+  music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+  people: '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.6"/><path d="M16 14.2a4.5 4.5 0 0 1 5 4.8"/>',
+  shield: '<path d="M12 3 4.5 6v5.5c0 4.5 3.2 8 7.5 9.5 4.3-1.5 7.5-5 7.5-9.5V6z"/><path d="m9 12 2 2 4-4"/>',
+  moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+  server: '<rect x="3.5" y="4" width="17" height="6.5" rx="2"/><rect x="3.5" y="13.5" width="17" height="6.5" rx="2"/><path d="M7.5 7.2h.01M7.5 16.7h.01"/>',
+  grid: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/>',
+  wifi: '<path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r=".9"/>',
+  map: '<path d="m9 4-5.5 2v14L9 18l6 2 5.5-2V4L15 6z"/><path d="M9 4v14M15 6v14"/>',
+  ha: '<path d="M12 3 3 11h2.5v9h13v-9H21z"/><circle cx="12" cy="13" r="2"/><path d="M12 15v5M9.5 11.5 12 13l2.5-1.5"/>',
+  chart: '<path d="M4 19V5M4 19h16"/><path d="m7 15 4-4 3 3 5-6"/>',
+  box: '<path d="m12 3 8.5 4.5v9L12 21l-8.5-4.5v-9z"/><path d="m3.5 7.5 8.5 4.5 8.5-4.5M12 12v9"/>',
+  disk: '<ellipse cx="12" cy="6" rx="7.5" ry="2.8"/><path d="M4.5 6v12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8V6M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/>',
+  block: '<circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/>',
+  keys: '<rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/>',
+  cam: '<rect x="3" y="6.5" width="13" height="11" rx="2.5"/><path d="m16 10.5 5-3v9l-5-3z"/>',
+  folder: '<path d="M3.5 6.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
+  bus: '<rect x="4" y="3.5" width="16" height="14" rx="3"/><path d="M4 11h16M8 21v-3.5M16 21v-3.5"/><circle cx="8" cy="14.3" r=".9"/><circle cx="16" cy="14.3" r=".9"/>',
+  bell: '<path d="M6 9.5a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4s2-1.5 2-6.5"/><path d="M10 19.5a2.2 2.2 0 0 0 4 0"/>',
+};
+const GROUPS = [
+  ['Everyday', 'the panels for the wall, the tablet, the phone and the computer', [
+    ['living', '/living', 'Home', 'Lights by room, music, front door', 'home', '#fbbf24', 'feat'],
+    ['media', '/media', 'Media', 'Music and media players', 'music', '#fb7185'],
+    ['family', '/family', 'Family', "Who's home, today's timeline", 'people', '#34d399'],
+    ['familyinfo', '/familyinfo', 'Family info', 'Weather, next buses, last one home', 'bus', '#22d3ee'],
+    ['ambient', '/ambient', 'Ambient', 'Night clock for the bedside', 'moon', '#a78bfa'],
+    ['desktop', '/desktop', 'Desktop', 'Computer wallpaper (Lively Wallpaper on Windows)', 'deck', '#6f8fe0'],
+  ]],
+  ['Settings', 'Home Assistant, editing and setup', [
+    ['ha', '/ha', 'Home Assistant', 'Devices, automations, areas', 'ha', '#18bcf2', 'feat'],
+    ['editor', '/editor', 'Panel editor', 'Edit the panels: code, live preview, history', 'keys', '#7c5cff'],
+    ['editstart', '/start?edit', 'Edit this page', 'Move, rename, hide or add cards', 'grid', '#7c5cff'],
+    ['setup', '/setup', 'Setup', 'Home Assistant token and what was found', 'box', '#6f8fe0'],
+  ]],
+];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// layout: GROUPS above are the defaults; a saved layout (edit mode, opened as /start?edit from Admin) replaces them
+const DEFAULT_FOOT = document.getElementById('foot').innerHTML;
+const defaults = () => ({ foot: DEFAULT_FOOT, groups: GROUPS.map(([title, sub, items]) => ({ title, sub,
+  items: items.map(([id, url, name, desc, icon, color, cls]) => ({ id, url, name, desc, icon, color, feat: cls === 'feat' })) })) });
+let model = defaults();
+const setModel = l => { model = l && l.groups ? l : defaults(); render(); };
+const editing = () => document.body.classList.contains('editing');
+function render() {
+document.getElementById('foot').innerHTML = model.foot ?? DEFAULT_FOOT;
+document.getElementById('groups').innerHTML = model.groups.map(({ title, sub, items }, gi) => `<section><h2 data-edit="group" data-gi="${gi}">${esc(title)} <small>${esc(sub)}</small></h2><div class="grid">`
+  + items.map(({ id, url, name, desc, icon, color, feat }, ii) => { const cls = feat ? 'feat' : '';
+      const ext = /^https?:/.test(url);
+      return `<a class="card ${cls || ''}" href="${esc(url)}" ${ext ? 'target="_blank" rel="noopener"' : ''} style="--c:${esc(color)}" data-edit="item" data-gi="${gi}" data-ii="${ii}">
+        <span class="ic"><svg viewBox="0 0 24 24">${I[icon] || I.grid || ''}</svg></span>
+        <span><span class="t">${esc(name)}<i class="dot" data-id="${id}" title="checking"></i></span><span class="d">${esc(desc)}</span>
+        <span class="u">${esc(url.replace(/^https?:\/\//, '').replace(/\/$/, '') || location.host)}</span></span></a>`;
+    }).join('') + '</div>' + (editing() ? `<button class="eadd" data-add="item" data-gi="${gi}">+ Add card to ${esc(title)}</button>` : '') + '</section>').join('')
+  + (editing() ? '<button class="eadd" data-add="group" style="margin-top:24px">+ Add group</button>' : '');
+if (typeof check === 'function' && render.done) check();
+render.done = true;
+}
+render();
+
+// ---------- edit mode ----------
+const ICONS = Object.keys(I).map(k => [k, k]);
+async function editItem(gi, ii, isNew) {
+  const g = model.groups[gi], it = isNew ? { id: '', url: 'https://', name: '', desc: '', icon: 'grid', color: '#7c5cff', feat: false } : g.items[ii];
+  const r = await Edit.sheet({ title: isNew ? 'New card' : 'Edit card', fields: [
+      { key: 'name', label: 'Name', value: it.name }, { key: 'desc', label: 'Description', value: it.desc },
+      { key: 'url', label: 'Address', type: 'url', value: it.url, hint: 'Full address, or a Home Deck path like /familyinfo' },
+      { key: 'icon', label: 'Icon', type: 'select', value: it.icon, options: ICONS }, { key: 'color', label: 'Colour', value: it.color, hint: 'e.g. #34d399' },
+      { key: 'feat', label: 'Wide card (featured)', type: 'toggle', value: it.feat },
+      { key: 'gi', label: 'Group', type: 'select', value: gi, options: model.groups.map((x, i) => [i, x.title]) }],
+    buttons: isNew ? [{ id: 'save', label: 'Add' }] : [{ id: 'del', label: 'Delete', tone: 'bad' }, { id: 'up', label: '←', side: true }, { id: 'down', label: '→', side: true }, { id: 'save', label: 'Save' }] });
+  if (!r) return;
+  if (r.action === 'del') { if (confirm(`Delete "${it.name}"?`)) g.items.splice(ii, 1); return render(); }
+  const v = r.values; if (!v.name || !v.url) return Edit.toast('Name and address are needed');
+  const upd = { ...it, name: v.name, desc: v.desc, url: v.url, icon: v.icon, color: v.color || '#7c5cff', feat: v.feat }; if (upd.url !== it.url) upd.id = '';
+  if (isNew) g.items.push(upd); else g.items[ii] = upd;
+  const at = isNew ? g.items.length - 1 : ii;
+  if (+v.gi !== gi) { g.items.splice(at, 1); model.groups[+v.gi].items.push(upd); }
+  else if (r.action === 'up' || r.action === 'down') Edit.move(g.items, at, r.action === 'up' ? -1 : 1);
+  render();
+}
+async function editGroup(gi, isNew) {
+  const g = isNew ? { title: '', sub: '', items: [] } : model.groups[gi];
+  const r = await Edit.sheet({ title: isNew ? 'New group' : 'Edit group', fields: [{ key: 'title', label: 'Group name', value: g.title }, { key: 'sub', label: 'Description', value: g.sub }],
+    buttons: isNew ? [{ id: 'save', label: 'Add' }] : [{ id: 'del', label: 'Delete group', tone: 'bad' }, { id: 'up', label: '↑', side: true }, { id: 'down', label: '↓', side: true }, { id: 'save', label: 'Save' }] });
+  if (!r) return;
+  if (r.action === 'del') { if (confirm(`Delete the group "${g.title}" and its ${g.items.length} cards?`)) model.groups.splice(gi, 1); return render(); }
+  if (!r.values.title) return Edit.toast('The group needs a name');
+  Object.assign(g, { title: r.values.title, sub: r.values.sub });
+  if (isNew) model.groups.push(g); else if (r.action !== 'save') Edit.move(model.groups, gi, r.action === 'up' ? -1 : 1);
+  render();
+}
+document.addEventListener('click', async e => {
+  if (!editing() || e.target.closest('#ebar, #eback')) return;
+  const add = e.target.closest('[data-add]'), el = e.target.closest('[data-edit]');
+  if (!add && !el) return;
+  e.preventDefault(); e.stopPropagation();
+  if (add) return add.dataset.add === 'group' ? editGroup(0, true) : editItem(+add.dataset.gi, 0, true);
+  if (el.dataset.edit === 'item') editItem(+el.dataset.gi, +el.dataset.ii);
+  else if (el.dataset.edit === 'group') editGroup(+el.dataset.gi);
+  else if (el.dataset.edit === 'foot') { const r = await Edit.sheet({ title: 'Edit footer', fields: [{ key: 'v', label: 'Footer text', type: 'textarea', value: (model.foot ?? DEFAULT_FOOT).replace(/<br>/g, '\n') }], buttons: [{ id: 'save', label: 'Save' }] });
+    if (r) { model.foot = esc(r.values.v).replace(/\n/g, '<br>'); render(); } }
+}, true);
+const startEdit = () => Edit.start({ page: 'start', title: 'Start', get: () => model, set: setModel, render });
+Edit.load('start').then(l => { if (l.groups) setModel(l); if (new URLSearchParams(location.search).has('edit')) startEdit(); });
+
+function tick() { const d = new Date();
+  document.getElementById('clock').textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  document.getElementById('date').textContent = d.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' }); }
+tick(); setInterval(tick, 1000);
+
+async function check() {
+  let r; try { r = await (await fetch('/api/links')).json(); } catch { return; }
+  let up = 0, all = 0, down = [];
+  document.querySelectorAll('.dot[data-id]').forEach(d => {
+    const s = r[d.dataset.id]; if (!s) return; all++;
+    d.className = 'dot ' + (s.up ? 'ok' : 'bad'); d.title = s.up ? `up · ${s.ms} ms` : 'not answering';
+    if (s.up) up++; else down.push(d.closest('.card').querySelector('.t').textContent.trim());
+  });
+  const sum = document.getElementById('summary');
+  sum.innerHTML = `<i class="dot ${down.length ? 'bad' : 'ok'}"></i><span>${down.length ? esc(down.length + ' not answering: ' + down.join(', ')) : `All ${all} up`}</span>`;
+}
+check(); setInterval(check, 30000);
+
+// ---------- SVT news ----------
+const REGION = { vast: 'Väst', skane: 'Skåne', jonkoping: 'Jönköping', ost: 'Öst', vastmanland: 'Västmanland', varmland: 'Värmland', sormland: 'Sörmland',
+  orebro: 'Örebro', gavleborg: 'Gävleborg', vasterbotten: 'Västerbotten', vasternorrland: 'Västernorrland', norrbotten: 'Norrbotten', jamtland: 'Jämtland',
+  dalarna: 'Dalarna', helsingborg: 'Helsingborg', smaland: 'Småland', blekinge: 'Blekinge', uppsala: 'Uppsala', stockholm: 'Stockholm', halland: 'Halland',
+  inrikes: 'Inrikes', utrikes: 'Utrikes', ekonomi: 'Ekonomi', politik: 'Politik', vetenskap: 'Vetenskap', kultur: 'Kultur', sport: 'Sport' };
+const ago = t => { if (!t) return ''; const m = (Date.now() / 1000 - t) / 60; if (m < 1) return 'just now'; if (m < 60) return Math.round(m) + ' min ago';
+  if (m < 60 * 24) return Math.round(m / 60) + ' h ago'; return new Date(t * 1000).toLocaleDateString([], { day: 'numeric', month: 'short' }); };
+async function loadNews() {
+  if (document.visibilityState !== 'visible') return;
+  for (const f of ['vast', 'all']) {
+    let d; try { d = await (await fetch('/api/news?f=' + f, { cache: 'no-store' })).json(); } catch { continue; }
+    if (d.error) { if (!document.querySelector(`#n-${f} .ni`)) document.getElementById('n-' + f).innerHTML = '<span class="nempty">SVT did not answer – trying again soon.</span>'; continue; }
+    const list = document.getElementById('n-' + f), top = list.scrollTop;
+    list.innerHTML = d.items.map(it => `<a class="ni ${it.at && Date.now() / 1000 - it.at < 3600 ? 'new' : ''}" href="${esc(it.link)}" target="svtnews" rel="noopener">
+      <b>${esc(it.title)}</b>${it.desc ? `<span>${esc(it.desc)}</span>` : ''}<small>${ago(it.at)}${f === 'all' && it.section ? ' · ' + esc(REGION[it.section] || it.section.replace(/-/g, ' ').replace(/^./, c => c.toUpperCase())) : ''}</small></a>`).join('')
+      || '<span class="nempty">No news right now.</span>';
+    list.scrollTop = top;
+    document.getElementById('nupd-' + f).textContent = d.stale ? 'older list' : new Date(d.fetched * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+}
+// a headline opens the article in a popup window next to the page (a new tab on phones and tablets); svt.se cannot be shown inside this page
+document.getElementById('news').addEventListener('click', e => {
+  const tab = e.target.closest('.ntabs button');
+  if (tab) { document.querySelectorAll('.ntabs button').forEach(b => b.classList.toggle('on', b === tab));
+    document.querySelectorAll('.ncol').forEach(c => c.classList.toggle('on', c.dataset.col === tab.dataset.f)); return; }
+  const a = e.target.closest('a.ni'); if (!a || editing()) return;
+  if (matchMedia('(pointer: fine)').matches) {
+    e.preventDefault();
+    const w = Math.min(980, screen.availWidth - 80), h = Math.min(1000, screen.availHeight - 80);
+    const win = window.open(a.href, 'svtnews', `popup=yes,width=${w},height=${h},left=${Math.round((screen.availWidth - w) / 2)},top=${Math.round((screen.availHeight - h) / 2)}`);
+    if (win) win.focus(); else location.href = a.href;            // popup blocked: open here instead
+  }
+});
+loadNews(); setInterval(loadNews, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', loadNews);
+document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && check());
+</script>
+</body>
+</html>

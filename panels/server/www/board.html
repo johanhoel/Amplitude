@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#101418">
+<link rel="apple-touch-icon" href="/familyinfo-icon.png">
+<title>Board</title>
+<style>
+/* A board: your own dashboard built from modules (modules.js). Address /board/<name>; the list is /boards.
+   Layout = /api/layout/board_<name>: {title, density, modules: [{id, type, size, cfg}]}. Editing (✎) needs the admin PIN;
+   every save is kept, so "Undo last save" in edit mode steps back. The grid fits any screen: phone 2 columns, tablet 4,
+   wall panel / desktop more; "density" makes the cards smaller or bigger. */
+:root { --bg: #101418; --ink: #eef2f6; --mute: #8b98a8; --faint: #5d6b7b; --line: #2a333d; --card: #1a2027; --card-hi: #222a33;
+  --accent: #38bdf8; --ok: #22c55e; --warn: #f59e0b; --bad: #ef4444; --gap: 12px;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
+* { box-sizing: border-box; }
+html { background: var(--bg); -webkit-text-size-adjust: 100%; }
+body { margin: 0; min-height: 100vh; color: var(--ink); font: 15px/1.4 var(--font); -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  padding: calc(env(safe-area-inset-top) + 14px) calc(env(safe-area-inset-right) + 14px) calc(env(safe-area-inset-bottom) + 28px) calc(env(safe-area-inset-left) + 14px); }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: inherit; }
+header { display: flex; align-items: center; gap: 10px; margin: 0 auto 14px; max-width: var(--maxw, 1600px); }
+header h1 { flex: 1; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+header a, header button { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--card); color: var(--ink); text-decoration: none; font-weight: 650; font-size: 14px; }
+#grid { display: grid; gap: var(--gap); grid-template-columns: repeat(var(--cols, 2), 1fr); grid-auto-rows: var(--row, 150px); grid-auto-flow: row dense;
+  max-width: var(--maxw, 1600px); margin: 0 auto; }
+.mod { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 14px 16px; overflow: hidden; min-width: 0;
+  display: flex; flex-direction: column; }
+.mod[data-sz="m"] { grid-column: span 2; } .mod[data-sz="t"] { grid-row: span 2; } .mod[data-sz="l"] { grid-column: span 2; grid-row: span 2; }
+.mod[data-sz="w"] { grid-column: 1 / -1; } .mod[data-sz="W"] { grid-column: 1 / -1; grid-row: span 2; }
+.mbody { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+/* card parts (used by modules.js) */
+.mh { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--mute); font-weight: 650; letter-spacing: .02em; }
+.mh .mt { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; letter-spacing: .1em; font-size: 11.5px; }
+.mh .mi { font-size: 16px; } .mh .mr { color: var(--ink); font-variant-numeric: tabular-nums; }
+.mbig { font-size: clamp(30px, calc(var(--row) * .3), 64px); font-weight: 300; line-height: 1; font-variant-numeric: tabular-nums; }
+.mbig small { font-size: .45em; color: var(--mute); margin-left: 2px; }
+.mclock { font-size: clamp(40px, calc(var(--row) * .45), 120px); font-weight: 250; line-height: 1; font-variant-numeric: tabular-nums; margin-top: auto; }
+.msub { color: var(--mute); font-size: 13.5px; }
+.mod:has(.mclock) .mbody { justify-content: center; }
+.me { color: var(--faint); font-size: 14px; margin: auto 0; }
+.mrow { display: flex; gap: 6px; margin-top: auto; overflow: hidden; }
+.mhour { flex: 1; min-width: 0; background: var(--card-hi); border-radius: 10px; padding: 4px 2px; display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 13px; white-space: nowrap; }
+.mhour small { color: var(--mute); font-size: 11px; }
+.mpeople { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
+.mp { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 999px; background: var(--card-hi); color: var(--mute); font-weight: 600; }
+.mp i { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); } .mp.on { color: var(--ink); } .mp.on i { background: var(--ok); }
+.mlights { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; overflow-y: auto; align-content: start; }
+.ml { min-height: 52px; border-radius: 14px; border: 1px solid var(--line); background: var(--card-hi); text-align: left; padding: 8px 12px; font-weight: 600; font-size: 14px; }
+.ml.on { background: #f59e0b; border-color: #f59e0b; color: #1f1300; }
+.mbtn { min-height: 46px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--card-hi); font-weight: 650; margin-top: auto; }
+.mctl { display: flex; gap: 8px; margin-top: auto; } .mctl .mbtn { flex: 1; margin: 0; font-size: 18px; }
+.mbtn.karmed, .mbig-btn.karmed { background: var(--bad) !important; border-color: var(--bad) !important; color: #fff; }
+.kdown { transform: scale(.97); }
+.mbig-btn { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 16px;
+  background: transparent; color: var(--ink); text-decoration: none; font-weight: 650; font-size: 15px; text-align: center; }
+.mbi { font-size: clamp(28px, calc(var(--row) * .26), 54px); line-height: 1; }
+.mod:has(.mbig-btn) { padding: 6px; } .mod:has(.mbig-btn):active { background: var(--card-hi); }
+.mstate { font-size: 22px; font-weight: 650; text-transform: capitalize; } .mstate.ok { color: var(--ok); } .mstate.warn { color: var(--warn); }
+.mlist { display: flex; flex-direction: column; gap: 7px; overflow-y: auto; min-height: 0; scrollbar-width: none; }
+.mlist > div { display: flex; align-items: center; gap: 10px; font-size: 14.5px; } .mlist b { font-variant-numeric: tabular-nums; }
+.mgrow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mline { min-width: 40px; text-align: center; padding: 3px 6px; border-radius: 8px; font-weight: 800; font-size: 13px; }
+.mdot { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); flex: none; } .mdot.ok { background: var(--ok); } .mdot.bad { background: var(--bad); }
+.mmedia { display: flex; gap: 12px; align-items: center; min-height: 0; } .mmedia b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mart { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; flex: none; }
+.mod:has(.mcam) { padding: 0; } .mcam { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mcamcap { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; padding: 10px 14px; background: linear-gradient(transparent, rgba(0,0,0,.75)); font-size: 14px; }
+.mnews a { display: block; text-decoration: none; font-size: 15px; line-height: 1.35; padding: 2px 0; border-bottom: 1px solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mnote { white-space: pre-wrap; font-size: 16px; overflow: auto; }
+/* edit mode */
+.medit { display: none; position: absolute; inset: 0; z-index: 3; background: rgba(16,20,24,.72); border-radius: inherit; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 8px; }
+body.editing .medit { display: flex; } body.editing .mod { outline: 1.5px dashed rgba(56,189,248,.7); outline-offset: 2px; }
+.medit b { font-size: 14px; text-align: center; } .medit small { color: var(--mute); font-size: 12px; }
+.medit .eb { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.medit button { min-width: 44px; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--card-hi); font-size: 17px; }
+.addmod { display: none; grid-column: span 1; border: 1.5px dashed rgba(56,189,248,.6); background: rgba(56,189,248,.08); color: #bae6fd; border-radius: 22px; font-weight: 650; }
+body.editing .addmod { display: block; }
+.emptyb { grid-column: 1 / -1; text-align: center; color: var(--mute); padding: 40px 10px; }
+.mod[hidden] { display: none !important; }
+.mod[data-sz="c"] { grid-column: span 2; grid-row: span 2; }
+.mthen { color: var(--mute); font-weight: 400; margin-left: 6px; font-size: .85em; }
+/* desktop cards */
+.dclock { font-size: clamp(56px, calc(var(--row) * .7), 170px); font-weight: 200; letter-spacing: -.04em; line-height: .9; font-variant-numeric: tabular-nums; text-shadow: 0 6px 40px rgba(0,0,0,.35); }
+.ddate { font-size: 22px; color: var(--mute); margin-top: 10px; font-weight: 300; text-transform: capitalize; }
+.dwx { display: flex; align-items: center; gap: 18px; margin-top: 16px; }
+.dwx .dt { font-size: 42px; font-weight: 250; } .dwx .dc { font-size: 15px; color: var(--mute); line-height: 1.35; }
+.dhours { display: flex; gap: 14px; padding-left: 18px; border-left: 1px solid var(--line); }
+.dhours div { text-align: center; font-size: 12.5px; color: var(--mute); line-height: 1.5; }
+.dhours b { display: block; color: var(--ink); font-weight: 500; font-size: 15px; } .dhours i { display: block; font-style: normal; color: #7dd3fc; font-size: 11px; min-height: 1.2em; }
+.mav { display: flex; gap: 10px; }
+.mav > div { flex: 1; text-align: center; min-width: 0; } .mav span { width: 50px; height: 50px; margin: 0 auto 6px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 20px; font-weight: 600; color: var(--faint); border: 2px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
+.mav .on span { color: var(--ink); border-color: var(--ok); box-shadow: 0 0 16px rgba(52,211,153,.3); background: rgba(52,211,153,.12); }
+.mav b { display: block; font-size: 14px; font-weight: 500; } .mav small { color: var(--mute); font-size: 12px; white-space: nowrap; }
+.mhomeline { display: flex; gap: 18px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line); font-size: 14px; color: var(--mute); }
+.mhomeline b { color: var(--ink); font-weight: 500; } .mhomeline b.warn { color: var(--warn); }
+.mcamrow { display: grid; grid-template-columns: 42% 1fr; gap: 14px; align-items: center; }
+.mcamrow img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 12px; display: block; background: rgba(255,255,255,.05); }
+.mwhat { font-size: 19px; font-weight: 500; line-height: 1.2; }
+.mlabhead { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 300; }
+.mstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 11.5px; color: var(--mute); }
+.mstats b { display: block; color: var(--ink); font-size: 18px; font-weight: 300; font-variant-numeric: tabular-nums; }
+.mnodes { display: grid; gap: 6px; } .mnodes > div { display: grid; grid-template-columns: 60px 1fr 130px; align-items: center; gap: 8px; font-size: 12.5px; color: var(--mute); }
+.mnodes > div span:last-child { text-align: right; white-space: nowrap; }
+.mbar { height: 6px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; } .mbar i { display: block; height: 100%; border-radius: 99px; }
+/* wallpaper boards (Board settings -> Layout: column on the left / right): one column of cards, the rest of the screen free
+   for desktop icons and the taskbar, "corner" modules float in the opposite bottom corner. Sized to the screen height. */
+#bg { position: fixed; inset: 0; z-index: -1;
+  background: radial-gradient(42% 52% at 12% 16%, rgba(91,60,255,.55), transparent 70%), radial-gradient(38% 46% at 88% 8%, rgba(0,160,220,.38), transparent 70%),
+              radial-gradient(46% 50% at 62% 104%, rgba(194,24,91,.32), transparent 70%), radial-gradient(30% 34% at 30% 92%, rgba(255,176,32,.16), transparent 70%), #06070c; }
+#bg::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 90% at 40% 40%, transparent 40%, rgba(0,0,0,.55)); }
+#corner { display: none; }
+body.col { overflow: hidden; padding: 0; user-select: none; -webkit-user-select: none; }
+body.col header { display: none; }
+body.col #grid { position: fixed; top: 3vh; bottom: calc(var(--clear-bottom, 64px) + 2.6vh); width: 440px; display: flex; flex-direction: column; gap: 14px;
+  max-width: none; margin: 0; zoom: var(--z, 1); overflow: hidden; }
+body.col.left #grid { left: calc(var(--clear-left, 10px) + 1.6vh); } body.col.right #grid { right: 2.6vh; }
+body.col .mod { flex: none; } body.col .mbody { gap: 10px; } body.col .mod:has(.mcam) .mcam { aspect-ratio: 16/9; height: auto; }
+body.col .addmod { min-height: 60px; flex: none; }
+body.col #corner { display: block; position: fixed; bottom: calc(var(--clear-bottom, 64px) + 3vh); zoom: var(--z, 1); }
+body.col.left #corner { right: 3.2vh; text-align: right; } body.col.right #corner { left: calc(var(--clear-left, 10px) + 3vh); }
+body.col.left #corner .dwx { justify-content: flex-end; }
+#corner .mod { background: none !important; border: 0 !important; padding: 0; overflow: visible; }
+#corner .dclock { font-size: 170px; } #corner .ddate { font-size: 27px; } #corner .dwx .dt { font-size: 50px; } #corner .dwx .dc { font-size: 18px; }
+#corner .dhours div { font-size: 14px; } #corner .dhours b { font-size: 17px; }
+body.glass .mod { background: rgba(16,17,26,.58) !important; border-color: rgba(255,255,255,.09) !important; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+#fab { display: none; position: fixed; top: 10px; right: 10px; z-index: 50; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line);
+  background: rgba(16,17,26,.7); color: var(--ink); opacity: .12; transition: opacity .2s; }
+body.col #fab { display: block; } #fab:hover, #fab:focus-visible { opacity: 1; } body.editing #fab { display: none; }
+/* blank boxes */
+.mod.bare { background: none !important; border-color: transparent !important; box-shadow: none !important; padding: 0; }
+body.editing .mod.bare { border-color: var(--line) !important; }
+.mhead { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 6px; }
+.mhead b { font-size: clamp(22px, calc(var(--row) * .2), 44px); font-weight: 700; letter-spacing: -.01em; } .mhead span { color: var(--mute); font-size: 15px; }
+.mpt { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.mimg { width: 100%; height: 100%; display: block; border-radius: 20px; }
+/* designer: drag a card to move it, drag the corner to resize (mouse; touch keeps ◀ ▶ ⤢) */
+.rz { display: none; position: absolute; right: 6px; bottom: 6px; z-index: 5; width: 22px; height: 22px; cursor: nwse-resize; border-radius: 6px;
+  background: linear-gradient(135deg, transparent 50%, var(--accent) 50%); }
+body.editing .rz { display: block; } body.editing .medit { cursor: grab; } body.dragging, body.dragging * { cursor: grabbing !important; user-select: none; }
+.mod.drag { opacity: .6; outline: 2px solid var(--accent) !important; z-index: 6; }
+/* placed grid (edit mode): every free cell shows as a dotted square; click one to put a new card there */
+.cell { border: 1.5px dashed rgba(56,189,248,.22); border-radius: 18px; display: grid; place-items: center; color: transparent; font-size: 26px; cursor: pointer; min-width: 0; }
+.cell:hover { border-color: rgba(56,189,248,.7); color: #7dd3fc; background: rgba(56,189,248,.06); }
+.cell.drop { border-color: var(--accent); background: rgba(56,189,248,.16); }
+/* free canvas: every card at its own position on a fixed-size page, scaled to fit the screen */
+body.canvas { overflow: hidden; padding: 0; } body.canvas header { display: none; } body.canvas #fab { display: block; }
+body.canvas #grid { display: block; position: fixed; inset: 0; max-width: none; margin: 0; }
+.cv { position: absolute; top: 0; transform-origin: 0 0; }
+body.editing .cv { background-image: linear-gradient(rgba(56,189,248,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(56,189,248,.08) 1px, transparent 1px);
+  background-size: 40px 40px; outline: 1px dashed rgba(56,189,248,.4); }
+.cv .mod { position: absolute; } .cv .addmod { position: absolute; right: 20px; bottom: 20px; width: 220px; height: 80px; }
+body.preview #fab, body.preview header a, body.preview header button { display: none !important; }
+</style>
+<link rel="stylesheet" href="/wall.css">
+</head>
+<body>
+<header><a href="/boards" class="start-link">‹ Boards</a><h1 id="title">Board</h1><button id="edit" aria-label="Edit this board">✎ Edit</button></header>
+<main id="grid"></main>
+<div id="corner"></div>
+<button id="fab" aria-label="Edit this board">✎ Edit</button>
+<script src="/wallkit.js"></script>
+<script src="/edit.js"></script>
+<script src="/pin.js"></script>
+<script src="/modules.js"></script>
+<script>
+const NAME = (location.pathname.match(/^\/board\/([a-z0-9_]{1,30})$/) || [])[1] || 'home';
+const PAGE = 'board_' + NAME;
+const { MODULES, SIZES } = Deck;
+const esc = Wall.esc;
+let L = { title: NAME, density: 'normal', layout: 'grid', modules: [] }, editing = false;
+const grid = document.getElementById('grid');
+
+// ---- grid size: whole columns that fit; phone >= 2 columns ----
+const CELL = { compact: 150, normal: 190, large: 250 };
+const cvW = () => +L.canvas_w || 1920, cvH = () => +L.canvas_h || 1080;
+function fit() {
+  const R = document.documentElement.style;
+  R.setProperty('--z', (Math.min(2.2, Math.max(.6, innerHeight / 1000)) * (+L.scale || 1)).toFixed(3));
+  R.setProperty('--clear-left', (+L.clear_left || 10) + 'px'); R.setProperty('--clear-bottom', (L.clear_bottom ?? 64) + 'px');
+  if (document.body.classList.contains('col')) { R.setProperty('--row', '150px'); return; }
+  if (L.layout === 'canvas') { R.setProperty('--row', '180px'); const cv = grid.querySelector('.cv'); if (!cv) return;
+    const sc = Math.min(innerWidth / cvW(), innerHeight / cvH()); cv.style.transform = `scale(${sc})`; cv.style.left = Math.max(0, (innerWidth - cvW() * sc) / 2) + 'px'; return; }
+  const w = grid.clientWidth || innerWidth - 28, gap = 12;
+  const cols = placedMode() ? designCols() : flowCols(w);
+  const colW = (w - gap * (cols - 1)) / cols;
+  document.documentElement.style.setProperty('--cols', cols);
+  document.documentElement.style.setProperty('--row', Math.round(Math.min(260, Math.max(110, colW * .78))) + 'px');
+}
+let wasPlaced = null;
+addEventListener('resize', () => { if (placedMode() !== wasPlaced) build(); else fit(); });
+
+// ---- placed grid: every card has its own column and row (m.g = {c, r}), so empty cells stay empty and a card can go anywhere.
+// The board remembers how many columns it was designed with (L.cols). A screen too narrow for that (a phone) shows the
+// cards in reading order (row by row) instead, each card at most the screen's width.
+const flowCols = w => Math.max(2, Math.round((w + 12) / ((CELL[L.density] || 190) + 12)));
+const designCols = () => Math.max(2, Math.min(16, +L.cols || 4));
+function placedMode() {
+  if (L.layout && L.layout !== 'grid' || !L.cols) return false;
+  const w = grid.clientWidth || innerWidth - 28;
+  return (w - 12 * (designCols() - 1)) / designCols() >= 105;          // columns at least ~105 px wide, else flow
+}
+function spanOf(m, cols = designCols()) {
+  const p = { s: [1, 1], m: [2, 1], t: [1, 2], l: [2, 2], c: [2, 2], w: [cols, 1], W: [cols, 2] }[m.size] || [m.cw || 2, m.rh || 1];
+  return { cw: Math.max(1, Math.min(cols, p[0])), rh: Math.max(1, p[1]) };
+}
+const hits = (a, b) => { const A = spanOf(a), B = spanOf(b);
+  return a.g.c < b.g.c + B.cw && b.g.c < a.g.c + A.cw && a.g.r < b.g.r + B.rh && b.g.r < a.g.r + A.rh; };
+function freeSpot(m, list) {                                            // first place (row by row) where m fits
+  const cols = designCols(), { cw } = spanOf(m);
+  for (let r = 1; r < 400; r++) for (let c = 1; c + cw - 1 <= cols; c++) { const t = { ...m, g: { c, r } }; if (!list.some(o => o !== m && o.g && hits(t, o))) return { c, r }; }
+  return { c: 1, r: 1 };
+}
+function pack() {                                                       // cards without a place get the first free spot, in list order
+  const placed = [];
+  L.modules.forEach(m => { const { cw } = spanOf(m);
+    if (!m.g || m.g.c + cw - 1 > designCols()) m.g = freeSpot(m, placed);
+    placed.push(m); });
+}
+function settle(fixed) {                                                // cards overlapping the one just placed move down
+  const order = [fixed, ...L.modules.filter(m => m !== fixed).sort((a, b) => a.g.r - b.g.r || a.g.c - b.g.c)], done = [];
+  for (const m of order) {
+    const { cw } = spanOf(m); m.g.c = Math.max(1, Math.min(designCols() - cw + 1, m.g.c)); m.g.r = Math.max(1, m.g.r);
+    let o; while ((o = done.find(d => hits(m, d)))) m.g.r = o.g.r + spanOf(o).rh;
+    done.push(m);
+  }
+}
+const lastRow = () => L.modules.reduce((a, m) => Math.max(a, m.g ? m.g.r + spanOf(m).rh - 1 : 0), 0);
+
+// ---- drawing ----
+function build() {
+  document.getElementById('title').textContent = L.title || NAME; document.title = L.title || NAME;
+  const extra = new Set(); L.modules.forEach(m => (MODULES[m.type]?.need || []).forEach(k => extra.add(k))); Deck.need([...extra]);
+  const col = L.layout === 'left' || L.layout === 'right';
+  document.body.classList.toggle('col', col); document.body.classList.toggle('left', L.layout === 'left'); document.body.classList.toggle('right', L.layout === 'right');
+  document.body.classList.toggle('glass', !!L.glass);
+  let bg = document.getElementById('bg');
+  if (L.bg === 'aurora' && !bg) { bg = document.createElement('div'); bg.id = 'bg'; document.body.prepend(bg); } else if (L.bg !== 'aurora' && bg) bg.remove();
+  const canvas = L.layout === 'canvas', placed = placedMode(); wasPlaced = placed;
+  document.body.classList.toggle('placed', placed);
+  const style = m => { const d = MODULES[m.type], c = m.cfg || {}, st = [d?.style ? d.style(c) : ''];
+    if (canvas) { const p = m.pos || {}; st.push(`left:${p.x || 0}px;top:${p.y || 0}px;width:${p.w || 400}px;height:${p.h || 240}px`); }
+    else if (placed && m.g) { const { cw, rh } = spanOf(m); st.push(`grid-column:${m.g.c} / span ${cw};grid-row:${m.g.r} / span ${rh}`); }
+    else if (m.size === 'x' || L.cols) { const fc = flowCols(grid.clientWidth || innerWidth - 28), { cw, rh } = spanOf(m, fc); st.push(`grid-column:span ${cw};grid-row:span ${rh}`); }
+    return st.filter(Boolean).join(';'); };
+  const card = (m, i) => `<section class="mod${MODULES[m.type]?.bare ? ' bare' : ''}" data-i="${i}" data-sz="${esc(m.size)}" style="${esc(style(m))}"><div class="mbody"></div><i class="rz" title="Drag to resize"></i>
+      <div class="medit"><b>${esc(MODULES[m.type]?.icon || '')} ${esc(MODULES[m.type]?.name || m.type)}</b><small>${esc(SIZES[m.size]?.[0] || '')}</small>
+        <div class="eb"><button data-e="left" aria-label="Move earlier">◀</button><button data-e="right" aria-label="Move later">▶</button>
+        <button data-e="size" aria-label="Change size">⤢</button><button data-e="set" aria-label="Settings">⚙</button></div></div></section>`;
+  document.body.classList.toggle('canvas', canvas); document.body.classList.toggle('preview', /[?&]preview\b/.test(location.search));
+  const inCorner = m => col && m.size === 'c';
+  const order = L.modules.map((m, i) => i);
+  if (L.cols && !canvas) order.sort((a, b) => { const A = L.modules[a].g, B = L.modules[b].g; return A && B ? A.r - B.r || A.c - B.c : a - b; });
+  let cells = '';
+  if (placed && editing) { const rows = lastRow() + 2, used = new Set();
+    L.modules.forEach(m => { const { cw, rh } = spanOf(m); for (let r = m.g.r; r < m.g.r + rh; r++) for (let c = m.g.c; c < m.g.c + cw; c++) used.add(r + ':' + c); });
+    for (let r = 1; r <= rows; r++) for (let c = 1; c <= designCols(); c++) if (!used.has(r + ':' + c)) cells += `<div class="cell" data-c="${c}" data-r="${r}" style="grid-column:${c};grid-row:${r}" title="Add a card here">+</div>`; }
+  const inner = cells + order.map(i => inCorner(L.modules[i]) ? '' : card(L.modules[i], i)).join('')
+    + (placed ? '' : `<button class="addmod" id="add">+ Add module</button>`)
+    + (L.modules.length ? '' : `<div class="emptyb">This board is empty. Tap <b>✎ Edit</b>, then <b>+ Add module</b>.</div>`);
+  grid.innerHTML = canvas ? `<div class="cv" style="width:${cvW()}px;height:${cvH()}px">${inner}</div>` : inner;
+  document.getElementById('corner').innerHTML = L.modules.map((m, i) => inCorner(m) ? card(m, i) : '').join('');
+  fit(); draw(Deck.D);
+}
+function draw(D) {
+  document.querySelectorAll('.mod').forEach(sec => {
+    const m = L.modules[+sec.dataset.i], def = MODULES[m.type], body = sec.querySelector('.mbody');
+    if (!def) { body.innerHTML = `<div class="me">Unknown module "${esc(m.type)}"</div>`; return; }
+    try { def.render(body, D, m.cfg || {}, m.size); } catch (e) { body.innerHTML = `<div class="me">Waiting for data…</div>`; }
+  });
+}
+Deck.data(draw);
+
+// ---- editing ----
+const uid = () => 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+async function settings(i) {
+  const m = L.modules[i], def = MODULES[m.type];
+  const fields = (def.cfg ? def.cfg(Deck.D) : []).map(f => ({ ...f, value: m.cfg?.[f.key] ?? f.value ?? '' }));
+  fields.push({ key: '_size', label: 'Size', type: 'select', options: Object.entries(SIZES).map(([k, s]) => [k, s[0]]), value: m.size });
+  const r = await Edit.sheet({ title: def.icon + ' ' + def.name, fields, buttons: [{ id: 'remove', label: 'Remove', tone: 'bad' }, { id: 'ok', label: 'OK' }] });
+  if (!r) return;
+  if (r.action === 'remove') { L.modules.splice(i, 1); return build(); }
+  const { _size, ...cfg } = r.values; m.size = _size || m.size; m.cfg = cfg; if (L.cols && m.g) settle(m); build();
+}
+async function addModule(at) {
+  const r = await Edit.sheet({ title: 'Add module', fields: [{ key: 'type', label: 'Module', type: 'select',
+    options: Object.entries(MODULES).map(([k, d]) => [k, `${d.icon} ${d.name} — ${d.desc}`]) }], buttons: [{ id: 'ok', label: 'Add' }] });
+  if (!r) return;
+  const def = MODULES[r.values.type], cfg = {};
+  (def.cfg ? def.cfg(Deck.D) : []).forEach(f => { cfg[f.key] = f.value ?? (f.type === 'select' ? f.options?.[0]?.[0] ?? '' : f.type === 'toggle' ? false : ''); });
+  const nm = { id: uid(), type: r.values.type, size: def.size, cfg, ...(L.layout === 'canvas' ? { pos: { x: 40, y: 40, ...canvasSize(def.size) } } : {}) };
+  L.modules.push(nm);
+  if (L.cols && L.layout !== 'canvas') { nm.g = at || freeSpot(nm, L.modules); if (at) settle(nm); }
+  build();
+  if (def.cfg) settings(L.modules.length - 1);
+}
+document.getElementById('corner').addEventListener('click', e => grid.onclick?.(e));
+grid.onclick = e => {
+  if (!editing) return;
+  if (e.target.closest('#add')) return addModule();
+  const cell = e.target.closest('.cell'); if (cell) return addModule({ c: +cell.dataset.c, r: +cell.dataset.r });
+  const b = e.target.closest('[data-e]'); if (!b) return;
+  const i = +b.closest('.mod').dataset.i, m = L.modules[i];
+  if (L.cols && m.g && (b.dataset.e === 'left' || b.dataset.e === 'right')) { m.g.c += b.dataset.e === 'left' ? -1 : 1; settle(m); }
+  else if (b.dataset.e === 'left') Edit.move(L.modules, i, -1);
+  else if (b.dataset.e === 'right') Edit.move(L.modules, i, 1);
+  else if (b.dataset.e === 'size') { const k = Object.keys(SIZES).filter(x => x !== 'x'); m.size = k[(k.indexOf(m.size) + 1) % k.length]; if (L.cols && m.g) settle(m); }
+  else if (b.dataset.e === 'set') return settings(i);
+  build();
+};
+async function boardSettings() {
+  const r = await Edit.sheet({ title: 'Board settings', fields: [
+    { key: 'title', label: 'Title', type: 'text', value: L.title || NAME },
+    { key: 'layout', label: 'Layout', type: 'select', value: L.layout || 'grid', options: [['grid', 'Grid over the whole screen (phone, tablet, wall panel)'],
+      ['left', 'Wallpaper: one column on the left'], ['right', 'Wallpaper: one column on the right'], ['canvas', 'Free canvas: place every box exactly (scaled to fit the screen)']] },
+    { key: 'canvas', label: 'Free canvas: page size in pixels (width×height)', type: 'text', value: `${cvW()}x${cvH()}`, hint: '1920x1080 for a PC screen, 1280x800 for a tablet, 1080x1920 for a standing panel' },
+    { key: 'cols', label: 'Grid: columns (how wide the design is; a narrower screen shows the cards in reading order)', type: 'select', value: String(designCols()),
+      options: [2, 3, 4, 5, 6, 7, 8, 10, 12].map(n => [String(n), n + ' columns']) },
+    { key: 'density', label: 'Card size (grid)', type: 'select', options: [['compact', 'Small cards (phone, many modules)'], ['normal', 'Normal'], ['large', 'Big cards (wall panel, far away)']], value: L.density || 'normal' },
+    { key: 'bg', label: 'Background', type: 'select', value: L.bg || 'plain', options: [['plain', 'Plain dark'], ['aurora', 'Colour glow (desktop wallpaper)']] },
+    { key: 'glass', label: 'See-through cards', type: 'toggle', value: !!L.glass },
+    { key: 'scale', label: 'Wallpaper size (1 = normal, 1.2 = bigger)', type: 'text', value: String(L.scale || 1) },
+    { key: 'clear_left', label: 'Wallpaper: free space on the left for desktop icons (px)', type: 'text', value: String(L.clear_left ?? 10) },
+    { key: 'clear_bottom', label: 'Wallpaper: free space at the bottom for the taskbar (px)', type: 'text', value: String(L.clear_bottom ?? 64) }],
+    buttons: [{ id: 'ok', label: 'OK' }] });
+  if (r) { const v = r.values, num = (x, d, lo, hi) => Math.min(hi, Math.max(lo, isFinite(+x) && x !== '' ? +x : d));
+    const [cw, ch] = String(v.canvas || '').split(/[x×*, ]+/).map(Number);
+    if (v.layout === 'canvas') { L.canvas_w = num(cw, 1920, 320, 7680); L.canvas_h = num(ch, 1080, 320, 4320); if (L.layout !== 'canvas') toCanvas(); }
+    if (+v.cols && +v.cols !== +L.cols) { L.cols = +v.cols; L.modules.forEach(m => { if (m.g) { const { cw } = spanOf(m); m.g.c = Math.min(m.g.c, designCols() - cw + 1); } }); pack();
+      L.modules.slice().sort((a, b) => a.g.r - b.g.r || a.g.c - b.g.c).forEach(m => settle(m)); }
+    Object.assign(L, { title: v.title || NAME, density: v.density, layout: v.layout, bg: v.bg, glass: v.glass,
+      scale: num(v.scale, 1, .5, 3), clear_left: num(v.clear_left, 10, 0, 600), clear_bottom: num(v.clear_bottom, 64, 0, 400) }); build(); }
+}
+// grid card -> a sensible size and place on the free canvas (flowed left to right)
+function canvasSize(sz) { return { s: { w: 220, h: 200 }, m: { w: 460, h: 200 }, t: { w: 220, h: 420 }, l: { w: 460, h: 420 }, w: { w: 940, h: 200 }, W: { w: 940, h: 420 }, c: { w: 640, h: 360 } }[sz] || { w: 460, h: 200 }; }
+function toCanvas() {
+  let x = 20, y = 20, rowH = 0;
+  L.modules.forEach(m => { if (m.pos) return; const s = canvasSize(m.size);
+    if (x + s.w > cvW() - 20) { x = 20; y += rowH + 20; rowH = 0; }
+    m.pos = { x, y, ...s }; x += s.w + 20; rowH = Math.max(rowH, s.h); });
+}
+async function uploadImage() {
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/jpeg,image/png,image/webp,image/gif';
+  inp.onchange = async () => { const f = inp.files[0]; if (!f) return;
+    const r = await fetch('/api/wallpaper', { method: 'POST', headers: { 'Content-Type': f.type }, body: f }).then(x => x.json()).catch(() => ({}));
+    if (!r.name) return Edit.toast('Upload failed: ' + (r.error || 'jpg, png, webp or gif under 15 MB'));
+    await loadWalls(); Edit.toast('Uploaded: pick it in an Image box'); };
+  inp.click();
+}
+async function loadWalls() { const s = await fetch('/api/settings', { cache: 'no-store' }).then(r => r.json()).catch(() => ({})); Deck.D.walls = s.walls || []; }
+
+// drag to move / resize (mouse). Grid: moving reorders, the corner sets column/row spans. Canvas: free x/y/w/h on a 10 px snap.
+let drag = null;
+document.addEventListener('pointerdown', e => {
+  if (!editing || e.button !== 0 || e.target.closest('button')) return;
+  const sec = e.target.closest('.mod'); if (!sec || !(e.target.closest('.medit') || e.target.classList.contains('rz'))) return;
+  const i = +sec.dataset.i, m = L.modules[i], resize = e.target.classList.contains('rz');
+  const cols = +getComputedStyle(document.documentElement).getPropertyValue('--cols') || 2, gap = 12;
+  const r = sec.getBoundingClientRect(), gw = grid.clientWidth;
+  const sc = L.layout === 'canvas' ? (grid.querySelector('.cv').getBoundingClientRect().width / cvW()) : 1;
+  drag = { i, m, sec, resize, x0: e.clientX, y0: e.clientY, sc, cols, colStep: (gw + gap) / cols, rowStep: (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--row')) || 150) + gap,
+           cw0: Math.round((r.width + gap) / ((gw + gap) / cols)), rh0: Math.max(1, Math.round((r.height + gap) / ((parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--row')) || 150) + gap))),
+           pos0: { ...(m.pos || {}) } };
+  if (placedMode() && m.g) { drag.grabC = Math.floor((e.clientX - r.left) / drag.colStep); drag.grabR = Math.floor((e.clientY - r.top) / drag.rowStep); }
+  sec.classList.add('drag'); document.body.classList.add('dragging'); e.preventDefault();
+});
+document.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0, snap = v => Math.round(v / 10) * 10;
+  if (L.layout === 'canvas') {
+    const p = drag.m.pos = { ...drag.pos0 };
+    if (drag.resize) { p.w = Math.max(60, snap(drag.pos0.w + dx / drag.sc)); p.h = Math.max(40, snap(drag.pos0.h + dy / drag.sc)); }
+    else { p.x = Math.min(cvW() - 40, Math.max(0, snap(drag.pos0.x + dx / drag.sc))); p.y = Math.min(cvH() - 40, Math.max(0, snap(drag.pos0.y + dy / drag.sc))); }
+    Object.assign(drag.sec.style, { left: p.x + 'px', top: p.y + 'px', width: p.w + 'px', height: p.h + 'px' });
+    return;
+  }
+  if (drag.resize) {
+    const cw = Math.min(drag.cols - ((drag.m.g?.c || 1) - 1), Math.max(1, drag.cw0 + Math.round(dx / drag.colStep))), rh = Math.min(8, Math.max(1, drag.rh0 + Math.round(dy / drag.rowStep)));
+    Object.assign(drag.m, { size: 'x', cw, rh });
+    drag.sec.style.gridColumn = drag.m.g && placedMode() ? `${drag.m.g.c} / span ${cw}` : `span ${cw}`; drag.sec.style.gridRow = drag.m.g && placedMode() ? `${drag.m.g.r} / span ${rh}` : `span ${rh}`;
+    return;
+  }
+  if (placedMode() && drag.m.g) {                                       // to any cell, empty or not; others move down on release
+    const gr = grid.getBoundingClientRect(), { cw, rh } = spanOf(drag.m);
+    const c = Math.max(1, Math.min(designCols() - cw + 1, Math.floor((e.clientX - gr.left) / drag.colStep) + 1 - drag.grabC));
+    const r = Math.max(1, Math.floor((e.clientY - gr.top) / drag.rowStep) + 1 - drag.grabR);
+    drag.target = { c, r }; drag.sec.style.gridColumn = `${c} / span ${cw}`; drag.sec.style.gridRow = `${r} / span ${rh}`;
+    return;
+  }
+  const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.mod');
+  if (over && over !== drag.sec && over.parentElement === drag.sec.parentElement) {
+    const j = +over.dataset.i; L.modules.splice(j, 0, L.modules.splice(drag.i, 1)[0]); build();
+    drag.i = j; drag.sec = document.querySelector(`.mod[data-i="${j}"]`); drag.sec.classList.add('drag');
+  }
+});
+addEventListener('pointerup', () => { if (!drag) return;
+  if (drag.target) drag.m.g = drag.target;
+  if (placedMode() && drag.m.g && (drag.target || drag.resize)) settle(drag.m);
+  drag = null; document.body.classList.remove('dragging'); build(); });
+
+async function deleteBoard() {
+  if (!confirm(`Delete the board "${L.title || NAME}"? It is kept as a backup on the server.`)) return;
+  const res = await fetch('/api/boards/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: NAME }) });
+  if (res.ok) location.replace('/boards'); else Edit.toast('Could not delete');
+}
+function begin() {
+  editing = true;
+  if ((!L.layout || L.layout === 'grid') && !L.cols) { L.cols = flowCols(grid.clientWidth || innerWidth - 28); pack(); }
+  Edit.start({ page: PAGE, title: L.title || NAME,
+    get: () => L, set: v => { L = v && v.modules ? v : { title: NAME, density: 'normal', modules: [] }; editing = false; build(); }, render: build,
+    extra: [{ label: 'Board settings (layout, title, size)', run: boardSettings }, { label: 'Add module or box', run: addModule }, { label: 'Upload an image', run: uploadImage },
+            { label: 'Delete this board', run: deleteBoard }] });
+  loadWalls();
+}
+document.getElementById('fab').addEventListener('click', () => document.getElementById('edit').click());
+document.getElementById('edit').addEventListener('click', async () => {
+  if (document.getElementById('ebar')) return;
+  const s = await fetch('/api/pin/status', { cache: 'no-store' }).then(r => r.json()).catch(() => ({}));
+  if (s.admin) begin(); else deckPin.open({ onOk: begin });
+});
+
+(async () => {
+  const saved = await Edit.load(PAGE);
+  if (saved && saved.modules) L = saved;
+  build();
+  if (/[?&]edit\b/.test(location.search)) document.getElementById('edit').click();
+})();
+</script>
+</body>
+</html>

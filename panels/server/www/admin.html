@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#101418">
+<meta name="apple-mobile-web-app-title" content="Admin"><meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="/admin-icon.png"><link rel="icon" type="image/png" href="/admin-icon.png">
+<title>Admin</title>
+<style>
+/* Admin: the home admin's phone page. Health at a glance, quick tasks (risky ones are press-and-hold), every guest,
+   and every console and service link with a live status dot. Search filters everything.
+   Data: /api/ops/snapshot (lab panel service: nodes, guests, health, lab commands), /api/links (status dots),
+   /api/home/do and /api/pc/do (home and PC tasks). Over WireGuard everything uses IPs, so it works away from home too. */
+:root { --bg: #101418; --ink: #f6f4fb; --mute: rgba(246,244,251,.58); --line: rgba(255,255,255,.08); --card: rgba(255,255,255,.045);
+  --accent: #38bdf8; --ok: #34d399; --warn: #fbbf24; --bad: #fb7185;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Inter, Roboto, sans-serif;
+  --sl: env(safe-area-inset-left); --sr: env(safe-area-inset-right); }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: var(--bg); }
+html, body { margin: 0; min-height: 100%; color: var(--ink); font-family: var(--font); -webkit-tap-highlight-color: transparent; touch-action: manipulation; overscroll-behavior-y: none; }
+body { background: var(--bg); }
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(70% 45% at 50% -10%, rgba(56,189,248,.26), transparent 70%), radial-gradient(60% 40% at 100% 100%, rgba(34,211,238,.10), transparent 70%); }
+button, input { font: inherit; color: inherit; }
+button { background: none; border: 0; padding: 0; cursor: pointer; -webkit-user-select: none; user-select: none; }
+a { color: inherit; text-decoration: none; }
+.num { font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 18px) calc(var(--sr) + 16px) calc(env(safe-area-inset-bottom) + 40px) calc(var(--sl) + 16px); }
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+h1 { margin: 0; font-size: 34px; font-weight: 750; letter-spacing: -.03em; }
+.sub { color: var(--mute); font-size: 14px; }
+.cap { font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); font-weight: 650; margin: 26px 2px 10px; display: flex; justify-content: space-between; }
+.cap small { letter-spacing: 0; text-transform: none; font-weight: 500; }
+
+/* health */
+.health { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 14px; }
+.hc { padding: 9px 10px; border-radius: 16px; min-width: 0; background: var(--card); border: 1px solid var(--line); display: block; }
+.hc b { display: block; font-size: 16px; font-weight: 650; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -.01em; }
+.hc span { font-size: 11px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+@media (min-width: 700px) { .health { grid-template-columns: repeat(8, minmax(0, 1fr)); } .hc b { font-size: 18px; } }
+.hc.bad { border-color: rgba(251,113,133,.45); background: rgba(251,113,133,.10); } .hc.bad b { color: var(--bad); }
+.hc.warn { border-color: rgba(251,191,36,.4); background: rgba(251,191,36,.08); } .hc.warn b { color: var(--warn); }
+.hc.ok b { color: var(--ok); }
+.problems { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.problems:empty { display: none; }
+.pb { font-size: 13px; padding: 6px 11px; border-radius: 999px; background: rgba(251,113,133,.14); color: #fecdd3; font-weight: 600; }
+
+/* search */
+.search { position: sticky; top: 0; z-index: 10; margin: 18px -16px 0; padding: calc(env(safe-area-inset-top) * 0 + 10px) 16px 10px;
+  background: linear-gradient(var(--bg) 70%, transparent); }
+.search input { width: 100%; height: 46px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.07); padding: 0 16px 0 42px; font-size: 16px; outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2.2'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: 14px center; background-size: 18px; -webkit-appearance: none; appearance: none; }
+.search input:focus { border-color: rgba(56,189,248,.7); }
+
+/* quick tasks */
+.tasks { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.task { position: relative; overflow: hidden; min-height: 64px; padding: 12px 14px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); text-align: left; display: grid; gap: 3px; align-content: center; }
+.task b { font-size: 15px; font-weight: 650; } .task small { font-size: 12px; color: var(--mute); }
+.task .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: rgba(56,189,248,.35); pointer-events: none; }
+.task.warn { border-color: rgba(251,191,36,.25); } .task.bad { border-color: rgba(251,113,133,.3); }
+.task.busy { opacity: .6; } .task.done { border-color: var(--ok); } .task.fail { border-color: var(--bad); }
+
+/* rows: nodes, guests, links */
+.list { border-radius: 20px; background: var(--card); border: 1px solid var(--line); overflow: hidden; }
+.row { display: grid; grid-template-columns: 30px 1fr auto; gap: 12px; align-items: center; padding: 11px 14px; min-height: 54px; border-top: 1px solid var(--line); }
+.row:first-child { border-top: 0; }
+a.row:active { background: rgba(255,255,255,.06); }
+.row .ic { font-size: 20px; text-align: center; }
+.row .t { min-width: 0; } .row .t b { display: block; font-size: 15.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .t small { display: block; font-size: 12.5px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.row .r { display: flex; align-items: center; gap: 8px; color: var(--mute); font-size: 12px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,.2); flex: none; }
+.dot.up { background: var(--ok); box-shadow: 0 0 8px rgba(52,211,153,.6); } .dot.down { background: var(--bad); box-shadow: 0 0 8px rgba(251,113,133,.6); }
+.chev { opacity: .35; font-size: 18px; }
+.grow { display: grid; grid-template-columns: minmax(0, 1fr) 52px; border-top: 1px solid var(--line); } .grow:first-child { border-top: 0; } .grow .row { border-top: 0; }
+.con { display: grid; place-items: center; font: 600 13px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--mute); border-left: 1px solid var(--line); }
+.con:active, .con:hover { background: rgba(56,189,248,.18); color: var(--ink); } .con.off { opacity: 0; }
+.meter { width: 54px; height: 5px; border-radius: 5px; background: rgba(255,255,255,.08); overflow: hidden; } .meter i { display: block; height: 100%; background: var(--accent); }
+.grid2 { display: grid; gap: 0 20px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .grid2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .wrap { padding-left: calc(var(--sl) + 28px); padding-right: calc(var(--sr) + 28px); } }
+.hidden { display: none !important; }
+.cap.fold { cursor: pointer; -webkit-user-select: none; user-select: none; }
+.cap.fold::after { content: "▾"; letter-spacing: 0; transition: transform .2s; }
+[data-sec].shut .cap.fold::after { transform: rotate(-90deg); }
+[data-sec].shut .list { display: none; }
+body.searching [data-sec].shut .list { display: block; }
+.empty { color: var(--mute); font-size: 14px; padding: 14px; }
+#toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 18px); transform: translateX(-50%) translateY(120px); transition: transform .25s;
+  padding: 12px 18px; border-radius: 999px; background: #1d1a2b; opacity: 0; border: 1px solid var(--line); font-size: 14px; font-weight: 600; z-index: 50; max-width: calc(100% - 32px); }
+#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+/* phone: one column in reading order (health, search, tasks, services, nodes, guests); the sidebar's parts flow in */
+.wrap { display: flex; flex-direction: column; }
+#side, #main { display: contents; }
+header { order: 0; } .health { order: 1; } .problems { order: 2; } #main > .search { order: 3; } #main > [data-sec="tasks"] { order: 4; }
+#links { order: 5; } #side .grid2 { order: 6; } .foot { order: 7; }
+/* Mac / PC: services in columns, health + nodes + guests in a sticky sidebar */
+@media (min-width: 1100px) {
+  .wrap { display: grid; max-width: 1680px; grid-template-columns: minmax(0, 1fr) 400px; grid-template-areas: "head head" "main side" "foot foot"; gap: 0 28px; align-items: start; }
+  header { grid-area: head; } #main { grid-area: main; display: block; } .foot { grid-area: foot; }
+  #side { grid-area: side; display: block; position: sticky; top: 14px; max-height: calc(100vh - 28px); overflow-y: auto; scrollbar-width: thin; padding-bottom: 10px; }
+  #side .health { grid-template-columns: repeat(4, minmax(0, 1fr)); } #side .grid2 { grid-template-columns: minmax(0, 1fr); }
+  #links { columns: 2; column-gap: 20px; } #links > [data-sec] { break-inside: avoid; }
+  .search { margin: 14px 0 0; padding: 0 0 6px; } .tasks { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+  a.row:hover, .task:hover { background: rgba(255,255,255,.07); } .hc:hover { border-color: rgba(255,255,255,.18); }
+  #links .cap { margin-top: 0; padding-top: 22px; }   /* padding, not margin: margins collapse unevenly at column tops */
+}
+@media (min-width: 1500px) { #links { columns: 3; } }
+.hdr { display: flex; align-items: center; gap: 12px; }
+.editbtn { min-height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.07); font-weight: 650; font-size: 14px; }
+body.editing .editbtn { display: none; }
+.foot { margin-top: 26px; color: var(--mute); font-size: 12px; line-height: 1.5; }
+</style>
+<link rel="stylesheet" href="/wall.css">
+</head>
+<body>
+<div class="wrap">
+  <header><h1 data-edit="title" id="title">Admin</h1><span class="hdr"><span class="sub num" id="clock">–</span><button id="editbtn" class="editbtn">Edit</button></span></header>
+  <aside id="side">
+    <section class="health" id="health"></section>
+    <div class="problems" id="problems"></div>
+    <div class="grid2">
+      <div data-sec="nodes"><div class="cap">Proxmox nodes</div><section class="list" id="nodes"></section></div>
+      <div data-sec="guests"><div class="cap">Guests <small id="gcount"></small></div><section class="list" id="guests"></section></div>
+    </div>
+  </aside>
+  <main id="main">
+  <div class="search"><input id="q" type="search" placeholder="Search services, guests, tasks…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="go"></div>
+  <div data-sec="tasks"><div class="cap">Quick tasks <small>hold the orange and red ones</small></div><section class="tasks" id="tasks"></section></div>
+  <div id="links"></div>
+  </main>
+  <div class="foot" data-edit="foot" id="foot">Status dots refresh every 30 s, health every 15 s. &gt;_ opens a guest's console in Proxmox (log in to Proxmox first). Guest power commands are on the Lab panel (/ops). Search for an IP, a name or a task. On a computer: / or ⌘K / Ctrl+K to search, Enter opens the first match, Esc clears.</div>
+</div>
+<div id="toast"></div>
+<script src="/edit.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const NODE_IP = { turbo: '192.168.1.249', edvin: '192.168.1.246', prippen: '192.168.1.253' };
+const HA = 'https://192.168.1.70:8123', GF = 'http://192.168.1.234:3000/d/';
+// [group, icon, [[label, url, note, status id?], ...]]
+const LINKS = [
+  ['Home Assistant', '🏠', [
+    ['Home Assistant', HA + '/', 'Dashboards · .70', 'ha'], ['Home Assistant (remote)', 'https://home.example.net:8123/', 'Through edge, works anywhere', 'ha_public'],
+    ['Automations', HA + '/config/automation/dashboard', 'Edit and trace automations'], ['Devices & entities', HA + '/config/devices/dashboard', 'All devices'],
+    ['Integrations', HA + '/config/integrations/dashboard', 'Plejd, HomeKit, Spotify, Zigbee…'], ['Updates', HA + '/config/updates', 'Core, OS and add-on updates'],
+    ['Logs', HA + '/config/logs', 'Errors and warnings'], ['Add-ons', HA + '/hassio/dashboard', 'VS Code, Zigbee2MQTT, Music Assistant'],
+    ['Entity states', HA + '/developer-tools/state', 'Developer tools'], ['History', HA + '/history', 'Entity history'], ['Logbook', HA + '/logbook', 'What happened when'],
+    ['Scripts', HA + '/config/script/dashboard', 'Scripts'], ['Scenes', HA + '/config/scene/dashboard', 'Scenes'], ['Areas', HA + '/config/areas/dashboard', 'Rooms and floors'],
+    ['Repairs', HA + '/config/repairs', 'Issues HA wants fixed'], ['Backups (HA)', HA + '/config/backup', 'HA backups'], ['System', HA + '/config/system', 'Restart, hardware, network'],
+    ['Check / reload YAML', HA + '/developer-tools/yaml', 'Config check, reload, restart'], ['HACS', HA + '/hacs/dashboard', 'Custom integrations (hass-plejd)'], ['Energy', HA + '/energy', 'Energy dashboard'],
+    ['Zigbee2MQTT', HA + '/hassio/ingress/45df7312_zigbee2mqtt', 'Add-on · Zigbee devices and map'], ['Music Assistant', HA + '/hassio/ingress/d5369777_music_assistant', 'Add-on · speakers and queues'],
+    ['Studio Code Server', HA + '/hassio/ingress/a0d7b954_vscode', 'Add-on · edit configuration.yaml'], ['Terminal', HA + '/hassio/ingress/a0d7b954_ssh', 'Add-on · HA shell (ha core …)']]],
+  ['Home Deck panels', '📱', [
+    ['Start', 'http://192.168.1.52/start', 'All panels and consoles', 'start'], ['Deck', 'http://192.168.1.52/', 'Wall panel', 'deck'],
+    ['Home', 'http://192.168.1.52/living', 'Lights by room, music, door', 'living'], ['Remote', 'http://192.168.1.52/remote', 'Phone remote', 'remote'],
+    ['Family', 'http://192.168.1.52/family', "Who's home", 'family'], ['Family info', 'http://192.168.1.52/familyinfo', 'Buses, weather, last one home', 'familyinfo'],
+    ['Security', 'http://192.168.1.52/security', 'Camera visits', 'security'], ['Media', 'http://192.168.1.52/media', 'Music, speakers, TV', 'media'],
+    ['Network', 'http://192.168.1.52/net', 'Internet, DNS, devices', 'net'], ['Lab', 'http://192.168.1.52/ops', 'Nodes, guests, hold-to-run commands', 'ops'],
+    ['Ambient', 'http://192.168.1.52/ambient', 'Night clock', 'ambient'], ['Network map', 'http://192.168.1.52/network.html', 'Document: map, guests, flows', 'networkmap'],
+    ['Buttons editor', 'http://192.168.1.52:4440/', 'Stream Deck + panel layouts', 'buttons'], ['Lab panel 6×6', 'http://192.168.1.52/lab', 'Buttons lab grid', 'lab']]],
+  ['Proxmox & backups', '🖥️', [
+    ['Proxmox · turbo', 'https://192.168.1.249:8006/', 'Main node · .249', 'pve_turbo'], ['Proxmox · edvin', 'https://192.168.1.246:8006/', 'edge, PBS, monitor, scrypted · .246', 'proxmox'],
+    ['Proxmox · prippen', 'https://192.168.1.253:8006/', 'Home Assistant, pihole2 · .253', 'pve_prippen'], ['Backup Server', 'https://192.168.1.32:8007/', 'PBS · nightly backups · .32', 'pbs'],
+    ...Object.entries(NODE_IP).map(([n, ip]) => [`Shell · ${n}`, `https://${ip}:8006/?console=shell&xtermjs=1&vmid=0&vmname=&node=${n}&cmd=`, `Root shell on ${n} in the browser`]),
+    ['Cluster tasks', 'https://192.168.1.249:8006/#v1:0:=datacenter:4:=tasks', 'Recent tasks and errors (Datacenter)'], ['Backup jobs', 'https://192.168.1.249:8006/#v1:0:=datacenter:4:=backup', 'Datacenter → Backup']]],
+  ['Network & DNS', '🌐', [
+    ['Router PR460X', 'https://192.168.1.254/', 'Port forwards, DHCP, WireGuard · .254', 'router'], ['Orbi RBE970', 'https://192.168.1.20/', 'Wi-Fi mesh · .20', 'orbi1'],
+    ['Orbi RBE971', 'https://192.168.1.21/', 'Wi-Fi mesh · .21', 'orbi2'], ['Netgear switch', 'http://192.168.1.10/', 'Managed switch · .10', 'switch'],
+    ['lab-dev', 'https://192.168.1.11/', 'Netgear device · .11', 'ngdev'], ['Pi-hole primary', 'http://192.168.1.30/admin/', 'DNS + ad blocking · .30', 'pihole1'],
+    ['Pi-hole secondary', 'http://192.168.1.31/admin/', 'Synced from .30 · .31', 'pihole2'],
+    ['Query log', 'http://192.168.1.30/admin/queries', 'Pi-hole .30 · what was looked up, blocked'], ['Network clients', 'http://192.168.1.30/admin/network', 'Pi-hole .30 · every device by MAC'],
+    ['Groups & clients', 'http://192.168.1.30/admin/groups', 'Pi-hole .30 · per-device rules'], ['Domains (allow/deny)', 'http://192.168.1.30/admin/groups/domains', 'Pi-hole .30'],
+    ['Blocklists', 'http://192.168.1.30/admin/groups/lists', 'Pi-hole .30 · adlists'], ['Query log · .31', 'http://192.168.1.31/admin/queries', 'Pi-hole secondary']]],
+  ['Monitoring & alerts', '📊', [
+    ['Grafana', 'http://192.168.1.234:3000/', 'All dashboards', 'grafana'], ['Home overview', GF + 'home', 'Grafana'], ['People', GF + 'people', 'Grafana'],
+    ['Unusual activity', GF + 'unusual', 'New destinations, spikes, night use'], ['Usage', GF + 'usage', 'Who uses what, when'], ['DNS overview', GF + 'dns-overview', 'Pi-hole'],
+    ['DNS: device', GF + 'dns-device', 'One device in detail'], ['DNS query log', GF + 'dns-querylog', 'Loki, 90 days'], ['Proxmox', GF + 'proxmox', 'Nodes and guests'],
+    ['Router', GF + 'router', 'PR460X'], ['Home Assistant', GF + 'hass', 'Grafana'], ['Camera visits', GF + 'camera', 'Grafana'], ['Public web', GF + 'edge', 'edge traffic'],
+    ['All dashboards', 'http://192.168.1.234:3000/dashboards', 'Grafana dashboard list'], ['Explore · Loki', 'http://192.168.1.234:3000/explore?left=%7B%22datasource%22:%22loki%22%7D', 'DNS query log, raw'],
+    ['Explore · Prometheus', 'http://192.168.1.234:3000/explore?left=%7B%22datasource%22:%22prometheus%22%7D', 'Ad-hoc metric queries'], ['Grafana alerts', 'http://192.168.1.234:3000/alerting/list', 'Alert rules → ntfy'],
+    ['Prometheus', 'http://192.168.1.234:9090/', 'Metrics and alerts', 'prometheus'], ['Prometheus targets', 'http://192.168.1.234:9090/targets', 'Which exporters are up'],
+    ['Prometheus alerts', 'http://192.168.1.234:9090/alerts', 'Firing / pending'], ['Lab panel service', 'http://192.168.1.234:8790/', 'Tile preview', 'lab'],
+    ['Gotify', 'http://192.168.1.53/', 'Push messages · .53', 'gotify'], ['Home notices (ntfy)', 'https://ntfy.sh/home-topic-removed', 'Door / last-one-home topic']]],
+  ['Cameras', '📷', [
+    ['camwatch', 'http://192.168.1.81:8080/', 'Recordings, faces, plates · .81', 'camwatch'], ['Scrypted', 'https://192.168.1.80:10443/', 'Camera bridge (NVR) · .80', 'scrypted'],
+    ['Dahua camera', 'http://192.168.1.85/', 'Front camera web UI · .85', 'camera']]],
+  ['Files, sites & repo', '📁', [
+    ['File Browser', 'http://192.168.1.51:8080/', 'Shared files on fileshare · .51', 'files'], ['File Browser (public)', 'https://home.example.net/files/', 'Through edge', 'site'],
+    ['Public site', 'https://home.example.net/', 'Through edge · .40', 'site'], ['Windows image repo', 'http://192.168.1.41/', 'ISOs + deploy.sh · .41', 'winrepo']]],
+  ['Everyday', '🚌', [
+    ['Västtrafik board', 'https://avgangstavla.vasttrafik.se/?board1Gids=9021014001000000&board1Modules=departures&board1Modules=trafficSituations', 'Storgatan'],
+    ['Spotify (web)', 'https://open.spotify.com/', 'Music']]],
+];
+// home and PC tasks; two = press and hold
+const HOME_TASKS = [
+  { id: 'lock', label: 'Lock front door', hint: 'never unlocks', tone: 'warn', two: true, run: () => post('/api/home/do', { do: 'lock' }) },
+  { id: 'all_off', label: 'All lights off', hint: 'every light in the house', tone: 'warn', two: true, run: () => post('/api/home/do', { do: 'all_off' }) },
+  { id: 'detect', label: 'Camera detection', hint: 'toggle alerts on/off', tone: 'warn', two: true, run: () => post('/api/home/do', { do: 'detect' }) },
+  { id: 'vac_start', label: 'Vacuum start', hint: 'Roborock', tone: 'accent', run: () => post('/api/home/do', { do: 'vacuum', value: 'start' }) },
+  { id: 'vac_dock', label: 'Vacuum dock', hint: 'back to base', tone: 'accent', run: () => post('/api/home/do', { do: 'vacuum', value: 'return_to_base' }) },
+  { id: 'wake_pc', label: 'Wake PC', hint: 'Wake-on-LAN', tone: 'accent', run: () => post('/api/home/do', { do: 'wake_pc' }) },
+  { id: 'pc_lock', label: 'Lock PC', hint: 'Windows lock screen', tone: 'warn', two: true, run: () => post('/api/pc/do', { action: 'lock' }) },
+  { id: 'pc_mic', label: 'PC mic mute', hint: 'toggle default mic', tone: 'accent', run: () => post('/api/pc/do', { action: 'mic' }) },
+];
+const post = async (u, b) => { const r = await fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) });
+  const j = await r.json().catch(() => ({})); if (!r.ok || j.error || j.ok === false) throw new Error(j.error || j.msg || 'HTTP ' + r.status); return j; };
+const toast = t => { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2600); };
+let snap = null, links = {}, tasks = [];
+const DEFAULT_FOOT = document.getElementById('foot').textContent;
+const defaults = () => ({ title: 'Admin', foot: DEFAULT_FOOT, tasks: {},
+  groups: LINKS.map(([name, icon, items]) => ({ name, icon, items: items.map(([label, url, note, id]) => ({ label, url, note, id })) })) });
+let model = defaults();
+const setModel = l => { model = l && l.groups ? l : defaults(); model.tasks = model.tasks || {}; renderAll(); };
+const editing = () => document.body.classList.contains('editing');
+function renderAll() { $('#title').textContent = model.title || 'Admin'; document.title = model.title || 'Admin'; $('#foot').textContent = model.foot ?? DEFAULT_FOOT; renderLinks(); renderTasks(); }
+let shut = []; try { shut = JSON.parse(localStorage.getItem('adminShut') || '[]'); } catch {}
+document.addEventListener('click', e => { const c = e.target.closest('.cap.fold'); if (!c) return;
+  const g = c.dataset.g, sec = c.parentElement; sec.classList.toggle('shut');
+  shut = sec.classList.contains('shut') ? [...new Set([...shut, g])] : shut.filter(x => x !== g);
+  try { localStorage.setItem('adminShut', JSON.stringify(shut)); } catch {} });
+
+function renderLinks() {
+  const ed = editing();
+  $('#links').innerHTML = model.groups.map(({ name: g, icon: ic, items }, gi) => `<div data-sec="g${gi}" class="${shut.includes(g) && !ed ? 'shut' : ''}"><div class="cap fold" data-g="${esc(g)}" data-edit="group" data-gi="${gi}">${esc(ic)} ${esc(g)}</div><section class="list">${items.map(({ label: l, url: u, note: n, id }, ii) =>
+    `<a class="row" href="${esc(u)}" target="_blank" rel="noopener" data-edit="item" data-gi="${gi}" data-ii="${ii}" data-q="${esc((l + ' ' + n + ' ' + u + ' ' + g).toLowerCase())}">
+      <span class="ic">${esc(ic)}</span><span class="t"><b>${esc(l)}</b><small>${esc(n)}</small></span>
+      <span class="r">${id ? `<i class="dot ${links[id] ? (links[id].up ? 'up' : 'down') : ''}" data-id="${id}"></i>` : ''}<span class="chev">›</span></span></a>`).join('')}</section>
+      ${ed ? `<button class="eadd" data-add="item" data-gi="${gi}">+ Add link to ${esc(g)}</button>` : ''}</div>`).join('')
+    + (ed ? '<button class="eadd" data-add="group" style="margin-top:22px">+ Add group</button>' : '');
+  filter();
+}
+function paintDots() { document.querySelectorAll('.dot[data-id]').forEach(d => { const s = links[d.dataset.id]; d.className = 'dot ' + (s ? (s.up ? 'up' : 'down') : ''); }); }
+
+function renderTasks() {
+  const lab = (snap?.lab_commands || []).map(c => ({ label: c.label, hint: c.two ? 'Pi-holes · hold' : 'Pi-holes', tone: c.tone, two: c.two,
+    run: () => post('/api/ops/act', { key: c.key }) }));
+  const lab2 = lab.map((t, i) => ({ ...t, id: snap.lab_commands[i].key }));
+  const T = model.tasks, order = T.order || [], text = T.text || {}, hidden = T.hidden || {};
+  tasks = [...HOME_TASKS, ...lab2].map(t => ({ ...t, ...(text[t.id] || {}), hide: !!hidden[t.id] }))
+    .sort((a, b) => (order.indexOf(a.id) + 1 || 999) - (order.indexOf(b.id) + 1 || 999))
+    .filter(t => editing() || !t.hide);
+  $('#tasks').innerHTML = tasks.map((t, i) => `<button class="task ${t.two ? (t.tone === 'bad' ? 'bad' : 'warn') : ''} ${t.hide ? 'ehidden' : ''}" data-edit="task" data-i="${i}" data-q="${esc((t.label + ' ' + t.hint + ' task').toLowerCase())}">
+    <i class="fill"></i><b>${esc(t.label)}</b><small>${esc(t.hint || '')}</small></button>`).join('');
+  filter();
+}
+async function runTask(el) {
+  const t = tasks[+el.dataset.i]; if (!t || el.classList.contains('busy')) return;
+  el.classList.add('busy'); el.classList.remove('done', 'fail');
+  try { const r = await t.run(); el.classList.add('done'); toast(`${t.label}: ${r?.msg || r?.result || 'done'}`); }
+  catch (e) { el.classList.add('fail'); toast(`${t.label}: ${e.message}`); }
+  el.classList.remove('busy'); setTimeout(() => el.classList.remove('done', 'fail'), 4000);
+}
+// tap runs; "two" tasks need a 1.2 s hold (the fill shows progress)
+let hold = null;
+const HOLD_MS = 1200;
+$('#tasks').addEventListener('pointerdown', e => {
+  const el = e.target.closest('.task'); if (!el || editing()) return;
+  const t = tasks[+el.dataset.i]; if (!t?.two) return;
+  const fill = el.querySelector('.fill'); fill.style.transition = `width ${HOLD_MS}ms linear`; fill.style.width = '100%';
+  hold = { el, timer: setTimeout(() => { hold = null; fill.style.transition = 'none'; fill.style.width = 0; navigator.vibrate?.(30); runTask(el); }, HOLD_MS) };
+});
+const cancelHold = () => { if (!hold) return; clearTimeout(hold.timer); const f = hold.el.querySelector('.fill'); f.style.transition = 'width .2s'; f.style.width = 0; hold = null; };
+['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => $('#tasks').addEventListener(ev, cancelHold));
+$('#tasks').addEventListener('click', e => { const el = e.target.closest('.task'); if (el && !tasks[+el.dataset.i]?.two) runTask(el); else if (el) toast('Press and hold to run'); });
+$('#tasks').addEventListener('contextmenu', e => e.preventDefault());
+
+const gb = b => (b / 1073741824).toFixed(b > 1e11 ? 0 : 1);
+const ago = t => { const s = Date.now() / 1000 - t; return s < 3600 ? Math.round(s / 60) + ' min' : s < 172800 ? Math.round(s / 3600) + ' h' : Math.round(s / 86400) + ' d'; };
+function renderSnap() {
+  const d = snap; if (!d) return;
+  const run = (d.guests || []).filter(g => g.status === 'running').length, all = (d.guests || []).length;
+  const svcDown = (d.services || []).filter(s => !s.up), cert = Math.min(...(d.certs || []).map(c => c.days), 999);
+  const card = (label, val, tone, href) => `<${href ? `a href="${href}" target="_blank"` : 'div'} class="hc ${tone || ''}"><span>${label}</span><b class="num">${val}</b></${href ? 'a' : 'div'}>`;
+  $('#health').innerHTML = [
+    card('Problems', d.problems?.length || 'None', d.problems?.length ? 'bad' : 'ok', '/ops'),
+    card('Mbit ↓/↑', d.net?.router_up ? `${Math.round((d.net.down || 0) / 1e6)}/${Math.round((d.net.up || 0) / 1e6)}` : 'down', d.net?.router_up ? '' : 'bad', GF + 'router'),
+    card('Ad block', d.dns ? Math.round(d.dns.blocked_pct) + '%' : '–', Object.values(d.dns?.hosts || {}).every(h => h.ok && h.blocking) ? '' : 'warn', 'http://192.168.1.30/admin/'),
+    card('Guests', `${run}/${all}`, '', null),
+    card('Backup', d.backups?.newest ? ago(d.backups.newest) : '–', d.backups?.stale ? 'warn' : '', 'https://192.168.1.32:8007/'),
+    card('Down', svcDown.length || 'None', svcDown.length ? 'bad' : 'ok', null),
+    card('Updates', d.ha?.updates ?? '–', d.ha?.updates ? 'warn' : '', HA + '/config/updates'),
+    card('Certs', cert < 999 ? Math.round(cert) + ' d' : '–', cert < 14 ? 'bad' : cert < 30 ? 'warn' : '', null),
+  ].join('');
+  const cfg = health?.settings && !health.settings.ok ? [`Settings: ${health.settings.problems.length} problem(s) in homedeck.toml, running on the last good copy`] : [];
+  $('#problems').innerHTML = [...cfg, ...(d.problems || []), ...svcDown.map(s => s.name + ' down')].map(p => `<span class="pb">${esc(p)}</span>`).join('');
+  $('#nodes').innerHTML = (d.nodes || []).map(n => `<a class="row" href="https://${NODE_IP[n.node] || n.node}:8006/" target="_blank" data-q="${esc((n.node + ' node proxmox ' + (NODE_IP[n.node] || '')).toLowerCase())}">
+    <span class="ic">🖥️</span><span class="t"><b>${esc(n.node)}</b><small>${n.status === 'online' ? `CPU ${Math.round(n.cpu * 100)}% · RAM ${gb(n.mem)}/${gb(n.maxmem)} GB · up ${ago(Date.now() / 1000 - n.uptime)}` : 'offline'}</small></span>
+    <span class="r"><span class="meter"><i style="width:${Math.round(n.mem / n.maxmem * 100)}%"></i></span><i class="dot ${n.status === 'online' ? 'up' : 'down'}"></i></span></a>`).join('');
+  $('#gcount').textContent = `${run} of ${all} running`;
+  const con = g => `https://${NODE_IP[g.node] || g.node}:8006/?console=${g.type === 'qemu' ? 'kvm&novnc=1' : 'lxc&xtermjs=1'}&vmid=${g.vmid}&vmname=${encodeURIComponent(g.name)}&node=${g.node}&resize=off&cmd=`;
+  $('#guests').innerHTML = (d.guests || []).sort((a, b) => a.vmid - b.vmid).map(g => `<div class="grow" data-q="${esc((g.vmid + ' ' + g.name + ' ' + (g.ip || '') + ' ' + g.node + ' guest').toLowerCase())}"><a class="row" target="_blank"
+      href="https://${NODE_IP[g.node] || g.node}:8006/#v1:0:=${g.type === 'qemu' ? 'qemu' : 'lxc'}%2F${g.vmid}:4:::::::">
+    <span class="ic num" style="font-size:12px;color:var(--mute)">${g.vmid}</span><span class="t"><b>${esc(g.name)}</b>
+      <small>${esc(g.ip || '')}${g.ip ? ' · ' : ''}${esc(g.node)}${g.status === 'running' ? ` · CPU ${Math.round(g.cpu * 100)}% · ${gb(g.mem)}/${gb(g.maxmem)} GB` : ' · ' + esc(g.status)}${g.backup ? ' · backup ' + ago(g.backup) + ' ago' : ''}</small></span>
+    <span class="r"><i class="dot ${g.status === 'running' ? 'up' : 'down'}"></i></span></a>${g.status === 'running' ? `<a class="con" href="${con(g)}" target="_blank" title="Console">&gt;_</a>` : '<span class="con off"></span>'}</div>`).join('') || '<div class="empty">No guests reported.</div>';
+  filter();
+}
+
+const norm = t => t.toLowerCase().replace(/[-_·]/g, '').replace(/\s+/g, ' ').trim();
+function filter() {
+  const q = norm($('#q').value);
+  document.querySelectorAll('[data-q]').forEach(el => el.classList.toggle('hidden', !!q && !q.split(' ').every(w => norm(el.dataset.q).replace(/ /g, '').includes(w))));
+  document.body.classList.toggle('searching', !!q);
+  document.querySelectorAll('[data-sec]').forEach(s => s.classList.toggle('hidden', !!q && !s.querySelector('[data-q]:not(.hidden)')));
+}
+$('#q').addEventListener('input', filter);
+// keyboard (Mac / PC): / or Cmd/Ctrl+K focuses search, Esc clears it
+document.addEventListener('keydown', e => {
+  const typing = document.activeElement === $('#q');
+  if ((e.key === '/' && !typing) || (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey))) { e.preventDefault(); $('#q').focus(); $('#q').select(); }
+  else if (e.key === 'Escape' && typing) { $('#q').value = ''; filter(); $('#q').blur(); }
+});
+$('#q').addEventListener('keydown', e => { if (e.key === 'Enter') { const a = document.querySelector('a.row[data-q]:not(.hidden)'); if (a) a.click(); } });
+
+async function get(u) { try { const r = await fetch(u, { cache: 'no-store' }); const j = await r.json(); return j.error ? null : j; } catch { return null; } }
+let health = null;
+async function loadSnap() { if (document.visibilityState !== 'visible') return; health = await get('/api/health') || health; const d = await get('/api/ops/snapshot'); if (d) { const first = !snap; snap = d; renderSnap(); if (first) renderTasks(); } }
+async function loadLinks() { if (document.visibilityState !== 'visible') return; const d = await get('/api/links'); if (d) { links = d; paintDots(); } }
+const tick = () => { $('#clock').textContent = new Date().toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }); };
+// ---------- edit mode ----------
+const groupOpts = () => model.groups.map((g, i) => [i, g.icon + ' ' + g.name]);
+async function editItem(gi, ii, isNew) {
+  const g = model.groups[gi], it = isNew ? { label: '', url: 'https://', note: '' } : g.items[ii];
+  const r = await Edit.sheet({ title: isNew ? 'New link' : 'Edit link', fields: [
+      { key: 'label', label: 'Name', value: it.label }, { key: 'note', label: 'Description', value: it.note },
+      { key: 'url', label: 'Address', type: 'url', value: it.url, hint: 'Full address, e.g. https://192.168.1.70:8123/config/logs' },
+      { key: 'gi', label: 'Group', type: 'select', value: gi, options: groupOpts() }],
+    buttons: isNew ? [{ id: 'save', label: 'Add' }] : [{ id: 'del', label: 'Delete', tone: 'bad' }, { id: 'up', label: '↑', side: true }, { id: 'down', label: '↓', side: true }, { id: 'save', label: 'Save' }] });
+  if (!r) return;
+  if (r.action === 'del') { if (confirm(`Delete "${it.label}"?`)) g.items.splice(ii, 1); return renderLinks(); }
+  const v = r.values; if (!v.label || !v.url) return Edit.toast('Name and address are needed');
+  const upd = { ...it, label: v.label, note: v.note, url: v.url }; if (upd.url !== it.url) delete upd.id;   // status dots only for the fixed server checks
+  if (isNew) g.items.push(upd); else g.items[ii] = upd;
+  const at = isNew ? g.items.length - 1 : ii;
+  if (+v.gi !== gi) { g.items.splice(at, 1); model.groups[+v.gi].items.push(upd); }
+  else if (r.action === 'up' || r.action === 'down') Edit.move(g.items, at, r.action === 'up' ? -1 : 1);
+  renderLinks();
+}
+async function editGroup(gi, isNew) {
+  const g = isNew ? { name: '', icon: '⭐', items: [] } : model.groups[gi];
+  const r = await Edit.sheet({ title: isNew ? 'New group' : 'Edit group', fields: [{ key: 'name', label: 'Group name', value: g.name },
+      { key: 'icon', label: 'Icon (an emoji)', value: g.icon }],
+    buttons: isNew ? [{ id: 'save', label: 'Add' }] : [{ id: 'del', label: 'Delete group', tone: 'bad' }, { id: 'up', label: '↑', side: true }, { id: 'down', label: '↓', side: true }, { id: 'save', label: 'Save' }] });
+  if (!r) return;
+  if (r.action === 'del') { if (confirm(`Delete the group "${g.name}" and its ${g.items.length} links?`)) model.groups.splice(gi, 1); return renderLinks(); }
+  if (!r.values.name) return Edit.toast('The group needs a name');
+  Object.assign(g, { name: r.values.name, icon: r.values.icon || '•' });
+  if (isNew) model.groups.push(g); else if (r.action !== 'save') Edit.move(model.groups, gi, r.action === 'up' ? -1 : 1);
+  renderLinks();
+}
+async function editTask(i) {
+  const t = tasks[i], T = model.tasks;
+  const r = await Edit.sheet({ title: 'Edit quick task', fields: [{ key: 'label', label: 'Name', value: t.label }, { key: 'hint', label: 'Description', value: t.hint },
+      { key: 'show', label: 'Show this task', type: 'toggle', value: !t.hide }],
+    buttons: [{ id: 'up', label: '←', side: true }, { id: 'down', label: '→', side: true }, { id: 'save', label: 'Save' }] });
+  if (!r) return;
+  T.text = T.text || {}; T.hidden = T.hidden || {};
+  T.text[t.id] = { label: r.values.label || t.label, hint: r.values.hint };
+  if (r.values.show) delete T.hidden[t.id]; else T.hidden[t.id] = true;
+  if (r.action !== 'save') { const ids = tasks.map(x => x.id); Edit.move(ids, i, r.action === 'up' ? -1 : 1); T.order = ids; }
+  renderTasks();
+}
+async function editText(key, label, multi) {
+  const r = await Edit.sheet({ title: 'Edit ' + label.toLowerCase(), fields: [{ key: 'v', label, type: multi ? 'textarea' : 'text', value: model[key] }], buttons: [{ id: 'save', label: 'Save' }] });
+  if (r) { model[key] = r.values.v; renderAll(); }
+}
+document.addEventListener('click', e => {                     // in edit mode a tap edits instead of opening or running
+  if (!editing() || e.target.closest('#ebar, #eback')) return;
+  const add = e.target.closest('[data-add]'), el = e.target.closest('[data-edit]');
+  if (!add && !el) return;
+  e.preventDefault(); e.stopPropagation();
+  if (add) return add.dataset.add === 'group' ? editGroup(0, true) : editItem(+add.dataset.gi, 0, true);
+  const k = el.dataset.edit;
+  if (k === 'item') editItem(+el.dataset.gi, +el.dataset.ii); else if (k === 'group') editGroup(+el.dataset.gi);
+  else if (k === 'task') editTask(+el.dataset.i); else if (k === 'title') editText('title', 'Page title'); else if (k === 'foot') editText('foot', 'Footer text', true);
+}, true);
+$('#editbtn').addEventListener('click', () => { $('#q').value = ''; filter();
+  Edit.start({ page: 'admin', title: 'Admin', get: () => model, set: setModel, render: renderAll,
+    extra: [{ label: 'Edit Start page', run: () => open('/start?edit', '_blank') }, { label: 'Edit Family info', run: () => open('/familyinfo?edit', '_blank') }] }); });
+
+renderAll(); tick();
+Edit.load('admin').then(l => { if (l.groups) setModel(l); });
+loadSnap(); loadLinks();
+setInterval(loadSnap, 15000); setInterval(loadLinks, 30000); setInterval(tick, 10000);
+document.addEventListener('visibilitychange', () => { loadSnap(); loadLinks(); });
+addEventListener('pageshow', e => { if (e.persisted) { loadSnap(); loadLinks(); } });
+</script>
+<script src="/cam.js" data-into=".hdr" defer></script>
+<script src="/adminlock.js" data-into=".hdr" defer></script></body>
+</html>

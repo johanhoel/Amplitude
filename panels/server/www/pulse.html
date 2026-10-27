@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#07080f">
+<meta name="apple-mobile-web-app-title" content="Pulse"><meta name="nav-related" content="/today,/rooms,/media,/security">
+<title>Pulse</title>
+<link rel="stylesheet" href="/deck.css">
+<style>
+/* Pulse: the whole house on one screen. An "attention" strip shows only what needs action; every tile opens its detail panel.
+   Data: /api/home/state, /api/status, /api/presence, /api/bus, /api/weather, /api/net, /api/ops/snapshot, /api/sec/visits, /api/health */
+:root { --hue: #38bdf8; --hue2: #22d3ee; }
+.attn { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.attn:empty { display: none; }
+.attn a { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 14px; font-size: 14px; font-weight: 600;
+  background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.35); color: #fde68a; }
+.attn a.bad { background: rgba(251,113,133,.13); border-color: rgba(251,113,133,.4); color: #fecdd3; }
+.attn a.ok { background: rgba(52,211,153,.1); border-color: rgba(52,211,153,.3); color: #a7f3d0; }
+.bento { display: grid; gap: 12px; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-flow: dense; }
+@media (max-width: 1100px) { .bento { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+.t { display: flex; flex-direction: column; gap: 6px; min-height: 132px; overflow: hidden; transition: border-color .2s, background .2s; }
+a.t:hover { border-color: rgba(255,255,255,.2); background: var(--card-hi); }
+.t.w2 { grid-column: span 2; } .t.h2 { grid-row: span 2; }
+.t .k { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; }
+.t .k i { font-style: normal; color: var(--faint); letter-spacing: 0; text-transform: none; font-weight: 500; }
+.t .v { font-size: 34px; font-weight: 300; letter-spacing: -.02em; line-height: 1.05; }
+.t .v small { font-size: 15px; color: var(--mute); font-weight: 500; margin-left: 4px; letter-spacing: 0; }
+.t .s { color: var(--mute); font-size: 13.5px; line-height: 1.4; }
+.t .s b { color: var(--ink); font-weight: 600; }
+.t.alert { border-color: rgba(251,113,133,.45); } .t.alert .v { color: var(--bad); }
+.t.good .v { color: var(--ok); }
+.people { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+.pp { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+.pp .av { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 21px; font-weight: 750; color: #fff;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 85%, #fff), var(--c) 60%); box-shadow: 0 8px 22px color-mix(in srgb, var(--c) 35%, transparent); }
+.pp.away .av { filter: grayscale(.9) brightness(.5); box-shadow: none; } .pp.away { color: var(--mute); }
+.pp small { font-size: 11px; color: var(--faint); font-weight: 500; }
+.np { display: flex; gap: 14px; align-items: center; }
+.np .art { width: 76px; height: 76px; border-radius: 16px; background: #1a1630 center/cover; flex: none; display: grid; place-items: center; font-size: 28px; }
+.np b { display: block; font-size: 18px; line-height: 1.2; } .np span { color: var(--mute); font-size: 13.5px; }
+.bar { height: 5px; border-radius: 5px; background: rgba(255,255,255,.08); overflow: hidden; margin-top: 6px; } .bar i { display: block; height: 100%; background: var(--c, var(--accent)); border-radius: 5px; }
+.lights { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.lights span { font-size: 12px; padding: 4px 9px; border-radius: 999px; background: rgba(245,158,11,.14); color: #fcd34d; font-weight: 600; }
+.cam { position: relative; padding: 0; min-height: 132px; }
+.cam img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .75; }
+.cam .over { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px; background: linear-gradient(transparent, rgba(0,0,0,.8)); }
+.spark { width: 100%; height: 34px; margin-top: auto; }
+.upd { margin-top: 18px; color: var(--faint); font-size: 12px; text-align: center; }
+</style>
+<link rel="stylesheet" href="/wall.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="head"><div><h1 id="greet">Pulse</h1><div class="sub" id="date">–</div></div><div class="right"><div class="clock num" id="clock">–</div></div></header>
+  <div class="attn" id="attn"></div>
+  <main class="bento" id="bento"></main>
+  <div class="upd" id="upd">Loading…</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const D = {}, AT = {};
+const COL = { Alex: '#38bdf8', Robin: '#f472b6', Sam: '#34d399', Kim: '#f59e0b' };
+const WX = { 'sunny': '☀️', 'clear-night': '🌙', 'partlycloudy': '⛅', 'cloudy': '☁️', 'rainy': '🌧️', 'pouring': '🌧️', 'lightning': '🌩️', 'lightning-rainy': '⛈️',
+  'snowy': '❄️', 'snowy-rainy': '🌨️', 'hail': '🌨️', 'fog': '🌫️', 'windy': '💨', 'windy-variant': '💨', 'exceptional': '⚠️' };
+const hm = d => new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+const minsTo = iso => Math.max(0, Math.floor((new Date(iso) - Date.now()) / 60000));
+const ago = t => { const m = (Date.now() - t) / 60000; return m < 1 ? 'just now' : m < 60 ? Math.round(m) + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
+async function get(k, url, every) {
+  if (AT[k] && Date.now() - AT[k] < every) return;
+  try { const r = await fetch(url, { cache: 'no-store' }); const j = await r.json(); if (!j.error) { D[k] = j; AT[k] = Date.now(); } } catch {}
+}
+function tile(href, cls, inner) { return `<a class="card t ${cls}" href="${href}">${inner}</a>`; }
+function spark(pts, color) {
+  if (!pts?.length) return '';
+  const v = pts.map(p => p[1]), mx = Math.max(...v, 1), w = 200, h = 34;
+  const d = v.map((y, i) => `${(i / (v.length - 1) * w).toFixed(1)},${(h - 2 - y / mx * (h - 6)).toFixed(1)}`).join(' ');
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${d}" fill="none" stroke="${color}" stroke-width="1.8" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function render() {
+  const now = new Date(), H = D.home, S = D.status, snap = D.snap;
+  const h = now.getHours();
+  $('#greet').textContent = h < 5 ? 'Good night' : h < 10 ? 'Good morning' : h < 17 ? 'Good afternoon' : h < 22 ? 'Good evening' : 'Good night';
+  $('#date').textContent = now.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
+  $('#clock').textContent = hm(now);
+  const attn = [], tiles = [];
+  if (H && H.configured) {
+    const home = H.people.filter(p => p.home), lightsOn = H.rooms.flatMap(r => r.lights.filter(l => l.on).map(l => l.name === 'All' ? r.room : `${l.name}`));
+    const roomsOn = H.rooms.filter(r => r.lights.some(l => l.on)).map(r => r.room);
+    if (H.door?.state && H.door.state !== 'locked') attn.push(['bad', '/control', `🔓 Front door is ${H.door.state}`]);
+    if (!home.length && lightsOn.length) attn.push(['', '/rooms', `💡 Nobody home, ${lightsOn.length} light${lightsOn.length > 1 ? 's' : ''} on`]);
+    tiles.push(tile('/today', 'w2', `<div class="k">People <i>${home.length} of ${H.people.length} home</i></div><div class="people">${H.people.map(p => {
+      const pr = D.presence?.[p.name.toLowerCase()];
+      return `<div class="pp ${p.home ? '' : 'away'}" style="--c:${COL[p.name] || '#38bdf8'}"><div class="av">${esc(p.name[0])}</div>${esc(p.name)}<small>${p.home ? (pr?.silent_s > 1800 ? 'home · phone resting' : 'home') : 'away'}</small></div>`; }).join('')}</div>`));
+    const door = H.door?.state;
+    tiles.push(tile('/control', door === 'locked' ? 'good' : 'alert', `<div class="k">Front door</div><div class="v">${door === 'locked' ? '🔒 Locked' : '🔓 ' + esc(door || '–')}</div><div class="s">${door === 'locked' ? 'All good' : 'Tap to lock (lock only)'}</div>`));
+    tiles.push(tile('/rooms', '', `<div class="k">Lights <i>${roomsOn.length} rooms</i></div><div class="v num">${lightsOn.length}<small>on</small></div><div class="lights">${roomsOn.slice(0, 5).map(r => `<span>${esc(r)}</span>`).join('')}${roomsOn.length > 5 ? `<span>+${roomsOn.length - 5}</span>` : ''}</div>`));
+    const p = (H.players || []).find(x => x.state === 'playing') || (H.appletv?.state === 'playing' ? H.appletv : null);
+    const art = p?.art ? `/api/art?e=${encodeURIComponent(p.id)}&k=${encodeURIComponent(p.art_key)}` : '';
+    tiles.push(tile('/media', 'w2', `<div class="k">Now playing <i>${p ? esc(p.label) : 'nothing'}</i></div><div class="np"><div class="art" style="${art ? `background-image:url('${art}')` : ''}">${art ? '' : '♫'}</div>
+      <div style="min-width:0"><b>${esc(p?.title || 'Quiet house')}</b><span>${esc(p ? [p.artist, p.app].filter(Boolean).join(' · ') : 'Nothing is playing')}</span>
+      ${p?.duration ? `<div class="bar" style="--c:#f472b6"><i style="width:${Math.min(100, ((p.position || 0) + (p.state === 'playing' && p.position_at ? (Date.now() - new Date(p.position_at)) / 1000 : 0)) / p.duration * 100)}%"></i></div>` : ''}</div></div>`));
+    const wx = D.weather?.now || H.wx;
+    const inside = (S?.ha?.temps || []).slice(0, 2);
+    tiles.push(tile('/today', '', `<div class="k">Outside <i>${esc(wx?.condition || '')}</i></div><div class="v num">${WX[wx?.condition] || ''} ${wx?.temperature != null ? Math.round(wx.temperature) + '°' : '–'}</div>
+      <div class="s">${inside.map(t => `${esc(t.name.replace(/[ _]temp(erature)?$/i, '').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()))} <b>${Math.round(t.value)}°</b>`).join(' · ') || 'Indoor sensors: none'}</div>`));
+    tiles.push(tile('/control', '', `<div class="k">Energy</div><div class="v num">${S?.ha?.charger_w != null ? Math.round(S.ha.charger_w) : '–'}<small>${esc(S?.ha?.charger_unit || 'W')}</small></div><div class="s">EV charger ${H.charger_on ? '<b>enabled</b>' : 'paused'}</div>`));
+    tiles.push(tile('/control', '', `<div class="k">Vacuum</div><div class="v" style="font-size:24px">${esc((H.vacuum?.state || '–').replace(/_/g, ' '))}</div><div class="s">Roborock${H.vacuum?.battery != null ? ` · ${H.vacuum.battery}%` : ''} · camera alerts ${H.detect ? '<b>on</b>' : 'off'}</div>`));
+  }
+  if (D.bus) {
+    const dep = (D.bus.departures || []).map(d => ({ ...d, t: [d.next, d.then].find(x => x?.time && new Date(x.time) > Date.now() - 30000) })).filter(d => d.t).sort((a, b) => new Date(a.t.time) - new Date(b.t.time))[0];
+    if (D.bus.situations?.length) attn.push(['', '/today', `🚌 ${D.bus.situations.length} traffic disruption${D.bus.situations.length > 1 ? 's' : ''}`]);
+    tiles.push(tile('/today', '', `<div class="k">Next bus <i>${esc(D.bus.stop || '')}</i></div>${dep ? `<div class="v num">${minsTo(dep.t.time) < 1 ? 'Now' : minsTo(dep.t.time) + '<small>min</small>'}</div>
+      <div class="s"><b>${esc(dep.line.shortName)}</b> to ${esc(dep.to)} · ${hm(dep.t.time)}</div>` : '<div class="v">–</div><div class="s">No departures soon</div>'}`));
+  }
+  if (S?.genelec) {
+    const g = S.genelec, on = g.power === 'ACTIVE';
+    if (g.auth_failed) attn.push(['bad', '/control', '🔈 Speakers refuse the saved password']);
+    tiles.push(tile('/control', '', `<div class="k">Speakers <i>${esc(S.dante?.source || '')}</i></div><div class="v">${on ? (g.mute ? 'Muted' : g.level != null ? Math.round(g.level) + '<small>dB</small>' : 'On') : 'Standby'}</div><div class="s">Genelec ×${(g.speakers || []).length} · Dante ${S.dante?.front_live ?? '–'}/${S.dante?.front_total ?? '–'} live</div>`));
+  }
+  if (D.net) {
+    const n = D.net;
+    tiles.push(tile('/net', '', `<div class="k">Network <i>${n.online} devices online</i></div><div class="v num">${S?.internet_ms != null ? S.internet_ms + '<small>ms</small>' : '–'}</div>
+      <div class="s">Ads blocked <b>${n.blocked_pct != null ? Math.round(n.blocked_pct) + '%' : '–'}</b> · ${n.speed?.down ? Math.round(n.speed.down / 1e6) + ' Mbit ↓' : ''}</div>${spark(n.dns, '#22d3ee')}`));
+  }
+  if (snap) {
+    const down = (snap.guests || []).filter(g => g.status !== 'running' && g.name !== 'gotify').length, probs = snap.problems || [];
+    const PROB = { backups: 'Backups are older than expected', dns: 'A DNS server is not answering', certs: 'A certificate expires soon', ha: 'Home Assistant needs attention', pve: 'Proxmox API not answering' };
+    probs.filter(p => p !== 'gotify').forEach(p => attn.push(['', '/ops', `⚙ Lab: ${PROB[p] || p}`]));
+    tiles.push(tile('/atlas', probs.filter(p => p !== 'gotify').length ? '' : 'good', `<div class="k">Lab <i>${(snap.nodes || []).length} nodes</i></div><div class="v num">${(snap.guests || []).filter(g => g.status === 'running').length}<small>/ ${(snap.guests || []).length} running</small></div>
+      <div class="s">${(snap.nodes || []).map(n => `${esc(n.node)} <b>${Math.round(n.cpu * 100)}%</b>`).join(' · ')}</div>`));
+  }
+  if (D.visits?.length) {
+    const v = D.visits[0], t = new Date(v.start).getTime();
+    tiles.push(`<a class="card t cam w2" href="/security">${v.has_jpg ? `<img src="/api/sec/thumb/${esc(v.day)}/${esc(v.stem)}.jpg?w=480" alt="" loading="lazy">` : ''}<div class="over">
+      <div class="k" style="color:#fff">Front camera <i style="color:rgba(255,255,255,.7)">${ago(t)}</i></div><div class="s" style="color:#fff"><b>${esc((v.people || []).map(p => p.name || p).join(', ') || (v.labels || []).join(', ') || 'Motion')}</b> · ${hm(t)}</div></div></a>`);
+  }
+  if (D.health && !D.health.settings?.ok) attn.push(['bad', '/atlas', `⚠ homedeck.toml: ${D.health.settings.problems.length} problem(s)`]);
+  if (!attn.length && H) attn.push(['ok', '/today', '✓ Nothing needs your attention']);
+  $('#attn').innerHTML = attn.map(([c, h, t]) => `<a class="${c}" href="${h}">${esc(t)}</a>`).join('');
+  $('#bento').innerHTML = tiles.join('');
+  const last = Math.max(0, ...Object.values(AT));
+  $('#upd').textContent = !last ? 'Waiting for data…' : Date.now() - last > 30000 ? 'Offline · last data ' + hm(last) : 'Live · updated ' + hm(last);
+}
+async function load() {
+  if (document.visibilityState !== 'visible') return;
+  await Promise.all([get('home', '/api/home/state', 4000), get('status', '/api/status', 9000), get('presence', '/api/presence', 25000),
+    get('bus', '/api/bus', 25000), get('weather', '/api/weather', 120000), get('net', '/api/net', 60000), get('snap', '/api/ops/snapshot', 25000),
+    get('visits', '/api/sec/visits?days=2&limit=1', 60000), get('health', '/api/health', 60000)]);
+  render();
+}
+load(); setInterval(load, 5000);
+document.addEventListener('visibilitychange', load);
+addEventListener('pageshow', e => { if (e.persisted) { Object.keys(AT).forEach(k => AT[k] = 0); load(); } });
+</script>
+<script src="/nav.js" defer></script>
+</body>
+</html>

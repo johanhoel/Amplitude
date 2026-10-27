@@ -1,0 +1,57 @@
+# Home Deck settings. Only the Home Assistant address is required; everything else is optional.
+# Rooms, lights, people, media players, the door lock and the weather are read from Home Assistant by themselves:
+#   rooms = Home Assistant areas (Settings -> Areas, labels & zones): put each light in an area there.
+#
+# How to change something safely:
+#   1. edit this file (in the editor at http://THIS-ADDRESS:8088, or: nano /opt/panel-wrapper/homedeck.toml)
+#   2. run  homedeck-apply   (the editor does this for you when you save)
+#      Every value is checked first. A typo is reported and nothing is restarted. If the panels do not answer after
+#      the restart, the previous version is put back automatically.
+#
+# TOML in 20 seconds:  name = "text"   number = 30   yes = true   list = ["a", "b"]   [section] groups the lines below.
+# The Home Assistant token is NOT here: paste it on the /setup page (it is stored privately on this server).
+
+[server]
+port = 80
+timezone = "Europe/Stockholm"
+title = "Home Deck"
+
+[homeassistant]
+url = "__HA_URL__"                  # address of Home Assistant as this server reaches it
+
+[entities]
+lock = ""                           # "" = the first door lock Home Assistant has; or e.g. "lock.front_door"
+weather = ""                        # "" = weather.forecast_home (Met.no) or the first weather entity
+
+[rooms]
+order = []                          # [] = Home Assistant's area order; or e.g. ["Kitchen", "Living room", "Office"]
+skip_lights = "^$"                  # regular expression: matching light ids are hidden, e.g. "_ble$|infrared"
+hide = []                           # rooms not to show, e.g. ["Garage"]
+
+[rooms.names]                       # rename a light or move it to another room:  "light.x" = ["Short name", "Room"]
+# "light.led_strip_2" = ["LED strip", "Office"]
+
+[players]
+list = []                           # [] = every media player in Home Assistant (Spotify first); or a fixed list:
+# list = [{entity = "media_player.spotify_anna", label = "Spotify"}, {entity = "media_player.living_room", label = "Living room"}]
+hide = []                           # players not to show, e.g. ["media_player.chromecast_old"]
+
+[people]
+hide = []                           # people not to show, e.g. ["person.guest"]
+
+[transit]
+bus_stop = ""                       # Västtrafik stop id (16 digits); easiest: pick the stop in Family info -> Edit
+
+[leave]
+enabled = true                      # notice when everyone has left and the door is not locked
+grace_s = 180                       # nobody home this long before the door is checked
+lock_check_s = 45                   # a lock command from a panel should have locked the door by then
+
+[notify]
+ntfy_server = "https://ntfy.sh"     # notices go to the topic the installer made (subscribe in the ntfy app)
+
+[news]
+enabled = true                      # SVT headlines on Start
+
+[links.extra]                       # more status dots on Start:  name = "http://address"
+# router = "http://192.168.1.1/"

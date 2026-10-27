@@ -1,0 +1,267 @@
+# Home Deck settings - every address, entity, phone, timer and list the panels use.
+#
+# How to change something safely:
+#   1. edit this file (in the Home Deck editor, or nano /opt/panel-wrapper/homedeck.toml)
+#   2. run  homedeck-apply   (the editor does this for you when you save)
+#      It checks every value first. A typo is reported with the line/setting and nothing is restarted.
+#      If the panels do not answer after the restart, the previous version is put back automatically.
+#   Even if a broken file gets in another way, the server keeps running on the last good copy and the
+#   Admin page shows what is wrong.
+#
+# TOML in 20 seconds:  name = "text"   number = 30   list = ["a", "b"]   a [section] groups the lines below it.
+# Names with dots or colons need quotes:  "light.bed_table" = [...]   "02:00:ae:6e:6f:73" = "Alex's phone"
+# Secrets (Home Assistant token, Genelec password, ntfy topic) are NOT here: they stay in
+# /var/lib/panel-wrapper/secrets.json and are set from the panels' settings.
+
+[server]
+port = 80
+static_dir = "/opt/panel-wrapper/www"
+netaudio = "/opt/panel-wrapper/venv/bin/netaudio"
+timezone = "Europe/Stockholm"
+
+[homeassistant]
+url = "https://192.168.1.70:8123"
+
+[services]
+pc = "192.168.1.200:8765"                         # deck-listener on the Windows PC (answers while the PC is on)
+pc_proxy_clients = ["192.168.1.70", "192.168.1.195", "127.0.0.1"]   # who may use /api/pc/mic (HA desk buttons)
+labpanel = "http://192.168.1.234:8790"            # lab panel service on monitor
+lab_panel_id = "lab"                                # the panel id the Buttons keys use (tile/lab/N.png)
+prometheus = "http://192.168.1.234:9090"
+camfeed = "http://192.168.1.81:8091"              # camwatch-feed (visits, thumbnails, latest event)
+ntfy = "https://ntfy.sh"                            # home notices go here (topic is in secrets.json)
+piholes = ["192.168.1.30", "192.168.1.31"]
+
+[entities]
+spotify = "media_player.spotify_alex"
+lock = "lock.front_door"                             # front door (lock.front_door_2 is tried too if this one is unavailable)
+charger = "switch.garage_charger_enabled"
+charger_power_prefix = "sensor.garage_"             # the Easee power sensor starts with this
+cam_detect = "input_boolean.cameradetection"
+wake_pc = "button.wake_on_lan_02_00_9a_b2_d1_b1"
+tv = "media_player.tv_rum"
+vacuum = "vacuum.roborock_s6_maxv"
+weather = "weather.forecast_home"                   # met.no
+apple_tv = "media_player.vardagsrum"
+apple_tv_remote = "remote.vardagsrum"
+
+# media players on the Media / Deck pages (in this order)
+[[players]]
+entity = "media_player.spotify_alex"
+label = "Spotify"
+[[players]]
+entity = "media_player.tv_rum"
+label = "TV room · Sonos Beam"
+[[players]]
+entity = "media_player.bathroom_speaker"
+label = "Bathroom speaker"
+[[players]]
+entity = "media_player.vardagsrum"
+label = "Living room · Apple TV"
+
+[apple_tv]
+commands = ["up", "down", "left", "right", "select", "menu", "home", "top_menu", "play_pause",
+            "skip_backward", "skip_forward", "volume_up", "volume_down"]
+
+# phone/remote panel -> deck-listener path on the PC (only these can be run)
+[pc_actions]
+lock = "/lock"
+mic = "/mic"
+snip = "/key/snip"
+nextmonitor = "/key/nextmonitor"
+desktop = "/key/desktop"
+sleep = "/sleep"
+taskmgr = "/taskmgr"
+gamemode = "/gamemode"
+discord-mute = "/key/discord-mute"
+discord-deafen = "/key/discord-deafen"
+clip = "/key/clip"
+overlay = "/key/overlay"
+battlefield = "/place/battlefield"
+camera = "/camera"
+
+[rooms]
+order = ["Vardagsrum", "Kök", "Hall nedervåning", "Kontor", "Master bed", "Allrum vån 2", "Sam",
+         "Kim", "Uterum", "Garage", "Utebelysning"]
+skip_lights = "infrared|_ble$"                      # lights whose id matches are hidden (regular expression)
+
+[rooms.names]                                       # lights whose HA name does not say the room: entity = [short name, room]
+"light.bed_table" = ["Bed table", "Master bed"]
+"light.garage_led_strip" = ["LED strip", "Garage"]
+"light.brytare_entre_1" = ["Entré switch 1", "Hall nedervåning"]
+"light.brytare_entre_2" = ["Entré switch 2", "Hall nedervåning"]
+
+[presence]
+# Phones must use a fixed Wi-Fi address at home (iOS: Private Wi-Fi Address = Fixed or Off).
+# Measured 2026-10-18: daytime silence at home < 7 min (Alex), < 11 (Sam), < 29 (Kim);
+# asleep the phones go quiet 30-120 min, so at night someone home stays home unless silent for night_limit_s.
+default_away_after_s = 900
+night_hours = [0, 7]                                # local hours [start, end)
+night_limit_s = 14400
+probe_after_s = 240                                 # quiet this long -> wake the phone and check ARP
+probe_trust_s = 21600                               # failed wake-ups only count if the phone answered one this recently
+cam_burst_s = 360                                   # after a front-camera event: scan every 15 s for this long
+cam_leave_silent_s = 90
+# camera leave rule, for people whose phone never answers a wake-up probe (so a failed probe proves nothing):
+# their phone was active around a front-camera event, then stays silent this long -> away at once
+# (instead of waiting for away_after_s). New activity from the phone makes them home again.
+cam_leave_people = ["kim"]
+cam_leave_after_s = 600
+
+[presence.phones]                                   # person = [Wi-Fi MAC addresses]
+alex = ["02:00:ae:6e:6f:73"]                       # Alex's iPhone (.138); the Z Fold7 is not always with him
+sam = ["02:00:66:fb:ba:8e"]                    # Sam's iPhone (.155)
+robin = ["02:00:b2:e4:22:d0"]                     # Robin's iPhone (.149/.171)
+kim = ["02:00:14:cf:a7:ac", "02:00:19:70:f6:13"]   # Kim's iPhone "Kim-2" + second iPhone (private address)
+
+[presence.away_after_s]                             # daytime silence before someone counts as away
+alex = 600
+sam = 720
+robin = 720
+kim = 1800
+
+[audio]
+genelecs = ["192.168.1.90", "192.168.1.91", "192.168.1.92"]
+front_pair = ["Genelec-000001", "Genelec-000002"]   # the two 4430s (L/R) whose Dante input is switched
+
+[audio.sources.pc]
+device = "DESKTOP-PC01"
+channels = ["01", "02"]
+
+[audio.sources.bt]
+device = "AU-BT2-000001"
+channels = ["Bluetooth OUT 1", "Bluetooth OUT 2"]
+
+[transit]
+bus_stop = "9021014001000000"                       # Storgatan; the Family info editor can pick another
+feed = "https://avgangstavla.vasttrafik.se/api/events?board1Gids={g}&board1Modules=departures&board1Modules=trafficSituations&board2Gids={g}&board2Modules=arrivals"
+stop_search = "https://avgangstavla.vasttrafik.se/api/stopAreas"
+
+[leave]
+grace_s = 180                                       # nobody home this long before the door is checked
+lock_check_s = 45                                   # a lock command should have locked the door by then
+
+[layouts]
+pages = ["admin", "start", "familyinfo"]            # pages with an edit mode
+keep = 30                                           # older saves kept per page (undo)
+
+[admin]
+# Pages that ask for the admin PIN (names as in the address, e.g. "admin" for /admin; "network" = /network.html)
+pages = ["admin", "ops", "lab", "net", "atlas", "network", "devices", "studio"]
+pin_min_digits = 4
+session_hours = 12                                  # how long a PIN unlocks a browser
+remember_days = 30                                  # with "remember this device"
+max_tries = 5                                       # wrong PINs before that address is locked out
+lock_minutes = 5
+
+[news]
+max_items = 40
+
+[news.feeds]
+vast = "https://www.svt.se/nyheter/lokalt/vast/rss.xml"
+all = "https://www.svt.se/nyheter/rss.xml"
+
+# status dots on Start / Admin: id = address probed from this server (any HTTP answer = up)
+[links]
+deck = "http://127.0.0.1/"
+living = "http://127.0.0.1/living"
+remote = "http://127.0.0.1/remote"
+media = "http://127.0.0.1/media"
+family = "http://127.0.0.1/family"
+familyinfo = "http://127.0.0.1/familyinfo"
+security = "http://127.0.0.1/security"
+ambient = "http://127.0.0.1/ambient"
+desktop = "http://127.0.0.1/desktop"
+editor = "http://127.0.0.1:8088/"
+ops = "http://127.0.0.1/ops"
+lab = "http://192.168.1.234:8790/health"
+net = "http://127.0.0.1/net"
+networkmap = "http://127.0.0.1/network.html"
+ha = "https://192.168.1.70:8123/manifest.json"
+grafana = "http://192.168.1.234:3000/api/health"
+proxmox = "https://192.168.1.246:8006/"
+pbs = "https://192.168.1.32:8007/"
+pihole1 = "http://192.168.1.30/admin/"
+pihole2 = "http://192.168.1.31/admin/"
+buttons = "http://127.0.0.1:4440/"
+camwatch = "http://192.168.1.81:8080/"
+scrypted = "https://192.168.1.80:10443/"
+files = "http://192.168.1.51:8080/"
+gotify = "http://192.168.1.53/health"
+start = "http://127.0.0.1/start"
+admin = "http://127.0.0.1/admin"
+ha_public = "https://home.example.net:8123/manifest.json"
+pve_turbo = "https://192.168.1.249:8006/"
+pve_prippen = "https://192.168.1.253:8006/"
+router = "https://192.168.1.254/"
+orbi1 = "https://192.168.1.20/"
+orbi2 = "https://192.168.1.21/"
+switch = "http://192.168.1.10/"
+ngdev = "https://192.168.1.11/"
+prometheus = "http://192.168.1.234:9090/-/healthy"
+camera = "http://192.168.1.85/"
+site = "https://home.example.net/"
+winrepo = "http://192.168.1.41/"
+pulse = "http://127.0.0.1/pulse"
+today = "http://127.0.0.1/today"
+rooms = "http://127.0.0.1/rooms"
+control = "http://127.0.0.1/control"
+atlas = "http://127.0.0.1/atlas"
+
+# Network panel: names by the last number of the IP address = [group, name]
+[network.names]
+"254" = ["Network", "Router PR460X"]
+"10" = ["Network", "Netgear switch"]
+"11" = ["Network", "lab-dev"]
+"20" = ["Network", "Orbi RBE970"]
+"21" = ["Network", "Orbi RBE971"]
+"246" = ["Servers", "edvin"]
+"249" = ["Servers", "turbo"]
+"253" = ["Servers", "prippen"]
+"30" = ["Servers", "Pi-hole"]
+"31" = ["Servers", "Pi-hole 2"]
+"32" = ["Servers", "PBS"]
+"40" = ["Servers", "edge"]
+"41" = ["Servers", "winrepo"]
+"50" = ["Servers", "deb-services"]
+"51" = ["Servers", "fileshare"]
+"52" = ["Servers", "buttons"]
+"53" = ["Servers", "gotify"]
+"234" = ["Servers", "monitor"]
+"80" = ["Servers", "scrypted"]
+"81" = ["Servers", "camwatch"]
+"220" = ["Servers", "win-lab04"]
+"70" = ["Home & media", "Home Assistant"]
+"71" = ["Home & media", "Plejd gateway"]
+"72" = ["Home & media", "Easee charger"]
+"73" = ["Home & media", "Roborock"]
+"74" = ["Home & media", "Google Home Mini"]
+"75" = ["Home & media", "Sonos Beam"]
+"76" = ["Home & media", "Apple TV"]
+"85" = ["Home & media", "Front camera"]
+"90" = ["Home & media", "Genelec 4430"]
+"91" = ["Home & media", "Genelec 4430"]
+"92" = ["Home & media", "Genelec 3440"]
+"95" = ["Home & media", "Dante"]
+"96" = ["Home & media", "Dante"]
+"200" = ["Computers & phones", "Alex's PC"]
+
+# Network panel: names for devices on DHCP, by MAC address
+[network.mac_names]
+"02:00:db:ab:da:dc" = "Alex's Z Fold7"
+"02:00:e2:7b:30:b8" = "iPad"
+"02:00:19:70:f6:13" = "Kim's 2nd iPhone"
+"02:00:29:43:40:cd" = "Gaming PC"
+"02:00:64:78:65:41" = "Gaming laptop"
+"02:00:f4:1e:1f:84" = "Work laptop"
+"02:00:5a:78:a5:2c" = "Mac"
+"02:00:08:f0:56:ac" = "Mac"
+"02:00:e9:17:c0:55" = "Apple device"
+"02:00:39:f2:b5:8f" = "'connect' IoT"
+
+[remote]
+# Access from the internet through the edge server: only paired devices (Android app, phones' home-screen web app).
+# Pair on /devices (admin PIN) while the phone is on the home Wi-Fi. Removing a device there locks it out at once.
+edge = ["192.168.1.40"]                           # the edge proxy; its requests must carry a paired device's key
+public_url = "https://home.example.net:8126"      # the address phones use (at home too: split DNS sends it to edge)
+pair_minutes = 10                                   # how long a pairing code / QR code is valid

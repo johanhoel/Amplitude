@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#101418">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Home">
+<title>Home</title>
+<style>
+/* Start = the Wall home (design 3, picked 2026-10-21). Readable from a metre away: big tiles, big numbers, high contrast.
+   Views: Home (3 x 2 board) · Lights · Actions · News · Panels (every panel and console; edit mode) · Admin (PIN keypad first).
+   Side rail with big labelled icons (bottom bar on phones); /start#lights etc. opens a view directly.
+   Reversible = instant + Undo; disruptive = first tap arms (red, 3 s), second tap runs. The old Start is in .snapshots/classic-design-20261021.tgz. */
+:root { --bg: #101418; --tile: #1a2027; --tile2: #222a33; --ink: #eef2f6; --mute: #8b98a8; --line: #2a333d; --acc: #38bdf8; --amber: #f59e0b; --red: #ef4444; --ok: #22c55e;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; --toast-bottom: 28px; }
+* { box-sizing: border-box; } html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--font); -webkit-tap-highlight-color: transparent; }
+body { display: flex; flex-direction: column; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+a { color: inherit; text-decoration: none; }
+.num { font-variant-numeric: tabular-nums; }
+.app { flex: 1; min-height: 0; display: grid; grid-template-columns: calc(env(safe-area-inset-left) + 108px) 1fr; }
+.rail { display: flex; flex-direction: column; gap: 10px; padding: calc(env(safe-area-inset-top) + 18px) 12px calc(env(safe-area-inset-bottom) + 18px) calc(env(safe-area-inset-left) + 12px); border-right: 1px solid var(--line); background: #0c1014; }
+.rail button { position: relative; min-height: 76px; border-radius: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 13px; font-weight: 700; color: var(--mute); }
+.rail button span { font-size: 26px; line-height: 1; } .rail button.on { background: var(--tile2); color: var(--ink); box-shadow: inset 4px 0 0 var(--acc); }
+.rail button em { position: absolute; top: 8px; right: 12px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--amber); color: #1c1300; font: 800 12px/22px var(--font); font-style: normal; }
+.rail .rgap { flex: 1; min-height: 16px; } .rail .adm { border: 1px dashed #3a4654; } .rail .adm.unlocked { border-style: solid; border-color: var(--ok); color: var(--ink); }
+.rail .clock { margin-top: 6px; text-align: center; font-size: 24px; font-weight: 300; color: var(--ink); }
+main { padding: calc(env(safe-area-inset-top) + 18px) calc(env(safe-area-inset-right) + 18px) calc(env(safe-area-inset-bottom) + 18px) 18px; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.v { display: none; flex: 1; min-height: 0; flex-direction: column; } .v.on { display: flex; }
+.vh { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; min-height: 48px; }
+h1 { margin: 0; font-size: 30px; font-weight: 750; letter-spacing: -.01em; } h1 small { display: block; font-size: 15px; color: var(--mute); font-weight: 600; margin-top: 3px; letter-spacing: 0; }
+.tools { display: flex; align-items: center; gap: 10px; flex: none; }
+.pill { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border-radius: 999px; background: var(--tile); border: 1px solid var(--line); font-size: 14px; font-weight: 650; color: var(--mute); max-width: 46vw; }
+.pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: #4b5563; flex: none; display: inline-block; } .dot.ok { background: var(--ok); } .dot.bad { background: var(--red); }
+/* home board */
+.board { flex: 1; min-height: 0; display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+.t { position: relative; border-radius: 28px; background: var(--tile); border: 1px solid var(--line); padding: 22px; display: flex; flex-direction: column; justify-content: space-between; min-height: 0; overflow: hidden; text-align: left; transition: transform .08s, background .15s; }
+.t .mid { flex: 1; display: flex; align-items: center; gap: 16px; min-width: 0; } .t .ic { font-size: clamp(30px, 4vw, 52px); opacity: .9; flex: none; }
+.t .k { font-size: 15px; color: var(--mute); font-weight: 650; display: flex; justify-content: space-between; gap: 8px; } .t .k i { font-style: normal; opacity: .7; }
+.t .val { font-size: clamp(30px, 4.4vw, 56px); font-weight: 300; line-height: 1.05; min-width: 0; } .t .val small { font-size: 18px; color: var(--mute); margin-left: 4px; }
+.t .val.s { font-size: clamp(20px, 2.4vw, 30px); font-weight: 600; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.t .sub { color: var(--mute); font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t.ok .val { color: var(--ok); } .t.warn { border-color: var(--amber); } .t.warn .val { color: var(--amber); }
+.t.karmed { background: #4a1212; border: 2px solid var(--red); animation: pulse 1s ease infinite; } .t.karmed .val { color: #fecaca; }
+.people { display: flex; gap: 12px; flex-wrap: wrap; } .pp { display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 650; font-size: 14px; }
+.pp i { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 23px; background: var(--acc); color: #04202d; font-weight: 800; } .pp.away { opacity: .35; }
+/* lights */
+.split { flex: 1; min-height: 0; display: grid; grid-template-columns: 260px 1fr; gap: 16px; }
+.rooms { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; min-height: 0; padding-right: 4px; }
+.rm { min-height: 64px; border-radius: 18px; background: var(--tile); border: 1px solid var(--line); padding: 0 18px; text-align: left; font-size: 17px; font-weight: 650; display: flex; align-items: center; justify-content: space-between; flex: none; gap: 10px; }
+.rm.on { background: var(--tile2); border-color: var(--acc); } .rm i { font-style: normal; font-size: 13px; color: var(--amber); font-weight: 700; white-space: nowrap; }
+.sq { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); grid-auto-rows: 170px; align-content: start; overflow-y: auto; min-height: 0; }
+.lb { border-radius: 28px; background: var(--tile); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-size: 17px; font-weight: 650; padding: 10px; text-align: center; transition: transform .08s, background .15s; }
+.lb .ic { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-size: 28px; background: rgba(255,255,255,.06); }
+.lb small { font-size: 13px; color: var(--mute); font-weight: 600; } .lb.on { background: linear-gradient(160deg, #6b4a10, #3b2a0c); border-color: var(--amber); } .lb.on .ic { background: var(--amber); }
+.lb.on small { color: #fde68a; } .lb.wait { opacity: .75; }
+.kdown { transform: scale(.97); }
+/* actions */
+.arow { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); flex: 1; min-height: 0; } #a1 { grid-template-columns: repeat(4, 1fr); } .arow + .lbl { margin-top: 22px; }
+.lbl { color: var(--mute); font-size: 14px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin: 0 0 12px; }
+.act { border-radius: 28px; background: var(--tile); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-size: 19px; font-weight: 700; padding: 14px; text-align: center; min-height: 96px; transition: transform .08s; }
+.act .ic { font-size: 34px; } .act small { font-size: 14px; color: var(--mute); font-weight: 600; } .act.risky { border: 2px dashed #4b5563; } .act.on { border-color: var(--acc); }
+.act.karmed { background: #4a1212; border: 2px solid var(--red); animation: pulse 1s ease infinite; } .act.karmed .klabel { color: #fecaca; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(239,68,68,.25); } }
+/* news */
+.ntabs { display: flex; gap: 8px; } .ntabs button { min-height: 48px; padding: 0 20px; border-radius: 16px; background: var(--tile); border: 1px solid var(--line); font-weight: 700; color: var(--mute); }
+.ntabs button.on { background: var(--tile2); color: var(--ink); border-color: var(--acc); }
+.nlist { flex: 1; min-height: 0; overflow-y: auto; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); grid-auto-rows: max-content; align-content: start; padding-bottom: 8px; }
+#homehead #nvcamfab.inline { width: 44px; height: 44px; font-size: 19px; }
+.ni { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; border-radius: 22px; background: var(--tile); border: 1px solid var(--line); min-height: 96px; }
+.ni b { font-size: 18px; line-height: 1.25; } .ni span { color: var(--mute); font-size: 14.5px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ni small { color: #6b7888; font-size: 13px; font-weight: 600; } .ni.new { border-color: #0e7490; } .ni.new small::before { content: "NEW · "; color: var(--acc); font-weight: 800; }
+.nempty { color: var(--mute); padding: 20px; }
+/* panels */
+.scroll { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 12px; }
+.scroll section + section { margin-top: 26px; }
+.scroll h2 { margin: 0 0 12px; font-size: 14px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); }
+.scroll h2 small { letter-spacing: 0; text-transform: none; font-weight: 500; margin-left: 8px; color: #6b7888; }
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.card { position: relative; display: flex; gap: 14px; align-items: center; min-height: 96px; padding: 16px 18px; border-radius: 24px; background: var(--tile); border: 1px solid var(--line); transition: transform .08s; }
+.card:active { transform: scale(.98); }
+.card .ic { width: 52px; height: 52px; flex: none; border-radius: 16px; display: grid; place-items: center; background: color-mix(in srgb, var(--c, #38bdf8) 18%, transparent); color: var(--c, #38bdf8); }
+.card .ic svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.card .t2 { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; } .card .d { display: block; color: var(--mute); font-size: 14px; line-height: 1.35; margin-top: 3px; }
+.card .u { display: block; color: #6b7888; font-size: 12px; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.card > span:last-child { min-width: 0; } .card .lk { margin-left: auto; font-size: 13px; opacity: .8; }
+footer { color: #6b7888; font-size: 13px; line-height: 1.5; margin-top: 26px; }
+.eadd { min-height: 56px; margin-top: 12px; width: 100%; border-radius: 18px; border: 2px dashed #3a4654; color: var(--mute); font-weight: 700; }
+/* vacuum chooser: all rooms, or pick rooms */
+.sheet { position: fixed; inset: 0; z-index: 80; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(5,8,12,.78); }
+.sheet.open { display: flex; }
+.sbox { width: min(620px, 100%); max-height: calc(100% - 20px); overflow-y: auto; border-radius: 28px; background: #151b22; border: 1px solid var(--line); padding: 24px; box-shadow: 0 24px 80px rgba(0,0,0,.6); }
+.sbox h2 { margin: 0; font-size: 26px; font-weight: 750; } .sbox .smute { margin: 4px 0 18px; color: var(--mute); font-size: 15px; }
+.sall { width: 100%; min-height: 84px; border-radius: 22px; background: #0c4a6e; border: 1px solid var(--acc); color: #e0f2fe; font-size: 20px; font-weight: 750; display: flex; align-items: center; justify-content: center; gap: 12px; transition: transform .08s; }
+.sbox .lbl { margin: 22px 0 10px; }
+.vrooms { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 10px; }
+.vr { min-height: 64px; border-radius: 18px; background: var(--tile); border: 1px solid var(--line); font-size: 17px; font-weight: 650; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform .08s; }
+.vr.on { background: var(--tile2); border: 2px solid var(--acc); color: var(--ink); } .vr.on::before { content: "✓"; color: var(--acc); font-weight: 800; }
+.srow { display: flex; gap: 10px; margin-top: 20px; } .srow button { min-height: 60px; border-radius: 18px; font-size: 17px; font-weight: 700; padding: 0 18px; transition: transform .08s; }
+.scancel { flex: 1; background: none; border: 1px solid var(--line); color: var(--mute); } .sgo { flex: 2; background: var(--acc); color: #04202d; } .sgo:disabled { opacity: .35; }
+.snote { color: var(--mute); font-size: 14px; margin-top: 10px; }
+/* admin hub */
+.adgrid { flex: 1; min-height: 0; display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); grid-auto-rows: minmax(120px, 1fr); }
+.adt { border-radius: 28px; background: var(--tile); border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 20px; color: var(--ink); transition: transform .08s; }
+.adt b { font-size: 22px; } .adt span { color: var(--mute); font-size: 14px; } .adt i { font-style: normal; font-size: clamp(34px, 4vw, 56px); }
+.lockadm { min-height: 56px; padding: 0 22px; border-radius: 18px; background: var(--tile); border: 1px solid var(--line); font-size: 16px; font-weight: 700; }
+.alab { color: var(--mute); font-size: 14px; font-weight: 600; margin: -4px 0 14px; }
+@media (max-width: 760px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; }
+  .rail { order: 2; flex-direction: row; gap: 4px; border-right: 0; border-top: 1px solid var(--line); padding: 6px calc(env(safe-area-inset-right) + 6px) calc(env(safe-area-inset-bottom) + 6px) calc(env(safe-area-inset-left) + 6px); }
+  .rail button { flex: 1; min-height: 60px; min-width: 0; font-size: 11.5px; border-radius: 16px; gap: 3px; } .rail button span { font-size: 22px; } .rail button.on { box-shadow: inset 0 3px 0 var(--acc); }
+  .rail button em { top: 4px; right: 4px; min-width: 18px; height: 18px; font-size: 11px; line-height: 18px; padding: 0 4px; }
+  .rail .clock, .rail .rgap { display: none; }
+  main { padding: calc(env(safe-area-inset-top) + 12px) calc(env(safe-area-inset-right) + 12px) 12px calc(env(safe-area-inset-left) + 12px); }
+  h1 { font-size: 24px; } h1 small { font-size: 13.5px; } .vh { margin-bottom: 10px; } .pill { max-width: 40vw; min-height: 36px; font-size: 13px; padding: 0 12px; }
+  .board { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 10px; } .t { padding: 14px 16px; border-radius: 22px; }
+  .t .k { font-size: 13.5px; } .t .val { font-size: 34px; } .t .val.s { font-size: 18px; } .t .ic { font-size: 30px; } .t .mid { gap: 10px; } .t .sub { font-size: 13px; }
+  .pp i { width: 40px; height: 40px; font-size: 17px; } .pp { font-size: 12px; } .people { gap: 8px; }
+  #doortile .val { font-size: 28px; } #doortile .ic { font-size: 26px; }
+  .split { grid-template-columns: 1fr; grid-template-rows: auto 1fr; gap: 10px; }
+  .rooms { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: 0 0 4px; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 30px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 30px), transparent); }
+  .rm { min-height: 52px; white-space: nowrap; font-size: 15px; }
+  .sq { grid-template-columns: 1fr 1fr; grid-auto-rows: 140px; gap: 10px; } .lb { border-radius: 22px; }
+  .arow, #a1 { grid-template-columns: 1fr; gap: 10px; flex: none; } .act { min-height: 72px; flex-direction: row; justify-content: flex-start; padding: 0 20px; gap: 16px; font-size: 17px; border-radius: 22px; }
+  .act .ic { font-size: 28px; } .act small { margin-left: auto; }
+  #v-actions { overflow-y: auto; }
+  .nlist { grid-template-columns: 1fr; gap: 10px; } .ni { min-height: 0; padding: 14px 16px; border-radius: 18px; } .ni b { font-size: 16.5px; }
+  .grid { grid-template-columns: 1fr; gap: 10px; } .card { min-height: 80px; border-radius: 20px; }
+  .adgrid { grid-template-columns: 1fr 1fr; gap: 10px; grid-auto-rows: minmax(124px, auto); flex: none; } .adt { padding: 16px; gap: 4px; border-radius: 22px; } .adt b { font-size: 18px; } .adt span { font-size: 13px; }
+  #v-admin { overflow-y: auto; }
+  :root { --toast-bottom: 96px; }
+}
+@media (max-width: 760px) and (max-height: 700px) { .board { grid-template-rows: repeat(3, minmax(124px, 1fr)); } #v-home { overflow-y: auto; } .pp i { width: 34px; height: 34px; font-size: 15px; } .pp { font-size: 11px; } .people { gap: 6px; } .t .k i { display: none; } }
+@media (min-width: 761px) and (max-height: 620px) { .board { grid-template-rows: repeat(2, minmax(150px, 1fr)); } #v-home { overflow-y: auto; } }
+</style>
+<link rel="stylesheet" href="/wall.css">
+</head><body>
+<div class="app">
+  <nav class="rail" aria-label="Sections">
+    <button data-go="home" class="on"><span>⌂</span>Home</button>
+    <button data-go="lights"><span>💡</span>Lights<em id="lcount" hidden></em></button>
+    <button data-go="actions"><span>⚡</span>Actions</button>
+    <button data-go="news"><span>📰</span>News</button>
+    <button data-go="panels"><span>▦</span>Panels</button>
+    <div class="rgap"></div>
+    <button id="adminbtn" class="adm" aria-label="Admin (PIN)"><span id="admic">🔐</span>Admin</button>
+    <div class="clock num" id="clock"></div>
+  </nav>
+  <main>
+    <section class="v on" id="v-home" data-v="home">
+      <div class="vh" id="homehead"><h1 id="hello">Home<small id="date"></small></h1><div class="tools"><span class="pill" id="summary"><i class="dot"></i><span>Checking…</span></span></div></div>
+      <div class="board" id="board"></div>
+    </section>
+    <section class="v" id="v-lights" data-v="lights">
+      <div class="vh"><h1>Lights<small id="lsub"></small></h1></div>
+      <div class="split"><div class="rooms" id="rooms"></div><div class="sq" id="sq"></div></div>
+    </section>
+    <section class="v" id="v-actions" data-v="actions">
+      <div class="vh"><h1>Actions</h1></div>
+      <div class="lbl">One tap</div><div class="arow" id="a1"></div>
+      <div class="lbl">Tap twice · the first tap arms, the second confirms</div><div class="arow" id="a2"></div>
+    </section>
+    <section class="v" id="v-news" data-v="news">
+      <div class="vh"><h1>News<small id="nupd"></small></h1><div class="ntabs" id="ntabs"><button data-f="vast" class="on">Väst</button><button data-f="all">Sverige</button></div></div>
+      <div class="nlist" id="nlist"><span class="nempty">Loading news…</span></div>
+    </section>
+    <section class="v" id="v-panels" data-v="panels">
+      <div class="vh"><h1>Panels<small>Every panel and console</small></h1></div>
+      <div class="scroll" id="pscroll"><div id="groups"></div>
+        <footer data-edit="foot" id="foot">LAN addresses: from outside the house, connect WireGuard first.<br>
+        The Deck, Lab panel and Buttons web view share one Buttons surface: opening it on a second screen shows "Overtaken" on the first.</footer></div>
+    </section>
+    <section class="v" id="v-admin" data-v="admin">
+      <div class="vh"><h1>Admin</h1><button class="lockadm" id="lockadm">🔒 Log out</button></div>
+      <div class="alab">Unlocked on this device · admin pages open without the PIN until you log out</div>
+      <div class="adgrid" id="adgrid"></div>
+    </section>
+  </main>
+</div>
+
+<div class="sheet" id="vsheet" role="dialog" aria-modal="true" aria-labelledby="vtitle"><div class="sbox">
+  <h2 id="vtitle">Start the vacuum</h2><div class="smute" id="vsub">Choose where to clean</div>
+  <button class="sall" id="vall"><span>🧹</span>All rooms</button>
+  <div class="lbl">Or only these rooms</div><div class="vrooms" id="vrooms"></div><div class="snote" id="vnote" hidden></div>
+  <div class="srow"><button class="scancel" id="vcancel">Cancel</button><button class="sgo" id="vgo" disabled>Pick rooms</button></div>
+</div></div>
+<script src="/wallkit.js"></script><script src="/pin.js"></script><script src="/edit.js"></script>
+<script>
+const $ = s => document.querySelector(s), { esc } = Wall;
+let S = null, room = null, view = 'home';
+
+// ---------- views ----------
+const VIEWS = ['home', 'lights', 'actions', 'news', 'panels', 'admin'];
+function show(v, push = true) {
+  if (!VIEWS.includes(v)) v = 'home';
+  if (v === 'admin' && !admin) return openAdmin();
+  view = v;
+  document.querySelectorAll('.rail button').forEach(x => x.classList.toggle('on', x.dataset.go === v || (v === 'admin' && x.id === 'adminbtn')));
+  document.querySelectorAll('.v').forEach(x => x.classList.toggle('on', x.dataset.v === v));
+  if (push) history.replaceState(null, '', v === 'home' ? location.pathname + location.search : '#' + v);
+  if (v === 'news') loadNews();
+}
+document.querySelectorAll('.rail button[data-go]').forEach(b => Wall.press(b, () => show(b.dataset.go)));
+addEventListener('hashchange', () => show(location.hash.slice(1), false));
+
+// ---------- admin: the keypad (server-checked PIN) first, then the admin hub ----------
+let admin = false;
+const ADMIN = [['⚙', 'Admin', 'Health, tasks, every console', '/admin'], ['⛁', 'Lab', 'Nodes, guests, commands', '/ops'], ['▦', 'Lab 6×6', 'The Buttons lab grid', '/lab'],
+               ['⌬', 'Network', 'Internet, DNS, devices', '/net'], ['✦', 'Atlas', 'Every endpoint, live', '/atlas'], ['⛶', 'Network map', 'Document', '/network.html']];
+$('#adgrid').innerHTML = ADMIN.map(([i, t, d, h]) => `<a class="adt" href="${h}" data-t="${t}"><i>${i}</i><b>${t}</b><span>${d}</span></a>`).join('');
+document.querySelectorAll('.adt').forEach(a => Wall.press(a, () => location.href = a.getAttribute('href')));
+async function admState() {
+  try { const s = await deckPin.status(); admin = !!s.admin; } catch { admin = false; }
+  $('#adminbtn').classList.toggle('unlocked', admin); $('#admic').textContent = admin ? '🔓' : '🔐';
+  if (!admin && view === 'admin') show('home');
+  renderPanels.done && renderPanels();
+  return admin;
+}
+const openAdmin = () => deckPin.open({ onOk: async () => { await admState(); show('admin'); } });
+Wall.press($('#adminbtn'), openAdmin);
+Wall.press($('#lockadm'), async () => { await deckPin.logout(); await admState(); show('home'); Wall.toast('Logged out · admin is locked on this device'); });
+
+// ---------- home board ----------
+const COL = ['#38bdf8', '#22c55e', '#f472b6', '#f59e0b', '#a3e635', '#fb923c'];
+function board() {
+  const d = new Date();
+  $('#clock').textContent = Wall.hm(d);
+  $('#date').textContent = d.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' + Wall.hm(d);
+  const hr = d.getHours(); $('#hello').firstChild.textContent = hr < 5 ? 'Good night' : hr < 10 ? 'Good morning' : hr < 18 ? 'Hello' : 'Good evening';
+  if (!S) return;
+  if (document.querySelector('.karmed')) return;                 // never redraw an armed tile under the user
+  const home = S.people.filter(p => p.home), door = S.door, locked = door === 'locked';
+  const wx = S.wx || {}, rain = (S.hourly || []).slice(0, 3).find(h => (h.precipitation_probability ?? 0) >= 60 && (h.precipitation ?? 0) >= 0.2);
+  const temps = (S.hourly || []).slice(0, 16).map(h => h.temperature).filter(x => x != null);
+  const b = S.bus, p = S.playing;
+  $('#board').innerHTML = `
+    <a class="t" href="/family" data-t="people"><span class="k">Who is home<i>${home.length} of ${S.people.length}</i></span>
+      <div class="people">${S.people.map((x, i) => `<span class="pp ${x.home ? '' : 'away'}"><i style="background:${COL[i % COL.length]}">${esc(x.name[0])}</i>${esc(x.name)}</span>`).join('')}</div></a>
+    <button class="t ${locked ? 'ok' : 'warn'}" id="doortile" data-t="door"><span class="k">Front door<i>${locked ? '' : 'tap twice to lock'}</i></span>
+      <div class="mid"><span class="ic">${locked ? '🔒' : '🔓'}</span><span class="val klabel">${locked ? 'Locked' : esc((door || '–').replace(/^./, c => c.toUpperCase()))}</span></div>
+      <span class="sub">${locked ? 'Unlock in the lock app' : 'Not locked'}</span></button>
+    <button class="t" data-go2="lights" data-t="lights"><span class="k">Lights on<i>${S.rooms.filter(r => r.lights.some(Wall.light)).length} rooms</i></span>
+      <div class="mid"><span class="ic">💡</span><span class="val num">${S.lightsOn}</span></div><span class="sub">Tap for the rooms</span></button>
+    <a class="t" href="/familyinfo" data-t="wx"><span class="k">Outside<i>${esc(Wall.WXT[wx.condition] || '')}</i></span>
+      <div class="mid"><span class="ic">${Wall.WX[wx.condition] || '·'}</span><span class="val num">${wx.temperature != null ? Math.round(wx.temperature) + '°' : '–'}</span></div>
+      <span class="sub">${rain ? `Rain around ${Wall.hm(rain.datetime)}` : temps.length ? `Today ${Math.round(Math.min(...temps))}° to ${Math.round(Math.max(...temps))}°` : ''}</span></a>
+    <a class="t" href="/familyinfo" data-t="bus"><span class="k">Next bus<i>${b && !b.none ? esc(b.line) : ''}</i></span>
+      <div class="mid"><span class="ic">🚌</span><span class="val ${b?.none ? 's' : 'num'}">${b?.none ? 'None this hour' : b ? (b.min < 1 ? 'Now' : b.min + '<small>min</small>') : '–'}</span></div>
+      <span class="sub">${b && !b.none ? `to ${esc(b.to)} · ${b.at}` : 'Storgatan'}</span></a>
+    <a class="t" href="/media" data-t="media"><span class="k">Now playing<i>${p ? esc(p.label || '') : ''}</i></span>
+      <div class="mid"><span class="ic">♫</span><span class="val s">${esc(p?.title || 'Nothing playing')}</span></div>
+      <span class="sub">${esc(p?.artist || (p ? '' : 'Tap for music and TV'))}</span></a>`;
+  document.querySelectorAll('#board a.t').forEach(a => Wall.press(a, () => location.href = a.getAttribute('href')));
+  Wall.press($('[data-go2="lights"]'), () => show('lights'));
+  const dt = $('#doortile');
+  if (locked) Wall.press(dt, () => Wall.toast('The door is locked · unlocking stays in the lock app'));
+  else Wall.arm(dt, () => Wall.act('/api/home/do', { do: 'lock' }, 'Locking the front door…'));
+}
+
+// ---------- lights ----------
+function lights() {
+  if (!S) return;
+  const on = S.lightsOn, lc = $('#lcount'); lc.hidden = !on; lc.textContent = on;
+  $('#lsub').textContent = on ? `${on} on now` : 'All off';
+  if (!room || !S.rooms.find(r => r.room === room)) room = (S.rooms.find(r => r.lights.some(Wall.light)) || S.rooms[0])?.room;
+  $('#rooms').innerHTML = S.rooms.map(r => { const n = r.lights.filter(l => l.name !== 'All' && Wall.light(l)).length;
+    return `<button class="rm ${r.room === room ? 'on' : ''}" data-r="${esc(r.room)}">${esc(r.room)}${n ? `<i>${n} on</i>` : ''}</button>`; }).join('');
+  document.querySelectorAll('.rm').forEach(b => Wall.press(b, () => { room = b.dataset.r; lights(); }));
+  const R = S.rooms.find(r => r.room === room);
+  $('#sq').innerHTML = (R?.lights || []).map(l => { const o = Wall.light(l);
+    return `<button class="lb ${o ? 'on' : ''}" data-id="${esc(l.id)}"><span class="ic">💡</span>${esc(l.name === 'All' ? 'Whole room' : l.name)}<small>${o ? 'On' : 'Off'}${l.bri != null && o ? ' · ' + l.bri + '%' : ''}</small></button>`; }).join('')
+    || '<span class="nempty">No lights in this room.</span>';
+  document.querySelectorAll('.lb').forEach(b => Wall.press(b, () => Wall.toggle(R.lights.find(l => l.id === b.dataset.id), render)));
+}
+
+// ---------- actions ----------
+function actions() {
+  const H = S?.H || {}, vac = H.vacuum?.state, cleaning = vac === 'cleaning', pc = !!S?.status?.pc_online;
+  const docked = vac === 'docked', homing = vac === 'returning';
+  const one = [['vac', '🧹', 'Start the vacuum', cleaning ? 'Cleaning now · tap to change rooms' : (vac || '–').replace(/_/g, ' '), cleaning],
+               ['dock', '⌂', 'Return to dock', docked ? 'Docked' : homing ? 'On its way home' : (vac || '–').replace(/_/g, ' '), homing],
+               ['wake', '⏻', 'Wake the PC', pc ? 'PC is on' : 'PC is off', pc],
+               ['detect', '◎', H.detect ? 'Camera alerts off' : 'Camera alerts on', H.detect ? 'Alerts are on' : 'Alerts are off', !!H.detect]];
+  const two = [['lock', '🔒', 'Lock the front door', S?.door === 'locked' ? 'Locked now' : 'Not locked'], ['alloff', '💡', 'All lights off', `${S?.lightsOn ?? '–'} on now`],
+               ['sleep', '☾', 'Sleep the PC', pc ? 'PC is on' : 'PC is off']];
+  if (document.querySelector('#v-actions .karmed')) return;
+  $('#a1').innerHTML = one.map(([id, i, t, s, on]) => `<button class="act ${on ? 'on' : ''}" data-id="${id}"><span class="ic">${i}</span><span>${t}</span><small>${esc(s)}</small></button>`).join('');
+  $('#a2').innerHTML = two.map(([id, i, t, s]) => `<button class="act risky" data-id="${id}"><span class="ic">${i}</span><span class="klabel">${t}</span><small>${esc(s)}</small></button>`).join('');
+  const RUN = {
+    vac: vacOpen,
+    dock: () => docked ? Wall.toast('The vacuum is already docked') : Wall.act('/api/home/do', { do: 'vacuum', value: 'return_to_base' }, 'Vacuum going back to the dock'),
+    wake: () => Wall.act('/api/home/do', { do: 'wake_pc' }, 'Wake-on-LAN sent'),
+    detect: () => Wall.act('/api/home/do', { do: 'detect' }, H.detect ? 'Camera alerts off' : 'Camera alerts on'),
+    lock: () => Wall.act('/api/home/do', { do: 'lock' }, 'Locking the front door…'),
+    alloff: () => Wall.act('/api/home/do', { do: 'all_off' }, 'All lights off'),
+    sleep: () => Wall.act('/api/pc/do', { action: 'sleep' }, 'PC going to sleep'),
+  };
+  document.querySelectorAll('#a1 .act').forEach(b => Wall.press(b, RUN[b.dataset.id]));
+  document.querySelectorAll('#a2 .act').forEach(b => Wall.arm(b, RUN[b.dataset.id]));
+}
+// ---------- vacuum chooser ----------
+const vsel = new Set();
+function vacDraw() {
+  const rooms = S?.H?.vacuum?.rooms || [];
+  $('#vrooms').innerHTML = rooms.map(r => `<button class="vr ${vsel.has(r.id) ? 'on' : ''}" data-id="vr${r.id}" data-r="${r.id}" aria-pressed="${vsel.has(r.id)}">${esc(r.name)}</button>`).join('');
+  $('#vnote').hidden = !!rooms.length; $('#vnote').textContent = 'The room list is still loading from the vacuum map. All rooms works now.';
+  document.querySelectorAll('.vr').forEach(b => Wall.press(b, () => { const id = +b.dataset.r; vsel.has(id) ? vsel.delete(id) : vsel.add(id); vacDraw(); }));
+  const n = vsel.size, go = $('#vgo'); go.disabled = !n;
+  go.textContent = n ? `Clean ${n === 1 ? rooms.find(r => vsel.has(r.id))?.name : n + ' rooms'}` : 'Pick rooms';
+}
+function vacOpen() { vsel.clear(); vacDraw(); $('#vsheet').classList.add('open'); $('#vall').focus({ preventScroll: true }); }
+const vacClose = () => $('#vsheet').classList.remove('open');
+Wall.press($('#vall'), () => { vacClose(); Wall.act('/api/home/do', { do: 'vacuum', value: 'start' }, 'Vacuum started · all rooms'); });
+Wall.press($('#vgo'), () => { if (!vsel.size) return; const pick = (S?.H?.vacuum?.rooms || []).filter(r => vsel.has(r.id));          // in map order
+  vacClose(); Wall.act('/api/home/do', { do: 'vacuum_rooms', value: pick.map(r => r.id) }, 'Vacuum started · ' + pick.map(r => r.name).join(', ')); });
+Wall.press($('#vcancel'), vacClose);
+// the backdrop closes only on a tap that starts AND ends on it (the tap that opened the sheet ends with a click that would land here)
+{ let down = false; const sh = $('#vsheet');
+  sh.addEventListener('pointerdown', e => { down = e.target === sh; });
+  sh.addEventListener('click', e => { if (e.target === sh && down) vacClose(); down = false; }); }
+addEventListener('keydown', e => { if (e.key === 'Escape' && $('#vsheet').classList.contains('open')) vacClose(); });
+
+function render() { board(); lights(); actions(); if ($('#vsheet').classList.contains('open')) vacDraw(); }
+Wall.data(D => { S = Wall.summary(D); S.hourly = D.wx?.hourly || []; render(); });
+setInterval(board, 20000);
+render();
+
+// ---------- link checks (status pill) ----------
+async function check() {
+  let r; try { r = await (await fetch('/api/links')).json(); } catch { return; }
+  let all = 0; const down = [];
+  document.querySelectorAll('.dot[data-id]').forEach(d => {
+    const s = r[d.dataset.id]; if (!s) return; all++;
+    d.className = 'dot ' + (s.up ? 'ok' : 'bad'); d.title = s.up ? `up · ${s.ms} ms` : 'not answering';
+    if (!s.up) down.push(d.closest('.card').querySelector('.t2').textContent.trim());
+  });
+  $('#summary').innerHTML = `<i class="dot ${down.length ? 'bad' : 'ok'}"></i><span>${down.length ? esc(down.length + ' not answering: ' + down.join(', ')) : `All ${all} up`}</span>`;
+}
+
+// ---------- panels (every panel and console; edit mode keeps working: /start?edit) ----------
+const I = {
+  deck: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 4v16M3 10h5M3 15h5"/>',
+  home: '<path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/>',
+  phone: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+  music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+  people: '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.6"/><path d="M16 14.2a4.5 4.5 0 0 1 5 4.8"/>',
+  shield: '<path d="M12 3 4.5 6v5.5c0 4.5 3.2 8 7.5 9.5 4.3-1.5 7.5-5 7.5-9.5V6z"/><path d="m9 12 2 2 4-4"/>',
+  moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+  server: '<rect x="3.5" y="4" width="17" height="6.5" rx="2"/><rect x="3.5" y="13.5" width="17" height="6.5" rx="2"/><path d="M7.5 7.2h.01M7.5 16.7h.01"/>',
+  grid: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/>',
+  wifi: '<path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r=".9"/>',
+  map: '<path d="m9 4-5.5 2v14L9 18l6 2 5.5-2V4L15 6z"/><path d="M9 4v14M15 6v14"/>',
+  ha: '<path d="M12 3 3 11h2.5v9h13v-9H21z"/><circle cx="12" cy="13" r="2"/><path d="M12 15v5M9.5 11.5 12 13l2.5-1.5"/>',
+  chart: '<path d="M4 19V5M4 19h16"/><path d="m7 15 4-4 3 3 5-6"/>',
+  box: '<path d="m12 3 8.5 4.5v9L12 21l-8.5-4.5v-9z"/><path d="m3.5 7.5 8.5 4.5 8.5-4.5M12 12v9"/>',
+  disk: '<ellipse cx="12" cy="6" rx="7.5" ry="2.8"/><path d="M4.5 6v12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8V6M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/>',
+  block: '<circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/>',
+  keys: '<rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/>',
+  cam: '<rect x="3" y="6.5" width="13" height="11" rx="2.5"/><path d="m16 10.5 5-3v9l-5-3z"/>',
+  folder: '<path d="M3.5 6.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
+  bus: '<rect x="4" y="3.5" width="16" height="14" rx="3"/><path d="M4 11h16M8 21v-3.5M16 21v-3.5"/><circle cx="8" cy="14.3" r=".9"/><circle cx="16" cy="14.3" r=".9"/>',
+  bell: '<path d="M6 9.5a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4s2-1.5 2-6.5"/><path d="M10 19.5a2.2 2.2 0 0 0 4 0"/>',
+};
+const GROUPS = [
+  ['Ring panels', 'swipe between them, or press ⌘K / tap the pill at the bottom to jump anywhere', [
+    ['pulse', '/pulse', 'Pulse', 'The whole house at a glance, with what needs attention', 'deck', '#38bdf8', 'feat'],
+    ['today', '/today', 'Today', 'The day as a live timeline: people, camera, buses, news', 'people', '#22d3ee'],
+    ['rooms', '/rooms', 'Rooms', 'Every room: tap or slide lights', 'home', '#f59e0b'],
+    ['control', '/control', 'Control', 'Control Center: toggles, speakers, PC, media', 'keys', '#34d399'],
+    ['atlas', '/atlas', 'Atlas', 'Every endpoint and service, checked live', 'map', '#60a5fa'],
+  ]],
+  ['Everyday', 'the panels on the wall, the tablet and the phone', [
+    ['deck', '/', 'Deck', 'Wall panel: Stream Deck folders, Genelec, Spotify, climate', 'deck', '#38bdf8', 'feat'],
+    ['living', '/living', 'Home', 'Lights by room, music, front door', 'home', '#fbbf24'],
+    ['remote', '/remote', 'Remote', 'Phone remote: lights, audio, PC, games', 'phone', '#22d3ee'],
+    ['media', '/media', 'Media', 'Music, speakers, TV room', 'music', '#fb7185'],
+    ['family', '/family', 'Family', "Who's home, today's timeline", 'people', '#34d399'],
+    ['familyinfo', '/familyinfo', 'Family info', 'Next buses from Storgatan, arrivals, disruptions', 'bus', '#22d3ee'],
+    ['security', '/security', 'Security', 'Front camera, visits, recognitions', 'shield', '#f97316'],
+    ['ambient', '/ambient', 'Ambient', 'Night clock for the bedside', 'moon', '#7dd3fc'],
+    ['desktop', '/desktop', 'Desktop', 'Windows wallpaper (Lively Wallpaper)', 'deck', '#6f8fe0'],
+  ]],
+  ['Home lab & network', 'how the servers and the network are doing', [
+    ['admin', '/admin', 'Admin', 'Phone admin: health, quick tasks, guests, every console', 'grid', '#38bdf8'],
+    ['ops', '/ops', 'Lab', 'Touch panel: nodes, guests, hold-to-run commands', 'server', '#38bdf8', 'feat'],
+    ['lab', '/lab', 'Lab panel 6×6', 'The Buttons lab grid with camera popup', 'grid', '#6f8fe0'],
+    ['net', '/net', 'Network', 'Internet, DNS, devices online', 'wifi', '#22d3ee'],
+    ['networkmap', '/network.html', 'Network map', 'Document: map, guests, data flows', 'map', '#4fb3a8'],
+  ]],
+  ['Admin consoles', 'the real UIs, for changing settings', [
+    ['ha', 'https://home.example.net:8123/', 'Home Assistant', 'Automations, devices, add-ons', 'ha', '#18bcf2', 'feat'],
+    ['grafana', 'http://192.168.1.234:3000/', 'Grafana', 'Dashboards: home, DNS, router, cameras, HA', 'chart', '#f97316'],
+    ['proxmox', 'https://192.168.1.246:8006/', 'Proxmox', 'Cluster: turbo, edvin, prippen', 'box', '#e57000'],
+    ['pbs', 'https://192.168.1.32:8007/', 'Backup Server', 'Backups, prune, verify', 'disk', '#6f8fe0'],
+    ['pihole1', 'http://192.168.1.30/admin/', 'Pi-hole primary', 'DNS + ad blocking (.30)', 'block', '#f87171'],
+    ['pihole2', 'http://192.168.1.31/admin/', 'Pi-hole secondary', 'DNS + ad blocking (.31)', 'block', '#f87171'],
+    ['buttons', 'http://192.168.1.52:4440/', 'Buttons editor', 'Stream Deck + panel layouts', 'keys', '#7dd3fc'],
+    ['editor', 'http://192.168.1.52:8088/', 'Panel editor', 'Edit the panels: code, live preview, history (from the PC)', 'keys', '#38bdf8'],
+    ['camwatch', 'http://192.168.1.81:8080/', 'camwatch', 'Recordings, people, plates (login)', 'cam', '#34d399'],
+    ['scrypted', 'https://192.168.1.80:10443/', 'Scrypted', 'Camera bridge (NVR)', 'cam', '#22d3ee'],
+    ['files', 'http://192.168.1.51:8080/', 'File Browser', 'Shared files on fileshare', 'folder', '#fbbf24'],
+    ['gotify', 'http://192.168.1.53/', 'Gotify', 'Notifications', 'bell', '#34d399'],
+  ]],
+];
+const GATED = new Set(['/admin', '/ops', '/lab', '/net', '/atlas', '/network.html']);
+// layout: GROUPS above are the defaults; a saved layout (edit mode, opened as /start?edit from Admin) replaces them
+const DEFAULT_FOOT = $('#foot').innerHTML;
+const defaults = () => ({ foot: DEFAULT_FOOT, groups: GROUPS.map(([title, sub, items]) => ({ title, sub,
+  items: items.map(([id, url, name, desc, icon, color, cls]) => ({ id, url, name, desc, icon, color, feat: cls === 'feat' })) })) });
+let model = defaults();
+const setModel = l => { model = l && l.groups ? l : defaults(); renderPanels(); };
+const editing = () => document.body.classList.contains('editing');
+function renderPanels() {
+  $('#foot').innerHTML = model.foot ?? DEFAULT_FOOT;
+  $('#groups').innerHTML = model.groups.map(({ title, sub, items }, gi) => `<section><h2 data-edit="group" data-gi="${gi}">${esc(title)} <small>${esc(sub)}</small></h2><div class="grid">`
+    + items.map(({ id, url, name, desc, icon, color }, ii) => { const ext = /^https?:/.test(url);
+        return `<a class="card" href="${esc(url)}" ${ext ? 'target="_blank" rel="noopener"' : ''} style="--c:${esc(color)}" data-edit="item" data-gi="${gi}" data-ii="${ii}">
+          <span class="ic"><svg viewBox="0 0 24 24">${I[icon] || I.grid}</svg></span>
+          <span><span class="t2">${esc(name)}<i class="dot" data-id="${esc(id)}" title="checking"></i>${GATED.has(url) && !admin ? '<span class="lk" title="Needs the admin PIN">🔒</span>' : ''}</span><span class="d">${esc(desc)}</span>
+          <span class="u">${esc(url.replace(/^https?:\/\//, '').replace(/\/$/, '') || location.host)}</span></span></a>`;
+      }).join('') + '</div>' + (editing() ? `<button class="eadd" data-add="item" data-gi="${gi}">+ Add card to ${esc(title)}</button>` : '') + '</section>').join('')
+    + (editing() ? '<button class="eadd" data-add="group" style="margin-top:24px">+ Add group</button>' : '');
+  check();
+  renderPanels.done = true;
+}
+renderPanels();
+
+// ---------- edit mode ----------
+const ICONS = Object.keys(I).map(k => [k, k]);
+async function editItem(gi, ii, isNew) {
+  const g = model.groups[gi], it = isNew ? { id: '', url: 'https://', name: '', desc: '', icon: 'grid', color: '#38bdf8', feat: false } : g.items[ii];
+  const r = await Edit.sheet({ title: isNew ? 'New card' : 'Edit card', fields: [
+      { key: 'name', label: 'Name', value: it.name }, { key: 'desc', label: 'Description', value: it.desc },
+      { key: 'url', label: 'Address', type: 'url', value: it.url, hint: 'Full address, or a Home Deck path like /familyinfo' },
+      { key: 'icon', label: 'Icon', type: 'select', value: it.icon, options: ICONS }, { key: 'color', label: 'Colour', value: it.color, hint: 'e.g. #34d399' },
+      { key: 'feat', label: 'Wide card (featured)', type: 'toggle', value: it.feat },
+      { key: 'gi', label: 'Group', type: 'select', value: gi, options: model.groups.map((x, i) => [i, x.title]) }],
+    buttons: isNew ? [{ id: 'save', label: 'Add' }] : [{ id: 'del', label: 'Delete', tone: 'bad' }, { id: 'up', label: '←', side: true }, { id: 'down', label: '→', side: true }, { id: 'save', label: 'Save' }] });
+  if (!r) return;
+  if (r.action === 'del') { if (confirm(`Delete "${it.name}"?`)) g.items.splice(ii, 1); return renderPanels(); }
+  const v = r.values; if (!v.name || !v.url) return Edit.toast('Name and address are needed');
+  const upd = { ...it, name: v.name, desc: v.desc, url: v.url, icon: v.icon, color: v.color || '#38bdf8', feat: v.feat }; if (upd.url !== it.url) upd.id = '';
+  if (isNew) g.items.push(upd); else g.items[ii] = upd;
+  const at = isNew ? g.items.length - 1 : ii;
+  if (+v.gi !== gi) { g.items.splice(at, 1); model.groups[+v.gi].items.push(upd); }
+  else if (r.action === 'up' || r.action === 'down') Edit.move(g.items, at, r.action === 'up' ? -1 : 1);
+  renderPanels();
+}
+async function editGroup(gi, isNew) {
+  const g = isNew ? { title: '', sub: '', items: [] } : model.groups[gi];
+  const r = await Edit.sheet({ title: isNew ? 'New group' : 'Edit group', fields: [{ key: 'title', label: 'Group name', value: g.title }, { key: 'sub', label: 'Description', value: g.sub }],
+    buttons: isNew ? [{ id: 'save', label: 'Add' }] : [{ id: 'del', label: 'Delete group', tone: 'bad' }, { id: 'up', label: '↑', side: true }, { id: 'down', label: '↓', side: true }, { id: 'save', label: 'Save' }] });
+  if (!r) return;
+  if (r.action === 'del') { if (confirm(`Delete the group "${g.title}" and its ${g.items.length} cards?`)) model.groups.splice(gi, 1); return renderPanels(); }
+  if (!r.values.title) return Edit.toast('The group needs a name');
+  Object.assign(g, { title: r.values.title, sub: r.values.sub });
+  if (isNew) model.groups.push(g); else if (r.action !== 'save') Edit.move(model.groups, gi, r.action === 'up' ? -1 : 1);
+  renderPanels();
+}
+document.addEventListener('click', async e => {
+  if (!editing() || e.target.closest('#ebar, #eback')) return;
+  const add = e.target.closest('[data-add]'), el = e.target.closest('[data-edit]');
+  if (!add && !el) return;
+  e.preventDefault(); e.stopPropagation();
+  if (add) return add.dataset.add === 'group' ? editGroup(0, true) : editItem(+add.dataset.gi, 0, true);
+  if (el.dataset.edit === 'item') editItem(+el.dataset.gi, +el.dataset.ii);
+  else if (el.dataset.edit === 'group') editGroup(+el.dataset.gi);
+  else if (el.dataset.edit === 'foot') { const r = await Edit.sheet({ title: 'Edit footer', fields: [{ key: 'v', label: 'Footer text', type: 'textarea', value: (model.foot ?? DEFAULT_FOOT).replace(/<br>/g, '\n') }], buttons: [{ id: 'save', label: 'Save' }] });
+    if (r) { model.foot = esc(r.values.v).replace(/\n/g, '<br>'); renderPanels(); } }
+}, true);
+const startEdit = () => { show('panels'); Edit.start({ page: 'start', title: 'Start', get: () => model, set: setModel, render: renderPanels }); };
+Edit.load('start').then(l => { if (l.groups) setModel(l); if (new URLSearchParams(location.search).has('edit')) startEdit(); });
+setInterval(check, 30000);
+
+// ---------- SVT news ----------
+const REGION = { vast: 'Väst', skane: 'Skåne', jonkoping: 'Jönköping', ost: 'Öst', vastmanland: 'Västmanland', varmland: 'Värmland', sormland: 'Sörmland',
+  orebro: 'Örebro', gavleborg: 'Gävleborg', vasterbotten: 'Västerbotten', vasternorrland: 'Västernorrland', norrbotten: 'Norrbotten', jamtland: 'Jämtland',
+  dalarna: 'Dalarna', helsingborg: 'Helsingborg', smaland: 'Småland', blekinge: 'Blekinge', uppsala: 'Uppsala', stockholm: 'Stockholm', halland: 'Halland',
+  inrikes: 'Inrikes', utrikes: 'Utrikes', ekonomi: 'Ekonomi', politik: 'Politik', vetenskap: 'Vetenskap', kultur: 'Kultur', sport: 'Sport' };
+const ago = t => { if (!t) return ''; const m = (Date.now() / 1000 - t) / 60; if (m < 1) return 'just now'; if (m < 60) return Math.round(m) + ' min ago';
+  if (m < 60 * 24) return Math.round(m / 60) + ' h ago'; return new Date(t * 1000).toLocaleDateString([], { day: 'numeric', month: 'short' }); };
+let feed = 'vast'; const NEWS = {};
+async function loadNews() {
+  if (document.visibilityState !== 'visible' || view !== 'news') return;
+  let d; try { d = await (await fetch('/api/news?f=' + feed, { cache: 'no-store' })).json(); } catch { return; }
+  const list = $('#nlist');
+  if (d.error) { if (!list.querySelector('.ni')) list.innerHTML = '<span class="nempty">SVT did not answer · trying again soon.</span>'; return; }
+  const f = feed, top = list.scrollTop;
+  list.innerHTML = d.items.map(it => `<a class="ni ${it.at && Date.now() / 1000 - it.at < 3600 ? 'new' : ''}" href="${esc(it.link)}" target="svtnews" rel="noopener">
+    <b>${esc(it.title)}</b>${it.desc ? `<span>${esc(it.desc)}</span>` : ''}<small>${ago(it.at)}${f === 'all' && it.section ? ' · ' + esc(REGION[it.section] || it.section.replace(/-/g, ' ').replace(/^./, c => c.toUpperCase())) : ''}</small></a>`).join('')
+    || '<span class="nempty">No news right now.</span>';
+  if (NEWS[f]) list.scrollTop = top; NEWS[f] = true;
+  $('#nupd').textContent = (f === 'vast' ? 'SVT · Lokalt Väst' : 'SVT · Alla nyheter') + ' · ' + (d.stale ? 'older list' : 'updated ' + new Date(d.fetched * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
+}
+document.querySelectorAll('#ntabs button').forEach(b => Wall.press(b, () => { feed = b.dataset.f; document.querySelectorAll('#ntabs button').forEach(x => x.classList.toggle('on', x === b)); $('#nlist').scrollTop = 0; loadNews(); }));
+// a headline opens the article in a popup window next to the page (a new tab on phones and tablets); svt.se cannot be shown inside this page
+$('#nlist').addEventListener('click', e => {
+  const a = e.target.closest('a.ni'); if (!a) return;
+  if (matchMedia('(pointer: fine)').matches) {
+    e.preventDefault();
+    const w = Math.min(980, screen.availWidth - 80), h = Math.min(1000, screen.availHeight - 80);
+    const win = window.open(a.href, 'svtnews', `popup=yes,width=${w},height=${h},left=${Math.round((screen.availWidth - w) / 2)},top=${Math.round((screen.availHeight - h) / 2)}`);
+    if (win) win.focus(); else location.href = a.href;            // popup blocked: open here instead
+  }
+});
+setInterval(loadNews, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { loadNews(); check(); admState(); } });
+
+admState().then(() => show(location.hash.slice(1) || 'home', false));
+</script>
+<script src="/cam.js" data-into="#homehead .tools" defer></script>
+</body>
+</html>

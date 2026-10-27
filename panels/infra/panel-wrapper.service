@@ -1,0 +1,14 @@
+[Unit]
+Description=Home Deck - panel page + live data backend (port 80, LAN)
+After=network-online.target
+
+[Service]
+DynamicUser=yes
+StateDirectory=panel-wrapper
+Environment=HOME=/var/lib/panel-wrapper
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+ExecStart=/opt/panel-wrapper/venv/bin/python3 /opt/panel-wrapper/server.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

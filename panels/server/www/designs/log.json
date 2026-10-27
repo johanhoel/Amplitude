@@ -1,0 +1,140 @@
+{
+ "calm": [
+  [
+   "Round 1",
+   "Accident test: a fast double tap switched a light twice (the redraw reset the guard) - the double-tap guard now remembers each button across redraws."
+  ],
+  [
+   "Round 2",
+   "Light pills no longer stretch across an iPad (auto columns); the bus card no longer says \"none\" twice."
+  ],
+  [
+   "Round 2",
+   "Wide screens: three-column home with a larger status sentence instead of a half-empty page."
+  ],
+  [
+   "Round 3",
+   "Pull-to-refresh and a ↻ button for home-screen apps; reloads itself after 15 min in the background."
+  ],
+  [
+   "Round 4",
+   "Larger text pushed the page sideways via the room chip strip - fixed, and the strip fades at its edges so it is obvious it scrolls."
+  ],
+  [
+   "Round 5",
+   "Never redraws under a finger: live data waits until you let go, so a tap can never be swallowed by an update."
+  ]
+ ],
+ "paper": [
+  [
+   "Round 1",
+   "Accident test: a fast double tap switched a light twice (the redraw reset the guard) - the double-tap guard now remembers each button across redraws."
+  ],
+  [
+   "Round 1",
+   "False alarm checked: a scroll that starts on a row does not switch it (only release without movement counts)."
+  ],
+  [
+   "Round 2",
+   "\"Who is home\" now stacks its label above the name chips instead of squeezing both into one line on a phone."
+  ],
+  [
+   "Round 2",
+   "\"Lights on\" split into a count and a separate \"Lit rooms\" row so it never wraps awkwardly."
+  ],
+  [
+   "Round 3",
+   "Pull-to-refresh and a ↻ button for home-screen apps; reloads itself after 15 min in the background."
+  ],
+  [
+   "Round 4",
+   "Landscape and 125 % text: no overflow or clipped text - unchanged."
+  ],
+  [
+   "Round 5",
+   "Never redraws under a finger: live data waits until you let go, so a tap can never be swallowed by an update."
+  ]
+ ],
+ "wall": [
+  [
+   "Round 1",
+   "Accident test: a fast double tap switched a light twice (the redraw reset the guard) - the double-tap guard now remembers each button across redraws."
+  ],
+  [
+   "Round 2",
+   "Home tiles: big icon + value in the middle instead of a lone number in an empty corner on the tablet."
+  ],
+  [
+   "Round 2",
+   "Phone: the bottom bar stretched to a third of the screen - grid rows fixed (content 1fr, bar auto)."
+  ],
+  [
+   "Round 3",
+   "Pull-to-refresh and a ↻ button for home-screen apps; reloads itself after 15 min in the background."
+  ],
+  [
+   "Round 4",
+   "Room strip on phones fades at the edge to show it scrolls sideways."
+  ],
+  [
+   "Round 5",
+   "Never redraws under a finger: live data waits until you let go, so a tap can never be swallowed by an update."
+  ]
+ ],
+ "night": [
+  [
+   "Round 1",
+   "Accident test: a fast double tap switched a light twice (the redraw reset the guard) - the double-tap guard now remembers each button across redraws."
+  ],
+  [
+   "Round 2",
+   "The bottom tabs floated over the last room - they now sit on a black gradient with extra bottom space."
+  ],
+  [
+   "Round 1",
+   "Test: a touch on the dimmed screen only wakes it (the veil catches it) - verified on phone, iPad and Mac."
+  ],
+  [
+   "Round 3",
+   "Pull-to-refresh and a ↻ button for home-screen apps; reloads itself after 15 min in the background."
+  ],
+  [
+   "Round 4",
+   "At 125 % text \"Actions\" fell off the screen - the three tabs now share the width."
+  ],
+  [
+   "Round 5",
+   "Never redraws under a finger: live data waits until you let go, so a tap can never be swallowed by an update."
+  ]
+ ],
+ "pro": [
+  [
+   "Round 1",
+   "Accident test: a fast double tap switched a light twice (the redraw reset the guard) - the double-tap guard now remembers each button across redraws."
+  ],
+  [
+   "Round 1",
+   "Buttons were 38 px high - raised to 44 px (touch minimum) without losing density."
+  ],
+  [
+   "Round 2",
+   "Phone: the 2 x 2 section bar ate a fifth of the screen - now one row of four."
+  ],
+  [
+   "Round 2",
+   "Lights as one card per room with state pills instead of one long cramped table."
+  ],
+  [
+   "Round 3",
+   "Pull-to-refresh and a ↻ button for home-screen apps; reloads itself after 15 min in the background."
+  ],
+  [
+   "Round 4",
+   "Landscape and 125 % text: no overflow or clipped text - unchanged."
+  ],
+  [
+   "Round 5",
+   "Never redraws under a finger: live data waits until you let go, so a tap can never be swallowed by an update."
+  ]
+ ]
+}

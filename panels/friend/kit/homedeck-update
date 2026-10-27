@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# homedeck-update - fetch the newest Home Deck and install it. Keeps settings, the Home Assistant token, layouts and
+# every file you edited (the new version of an edited file is saved next to it as .new-<version>).
+# A failed start rolls back to the previous version automatically (homedeck-apply).
+set -euo pipefail
+REPOS="${HOMEDECK_REPO:-https://home.example.net:8443 http://192.168.1.41}"
+HDR=(-H "X-Winrepo-Key: ${WIN_REPO_KEY:-VKcUYRQvHZAm2ZQD1c2eV7KoSqacgmsA}")
+[ "$(id -u)" -eq 0 ] || { echo "run as root"; exit 1; }
+cur=$(cat /opt/panel-wrapper/VERSION 2>/dev/null || echo none)
+tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+for r in $REPOS; do
+  if curl -fsS -m 10 "${HDR[@]}" -o "$tmp/kit.sha256" "$r/homedeck/homedeck-kit.tar.gz.sha256" 2>/dev/null; then REPO=$r; break; fi
+done
+[ -n "${REPO:-}" ] || { echo "Can't reach the Home Deck download ($REPOS)."; exit 1; }
+curl -fsS "${HDR[@]}" -o "$tmp/kit.tgz" "$REPO/homedeck/homedeck-kit.tar.gz"
+[ "$(sha256sum "$tmp/kit.tgz" | cut -c1-64)" = "$(cut -c1-64 "$tmp/kit.sha256")" ] || { echo "Download damaged (checksum), try again."; exit 1; }
+tar xzf "$tmp/kit.tgz" -C "$tmp"
+new=$(cat "$tmp/homedeck-kit/app/VERSION")
+if [ "$new" = "$cur" ] && [ "${1:-}" != "--force" ]; then echo "Home Deck is up to date ($cur)."; exit 0; fi
+echo "Updating Home Deck $cur -> $new"
+bash "$tmp/homedeck-kit/install-homedeck.sh" --update
