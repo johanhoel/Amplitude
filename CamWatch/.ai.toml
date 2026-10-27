@@ -1,0 +1,5 @@
+# Settings for the `ai` command (ai-stack): how to test this repo and what every model must read first.
+# {python} = AI_TEST_PYTHON, else .venv (dev/setup.ps1), else the Python running `ai`.
+test_quick = "{python} tests/run.py --quick"
+test_full = "{python} tests/run.py --quick"
+read = ["AGENTS.md"]

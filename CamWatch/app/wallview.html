@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#101418">
+<meta name="apple-mobile-web-app-title" content="Cameras">
+<link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
+<link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png"><link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<script>if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
+<title>Cameras · camwatch</title>
+<style>
+/* Wall view (phone/tablet first): live picture on top, every recording below, newest first, day by day as you scroll.
+   Live: a snapshot every 4 s (light on mobile data); ▶ Live switches to MJPEG video, which stops by itself after 2 min.
+   Recordings: /api/days + /api/visits?day=, thumbnails /api/thumb, video and face crops via /media (Range for seeking).
+   Player: full screen, swipe or ‹ › for the next / previous recording, the phone's Back closes it. */
+:root { --bg: #101418; --ink: #eef2f6; --mute: #8b98a8; --faint: #5d6b7b; --line: #2a333d; --card: #1a2027; --card-hi: #222a33;
+  --accent: #38bdf8; --ok: #22c55e; --warn: #f59e0b; --bad: #ef4444; --live: #e11d48;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
+* { box-sizing: border-box; }
+html { background: var(--bg); -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.4 var(--font); -webkit-tap-highlight-color: transparent; overscroll-behavior-y: contain;
+  padding: calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 12px) calc(env(safe-area-inset-bottom) + 30px) calc(env(safe-area-inset-left) + 12px); }
+::selection { background: rgba(56, 189, 248, .35); }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+.wrap { max-width: 900px; margin: 0 auto; }
+header { display: flex; align-items: center; gap: 10px; margin: 2px 0 12px; }
+header h1 { flex: 1; margin: 0; font-size: 26px; font-weight: 750; }
+header a, header .arm { min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); text-decoration: none;
+  font-weight: 650; font-size: 14px; display: inline-flex; align-items: center; }
+header .arm.on { border-color: var(--accent); color: var(--accent); }
+/* live */
+.live { position: relative; border-radius: 20px; overflow: hidden; background: #000; border: 1px solid var(--line); aspect-ratio: 16/9; }
+.live img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.live .top { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: linear-gradient(rgba(0,0,0,.65), transparent); }
+.badge { padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 750; letter-spacing: .08em; background: rgba(255,255,255,.22); }
+.badge.on { background: var(--live); } .badge.off { background: var(--bad); }
+.live .when { font-size: 12.5px; color: rgba(255,255,255,.8); flex: 1; text-shadow: 0 1px 3px #000; }
+.live .bot { position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; justify-content: flex-end; padding: 10px; background: linear-gradient(transparent, rgba(0,0,0,.6)); }
+.pill { min-height: 40px; padding: 0 16px; border-radius: 999px; background: rgba(0,0,0,.55); color: #fff; font-weight: 700; font-size: 14px; border: 1px solid rgba(255,255,255,.2); }
+.pill.on { background: var(--live); border-color: var(--live); }
+.live.full { position: fixed; inset: 0; z-index: 60; border-radius: 0; aspect-ratio: auto; border: 0; }
+.live.full img { object-fit: contain; }
+/* filters + list */
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 14px 0 6px; scrollbar-width: none; } .chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; min-height: 38px; padding: 0 15px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-weight: 650; font-size: 14px; }
+.chip.on { background: var(--accent); border-color: var(--accent); color: #062033; }
+.day { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 12px 2px 8px; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--mute);
+  font-weight: 700; display: flex; justify-content: space-between; }
+.list { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+@media (max-width: 420px) { .list { grid-template-columns: 1fr 1fr; gap: 8px; } }
+.v { position: relative; border-radius: 14px; overflow: hidden; background: var(--card); border: 1px solid var(--line); text-align: left; padding: 0; }
+.v img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; background: #0b0e12; }
+.v .meta { padding: 7px 9px 9px; } .v b { font-size: 14.5px; font-variant-numeric: tabular-nums; }
+.v .w { display: block; font-size: 12.5px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v .w.known { color: #86efac; } .v .w.unknown { color: #fbbf24; } .v .star { position: absolute; top: 6px; right: 8px; font-size: 16px; text-shadow: 0 1px 3px #000; }
+.v .dur { position: absolute; top: 6px; left: 6px; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,.6); }
+.more { text-align: center; color: var(--mute); padding: 18px; } .empty { color: var(--faint); padding: 10px 2px 4px; font-size: 14px; }
+/* player */
+#pl { position: fixed; inset: 0; z-index: 80; background: #000; display: none; flex-direction: column; touch-action: pan-y; }
+#pl.open { display: flex; }
+#pl .ptop { display: flex; align-items: center; gap: 10px; padding: calc(env(safe-area-inset-top) + 8px) 12px 8px; background: #000; }
+#pl .ptop .t { flex: 1; min-width: 0; } #pl .ptop b { display: block; font-size: 16px; }
+#pl .ptop span { font-size: 13px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+#pl .x, #pl .info { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.12); font-size: 20px; color: #fff; display: grid; place-items: center; text-decoration: none; flex: none; }
+#pl video { flex: 1; width: 100%; min-height: 0; background: #000; }
+#pl .pbot { display: flex; gap: 10px; align-items: center; padding: 10px 12px calc(env(safe-area-inset-bottom) + 12px); }
+#pl .pbot button, #pl .pbot a { min-height: 48px; padding: 0 18px; border-radius: 14px; background: rgba(255,255,255,.12); color: #fff; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; }
+#pl .pbot button:disabled { opacity: .35; }
+#pl .pbot .sp { flex: 1; text-align: center; color: var(--mute); font-size: 13px; }
+#pl .faces { display: flex; gap: 6px; padding: 0 12px 6px; overflow-x: auto; } #pl .faces img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; }
+/* pull to refresh */
+#dkptr { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 6px); z-index: 99; width: 42px; height: 42px; margin-left: -21px; border-radius: 50%;
+  display: grid; place-items: center; background: #1a2027; color: #fff; font: 700 20px var(--font); box-shadow: 0 6px 20px rgba(0,0,0,.45);
+  transform: translateY(-70px); opacity: 0; transition: opacity .15s; pointer-events: none; }
+#dkptr.ready { background: #0284c7; } #dkptr.go { animation: dkspin .8s linear infinite; } @keyframes dkspin { to { rotate: 360deg; } }
+/* tag sheet */
+#sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 90; max-height: 78vh; overflow-y: auto; background: var(--card); border-top: 1px solid var(--line);
+  border-radius: 20px 20px 0 0; padding: 14px 14px calc(env(safe-area-inset-bottom) + 16px); box-shadow: 0 -10px 40px rgba(0,0,0,.6); }
+#sheet h3 { margin: 4px 0 10px; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); display: flex; justify-content: space-between; align-items: center; }
+#sheet .face { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--line); }
+#sheet .face img { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; flex: none; background: #0b0e12; }
+#sheet .face .who { font-weight: 700; } #sheet .face .who small { color: var(--mute); font-weight: 500; }
+#sheet .names { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+#sheet .nm { min-height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card-hi); font-weight: 650; font-size: 13.5px; }
+#sheet .nm.on { background: var(--ok); border-color: var(--ok); color: #052e16; } #sheet .nm.add { border-style: dashed; color: var(--mute); }
+#sheet .plate { display: flex; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+#sheet .plate b { font-family: ui-monospace, monospace; font-size: 16px; }
+#sheet input { min-height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; flex: 1; min-width: 120px; }
+#sheet .close { min-height: 34px; padding: 0 14px; border-radius: 999px; background: var(--card-hi); border: 1px solid var(--line); font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--ink); }
+#sheet .msg { color: var(--mute); font-size: 13px; padding: 4px 0; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>Cameras</h1>
+    <select class="arm" id="camsel" hidden aria-label="Camera"></select>
+    <form method="post" action="/arm"><button class="arm" id="arm" title="Tap to switch"></button></form>
+    <a href="/dashboard">‹ Home</a></header>
+
+  <section class="live" id="live">
+    <img id="snap" alt="Live camera">
+    <div class="top"><span class="badge" id="badge">SNAPSHOT</span><span class="when" id="when"></span></div>
+    <div class="bot"><button class="pill" id="golive">▶ Live</button><button class="pill" id="full" aria-label="Full screen">⤢</button></div>
+  </section>
+
+  <div class="chips" id="chips"></div>
+  <div id="days"></div>
+  <div class="more" id="more">Loading…</div>
+</div>
+
+<div id="pl" role="dialog" aria-label="Recording">
+  <div class="ptop"><div class="t"><b id="pt"></b><span id="ps"></span></div>
+    <button class="info" id="ptag" aria-label="Tag people, plates, star" title="Tag">🏷</button>
+    <a class="info" id="pi" aria-label="Clip details" title="Details">ⓘ</a>
+    <button class="x" id="px" aria-label="Close">✕</button></div>
+  <div class="faces" id="pf"></div>
+  <video id="pv" controls playsinline preload="metadata"></video>
+  <div class="pbot"><button id="pprev" aria-label="Newer recording">‹ Newer</button><span class="sp" id="pn"></span><a id="pdl" download aria-label="Download">⬇</a><button id="pnext" aria-label="Older recording">Older ›</button></div>
+</div>
+
+<div id="sheet" role="dialog" aria-label="Tag this recording" hidden></div>
+
+<script>
+const ARMED = __ARMED__;
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const hm = d => new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+const get = u => fetch(u, { cache: 'no-store' }).then(r => r.ok ? r.json() : Promise.reject(r.status));
+const FILTERS = [['all', 'All'], ['person', '🧍 People'], ['known', '😀 Known faces'], ['unknown', '❔ Unknown faces'], ['vehicle', '🚗 Cars'], ['package', '📦 Packages'], ['star', '⭐ Starred']];
+let filter = 'all', days = [], nextDay = 0, loading = false, shown = [];          // shown = every visit on screen, in order (for ‹ ›)
+$('#arm').textContent = ARMED ? '🛡 Armed' : '🔕 Disarmed'; $('#arm').classList.toggle('on', ARMED);
+
+// ---------- live ----------
+let liveOff = null, streaming = false;
+let cam = null, camCount = 1;
+async function loadCameras() {
+  const list = await get('/api/cameras').catch(() => []);
+  camCount = list.length || 1;
+  let saved = null; try { saved = localStorage.getItem('camwatch-cam'); } catch {}
+  cam = (list.find(c => c.name === saved) || list[0] || {}).name || null;
+  const sel = $('#camsel');
+  sel.innerHTML = list.map(c => `<option value="${esc(c.name)}">${c.online ? '🟢' : '⚪'} ${esc(c.name)}</option>`).join('');
+  sel.hidden = list.length < 2; if (cam) sel.value = cam;
+  sel.onchange = () => { cam = sel.value; try { localStorage.setItem('camwatch-cam', cam); } catch {} setLive(false); };
+}
+const camQ = () => cam ? `camera=${encodeURIComponent(cam)}&` : '';
+function snapshot() {
+  if (streaming || document.visibilityState !== 'visible') return;
+  const img = new Image();
+  img.onload = () => { $('#snap').src = img.src; $('#when').textContent = 'updated ' + hm(Date.now()); $('#badge').classList.remove('off'); $('#badge').textContent = 'SNAPSHOT'; };
+  img.onerror = () => { $('#badge').classList.add('off'); $('#badge').textContent = 'NO PICTURE'; $('#when').textContent = 'camera not sending'; };
+  img.src = `/live.jpg?${camQ()}w=960&t=${Date.now()}`;
+}
+function setLive(on) {
+  streaming = on; clearTimeout(liveOff);
+  $('#golive').classList.toggle('on', on); $('#golive').textContent = on ? '■ Stop' : '▶ Live';
+  $('#badge').classList.toggle('on', on); $('#badge').textContent = on ? 'LIVE' : 'SNAPSHOT';
+  if (on) { $('#snap').src = `/live.mjpg?${camQ()}t=${Date.now()}`; $('#when').textContent = 'live video'; liveOff = setTimeout(() => setLive(false), 120000); }
+  else { $('#snap').src = 'data:,'; snapshot(); }
+}
+$('#golive').onclick = () => setLive(!streaming);
+$('#full').onclick = () => { const l = $('#live'); l.classList.toggle('full'); $('#full').textContent = l.classList.contains('full') ? '✕' : '⤢'; };
+$('#snap').onclick = () => { if ($('#live').classList.contains('full')) $('#full').click(); else setLive(!streaming); };
+document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible' && streaming) setLive(false); else snapshot(); });
+
+// ---------- recordings ----------
+const dayName = d => { const t = new Date(); t.setHours(0, 0, 0, 0); const x = new Date(d + 'T00:00'); const n = Math.round((t - x) / 86400000);
+  return n === 0 ? 'Today' : n === 1 ? 'Yesterday' : x.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }); };
+const plateText = v => v.plates.map(p => p.name || p.plate).join(', ');
+const carMove = v => v.vehicles.map(m => `${m.name || m.plate || m.label || 'car'} ${m.direction}`).join(', ');
+const who = v => (v.packages?.some(p => p.kind === 'delivered') ? '📦 ' : '') + (v.people.length ? v.people.map(p => p.name).join(', ')
+  : v.vehicles.length ? carMove(v) : v.plates.length ? 'Car ' + plateText(v)
+  : v.labels.length ? v.labels[0][0].toUpperCase() + v.labels[0].slice(1) + (v.labels.length > 1 ? ' + ' + v.labels.slice(1).join(', ') : '') : 'Motion');
+const secs = v => Math.max(1, Math.round((new Date(v.end) - new Date(v.start)) / 1000));
+const pass = v => filter === 'all' || (filter === 'person' && v.labels.includes('person')) || (filter === 'known' && v.people.length)
+  || (filter === 'unknown' && v.unknown > 0)
+  || (filter === 'vehicle' && (v.vehicles.length || v.plates.length || v.labels.some(l => /car|truck|bus|motorcycle|bicycle/.test(l)))) || (filter === 'star' && v.star) || (filter === 'package' && v.packages?.length);
+const cache = {};
+async function loadDay(d) {
+  if (!cache[d.day] || d.day === days[0]?.day) cache[d.day] = await get('/api/visits?day=' + d.day).catch(() => []);
+  const vs = cache[d.day].filter(pass);
+  const sec = document.createElement('section');
+  sec.innerHTML = `<div class="day"><span>${esc(dayName(d.day))}</span><span>${vs.length}${filter === 'all' ? '' : ' of ' + cache[d.day].length}</span></div>`
+    + (vs.length ? `<div class="list">${vs.map(v => { const i = shown.push(v) - 1;
+        return `<button class="v" data-i="${i}"><img loading="lazy" src="/api/thumb/${esc(v.day)}/${esc(v.stem)}.jpg?w=480" alt="">
+          <span class="dur">${secs(v)} s</span>${v.star ? '<span class="star">⭐</span>' : ''}
+          <div class="meta"><b>${hm(v.start)}</b>${camCount > 1 ? ` <span class="w" style="display:inline">· ${esc(v.camera)}${v.visit && v.visit.length ? ` 🔗 ${esc([...new Set(v.visit)].join(', '))}` : ''}</span>` : ''}${v.unusual ? ` <span class="w unknown" style="display:inline" title="${esc(v.unusual)}">⚠ unusual</span>` : ''}<span class="w ${v.people.length ? 'known' : ''}">${esc(who(v))}</span></div></button>`; }).join('')}</div>`
+      : `<div class="empty">Nothing ${filter === 'all' ? '' : 'matching '}this day.</div>`);
+  $('#days').appendChild(sec);
+}
+async function more() {
+  if (loading || nextDay >= days.length) return;
+  loading = true; $('#more').textContent = 'Loading…';
+  try { await loadDay(days[nextDay++]); while (nextDay < days.length && document.body.scrollHeight < innerHeight * 1.6) await loadDay(days[nextDay++]); }
+  finally { loading = false; $('#more').textContent = nextDay < days.length ? '' : `That's everything (${days.length} day${days.length > 1 ? 's' : ''} kept).`; }
+}
+async function restart() {
+  $('#days').innerHTML = ''; shown = []; nextDay = 0;
+  days = await get('/api/days').catch(() => []);
+  if (!days.length) { $('#more').textContent = 'No recordings.'; return; }
+  more();
+}
+new IntersectionObserver(es => { if (es[0].isIntersecting) more(); }, { rootMargin: '600px' }).observe($('#more'));
+$('#chips').innerHTML = FILTERS.map(([k, t]) => `<button class="chip ${k === filter ? 'on' : ''}" data-f="${k}">${t}</button>`).join('');
+$('#chips').onclick = e => { const b = e.target.closest('[data-f]'); if (!b) return; filter = b.dataset.f;
+  $('#chips').querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === b)); restart(); };
+$('#days').onclick = e => { const b = e.target.closest('.v'); if (b) openPlayer(+b.dataset.i); };
+
+// ---------- player ----------
+let cur = -1;
+function show(i) {
+  if (i < 0 || i >= shown.length) return;
+  cur = i; $('#sheet').hidden = true; const v = shown[i], src = `/media/${v.day}/${v.video}`, pv = $('#pv');
+  $('#pt').textContent = `${dayName(v.day)} ${hm(v.start)}`;
+  $('#ps').textContent = `${who(v)} · ${secs(v)} s${v.unknown ? ` · ${v.unknown} unknown face${v.unknown > 1 ? 's' : ''}` : ''}`;
+  $('#pf').innerHTML = v.people.filter(p => p.crop).map(p => `<img src="/media/${esc(v.day)}/${esc(p.crop)}" alt="${esc(p.name)}" title="${esc(p.name)}">`).join('');
+  pv.poster = `/api/thumb/${v.day}/${v.stem}.jpg?w=960`; pv.src = src; pv.play().catch(() => {});
+  $('#pdl').href = src; $('#pdl').setAttribute('download', v.video); $('#pi').href = `/clip/${v.day}/${v.stem}`;
+  $('#pn').textContent = `${i + 1} / ${shown.length}${nextDay < days.length ? '+' : ''}`;
+  $('#pprev').disabled = i === 0; $('#pnext').disabled = i === shown.length - 1 && nextDay >= days.length;
+  if (i >= shown.length - 3) more();                                    // keep older ones coming
+}
+function openPlayer(i) { if (streaming) setLive(false); $('#pl').classList.add('open'); history.pushState({ pl: 1 }, ''); show(i); }
+function closePlayer() { $('#sheet').hidden = true; const pv = $('#pv'); pv.pause(); pv.removeAttribute('src'); pv.load(); $('#pl').classList.remove('open'); }
+$('#px').onclick = () => history.back();
+addEventListener('popstate', () => { if ($('#pl').classList.contains('open')) closePlayer(); });
+$('#pprev').onclick = () => show(cur - 1);
+$('#pnext').onclick = async () => { if (cur === shown.length - 1) await more(); show(cur + 1); };
+$('#pv').addEventListener('ended', () => { if (cur < shown.length - 1) show(cur + 1); });   // play on through older recordings
+let sx = null, sy = null;                                                                   // swipe left = older, right = newer
+$('#pl').addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+$('#pl').addEventListener('touchend', e => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
+  if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) { if (dx < 0) $('#pnext').click(); else $('#pprev').click(); } });
+addEventListener('keydown', e => { if (!$('#pl').classList.contains('open')) return; if (e.key === 'Escape') history.back(); if (e.key === 'ArrowRight') $('#pnext').click(); if (e.key === 'ArrowLeft') $('#pprev').click(); });
+
+// ---------- tagging from the player ----------
+async function post(url, fields) {
+  const body = new FormData(); Object.entries(fields).forEach(([k, v]) => body.append(k, v));
+  const r = await fetch(url, { method: 'POST', body });
+  if (!r.ok) throw new Error(r.status);
+}
+async function refreshCurrent() {
+  const v = shown[cur]; if (!v) return;
+  cache[v.day] = await get('/api/visits?day=' + v.day).catch(() => cache[v.day]);
+  const fresh = (cache[v.day] || []).find(x => x.stem === v.stem);
+  if (!fresh) return;
+  Object.assign(v, fresh);
+  $('#ps').textContent = `${who(v)} · ${secs(v)} s${v.unknown ? ` · ${v.unknown} unknown face${v.unknown > 1 ? 's' : ''}` : ''}`;
+  $('#pf').innerHTML = v.people.filter(p => p.crop).map(p => `<img src="/media/${esc(v.day)}/${esc(p.crop)}" alt="${esc(p.name)}" title="${esc(p.name)}">`).join('');
+}
+async function openSheet() {
+  const v = shown[cur], sh = $('#sheet'); if (!v) return;
+  sh.hidden = false; sh.innerHTML = '<div class="msg">Loading…</div>';
+  let c;
+  try { c = await get(`/api/clip/${v.day}/${v.stem}`); } catch { sh.innerHTML = '<div class="msg">Could not load this recording.</div>'; return; }
+  const base = `/clip/${v.day}/${v.stem}`, names = c.people || [];
+  const chips = (crop, current) => names.map(n => `<button class="nm ${n === current ? 'on' : ''}" data-tag="${esc(n)}" data-crop="${esc(crop || '')}">${esc(n)}</button>`).join('')
+    + `<button class="nm add" data-new="1" data-crop="${esc(crop || '')}">+ New name</button>`;
+  const faceLine = f => f.tag ? `${esc(f.tag)} <small>tagged</small>`
+    : f.name ? `${esc(f.name)} <small>recognised ${Math.round((f.score || 0) * 100)}%</small>`
+    : 'Unknown' + (f.guess ? ` <small>closest: ${esc(f.guess)}</small>` : '');
+  const faces = c.faces.length
+    ? c.faces.map(f => `<div class="face"><img src="/media/${esc(v.day)}/${esc(f.crop)}" alt=""><div><div class="who">${faceLine(f)}</div>
+        <div class="names">${chips(f.crop, f.tag || f.name)}</div></div></div>`).join('')
+    : `<div class="msg">${c.analysed ? 'No faces were found in this recording.' : 'Faces are still being analysed; try again in a minute.'}</div>`;
+  const plates = c.plates.length ? '<h3>Number plates</h3>' + c.plates.map(p => `<div class="plate"><b>${esc(p.plate)}</b>` + (p.name
+    ? `<span class="nm on">${esc(p.name)}</span>`
+    : `<input placeholder="Name, e.g. Family car" data-plate="${esc(p.plate)}"><button class="nm" data-saveplate="${esc(p.plate)}">Save</button>`) + '</div>').join('') : '';
+  sh.innerHTML = `<h3><span>Tag this recording</span><button class="close" id="sclose">Done</button></h3>
+    <div class="names" style="margin-bottom:12px"><button class="nm ${c.star ? 'on' : ''}" id="sstar">${c.star ? '⭐ Starred (kept forever)' : '☆ Star (keep forever)'}</button></div>
+    <h3>Faces</h3>${faces}<h3>Someone else was here</h3><div class="names">${chips('', null)}</div>${plates}
+    <h3>Share a blurred copy</h3><div class="names"><button class="nm" data-share="strangers">Blur strangers + plates</button>
+    <button class="nm" data-share="all">Blur every face + plates</button></div><div class="msg" id="smsg"></div>`;
+  const done = async text => { $('#smsg').textContent = text; await refreshCurrent(); setTimeout(openSheet, 600); };
+  const fail = () => { $('#smsg').textContent = 'That did not work (name: letters, digits, spaces, dot, apostrophe or dash).'; };
+  $('#sclose').onclick = () => { sh.hidden = true; };
+  sh.querySelectorAll('[data-share]').forEach(b => b.onclick = async () => {
+    const body = new FormData(); body.append('faces', b.dataset.share); body.append('plates', '1');
+    let s = await fetch(`${base}/share`, { method: 'POST', body, headers: { Accept: 'application/json' } }).then(r => r.json()).catch(() => null);
+    if (!s) { $('#smsg').textContent = 'Could not start the copy.'; return; }
+    while (s && s.state !== 'done' && s.state !== 'error') {
+      $('#smsg').textContent = s.state === 'queued' ? 'Waiting for another copy…' : `Blurring… ${Math.round(s.progress * 100)}%`;
+      await new Promise(r => setTimeout(r, 1500));
+      s = await get(`/api/share/${s.id}`).catch(() => null);
+    }
+    $('#smsg').innerHTML = s && s.state === 'done' ? `<a class="nm on" style="display:inline-flex;align-items:center" href="${s.url}">⬇ Download the blurred copy</a>`
+      : 'Could not make the copy' + (s && s.error ? ': ' + esc(s.error) : '.');
+  });
+  $('#sstar').onclick = () => post(`${base}/star`, {}).then(() => done('Saved.'), fail);
+  sh.querySelectorAll('[data-tag]').forEach(b => b.onclick = () =>
+    post(`${base}/label`, b.dataset.crop ? { name: b.dataset.tag, crop: b.dataset.crop, add_to_library: '1' } : { name: b.dataset.tag })
+      .then(() => done(b.dataset.crop ? `Tagged ${b.dataset.tag}; the face was added to their reference photos.` : `Tagged ${b.dataset.tag}.`), fail));
+  sh.querySelectorAll('[data-new]').forEach(b => b.onclick = () => {
+    const n = (prompt('Name of this person') || '').trim(); if (!n) return;
+    post(`${base}/label`, b.dataset.crop ? { new_name: n, crop: b.dataset.crop, add_to_library: '1' } : { new_name: n })
+      .then(() => done(`Tagged ${n}.`), fail);
+  });
+  sh.querySelectorAll('[data-saveplate]').forEach(b => b.onclick = () => {
+    const name = sh.querySelector(`input[data-plate="${b.dataset.saveplate}"]`).value.trim(); if (!name) return;
+    post('/plates', { plate: b.dataset.saveplate, name }).then(() => done(`Saved ${b.dataset.saveplate} as ${name}.`), fail);
+  });
+}
+$('#ptag').onclick = openSheet;
+
+// new recordings while the page is open: refresh the list every minute (unless the player is open or you scrolled down)
+setInterval(async () => { if (document.visibilityState !== 'visible' || $('#pl').classList.contains('open') || scrollY > 400) return;
+  const d = await get('/api/days').catch(() => null); if (d && d[0] && (!days[0] || d[0].count !== days[0].count || d[0].day !== days[0].day)) restart(); }, 60000);
+
+// ---------- pull to refresh (home-screen apps have no reload button) + reload after 15 min in the background ----------
+(() => {
+  const reload = () => { ind.style.opacity = 1; ind.style.transform = 'translateY(0)'; ind.classList.add('go'); setTimeout(() => location.reload(), 120); };
+  const ind = document.createElement('div'); ind.id = 'dkptr'; ind.textContent = '↻'; ind.setAttribute('aria-hidden', 'true'); document.body.appendChild(ind);
+  let y0 = null, pull = 0;
+  const atTop = () => (document.scrollingElement || document.documentElement).scrollTop <= 0;
+  const blocked = t => !!t.closest?.('input, textarea, select, .chips, #pl, #sheet, .live.full');
+  addEventListener('touchstart', e => { y0 = null; if (e.touches.length !== 1 || !atTop() || blocked(e.target)) return; y0 = e.touches[0].clientY; pull = 0; }, { passive: true });
+  addEventListener('touchmove', e => { if (y0 === null) return; pull = e.touches[0].clientY - y0;
+    if (pull <= 0 || !atTop()) { ind.style.opacity = 0; return; }
+    const k = Math.min(1, pull / 90); ind.style.opacity = k; ind.style.transform = `translateY(${-70 + k * 70}px) rotate(${k * 270}deg)`; ind.classList.toggle('ready', pull >= 90); }, { passive: true });
+  addEventListener('touchend', () => { if (y0 === null) return; y0 = null; if (pull >= 90 && atTop()) return reload();
+    ind.style.opacity = 0; ind.style.transform = 'translateY(-70px)'; ind.classList.remove('ready'); });
+  let hiddenAt = 0;
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') hiddenAt = Date.now();
+    else if (hiddenAt && Date.now() - hiddenAt > 15 * 60000) reload(); });
+})();
+
+loadCameras().then(() => { snapshot(); setInterval(snapshot, 4000); restart(); });
+</script>
+<p id="ver" style="text-align:center;color:#5d6b7b;font-size:12px;margin:18px 0 10px"></p>
+<script>fetch('/api/version', {cache: 'no-store'}).then(r => r.json()).then(v => { document.getElementById('ver').textContent = `camwatch ${v.text}`; }).catch(() => {});</script>
+</body>
+</html>

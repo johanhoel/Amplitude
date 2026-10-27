@@ -1,0 +1,26 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.cred
+
+# Runtime data (never commit footage, faces or databases)
+recordings/
+photos/
+data/
+*.mp4
+*.mkv
+*.jpg
+*.jsonl
+
+# Backups and caches
+*.bak*
+app.bak-*/
+__pycache__/
+*.pyc
+
+# Development
+.venv/
+tests/.cache/
+.aider*
+!.aider.conf.yml

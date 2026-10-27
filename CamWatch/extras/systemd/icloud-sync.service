@@ -1,0 +1,8 @@
+[Unit]
+Description=Copy starred camwatch clips to the iCloud Drive share on the PC
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/camwatch/extras/icloud-sync.sh
+Nice=10

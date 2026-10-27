@@ -1,0 +1,9 @@
+opencv-python-headless>=4.10,<5
+numpy>=1.26
+flask>=3.0,<4
+waitress>=3.0,<4
+onnxruntime>=1.18
+paho-mqtt>=2.0,<3
+fast-alpr==0.4.0
+PyMySQL>=1.1,<2
+fastembed==0.7.4

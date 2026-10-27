@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly camwatch database dump (before the host/Proxmox backup window)
+
+[Timer]
+OnCalendar=*-*-* 01:30
+RandomizedDelaySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

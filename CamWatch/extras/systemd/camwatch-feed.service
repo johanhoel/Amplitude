@@ -1,0 +1,19 @@
+[Unit]
+Description=camwatch-feed - read-only visits JSON for dashboard panels (port 8091, allow-listed clients only)
+After=network-online.target
+
+[Service]
+# Set the IPs of the panels/tablets that may read the feed
+Environment=FEED_ALLOW=127.0.0.1
+Environment=FEED_RECORDINGS=/srv/camwatch/recordings
+ExecStart=/usr/bin/python3 /opt/camwatch/extras/feed/feed.py
+DynamicUser=yes
+SupplementaryGroups=root
+ReadOnlyPaths=/srv/camwatch/recordings
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

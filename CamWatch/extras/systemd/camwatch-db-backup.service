@@ -1,0 +1,8 @@
+[Unit]
+Description=Dump the camwatch presence database for backups
+After=mariadb.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/camwatch/extras/db-backup.sh
+Nice=10

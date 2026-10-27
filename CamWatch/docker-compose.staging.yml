@@ -1,0 +1,24 @@
+# Staging: production's compose file plus this one, next to production on the same host.
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.staging.yml  (set in the staging .env, see extras/staging.env.example)
+# A fake camera (mediamtx + an ffmpeg test picture with a moving box every 10 minutes) instead of real ones,
+# no presence log (it would write to the real database), its own image tag, ports and data folders.
+services:
+  fakecam:
+    image: bluenviron/mediamtx:1.9.3
+    container_name: ${CAMWATCH_PREFIX:-camwatch}-fakecam
+    restart: unless-stopped
+
+  fakecam-feed:
+    image: ${CAMWATCH_IMAGE:-camwatch:staging}
+    pull_policy: never
+    container_name: ${CAMWATCH_PREFIX:-camwatch}-fakecam-feed
+    restart: unless-stopped
+    depends_on: [fakecam]
+    # a still grey picture; a box crosses it for 15 s every 10 minutes (= one motion event, one clip)
+    command: >
+      ffmpeg -hide_banner -loglevel warning -re -f lavfi
+      -i "color=c=0x56606a:size=1280x720:rate=10,drawbox=x='mod(t*200,1280)':y=300:w=120:h=240:color=white@0.9:t=fill:enable='lt(mod(t,600),15)'"
+      -c:v libx264 -preset ultrafast -tune zerolatency -g 20 -b:v 1M -f rtsp -rtsp_transport tcp rtsp://fakecam:8554/cam
+
+  presence:
+    profiles: ["never"]
