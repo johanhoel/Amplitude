@@ -34,15 +34,15 @@ Self-hosted camera service for one RTSP camera: motion and object detection (YOL
 
 ## Screenshots
 
-Taken from demo data (drawn pictures, no real footage) with `python dev/screenshots.py`.
+`python dev/screenshots.py` takes these screenshots from demo pictures. They show no real camera footage.
 
 | | |
 |---|---|
-| ![Dashboard](docs/screenshots/dashboard.jpg)<br>**Dashboard**: today at a glance, live cameras and a tile for every page | ![Clips](docs/screenshots/clips.jpg)<br>**Clips**: recordings by day with a timeline, filters and tags (unusual, 🔗 same visit) |
-| ![Clip](docs/screenshots/clip.jpg)<br>**Clip**: player, a visit seen by several cameras with *Play all*, face tagging | ![Live](docs/screenshots/live.jpg)<br>**Live**: every camera live, and the end-to-end test button |
-| ![Zones](docs/screenshots/zones.jpg)<br>**Zones**: draw trigger, ignore, package and parking zones per camera | ![Report](docs/screenshots/report.jpg)<br>**Report**: visits per day and hour, and a heatmap of where people walk |
-| ![Strangers](docs/screenshots/strangers.jpg)<br>**Strangers**: unknown faces seen again and again, named once | ![Cameras](docs/screenshots/settings-cameras.jpg)<br>**Settings - cameras**: up to 4 cameras, *Find* scans the network |
-| ![Off-site](docs/screenshots/settings-offsite.jpg)<br>**Settings - off-site storage and Home Assistant**: iCloud, Google Drive, B2, NAS...; MQTT | |
+| ![Dashboard](docs/screenshots/dashboard.jpg)<br>**Dashboard**: shows a summary of today, the live cameras and a tile for every page. | ![Clips](docs/screenshots/clips.jpg)<br>**Clips**: lists the clips of each day on a timeline. You can filter and tag the clips. |
+| ![Clip](docs/screenshots/clip.jpg)<br>**Clip**: plays one clip. *Play all* plays every camera in the same visit. You can name the faces. | ![Live](docs/screenshots/live.jpg)<br>**Live**: shows every camera live. A button tests the whole chain from camera to phone alert. |
+| ![Zones](docs/screenshots/zones.jpg)<br>**Zones**: you draw the areas that start, ignore or mark activity for each camera. | ![Report](docs/screenshots/report.jpg)<br>**Report**: counts visits per day and per hour. A map shows where people walk most often. |
+| ![Strangers](docs/screenshots/strangers.jpg)<br>**Strangers**: groups unknown faces that come back. You name each person once. | ![Cameras](docs/screenshots/settings-cameras.jpg)<br>**Settings, cameras**: holds up to 4 cameras. *Find* searches your network for cameras. |
+| ![Off-site](docs/screenshots/settings-offsite.jpg)<br>**Settings, off-site copies**: copies clips to iCloud, Google Drive or another place. Home Assistant settings follow below. | |
 
 | Phone: home | Phone: cameras | Phone: settings |
 |---|---|---|

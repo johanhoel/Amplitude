@@ -1,37 +1,71 @@
 # CamWatch: latest changes
 
-Newest first.
+Newest changes first.
 
 ## 2026-10-27
 
-- README: install clones `amplitude` and works in `CamWatch/` (the old command pointed at a standalone repo)
-- README: screenshots of every page (desktop and phone), from demo data with `dev/screenshots.py`
-- Camera 1 can be switched off (removed) like the other cameras
-- Version indicator (2026.10.27) on every page and in `/api/version`
-- release.sh no longer stops silently when `.env` has no `CAMWATCH_PREFIX`
+- The README install steps now copy `amplitude` and work in `CamWatch/`.
+- The old install steps pointed at a CamWatch repo of its own.
+- The README shows a screenshot of every page, on a computer and on a phone.
+- `dev/screenshots.py` takes these screenshots from demo pictures.
+- You can now switch off camera 1, like the other cameras.
+- Every page shows the version number (2026.10.27).
+- `/api/version` returns the same version number.
+- `release.sh` now runs when `.env` has no `CAMWATCH_PREFIX`.
+- Before this fix, `release.sh` stopped with no message in that case.
 
 ## 2026-10-26
 
-- Camera passwords: the masked password (••••••) always stands for the whole saved password; half-edited masks
-  are refused, and passwords with `/ # ? @` are kept exactly
-- Staging on the data disk with a fake camera, releases with automatic rollback, CI workflow
-- Tests in the repo (`tests/run.py`) and AGENTS.md for coding agents
-- Phone home screen (`/m`): what needs attention, swipeable live cameras, today and recent visits
-- Camera finder: scans the network (ONVIF discovery shows maker and model) and fills in the stream addresses
-- Off-site storage: copies to iCloud Drive, Google Drive, OneDrive, Dropbox, Backblaze B2, S3 or a NAS through
-  rclone; encrypted by default, alarms uploaded at once, the rest nightly; "Sign in again" keeps the keys
-- One visit across cameras (one push, Play all), Star / Snooze 1h buttons on pushes, unusual-activity alerts,
-  ntfy settings in the web UI, installable phone app
-- Settings: camera cards, trusted networks for login without password, cameras and Home Assistant/MQTT set in
-  the web UI
-- Multiple cameras (up to 4)
-- Timelapse and highlights, shareable blurred copies (heads and plates pixelated), search by objects
-- Every page restyled in the dark "Wall" look
+- The dots (••••••) in a camera address always stand for the whole saved password.
+- Settings refuses a camera address where you changed only part of the dots.
+- Settings keeps passwords with `/ # ? @` exactly as you typed them.
+- A test copy of CamWatch runs on the data disk with a fake camera.
+- A new release goes back to the last version by itself when it fails.
+- GitHub runs the tests automatically.
+- The repo holds its own tests (`tests/run.py`).
+- AGENTS.md tells coding assistants how to work in the repo.
+- The phone home page (`/m`) shows what needs your attention first.
+- On the phone home page, you swipe between live cameras.
+- The phone home page also lists today's visits and recent visits.
+- Settings can search your network for cameras.
+- The camera search shows the maker and model of each camera.
+- The camera search fills in the camera addresses for you.
+- CamWatch can copy clips to iCloud Drive, Google Drive, OneDrive, Dropbox, Backblaze B2, S3 or a home file server.
+- CamWatch encrypts these copies unless you switch encryption off.
+- CamWatch copies alarm clips at once and all other clips every night.
+- "Sign in again" renews the sign-in and keeps the encryption keys.
+- CamWatch joins one visit seen by several cameras into one visit.
+- A visit sends one phone alert.
+- *Play all* plays the clips from every camera in a visit.
+- Phone alerts have a Star button and a Snooze 1h button.
+- CamWatch sends an alert when it sees activity at an unusual time.
+- You set the phone alerts (ntfy) on the Settings page.
+- You can install CamWatch on a phone like an app.
+- Settings shows each camera on a card of its own.
+- You can list trusted networks, where you log in without a password.
+- You set cameras and Home Assistant on the Settings page.
+- CamWatch records up to 4 cameras.
+- CamWatch makes fast-forward videos of each day.
+- CamWatch makes short videos of the main moments.
+- You can share a copy of a clip with heads and number plates blurred.
+- You can search clips by the objects in them, for example a car or a dog.
+- Every page now uses the dark "Wall" look.
 
 ## 2026-10-25
 
-- Recurring strangers, search by description, quiet pushes for the household, optional no-password login on the LAN
-- Dashboard, weekly report, heatmap, package detection, tagging from the wall view
-- Wall view (`/view`): phone/tablet Cameras page
-- Recording watchdog, status alerts, number plate cleanup, Home Assistant event types, database backup
-- Add CamWatch
+- CamWatch notices strangers who come back again and again.
+- You can search clips by a description in your own words.
+- Phone alerts about people in your household arrive without sound.
+- You can choose to log in without a password from your home network.
+- The dashboard shows a summary of today.
+- A weekly report counts visits per day and per hour.
+- A map shows where people walk most often.
+- CamWatch notices when someone leaves a package.
+- You can tag clips from the wall view.
+- The wall view (`/view`) shows the cameras on a phone or tablet.
+- CamWatch warns you when recording stops.
+- CamWatch sends an alert when a camera or a service stops working.
+- CamWatch cleans up its list of number plates.
+- Home Assistant receives a separate event for each type of activity.
+- CamWatch backs up its database.
+- CamWatch added to this repo.
