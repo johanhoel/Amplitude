@@ -97,6 +97,11 @@ CHATS = os.path.join(STATE, 'chats')           # one private JSON file per chat 
 _queue = queue.Queue()                         # one GPU: answers run one at a time, the rest wait
 _stop = set()                                  # chat ids asked to stop
 _clock = threading.Lock()
+# The models are trained to use tools. Without this, qwen3.8 says "Let me explore the project setup" and stops.
+SYSTEM = ("You are a chat assistant on a home panel. You have no tools: you cannot read files, run commands, "
+          "browse the web or open LinkedIn. Never say you will look, explore or check something. "
+          "Do the whole task in this one reply. When the user asks for code, write the complete code now. "
+          "If you need facts you do not have, use clear placeholders and say which ones to replace.")
 
 
 def _cpath(cid):
@@ -180,7 +185,7 @@ def _answer(cid):
         _stop.discard(cid)
         return
     c['status'] = 'answering'; _csave(c)
-    msgs = [{'role': m['role'], 'content': m['content']} for m in c['messages'][:-1]][-40:]
+    msgs = [{'role': 'system', 'content': SYSTEM}] + [{'role': m['role'], 'content': m['content']} for m in c['messages'][:-1]][-40:]
     ans, done, last_save = c['messages'][-1], False, 0
     try:
         body = json.dumps({'model': c['model'], 'messages': msgs, 'stream': True, 'think': False,
