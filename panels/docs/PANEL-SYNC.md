@@ -21,7 +21,10 @@ To see what would go up without pushing:
 
 - Takes everything that's committed in `~/homedeck`. Uncommitted edits are not included, so commit first.
 - Leaves out the coordinator and the developer-tooling files, and refuses to push if any of them are left.
-- Adds one commit on top of `main` (author Alex Demo) that replaces only `panels/`.
+- Makes the copy neutral: family names, phone MAC addresses, LAN addresses, the public domain, the bus stop and
+  device ids are swapped for demo values, screenshots for their clean versions (`~/homedeck-tools/neutralize.py`,
+  `clean-shots/`). It refuses to push if anything personal is left.
+- Adds one commit on top of `main` (author: the account's private GitHub address) that replaces only `panels/`.
   Everything else in Amplitude (`dantestreamer/`, `README.md`, other branches) is never touched.
 - Keeps the project list in Amplitude's top `README.md` up to date: adds the `panels` row (with a link to the
   change log) and the Layout line if they're missing. Rows you edit yourself are left alone.

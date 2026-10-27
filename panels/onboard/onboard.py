@@ -10,7 +10,8 @@ settings or scan as root). It is protected by a one-time setup code: install.sh 
   GET  /api/plan          every setting the wizard covers: current value, what was found, the suggestion
   POST /api/preview       {choices} -> {diff, problems} for homedeck.toml (nothing written)
   POST /api/finish        {choices} -> backup, write homedeck.toml + the token, homedeck-apply, then this service stops
-Settings start from the current homedeck.toml; only values you confirm change. Comments in the file stay.
+Works on the friend edition's homedeck.toml (only the Home Assistant address is required; the rest is automatic).
+Only values you confirm change. Comments in the file stay.
 """
 import difflib, hmac, json, os, re, secrets as pysecrets, shutil, ssl, subprocess, sys, threading, time, tomllib, urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -78,101 +79,79 @@ def _ents(states, domain, prefer=None):
     return out
 
 
-# step, dotted key, label, kind, HA domain + preferred pattern (for entity fields), help
-ENTITY_FIELDS = [
-    ('home', 'entities.lock', 'Front door lock', 'lock', 'front|door|ytter|entre', 'Shown on Start, Pulse and the leave check.'),
-    ('home', 'entities.weather', 'Weather', 'weather', 'forecast_home|home', 'Weather on Start, Ambient and Family info.'),
-    ('home', 'entities.vacuum', 'Robot vacuum', 'vacuum', '', 'Start / dock buttons on Control.'),
-    ('home', 'entities.charger', 'EV charger switch', 'switch', 'charg|easee', 'Charger on Control and Pulse.'),
-    ('cameras', 'entities.cam_detect', 'Camera alerts on/off', 'input_boolean', 'cam|detect|motion', 'The switch that turns camera alerts to phones on and off.'),
-    ('lab', 'entities.wake_pc', 'Wake the PC', 'button', 'wake|wol', 'Wake-on-LAN button for the desk PC.'),
-    ('media', 'entities.spotify', 'Spotify', 'media_player', 'spotify', 'Spotify player on Media and Start.'),
-    ('media', 'entities.tv', 'TV / soundbar', 'media_player', r'\btv|beam|soundbar', 'The TV room player.'),
-    ('media', 'entities.apple_tv', 'Apple TV', 'media_player', 'apple|vardagsrum|living', 'Apple TV on Media.'),
-    ('media', 'entities.apple_tv_remote', 'Apple TV remote', 'remote', 'apple|vardagsrum|living', 'Arrow keys on Media and Remote.'),
-]
-STEPS = [('ha', 'Home Assistant'), ('home', 'Home'), ('media', 'Media and speakers'), ('cameras', 'Cameras'),
-         ('lab', 'Lab and network'), ('people', 'People and phones')]
+STEPS = [('ha', 'Home Assistant'), ('home', 'Home'), ('media', 'Media and speakers'), ('people', 'People'),
+         ('network', 'Network and cameras')]
+AUTO = {'value': '', 'label': 'Automatic', 'why': 'Home Deck picks it from Home Assistant by itself', 'seen': True}
+LINK_ROLES = (('router', 'router', 'http'), ('pihole', 'pihole', 'http'), ('proxmox', 'proxmox', 'https'), ('pbs', 'backup', 'https'),
+              ('nvr', 'nvr', 'https'), ('camera', 'camera', 'http'), ('grafana', 'grafana', 'http'), ('homeassistant', None, None))
+LINK_PORTS = {'pihole': '/admin/', 'proxmox': ':8006/', 'pbs': ':8007/', 'grafana': ':3000/'}
 
 
-def _field(step, key, label, kind, cur, options, help, info=None):
+def _field(step, key, label, kind, cur, options, help, info=None, suggest=None):
     vals = [o['value'] for o in options]
     if kind == 'one':
-        suggest = cur if cur in vals or not options else options[0]['value']
         if cur is not None and cur not in vals:
-            options = options + [{'value': cur, 'label': f'{cur}', 'why': 'current setting, not seen in the scan', 'seen': False}]
+            options = options + [{'value': cur, 'label': f'{cur}', 'why': 'current setting, not seen now', 'seen': False}]
+        sug = cur if suggest is None else suggest
     else:
-        cur = cur or []
-        seen = [v for v in cur if v in vals]
-        suggest = seen or [o['value'] for o in options if o.get('pick')] or cur
-        options = options + [{'value': v, 'label': str(v), 'why': 'current setting, not seen in the scan', 'seen': False}
-                             for v in cur if v not in vals]
-    return {'step': step, 'key': key, 'label': label, 'kind': kind, 'current': cur, 'suggest': suggest,
+        sug = suggest if suggest is not None else [v for v in (cur or []) if v in vals]
+    return {'step': step, 'key': key, 'label': label, 'kind': kind, 'current': cur, 'suggest': sug, 'now': cur,
             'options': options, 'help': help, 'info': info or []}
 
 
+def _link_options(found):
+    """Web pages of things on the network -> status-dot options on Start (value 'name|url')."""
+    opts, used = [], set()
+    for role, base, scheme in LINK_ROLES:
+        if not base:
+            continue
+        for x in found.get(role, []):
+            name = base if base not in used else f"{base}-{x['ip'].rsplit('.', 1)[1]}"
+            used.add(name)
+            port = {'Scrypted': ':10443/', 'Frigate': ':5000/'}.get(x['label'], LINK_PORTS.get(role, '/'))
+            url = x.get('url') or f"{scheme}://{x['ip']}{port}"
+            opts.append({'value': f'{name}|{url}', 'label': f"{x['label']} ({x['ip']})", 'why': f'status dot "{name}" -> {url}',
+                         'seen': True, 'role': role})
+    return opts
+
+
 def plan():
+    """The friend-edition settings (homedeck.toml): only the Home Assistant address is required, the rest is
+    automatic unless set. Each field: what is set now, what was found, and the suggestion."""
     tree, scan, ha = current(), S['scan']['result'] or {'found': {}, 'devices': []}, S['ha']
     found, states = scan['found'], ha['states'] or []
     F = []
-    # Home Assistant
     opts = [{'value': x['url'], 'label': x['label'], 'why': f"found at {x['ip']}", 'seen': True}
             for x in found.get('homeassistant', []) if x.get('url')]
-    cur = tree['homeassistant']['url']
     if ha['url'] and ha['url'] not in [o['value'] for o in opts]:
         opts.insert(0, {'value': ha['url'], 'label': ha['url'], 'why': 'the address you connected with', 'seen': True})
-    F.append(_field('ha', 'homeassistant.url', 'Home Assistant address', 'one', cur, opts,
-                    'The panels talk to Home Assistant at this address.'))
-    # entities from Home Assistant
-    for step, key, label, domain, prefer, help in ENTITY_FIELDS:
-        opts = [{'value': e, 'label': n, 'why': e, 'seen': True} for e, n in _ents(states, domain, prefer)]
-        F.append(_field(step, key, label, 'one', _get(tree, key), opts, help))
-    # media players
-    cur_players = {p['entity']: p['label'] for p in tree.get('players', [])}
-    opts = [{'value': e, 'label': cur_players.get(e, n), 'why': e, 'seen': True, 'pick': e in cur_players}
-            for e, n in _ents(states, 'media_player', 'spotify|tv|beam')]
-    f = _field('media', 'players', 'Players on the Media and Deck pages', 'many', list(cur_players), opts,
-               'Tick the speakers and players to show, in this order.')
-    for o in f['options']:
-        o['label'] = cur_players.get(o['value'], o['label'])     # keep the names you gave them
-    F.append(f)
-    info = [f"{x['label']} ({x['ip']})" for r in ('sonos', 'cast', 'appletv', 'airplay') for x in found.get(r, [])]
-    F[-1]['info'] = info
-    # Genelec speakers on Dante
-    gen = [x for x in found.get('dante', []) if x['dante_name'].lower().startswith('genelec')]
-    F.append(_field('media', 'audio.genelecs', 'Genelec speakers', 'many', tree['audio']['genelecs'],
-                    [{'value': x['ip'], 'label': x['dante_name'], 'why': x['ip'], 'seen': True, 'pick': True} for x in gen],
-                    'Volume, mute and power for these speakers (Genelec API on each).',
-                    [f"{x['label']} ({x['ip']})" for x in found.get('dante', []) if x not in gen]))
-    # cameras
-    F.append(_field('cameras', 'services.camfeed', 'Camera feed (camwatch)', 'one', tree['services']['camfeed'],
-                    [{'value': x['url'], 'label': x['label'], 'why': x['ip'], 'seen': True} for x in found.get('camfeed', [])],
-                    'Visits, thumbnails and recordings on Cameras, Security and Today.',
-                    [f"{x['label']} ({x['ip']})" for r in ('camera', 'nvr') for x in found.get(r, [])]
-                    + [f'Home Assistant camera: {n}' for e, n in _ents(states, 'camera')]))
-    # lab and network
-    F.append(_field('lab', 'services.piholes', 'Pi-hole DNS servers', 'many', tree['services']['piholes'],
-                    [{'value': x['ip'], 'label': x['label'], 'why': x['ip'], 'seen': True, 'pick': True} for x in found.get('pihole', [])],
-                    'Network names, presence by Wi-Fi and the DNS tiles.'))
-    for key, role, label, help in (('services.labpanel', 'labpanel', 'Lab panel', 'Lab tiles on Admin and the lab touch panel.'),
-                                   ('services.prometheus', 'prometheus', 'Prometheus', 'Graphs on Network and Pulse.')):
-        F.append(_field('lab', key, label, 'one', _get(tree, key),
-                        [{'value': x['url'], 'label': x['label'], 'why': x['ip'], 'seen': True} for x in found.get(role, [])], help))
-    F.append(_field('lab', 'services.pc', 'Desk PC (deck-listener)', 'one', tree['services']['pc'],
-                    [{'value': x['hostport'], 'label': x['label'], 'why': x['ip'], 'seen': True} for x in found.get('pc', [])],
-                    'Mic mute, sleep and keys on the PC. The PC only answers while it is on.',
-                    [f"{x['label']} ({x['ip']})" for r in ('router', 'proxmox', 'pbs', 'grafana') for x in found.get(r, [])]))
-    # people and phones
-    phones = found.get('phone', [])
-    people = {e.split('.', 1)[1]: n for e, n in _ents(states, 'person')}
-    cur_ph = tree['presence']['phones']
-    for pid in list(cur_ph) + [p for p in people if p not in cur_ph]:
-        opts = [{'value': x['mac'], 'label': x['label'], 'why': f"{x['ip']} · {x['mac']}" + (' · private address' if x['private_mac'] else ''),
-                 'seen': True} for x in phones]
-        f = _field('people', f'presence.phones.{pid}', people.get(pid, pid.title()), 'many', cur_ph.get(pid, []), opts,
-                   'Phones that mean this person is home. Only ticked phones are used.')
-        f['suggest'] = cur_ph.get(pid, [])                 # phones are never ticked for you
+    cur = _get(tree, 'homeassistant.url')
+    placeholder = not cur or 'homeassistant.local' in cur
+    F.append(_field('ha', 'homeassistant.url', 'Home Assistant address', 'one', None if placeholder else cur, opts,
+                    'The panels talk to Home Assistant at this address.',
+                    suggest=(opts[0]['value'] if opts and placeholder else cur)))
+    for key, label, domain, help in (('entities.lock', 'Front door lock', 'lock', 'Shown on Start and used for the leave check.'),
+                                     ('entities.weather', 'Weather', 'weather', 'Weather on Start, Ambient and Family info.')):
+        o = [AUTO] + [{'value': e, 'label': n, 'why': e, 'seen': True} for e, n in _ents(states, domain)]
+        F.append(_field('home', key, label, 'one', _get(tree, key) or '', o, help))
+    # media players and people: tick what to SHOW; saved as the hide lists
+    for step, key, domain, label, help in (
+            ('media', 'players.hide', 'media_player', 'Players on the Media page', 'Untick players you do not want on the panels.'),
+            ('people', 'people.hide', 'person', 'People on Start and Family', 'Untick people the panels should not show.')):
+        hidden = _get(tree, key) or []
+        o = [{'value': e, 'label': n, 'why': e, 'seen': True} for e, n in _ents(states, domain, 'spotify')]
+        f = _field(step, key, label, 'show', hidden, o, help, suggest=[x['value'] for x in o if x['value'] not in hidden])
+        f['now'] = f['suggest']                                    # the page compares what is shown, not the hide list
         F.append(f)
+    F[-2]['info'] = [f"{x['label']} ({x['ip']})" for r in ('sonos', 'cast', 'appletv', 'airplay', 'dante') for x in found.get(r, [])]
+    F[-1]['info'] = ['Who is home comes from each person in Home Assistant (the Home Assistant app on their phone).']
+    cur_links = _get(tree, 'links.extra') or {}
+    o = _link_options(found)
+    F.append(_field('network', 'links.extra', 'Status dots on Start', 'links', [f'{k}|{v}' for k, v in cur_links.items()], o,
+                    'Each ticked device gets a dot on Start that turns red when it stops answering.',
+                    [f"{x['label']} ({x['ip']})" for r in ('camfeed', 'labpanel', 'prometheus', 'pc') for x in found.get(r, [])]
+                    + [f'Home Assistant camera: {n}' for e, n in _ents(states, 'camera')],
+                    suggest=[f'{k}|{v}' for k, v in cur_links.items()] + [x['value'] for x in o if x['role'] in ('router', 'pihole', 'nvr')]))
     return {'steps': STEPS, 'fields': F, 'scan': {k: scan.get(k) for k in ('subnet', 'took_s')} | {'devices': len(scan['devices'])},
             'ha': {'connected': bool(states), 'url': ha['url'], 'error': ha['error'], 'entities': len(states)},
             'devices': scan['devices']}
@@ -182,20 +161,20 @@ def render(choices):
     """choices {key: value} -> (new text, problems). Only keys whose value differs from now are written."""
     with open(CONFIG, encoding='utf-8') as f:
         text = f.read()
-    tree, phones = tomllib.loads(text), {}
+    tree, fields = tomllib.loads(text), {f['key']: f for f in plan()['fields']}
     for key, v in choices.items():
-        if key.startswith('presence.phones.'):
-            if v != tree['presence']['phones'].get(key.rsplit('.', 1)[1], []) and v:
-                phones[key.rsplit('.', 1)[1]] = v
-        elif key == 'players':
-            labels = (choices.get('_labels') or {}) | {p['entity']: p['label'] for p in tree.get('players', [])}
-            new = [{'entity': e, 'label': labels.get(e) or e.split('.', 1)[1].replace('_', ' ').title()} for e in v]
-            if new != tree.get('players'):
-                text = tomledit.set_players(text, new)
-        elif key != '_labels' and v is not None and v != _get(tree, key):
+        f = fields.get(key)
+        if not f or v is None:
+            continue
+        if f['kind'] == 'show':                                    # ticked = shown; everything else known is hidden
+            known = [o['value'] for o in f['options']]
+            v = sorted(set(_get(tree, key) or []) - set(known) | {e for e in known if e not in v})
+        if f['kind'] == 'links':
+            new = {x.split('|', 1)[0]: x.split('|', 1)[1] for x in v}
+            if new and new != (_get(tree, key) or {}):
+                text = tomledit.set_table(text, key, new)
+        elif v != _get(tree, key):
             text = tomledit.set_value(text, key, v)
-    if phones:
-        text = tomledit.set_table(text, 'presence.phones', phones)
     try:
         problems = hdconfig.validate(tomllib.loads(text))
     except tomllib.TOMLDecodeError as e:

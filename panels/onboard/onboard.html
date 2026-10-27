@@ -47,7 +47,6 @@ pre .a { color: var(--ok); } pre .d { color: var(--bad); } pre .h { color: var(-
 .nav { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(env(safe-area-inset-bottom) + 12px); background: rgba(6,7,12,.85); backdrop-filter: blur(16px); border-top: 1px solid var(--line); }
 .nav div { max-width: 760px; margin: 0 auto; display: flex; justify-content: space-between; gap: 10px; }
 details summary { cursor: pointer; color: var(--mute); }
-.consent { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 14px; background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.25); margin-bottom: 12px; }
 </style>
 </head>
 <body>
@@ -67,9 +66,9 @@ const api = async (path, body) => {
   if (!r.ok && !j.error) j.error = 'HTTP ' + r.status;
   return j;
 };
-const PAGES = ['welcome', 'scan', 'ha', 'home', 'media', 'cameras', 'lab', 'people', 'review'];
-const NAMES = { welcome: 'Start', scan: 'Scan', ha: 'Home Assistant', home: 'Home', media: 'Media', cameras: 'Cameras', lab: 'Lab', people: 'People', review: 'Review' };
-let page = 0, PLAN = null, CH = {}, consent = false, tokenSaved = false;
+const PAGES = ['welcome', 'scan', 'ha', 'home', 'media', 'people', 'network', 'review'];
+const NAMES = { welcome: 'Start', scan: 'Scan', ha: 'Home Assistant', home: 'Home', media: 'Media', people: 'People', network: 'Network', review: 'Review' };
+let page = 0, PLAN = null, CH = {}, tokenSaved = false;
 
 function rail() {
   $('#rail').innerHTML = PAGES.map((p, i) => `<span class="${i === page ? 'on' : i < page ? 'done' : ''}">${i < page ? '✓ ' : ''}${NAMES[p]}</span>`).join('');
@@ -88,8 +87,8 @@ $('#next').onclick = async () => {
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 function fieldHtml(f) {
-  const val = CH[f.key], multi = f.kind === 'many';
-  const changed = !same(val, f.current) ? '<span class="tag chg">changes</span>' : '';
+  const val = CH[f.key], multi = f.kind !== 'one';
+  const changed = !same(val, f.now) ? '<span class="tag chg">changes</span>' : '';
   const opts = f.options.map((o, i) => {
     const on = multi ? (val || []).includes(o.value) : val === o.value;
     return `<label class="opt"><input type="${multi ? 'checkbox' : 'radio'}" name="${esc(f.key)}" data-k="${esc(f.key)}" data-i="${i}" ${on ? 'checked' : ''}>
@@ -104,10 +103,10 @@ function bindFields(fields) {
   document.querySelectorAll('input[data-k]').forEach(el => el.onchange = () => {
     const f = fields.find(x => x.key === el.dataset.k);
     if (el.dataset.other !== undefined) { CH[f.key] = document.querySelector(`[data-otherval="${CSS.escape(f.key)}"]`).value.trim() || f.current; }
-    else if (f.kind === 'many') {
+    else if (f.kind !== 'one') {
       CH[f.key] = f.options.filter((o, i) => document.querySelector(`input[data-k="${CSS.escape(f.key)}"][data-i="${i}"]`).checked).map(o => o.value);
     } else CH[f.key] = f.options[+el.dataset.i].value;
-    const h = el.closest('.card').querySelector('h3 .chg'), ch = !same(CH[f.key], f.current);
+    const h = el.closest('.card').querySelector('h3 .chg'), ch = !same(CH[f.key], f.now);
     if (ch && !h) el.closest('.card').querySelector('h3').insertAdjacentHTML('beforeend', '<span class="tag chg">changes</span>'); else if (!ch && h) h.remove();
   });
   document.querySelectorAll('[data-otherval]').forEach(el => el.oninput = () => {
@@ -139,7 +138,7 @@ const VIEWS = {
     $('#code').onkeydown = e => e.key === 'Enter' && $('#go').click();
   },
   async scan() {
-    $('#view').innerHTML = `<section class="card"><h2>Network scan</h2><p class="help">Looking for Home Assistant, speakers, cameras, servers and phones on this network. About 15 seconds.</p>
+    $('#view').innerHTML = `<section class="card"><h2>Network scan</h2><p class="help">Looking for Home Assistant, speakers, cameras and servers on this network. About 15 seconds.</p>
       <div class="bar"><i id="bar"></i></div><div id="stext" class="help"></div><div id="sres"></div>
       <button class="ghost" id="again" hidden>Scan again</button></section>`;
     $('#next').disabled = true;
@@ -188,19 +187,9 @@ const VIEWS = {
     };
   },
   home() { return fieldPage('home', 'Things in the house that the panels show and control. Suggestions come from Home Assistant.'); },
-  media() { return fieldPage('media', 'Speakers and players. Found on the network and in Home Assistant.'); },
-  cameras() { return fieldPage('cameras', 'Camera visits and alerts.'); },
-  lab() { return fieldPage('lab', 'Servers and network services the Lab and Network pages use.'); },
-  people() {
-    const fs = stepFields('people');
-    $('#view').innerHTML = `<label class="consent"><input type="checkbox" id="consent" ${consent ? 'checked' : ''} style="margin-top:4px;accent-color:var(--accent)">
-      <span><b>Use phones on Wi-Fi to see who is home</b><br><span class="help">Home Deck checks whether these phones are on the home Wi-Fi. Nothing leaves the house.
-      Phones are never ticked for you: tick each person's own phone. Phones with a private (random) address may change it; turn that off for the home Wi-Fi on the phone.</span></span></label>
-      <div id="pf"${consent ? '' : ' hidden'}>${fs.map(fieldHtml).join('')}</div>
-      <p class="help" id="pfoff"${consent ? ' hidden' : ''}>Off: the phones that are set now stay as they are.</p>`;
-    bindFields(fs);
-    $('#consent').onchange = e => { consent = e.target.checked; $('#pf').hidden = !consent; $('#pfoff').hidden = consent; };
-  },
+  media() { return fieldPage('media', 'Media players come from Home Assistant; the speakers found on the network are listed below them.'); },
+  people() { return fieldPage('people', 'People come from Home Assistant.'); },
+  network() { return fieldPage('network', 'Devices on your network that have a web page: routers, Pi-hole, servers, cameras and recorders.'); },
   async review() {
     $('#view').innerHTML = '<section class="card"><h2>Review</h2><div class="help">Working ...</div></section>';
     const r = await api('/api/preview', { choices: choices() });
@@ -229,9 +218,7 @@ function fieldPage(step, intro) {
 }
 function choices() {
   const c = {};
-  for (const [k, v] of Object.entries(CH)) if (!k.startsWith('presence.phones.') || consent) c[k] = v;
-  const pl = PLAN.fields.find(f => f.key === 'players');
-  if (pl) c._labels = Object.fromEntries(pl.options.map(o => [o.value, o.label]));
+  for (const [k, v] of Object.entries(CH)) c[k] = v;
   return c;
 }
 async function finish() {
