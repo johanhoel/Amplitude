@@ -10,6 +10,7 @@
   POST /api/media             {action: play_pause|next|previous} (Spotify)
   POST /api/pc/mic            PC microphone mute via deck-listener (Home Assistant only);  POST /api/pc/do {action}
   GET  /api/lab/state, POST /api/lab/close, GET /lab   lab panel (service on monitor)
+  GET  /api/llm/status, POST /api/llm/load|unload/<id>, /api/llm/launch/<setup>/<id>, /api/llm/video-use, /api/llm/chat   Local AI (admin)
   GET  /api/cams, /api/cam/<entity>/snap|stream        cameras through the lab panel service
   GET  /api/family /api/net   Family and Network panels;  GET /api/sec/visits, /api/sec/thumb|crop/...  camera visits
   GET  /api/presence, /api/presence/unassigned, /metrics   Wi-Fi presence (and for Prometheus)
@@ -24,13 +25,13 @@
 import json, os, re, subprocess, time, urllib.error, urllib.parse, urllib.request
 from http.server import SimpleHTTPRequestHandler
 
-from . import audio, auth, devices, studio, home, insights, layouts, leave, links, news, presence, status, transit, weather
+from . import audio, auth, devices, localai, studio, home, insights, layouts, leave, links, news, presence, status, transit, weather
 from .config import C, REPORT
 from .ha import ha_call, ha_get
 from .store import SECRETS, SETTINGS, STATIC, WALLS, load, save
 
 PAGES = ('ops', 'living', 'remote', 'family', 'net', 'security', 'ambient', 'media', 'start', 'familyinfo', 'admin', 'desktop',
-         'pulse', 'today', 'rooms', 'control', 'atlas', 'pin', 'devices', 'pair', 'app', 'boards', 'studio', 'cameras')
+         'pulse', 'today', 'rooms', 'control', 'atlas', 'pin', 'devices', 'pair', 'app', 'boards', 'studio', 'cameras', 'localai')
 STARTED = time.time()
 
 
@@ -174,6 +175,10 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_response(302); self.send_header('Location', C.HA + '/'); self.send_header('Content-Length', '0'); self.end_headers(); return
         if p == '/api/watched':                                           # Device status card (names + online only, no PIN)
             return self.json_or_502(studio.watched)
+        if p == '/api/llm/status':                                        # Local AI panel (admin only, reads too)
+            if not auth.is_admin(self.headers):
+                return self.send_json({'error': 'admin PIN needed', 'admin': True}, 401)
+            return self.json_or_502(localai.state)
         if p.startswith('/api/studio/'):                                  # Home Deck Studio (admin only, reads too)
             if not auth.is_admin(self.headers):
                 return self.send_json({'error': 'admin PIN needed', 'admin': True}, 401)
@@ -303,6 +308,20 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json_cookie(body, code, cookie)
             if auth.needs_admin_post(self.path) and not auth.is_admin(self.headers):
                 return self.send_json({'error': 'admin PIN needed', 'admin': True}, 401)
+            if self.path.startswith('/api/llm/'):                         # Local AI (admin, auth.ADMIN_POSTS)
+                if self.path == '/api/llm/chat':
+                    return localai.chat(self, json.loads(self.body(256 * 1024) or b'{}'))
+                m = re.fullmatch(r'/api/llm/(load|unload)/(\w+)|/api/llm/launch/(opencode|claude)/(\w+)|/api/llm/(video-use)', self.path)
+                if not m:
+                    return self.send_json({'error': 'unknown'}, 404)
+                try:
+                    if m.group(1):
+                        return self.send_json(localai.act(m.group(1), m.group(2)))
+                    if m.group(3):
+                        return self.send_json(localai.act('launch', m.group(4), m.group(3)))
+                    return self.send_json(localai.act('video-use'))
+                except ValueError as e:
+                    return self.send_json({'error': str(e)}, 409 if 'busy' in str(e) else 400)
             if self.path.startswith('/api/studio/'):                      # admin (auth.ADMIN_POSTS)
                 req = json.loads(self.body(64 * 1024) or b'{}')
                 try:

@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#07080f">
+<meta name="apple-mobile-web-app-title" content="Local AI"><meta name="nav-related" content="/control,/remote,/admin">
+<title>Local AI</title>
+<link rel="stylesheet" href="/deck.css">
+<style>
+/* Local AI: the language models on the PC's RTX 5090. Wake / sleep the PC, see what is on the GPU, load and unload
+   models, open OpenCode / Claude Code / video-use on the PC's screen, and chat from here.
+   Data: /api/llm/status (admin); actions: POST /api/llm/load|unload/<id>, /api/llm/launch/<setup>/<id>,
+   /api/llm/video-use, /api/llm/chat (streamed), /api/home/do wake_pc, /api/pc/do sleep */
+:root { --hue: #a78bfa; --hue2: #38bdf8; }
+.grid { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+.grp { grid-column: 1 / -1; margin-top: 6px; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); font-weight: 700; padding: 10px 2px 0; }
+.cd { border-radius: 22px; background: var(--card); border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.cd h3 { margin: 0; font-size: 17px; font-weight: 650; } .cd .tag { font-size: 12px; color: var(--mute); }
+.cd p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--ink); opacity: .85; }
+.cd .st { font-size: 13px; color: var(--mute); } .cd .st b { color: var(--ink); }
+.cd.on { border-color: color-mix(in srgb, var(--hue) 60%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--hue) 35%, transparent) inset; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: auto; }
+.bt { min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.07); color: var(--ink); font: inherit; font-weight: 650; }
+.bt.go { background: var(--hue); border-color: transparent; color: #140b2a; } .bt:disabled { opacity: .4; }
+.bt.warn { color: #fecaca; border-color: rgba(239,68,68,.45); }
+select.sel { min-height: 40px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--ink); font: inherit; padding: 0 10px; }
+.top { grid-column: 1 / -1; display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; }
+@media (max-width: 700px) { .top { grid-template-columns: 1fr; } }
+.pcst { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 650; }
+.dot { width: 11px; height: 11px; border-radius: 50%; background: var(--faint, #555); } .dot.ok { background: #34d399; box-shadow: 0 0 10px #34d399; } .dot.bad { background: #f87171; }
+.gbar { height: 10px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; } .gbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--hue2), var(--hue)); }
+.note { border-radius: 14px; padding: 10px 12px; font-size: 13.5px; background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.3); }
+.job { font-size: 13.5px; color: var(--mute); } .job.busy::before { content: ''; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%;
+  border: 2px solid var(--hue); border-right-color: transparent; animation: spin .8s linear infinite; vertical-align: -1px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.chat { grid-column: 1 / -1; }
+.msgs { display: flex; flex-direction: column; gap: 10px; max-height: 55vh; overflow-y: auto; }
+.msg { max-width: 92%; padding: 10px 14px; border-radius: 16px; white-space: pre-wrap; font-size: 14.5px; line-height: 1.5; }
+.msg.user { align-self: flex-end; background: color-mix(in srgb, var(--hue) 30%, transparent); }
+.msg.assistant { align-self: flex-start; background: rgba(255,255,255,.07); }
+textarea.in { width: 100%; min-height: 70px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.05); color: var(--ink); font: inherit; padding: 10px 12px; resize: vertical; }
+</style>
+<link rel="stylesheet" href="/wall.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="head"><div><h1>Local AI</h1><div class="sub">Language models on the PC's RTX 5090</div></div><div class="right"><div class="clock num" id="clock">–</div></div></header>
+  <main class="grid" id="main"><div class="grp">Loading…</div></main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const toast = t => { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 3200); };
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b || {}) });
+const MODELS = {
+  qwen38: { name: 'Qwen3.8 27B', tag: 'general · images · tools · thinking',
+    text: 'The general model: questions, planning, agent work in OpenCode and video-use. Reads images, uses tools and can think step by step. The best pick when unsure.' },
+  gemma4: { name: 'Gemma 4 26B', tag: 'documents · images · tools · thinking',
+    text: 'Reads documents well: it fills product data from datasheets in av-diagram-builder (its first test, a JBL Control 68HP, was right on every field). Reads images and uses tools.' },
+  coder: { name: 'Qwen3-Coder 30B', tag: 'code · tools · text only',
+    text: 'Writes and fixes code in OpenCode, where it is the default model. Uses tools. No images and no thinking mode, so not for reading documents.' },
+  small: { name: 'Qwen3 4B', tag: 'small · fast · tools · text only',
+    text: 'Fast and small, about 8 GB on the GPU: quick questions, sorting and tagging text. Leaves room for a game or a big model next to it.' },
+};
+const SETUPS = [
+  { id: 'opencode', name: 'OpenCode', def: 'coder', text: 'A coding agent in a terminal on the PC. It reads and edits files, runs commands and uses skills such as video-use and no-ai-slop. Use Qwen3-Coder for code and Qwen3.8 for everything else.' },
+  { id: 'claude', name: 'Claude Code (local)', def: 'qwen38', text: "Claude Code's interface driven by a local model instead of Anthropic's cloud. Same tools as OpenCode. Quality depends on the model, and long multi-step jobs are less reliable than with Claude itself." },
+];
+let S = null, CHAT = [], abort = null, chatModel = localStorage.getItem('lai_model') || 'qwen38', touching = false, wakeAt = 0;
+addEventListener('pointerdown', () => touching = true, true); ['pointerup', 'pointercancel'].forEach(ev => addEventListener(ev, () => touching = false, true));
+const gb = mb => (mb / 1024).toFixed(1) + ' GB';
+const hhmm = iso => { try { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } };
+const opts = sel => Object.entries(MODELS).map(([id, m]) => `<option value="${id}" ${id === sel ? 'selected' : ''}>${esc(m.name)}</option>`).join('');
+
+async function load() {
+  try {
+    const r = await fetch('/api/llm/status', { cache: 'no-store' });
+    if (r.status === 401) { location.href = '/pin?next=/localai'; return; }
+    S = await r.json();
+  } catch (e) { S = { awake: false, error: 'Home Deck did not answer' }; }
+  if (!touching && !document.activeElement?.matches('textarea, select')) render();
+}
+function render() {
+  const s = S || {}, models = s.models || [], busy = s.busy || (s.job && !s.job.done), g = s.gpu || {};
+  const loaded = models.filter(m => m.loaded);
+  const job = s.job && s.job.label ? (s.job.done ? (s.job.ok ? '✓ ' + (s.job.result || s.job.label) : '✕ ' + s.job.label + ': ' + s.job.result) : s.job.label + '… ' + Math.round(Date.now() / 1000 - s.job.started) + ' s') : '';
+  const top = `<div class="cd top"><div class="pcst"><i class="dot ${s.awake ? 'ok' : 'bad'}"></i>${s.awake ? (s.ollama === false ? 'PC awake · Ollama not running' : 'PC awake') : (Date.now() - wakeAt < 120000 ? 'Waking the PC…' : 'PC asleep')}</div>
+      <div>${s.awake && g.total_mb ? `<div class="st">GPU memory <b>${gb(g.mem_mb)}</b> of ${gb(g.total_mb)} · load ${g.util ?? 0}%</div><div class="gbar"><i style="width:${Math.min(100, 100 * g.mem_mb / g.total_mb)}%"></i></div>` : ''}
+        ${job ? `<div class="job ${busy ? 'busy' : ''}">${esc(job)}</div>` : ''}</div>
+      <div class="row">${s.awake ? '<button class="bt warn" id="sleep">Sleep the PC</button>' : '<button class="bt go" id="wake">Wake the PC</button>'}</div>
+      ${s.game ? `<div class="note" style="grid-column:1/-1">A game is running on the PC (Steam app ${s.game}). Loading a model now takes GPU memory from the game.</div>` : ''}
+      ${loaded.some(m => m.by === 'other') ? `<div class="note" style="grid-column:1/-1">${loaded.filter(m => m.by === 'other').map(m => esc(MODELS[m.id]?.name || m.model)).join(', ')} was loaded outside this panel, most likely by the AI coordinator for a job. Unloading it can cut that job off.</div>` : ''}
+      ${s.error ? `<div class="note" style="grid-column:1/-1">${esc(s.error)}</div>` : ''}</div>`;
+  const cards = Object.entries(MODELS).map(([id, info]) => {
+    const m = models.find(x => x.id === id) || {};
+    const state = !s.awake ? 'PC asleep' : m.installed === false ? 'not installed' : m.loaded ? `on the GPU · <b>${gb(m.vram_mb)}</b>${m.until ? ' · until ' + hhmm(m.until) : ''}${m.by === 'other' ? ' · coordinator?' : ''}` : 'not loaded';
+    return `<div class="cd ${m.loaded ? 'on' : ''}"><div><h3>${esc(info.name)}</h3><div class="tag">${esc(m.model || '')} · ${esc(info.tag)}</div></div><p>${esc(info.text)}</p>
+      <div class="st">${state}</div>
+      <div class="row"><button class="bt go" data-load="${id}" ${!s.awake || busy || m.loaded || m.installed === false ? 'disabled' : ''}>Load 30 min</button>
+        <button class="bt" data-unload="${id}" ${!s.awake || busy || !m.loaded ? 'disabled' : ''}>Unload</button>
+        <button class="bt" data-chat="${id}" ${!s.awake || m.installed === false ? 'disabled' : ''}>Chat</button></div></div>`;
+  }).join('');
+  const setups = SETUPS.map(x => `<div class="cd"><div><h3>${esc(x.name)}</h3><div class="tag">opens on the PC's screen</div></div><p>${esc(x.text)}</p>
+      <div class="row"><select class="sel" id="m-${x.id}">${opts(x.def)}</select><button class="bt go" data-launch="${x.id}" ${!s.awake || busy ? 'disabled' : ''}>Open on the PC</button></div></div>`).join('') +
+    `<div class="cd"><div><h3>video-use</h3><div class="tag">opens on the PC's screen · Qwen3.8</div></div>
+      <p>Edits video by conversation: cuts filler words and pauses, grades colour, adds subtitles and renders final.mp4. Whisper transcribes on the GPU. Put the footage in Videos\\video-use on the PC first. AI Studio's Video edit tab does the same from a browser.</p>
+      <div class="row"><button class="bt go" id="vuse" ${!s.awake || busy ? 'disabled' : ''}>Open on the PC</button></div></div>`;
+  const chat = `<div class="cd chat"><div class="row" style="margin:0"><h3 style="flex:1">Chat</h3><select class="sel" id="cm">${opts(chatModel)}</select><button class="bt" id="cclear">Clear</button></div>
+      <p class="tag">Ask a model from here. The answer comes from the PC's GPU, so the PC must be awake; the first answer waits while the model loads.</p>
+      <div class="msgs" id="msgs">${CHAT.map(m => `<div class="msg ${m.role}">${esc(m.content)}</div>`).join('')}</div>
+      <textarea class="in" id="ctext" placeholder="Type a question">${esc($('#ctext')?.value || '')}</textarea>
+      <div class="row" style="margin:0"><button class="bt go" id="csend" ${!s.awake || abort ? 'disabled' : ''}>Send</button>${abort ? '<button class="bt warn" id="cstop">Stop</button>' : ''}</div></div>`;
+  $('#main').innerHTML = top + '<div class="grp">Models</div>' + cards + '<div class="grp">Agents on the PC</div>' + setups + '<div class="grp">Chat</div>' + chat;
+  bind();
+}
+async function act(url, msg) {
+  const r = await post(url); const j = await r.json().catch(() => ({}));
+  if (r.status === 401) { location.href = '/pin?next=/localai'; return; }
+  toast(r.ok ? msg : (j.error || 'did not work')); setTimeout(load, 400);
+}
+function bind() {
+  const s = S || {}, models = s.models || [];
+  $('#wake') && ($('#wake').onclick = async () => { wakeAt = Date.now(); await post('/api/home/do', { do: 'wake_pc' }); toast('Wake-on-LAN sent. The PC takes about a minute.'); render(); });
+  $('#sleep') && ($('#sleep').onclick = async () => {
+    if (!confirm('Put the PC to sleep? Anything running on it pauses, including jobs of the AI coordinator.')) return;
+    const r = await post('/api/pc/do', { action: 'sleep' }); toast(r.ok ? 'The PC is going to sleep' : 'The PC did not answer'); setTimeout(load, 3000);
+  });
+  document.querySelectorAll('[data-load]').forEach(b => b.onclick = () => {
+    if (s.game && !confirm('A game is running. Load the model anyway? It takes GPU memory from the game.')) return;
+    act('/api/llm/load/' + b.dataset.load, 'Loading ' + MODELS[b.dataset.load].name + '. A first load takes up to a minute.');
+  });
+  document.querySelectorAll('[data-unload]').forEach(b => b.onclick = () => {
+    const m = models.find(x => x.id === b.dataset.unload);
+    if (m && m.by === 'other' && !confirm('The AI coordinator is probably using this model right now. Unloading it can cut its job off. Unload anyway?')) return;
+    act('/api/llm/unload/' + b.dataset.unload, 'Unloading ' + MODELS[b.dataset.unload].name);
+  });
+  document.querySelectorAll('[data-launch]').forEach(b => b.onclick = () => act(`/api/llm/launch/${b.dataset.launch}/${$('#m-' + b.dataset.launch).value}`, 'Opening on the PC\'s screen'));
+  $('#vuse') && ($('#vuse').onclick = () => act('/api/llm/video-use', 'Opening video-use on the PC\'s screen'));
+  document.querySelectorAll('[data-chat]').forEach(b => b.onclick = () => { chatModel = b.dataset.chat; localStorage.setItem('lai_model', chatModel); render(); $('#ctext').focus(); $('#ctext').scrollIntoView({ block: 'center' }); });
+  $('#cm').onchange = e => { chatModel = e.target.value; try { localStorage.setItem('lai_model', chatModel); } catch (x) { } };
+  $('#cclear').onclick = () => { CHAT = []; render(); };
+  $('#csend').onclick = send;
+  $('#cstop') && ($('#cstop').onclick = () => abort && abort.abort());
+  $('#ctext').onkeydown = e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send(); };
+  const ms = $('#msgs'); ms.scrollTop = ms.scrollHeight;
+}
+async function send() {
+  const t = $('#ctext').value.trim(); if (!t || abort) return;
+  CHAT.push({ role: 'user', content: t }); const ans = { role: 'assistant', content: '' }; CHAT.push(ans);
+  $('#ctext').value = ''; abort = new AbortController(); render();
+  const box = () => document.querySelector('#msgs .msg:last-child');
+  try {
+    const r = await fetch('/api/llm/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: abort.signal,
+      body: JSON.stringify({ model: chatModel, messages: CHAT.slice(0, -1) }) });
+    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || 'HTTP ' + r.status); }
+    if (box()) box().textContent = 'thinking…';
+    const rd = r.body.getReader(), dec = new TextDecoder(); let buf = '';
+    for (;;) {
+      const { value, done } = await rd.read(); if (done) break;
+      buf += dec.decode(value, { stream: true }); let i;
+      while ((i = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, i); buf = buf.slice(i + 1); if (!line.trim()) continue;
+        const j = JSON.parse(line); if (j.error) throw new Error(j.error);
+        ans.content += j.message?.content || ''; if (box()) box().textContent = ans.content || 'thinking…';
+        const ms = $('#msgs'); ms.scrollTop = ms.scrollHeight;
+      }
+    }
+  } catch (e) { if (e.name !== 'AbortError') ans.content += (ans.content ? '\n\n' : '') + '(' + e.message + ')'; else ans.content += ' (stopped)'; }
+  abort = null; render(); setTimeout(load, 500);
+}
+setInterval(() => { $('#clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }, 1000);
+load(); setInterval(() => { if (!abort) load(); }, 3000);
+</script>
+<script src="/nav.js" defer></script>
+</body>
+</html>

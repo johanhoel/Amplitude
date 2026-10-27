@@ -29,6 +29,7 @@ labpanel = "http://192.168.1.234:8790"            # lab panel service on monitor
 lab_panel_id = "lab"                                # the panel id the Buttons keys use (tile/lab/N.png)
 prometheus = "http://192.168.1.234:9090"
 camfeed = "http://192.168.1.81:8091"              # camwatch-feed (visits, thumbnails, latest event)
+ollama = "http://192.168.1.200:11434"             # Ollama on the PC (Local AI chat; the PC firewall allows .52)
 ntfy = "https://ntfy.sh"                            # home notices go here (topic is in secrets.json)
 piholes = ["192.168.1.30", "192.168.1.31"]
 
@@ -147,7 +148,7 @@ keep = 30                                           # older saves kept per page 
 
 [admin]
 # Pages that ask for the admin PIN (names as in the address, e.g. "admin" for /admin; "network" = /network.html)
-pages = ["admin", "ops", "lab", "net", "atlas", "network", "devices", "studio"]
+pages = ["admin", "ops", "lab", "net", "atlas", "network", "devices", "studio", "localai"]
 pin_min_digits = 4
 session_hours = 12                                  # how long a PIN unlocks a browser
 remember_days = 30                                  # with "remember this device"
