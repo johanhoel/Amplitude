@@ -190,11 +190,8 @@ docker compose logs -f dantestreamer  # startup, clock and AirPlay messages
 | `.env.example` | Names template; copy to `.env` |
 | `config/` | Templates for Virgil, Shairport Sync, ALSA and Snapcast |
 | `data/`, `logs/` | Created at runtime: live Virgil config and logs (not in git) |
-
-`BUILD_AND_TEST.md`, `DOCKER_SETUP.md`, `MULTI_SOURCE_AUDIO.md`,
-`DANTE_PLAYER_PROJECT.md` and `VIRGIL_API_REFERENCE.md` are older design
-notes. Parts of them describe plans that were never built, such as the
-Google Cast input and an API on port 8080.
+| `tools/screenshots.py` | Captures the panel screenshots in `docs/screenshots/` |
+| [`BUILD_AND_TEST.md`](BUILD_AND_TEST.md) | How the image is built, and how to check a change works |
 
 ## Roadmap
 
