@@ -36,3 +36,28 @@ Every project shows what it can do, with screenshots.
   faces or camera footage of people, no personal names, addresses or
   phone numbers. Use demo data or blur it.
 - Mention new or updated screenshots in the project's `CHANGELOG.md`.
+
+## Writing: no AI slop (always)
+
+Every piece of prose in an update follows the
+[no-ai-slop](https://github.com/petergyang/no-ai-slop) rules: READMEs,
+`CHANGELOG.md` entries, docs, commit messages, pull requests, UI text and
+code comments.
+
+- With the `/no-ai-slop` skill installed, check new or changed prose with
+  it before calling the work done. Without it, apply the rules below by
+  hand.
+- Lead with the point. Be concrete: names, numbers, file paths, what
+  changed and why, not "improves the experience".
+- Cut the banned words (delve, leverage, utilize, robust, seamless,
+  streamline, empower, cutting-edge, game changer, transformative, ...)
+  and empty filler ("it's worth noting", "at its core", "in order to").
+- Cut the patterns: "It's not X. It's Y.", throat-clearing openers,
+  "here's what nobody tells you", colon reveals ("The best part: it
+  learns."), importance puffery ("a testament to", "a pivotal moment"),
+  "experts agree" without a source, dramatic fragments, and fake-profound
+  closing lines.
+- Plain formatting: no emoji in headings, no bold sprinkled mid-sentence,
+  no bullets where two sentences read better, no em dashes as a habit.
+- Edits keep the author's voice: change what's sloppy, leave strong
+  sentences alone.
