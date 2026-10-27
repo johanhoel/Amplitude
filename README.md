@@ -22,6 +22,10 @@ amplitude/
 To add a project, create a new top-level folder, put everything it needs
 inside it, and add a row to the table above.
 
+Every project's README has a **Screenshots** section showing each of its
+features, kept up to date as features change. See [AGENTS.md](AGENTS.md)
+for the format.
+
 ## Working on a project
 
 ```bash
