@@ -10,7 +10,8 @@
   POST /api/media             {action: play_pause|next|previous} (Spotify)
   POST /api/pc/mic            PC microphone mute via deck-listener (Home Assistant only);  POST /api/pc/do {action}
   GET  /api/lab/state, POST /api/lab/close, GET /lab   lab panel (service on monitor)
-  GET  /api/llm/status, POST /api/llm/load|unload/<id>, /api/llm/launch/<setup>/<id>, /api/llm/video-use, /api/llm/chat   Local AI (admin)
+  GET  /api/llm/status, POST /api/llm/load|unload/<id>, /api/llm/launch/<setup>/<id>, /api/llm/video-use   Local AI (admin)
+  GET  /api/llm/chats[/<id>], POST /api/llm/chats {text, model, id?}, /api/llm/chats/<id>/stop|delete   saved chats (admin)
   GET  /api/cams, /api/cam/<entity>/snap|stream        cameras through the lab panel service
   GET  /api/family /api/net   Family and Network panels;  GET /api/sec/visits, /api/sec/thumb|crop/...  camera visits
   GET  /api/presence, /api/presence/unassigned, /metrics   Wi-Fi presence (and for Prometheus)
@@ -179,6 +180,13 @@ class Handler(SimpleHTTPRequestHandler):
             if not auth.is_admin(self.headers):
                 return self.send_json({'error': 'admin PIN needed', 'admin': True}, 401)
             return self.json_or_502(localai.state)
+        if p.startswith('/api/llm/chats'):                                # saved chats (admin only, reads too)
+            if not auth.is_admin(self.headers):
+                return self.send_json({'error': 'admin PIN needed', 'admin': True}, 401)
+            if p == '/api/llm/chats':
+                return self.send_json({'chats': localai.chats()})
+            c = localai.chat_get(p.rsplit('/', 1)[1])
+            return self.send_json(c) if c else self.send_json({'error': 'unknown chat'}, 404)
         if p.startswith('/api/studio/'):                                  # Home Deck Studio (admin only, reads too)
             if not auth.is_admin(self.headers):
                 return self.send_json({'error': 'admin PIN needed', 'admin': True}, 401)
@@ -309,8 +317,18 @@ class Handler(SimpleHTTPRequestHandler):
             if auth.needs_admin_post(self.path) and not auth.is_admin(self.headers):
                 return self.send_json({'error': 'admin PIN needed', 'admin': True}, 401)
             if self.path.startswith('/api/llm/'):                         # Local AI (admin, auth.ADMIN_POSTS)
-                if self.path == '/api/llm/chat':
-                    return localai.chat(self, json.loads(self.body(256 * 1024) or b'{}'))
+                if self.path == '/api/llm/chats':                         # ask (new chat, or more in one): a job, not tied to the page
+                    try:
+                        return self.send_json(localai.chat_send(json.loads(self.body(64 * 1024) or b'{}')))
+                    except ValueError as e:
+                        return self.send_json({'error': str(e)}, 400)
+                m = re.fullmatch(r'/api/llm/chats/([\w-]+)/(stop|delete)', self.path)
+                if m:
+                    try:
+                        (localai.chat_stop if m.group(2) == 'stop' else localai.chat_delete)(m.group(1))
+                    except ValueError as e:
+                        return self.send_json({'error': str(e)}, 400)
+                    return self.send_json({'ok': True})
                 m = re.fullmatch(r'/api/llm/(load|unload)/(\w+)|/api/llm/launch/(opencode|claude)/(\w+)|/api/llm/(video-use)', self.path)
                 if not m:
                     return self.send_json({'error': 'unknown'}, 404)

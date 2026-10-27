@@ -12,7 +12,7 @@
 /* Local AI: the language models on the PC's RTX 5090. Wake / sleep the PC, see what is on the GPU, load and unload
    models, open OpenCode / Claude Code / video-use on the PC's screen, and chat from here.
    Data: /api/llm/status (admin); actions: POST /api/llm/load|unload/<id>, /api/llm/launch/<setup>/<id>,
-   /api/llm/video-use, /api/llm/chat (streamed), /api/home/do wake_pc, /api/pc/do sleep */
+   /api/llm/video-use, /api/llm/chats (saved chats, answered on Home Deck), /api/home/do wake_pc, /api/pc/do sleep */
 :root { --hue: #a78bfa; --hue2: #38bdf8; }
 .grid { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -38,6 +38,14 @@ select.sel { min-height: 40px; border-radius: 12px; border: 1px solid var(--line
   border: 2px solid var(--hue); border-right-color: transparent; animation: spin .8s linear infinite; vertical-align: -1px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .chat { grid-column: 1 / -1; }
+.cw { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 14px; } @media (max-width: 700px) { .cw { grid-template-columns: minmax(0, 1fr); } }
+.cw > div, .cd, .grid > * { min-width: 0; } .wrap { padding-bottom: 96px; }   /* long chat titles never widen the page; room above the menu pill */
+.clist { display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow-y: auto; }
+.ci { text-align: left; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.04); color: var(--ink); font: inherit; }
+.ci.on { border-color: var(--hue); } .ci b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ci small { color: var(--mute); font-size: 12px; }
+.chip { font-size: 11px; padding: 1px 8px; border-radius: 99px; margin-left: 4px; background: rgba(255,255,255,.08); } .chip.answering, .chip.waiting { background: color-mix(in srgb, var(--hue) 35%, transparent); }
+.chip.cut { background: rgba(251,191,36,.18); color: #fde68a; }
+.msg .cut { display: block; margin-top: 6px; font-size: 12.5px; color: #fde68a; }
 .msgs { display: flex; flex-direction: column; gap: 10px; max-height: 55vh; overflow-y: auto; }
 .msg { max-width: 92%; padding: 10px 14px; border-radius: 16px; white-space: pre-wrap; font-size: 14.5px; line-height: 1.5; }
 .msg.user { align-self: flex-end; background: color-mix(in srgb, var(--hue) 30%, transparent); }
@@ -50,6 +58,7 @@ textarea.in { width: 100%; min-height: 70px; border-radius: 14px; border: 1px so
 <div class="wrap">
   <header class="head"><div><h1>Local AI</h1><div class="sub">Language models on the PC's RTX 5090</div></div><div class="right"><div class="clock num" id="clock">–</div></div></header>
   <main class="grid" id="main"><div class="grp">Loading…</div></main>
+  <div class="grid" style="margin-top:12px"><div class="grp">Chats</div><div class="cd chat" id="chat"></div></div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -71,7 +80,7 @@ const SETUPS = [
   { id: 'opencode', name: 'OpenCode', def: 'coder', text: 'A coding agent in a terminal on the PC. It reads and edits files, runs commands and uses skills such as video-use and no-ai-slop. Use Qwen3-Coder for code and Qwen3.8 for everything else.' },
   { id: 'claude', name: 'Claude Code (local)', def: 'qwen38', text: "Claude Code's interface driven by a local model instead of Anthropic's cloud. Same tools as OpenCode. Quality depends on the model, and long multi-step jobs are less reliable than with Claude itself." },
 ];
-let S = null, CHAT = [], abort = null, chatModel = localStorage.getItem('lai_model') || 'qwen38', touching = false, wakeAt = 0;
+let S = null, CL = [], OPEN = null, chatModel = localStorage.getItem('lai_model') || 'qwen38', touching = false, wakeAt = 0;
 addEventListener('pointerdown', () => touching = true, true); ['pointerup', 'pointercancel'].forEach(ev => addEventListener(ev, () => touching = false, true));
 const gb = mb => (mb / 1024).toFixed(1) + ' GB';
 const hhmm = iso => { try { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } };
@@ -83,7 +92,7 @@ async function load() {
     if (r.status === 401) { location.href = '/pin?next=/localai'; return; }
     S = await r.json();
   } catch (e) { S = { awake: false, error: 'Home Deck did not answer' }; }
-  if (!touching && !document.activeElement?.matches('textarea, select')) render();
+  if (!touching && !document.activeElement?.matches('select')) { render(); if (document.activeElement?.id !== 'ctext' && typeof chatRender === 'function' && !running(OPEN)) chatRender(); }
 }
 function render() {
   const s = S || {}, models = s.models || [], busy = s.busy || (s.job && !s.job.done), g = s.gpu || {};
@@ -110,12 +119,7 @@ function render() {
     `<div class="cd"><div><h3>video-use</h3><div class="tag">opens on the PC's screen · Qwen3.8</div></div>
       <p>Edits video by conversation: cuts filler words and pauses, grades colour, adds subtitles and renders final.mp4. Whisper transcribes on the GPU. Put the footage in Videos\\video-use on the PC first. AI Studio's Video edit tab does the same from a browser.</p>
       <div class="row"><button class="bt go" id="vuse" ${!s.awake || busy ? 'disabled' : ''}>Open on the PC</button></div></div>`;
-  const chat = `<div class="cd chat"><div class="row" style="margin:0"><h3 style="flex:1">Chat</h3><select class="sel" id="cm">${opts(chatModel)}</select><button class="bt" id="cclear">Clear</button></div>
-      <p class="tag">Ask a model from here. The answer comes from the PC's GPU, so the PC must be awake; the first answer waits while the model loads.</p>
-      <div class="msgs" id="msgs">${CHAT.map(m => `<div class="msg ${m.role}">${esc(m.content)}</div>`).join('')}</div>
-      <textarea class="in" id="ctext" placeholder="Type a question">${esc($('#ctext')?.value || '')}</textarea>
-      <div class="row" style="margin:0"><button class="bt go" id="csend" ${!s.awake || abort ? 'disabled' : ''}>Send</button>${abort ? '<button class="bt warn" id="cstop">Stop</button>' : ''}</div></div>`;
-  $('#main').innerHTML = top + '<div class="grp">Models</div>' + cards + '<div class="grp">Agents on the PC</div>' + setups + '<div class="grp">Chat</div>' + chat;
+  $('#main').innerHTML = top + '<div class="grp">Models</div>' + cards + '<div class="grp">Agents on the PC</div>' + setups;
   bind();
 }
 async function act(url, msg) {
@@ -141,40 +145,60 @@ function bind() {
   });
   document.querySelectorAll('[data-launch]').forEach(b => b.onclick = () => act(`/api/llm/launch/${b.dataset.launch}/${$('#m-' + b.dataset.launch).value}`, 'Opening on the PC\'s screen'));
   $('#vuse') && ($('#vuse').onclick = () => act('/api/llm/video-use', 'Opening video-use on the PC\'s screen'));
-  document.querySelectorAll('[data-chat]').forEach(b => b.onclick = () => { chatModel = b.dataset.chat; localStorage.setItem('lai_model', chatModel); render(); $('#ctext').focus(); $('#ctext').scrollIntoView({ block: 'center' }); });
-  $('#cm').onchange = e => { chatModel = e.target.value; try { localStorage.setItem('lai_model', chatModel); } catch (x) { } };
-  $('#cclear').onclick = () => { CHAT = []; render(); };
-  $('#csend').onclick = send;
-  $('#cstop') && ($('#cstop').onclick = () => abort && abort.abort());
-  $('#ctext').onkeydown = e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send(); };
+  document.querySelectorAll('[data-chat]').forEach(b => b.onclick = () => { chatModel = b.dataset.chat; OPEN = null; chatRender(); $('#ctext').focus(); $('#chat').scrollIntoView({ block: 'start' }); });
+}
+// ---------- saved chats: answers run on Home Deck and keep going when this page closes ----------
+const ago = t => { const d = Math.round(Date.now() / 1000 - t); return d < 60 ? 'just now' : d < 3600 ? Math.round(d / 60) + ' min ago' : d < 86400 ? Math.round(d / 3600) + ' h ago' : new Date(t * 1000).toLocaleDateString(); };
+const chipOf = st => st === 'answering' ? '<span class="chip answering">answering…</span>' : st === 'waiting' ? '<span class="chip waiting">waiting for the GPU</span>'
+  : st === 'cut off' ? '<span class="chip cut">cut off</span>' : st === 'stopped' ? '<span class="chip">stopped</span>' : '';
+const running = c => c && ['answering', 'waiting'].includes(c.status);
+async function chatList() {
+  const r = await fetch('/api/llm/chats', { cache: 'no-store' }); if (r.status === 401) return;
+  CL = (await r.json()).chats || [];
+}
+async function chatOpen(id) {
+  if (!id) { OPEN = null; return chatRender(); }
+  const r = await fetch('/api/llm/chats/' + id, { cache: 'no-store' }); OPEN = r.ok ? await r.json() : null; chatRender();
+}
+function chatRender() {
+  const box = $('#chat'), keep = $('#ctext')?.value || '', focused = document.activeElement?.id === 'ctext';
+  const msgs = OPEN ? OPEN.messages.map((m, i) => {
+    const last = i === OPEN.messages.length - 1 && m.role === 'assistant';
+    const body = m.content || (last && running(OPEN) ? (OPEN.status === 'waiting' ? 'waiting for the GPU…' : 'thinking…') : '');
+    return `<div class="msg ${m.role}">${esc(body)}${last && OPEN.note ? `<span class="cut">${esc(OPEN.note)}</span>` : ''}</div>`;
+  }).join('') : '<div class="tag">A new chat. Answers keep going on Home Deck if you close this page, and every chat is saved here.</div>';
+  box.innerHTML = `<div class="cw"><div><button class="bt go" id="cnew" style="width:100%;margin-bottom:8px">New chat</button><div class="clist">${CL.map(c => `<button class="ci ${OPEN && OPEN.id === c.id ? 'on' : ''}" data-open="${c.id}">
+      <b>${esc(c.title)}</b><small>${esc(c.model)} · ${ago(c.updated)}</small>${chipOf(c.status)}</button>`).join('') || '<div class="tag">No chats yet.</div>'}</div></div>
+    <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+      <div class="row" style="margin:0"><h3 style="flex:1;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${OPEN ? esc(OPEN.title) : 'New chat'}</h3>
+        ${OPEN ? `<span class="tag">${esc(OPEN.model)}</span>${chipOf(OPEN.status)}` : `<select class="sel" id="cm">${opts(chatModel)}</select>`}</div>
+      <div class="msgs" id="msgs">${msgs}</div>
+      <textarea class="in" id="ctext" placeholder="${OPEN ? 'Ask more in this chat' : 'Type a question'}">${esc(keep)}</textarea>
+      <div class="row" style="margin:0"><button class="bt go" id="csend" ${!(S && S.awake) || running(OPEN) ? 'disabled' : ''}>Send</button>
+        ${running(OPEN) ? '<button class="bt warn" id="cstop">Stop</button>' : ''}${OPEN && !running(OPEN) ? '<button class="bt" id="cdel">Delete chat</button>' : ''}
+        ${S && !S.awake ? '<span class="tag">The PC is asleep: wake it first.</span>' : ''}</div></div></div>`;
   const ms = $('#msgs'); ms.scrollTop = ms.scrollHeight;
+  if (focused) { const t = $('#ctext'); t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
+  $('#cnew').onclick = () => { OPEN = null; chatRender(); $('#ctext').focus(); };
+  document.querySelectorAll('[data-open]').forEach(b => b.onclick = () => chatOpen(b.dataset.open));
+  $('#cm') && ($('#cm').onchange = e => { chatModel = e.target.value; try { localStorage.setItem('lai_model', chatModel); } catch (x) { } });
+  $('#csend').onclick = send; $('#ctext').onkeydown = e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send(); };
+  $('#cstop') && ($('#cstop').onclick = async () => { await post(`/api/llm/chats/${OPEN.id}/stop`); setTimeout(() => chatOpen(OPEN.id), 400); });
+  $('#cdel') && ($('#cdel').onclick = async () => { if (!confirm('Delete this chat? It cannot be brought back.')) return;
+    await post(`/api/llm/chats/${OPEN.id}/delete`); OPEN = null; await chatList(); chatRender(); });
 }
 async function send() {
-  const t = $('#ctext').value.trim(); if (!t || abort) return;
-  CHAT.push({ role: 'user', content: t }); const ans = { role: 'assistant', content: '' }; CHAT.push(ans);
-  $('#ctext').value = ''; abort = new AbortController(); render();
-  const box = () => document.querySelector('#msgs .msg:last-child');
-  try {
-    const r = await fetch('/api/llm/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: abort.signal,
-      body: JSON.stringify({ model: chatModel, messages: CHAT.slice(0, -1) }) });
-    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || 'HTTP ' + r.status); }
-    if (box()) box().textContent = 'thinking…';
-    const rd = r.body.getReader(), dec = new TextDecoder(); let buf = '';
-    for (;;) {
-      const { value, done } = await rd.read(); if (done) break;
-      buf += dec.decode(value, { stream: true }); let i;
-      while ((i = buf.indexOf('\n')) >= 0) {
-        const line = buf.slice(0, i); buf = buf.slice(i + 1); if (!line.trim()) continue;
-        const j = JSON.parse(line); if (j.error) throw new Error(j.error);
-        ans.content += j.message?.content || ''; if (box()) box().textContent = ans.content || 'thinking…';
-        const ms = $('#msgs'); ms.scrollTop = ms.scrollHeight;
-      }
-    }
-  } catch (e) { if (e.name !== 'AbortError') ans.content += (ans.content ? '\n\n' : '') + '(' + e.message + ')'; else ans.content += ' (stopped)'; }
-  abort = null; render(); setTimeout(load, 500);
+  const t = $('#ctext').value.trim(); if (!t) return;
+  const r = await post('/api/llm/chats', { id: OPEN?.id, model: OPEN ? undefined : chatModel, text: t });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) return toast(j.error || 'did not work');
+  $('#ctext').value = ''; OPEN = j; await chatList(); chatRender();
 }
+setInterval(async () => { if (running(OPEN) && !touching) { const id = OPEN.id; await chatOpen(id); if (!running(OPEN)) { await chatList(); chatRender(); } } }, 900);
+setInterval(async () => { if (document.activeElement?.id !== 'ctext') { await chatList(); chatRender(); } }, 5000);
+chatList().then(chatRender);
 setInterval(() => { $('#clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }, 1000);
-load(); setInterval(() => { if (!abort) load(); }, 3000);
+load(); setInterval(load, 3000);
 </script>
 <script src="/nav.js" defer></script>
 </body>

@@ -7,7 +7,7 @@ live preview of an unsaved backend file) also runs the read-only status refresh.
 import os, sys, threading
 from http.server import ThreadingHTTPServer
 
-from . import leave, presence, status, studio
+from . import leave, localai, presence, status, studio
 from .config import C, REPORT
 from .web import Handler
 
@@ -30,6 +30,8 @@ def run():
         jobs = (status.refresher,)
     else:
         jobs = (status.refresher, presence.presence_loop, presence.camera_trigger_loop, leave.leave_watch_loop, studio.watch_loop)
+    if os.environ.get('HOMEDECK_PREVIEW') != '1':        # Local AI chats: answers keep going when a page closes
+        jobs = tuple(jobs) + (localai.chat_worker,)
     for job in jobs:
         threading.Thread(target=job, name=job.__name__, daemon=True).start()
     port = int(os.environ.get('HOMEDECK_PORT') or C.PORT)

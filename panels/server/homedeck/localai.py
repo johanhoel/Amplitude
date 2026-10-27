@@ -5,14 +5,16 @@
   act(kind, ...)     load / unload a model, open OpenCode / Claude Code / video-use on the PC's screen. deck-listener
                      answers one request at a time and a first load takes up to a minute, so actions run in the
                      background here and state() reports them; the panel never waits on the PC
-  chat(...)          Ollama /api/chat on the PC, streamed through Home Deck (Ollama has no login; it is never exposed
-                     to phones directly, and the panel is behind the admin PIN)
+  chats / chat_*     saved chats: each answer is a job here that keeps going when the page closes or the phone sleeps;
+                     one answer at a time (one GPU), the rest wait; a cut-off answer keeps what arrived. Files in
+                     $STATE/chats (private). Ollama has no login, so it is never exposed to phones; all of it needs the PIN
 The AI coordinator (.55) loads models only for the length of one request, so a loaded model this panel did not
 load is most likely in use by the coordinator: the panel warns before unloading it.
 """
-import json, re, threading, time, urllib.request
+import json, os, queue, re, threading, time, urllib.request
 
-from .config import C
+from .config import C, STATE
+from .store import load, save
 
 _job = {}                      # the action running now / the last one: {action, label, started, done, ok, result}
 _ours = {}                     # model id -> when this panel loaded it
@@ -90,32 +92,133 @@ def act(kind, mid='', setup=''):
     return {'ok': True, 'started': label}
 
 
-def chat(handler, req):
-    """Stream Ollama's /api/chat answer (NDJSON lines) straight to the browser."""
-    names = {m['id']: m['model'] for m in _last.get('models', [])}
-    model = names.get(req.get('model'))
-    if not model:
-        return handler.send_json({'error': 'pick a model'}, 400)
-    msgs = [{'role': m['role'], 'content': str(m.get('content', ''))[:20000]} for m in (req.get('messages') or [])[-30:]
-            if isinstance(m, dict) and m.get('role') in ('user', 'assistant', 'system')]
-    if not msgs:
-        return handler.send_json({'error': 'nothing to send'}, 400)
-    body = json.dumps({'model': model, 'messages': msgs, 'stream': True, 'think': bool(req.get('think'))}).encode()
+# ---------- saved chats: each answer is a job on Home Deck, not tied to the browser ----------
+CHATS = os.path.join(STATE, 'chats')           # one private JSON file per chat (never in git, never logged)
+_queue = queue.Queue()                         # one GPU: answers run one at a time, the rest wait
+_stop = set()                                  # chat ids asked to stop
+_clock = threading.Lock()
+
+
+def _cpath(cid):
+    return os.path.join(CHATS, cid + '.json')
+
+
+def _cload(cid):
+    if not re.fullmatch(r'c-\d{8}-\d{6}-[0-9a-f]{4}', cid or '') or not os.path.exists(_cpath(cid)):
+        return None
+    return load(_cpath(cid), None)
+
+
+def _csave(c):
+    os.makedirs(CHATS, mode=0o700, exist_ok=True)
+    c['updated'] = time.time()
+    save(_cpath(c['id']), c, private=True)
+
+
+def chats():
+    """The list: newest first, without the messages."""
+    out = []
+    if os.path.isdir(CHATS):
+        for f in os.listdir(CHATS):
+            if f.endswith('.json'):
+                c = load(os.path.join(CHATS, f), None)
+                if c:
+                    out.append({k: c.get(k) for k in ('id', 'model', 'title', 'created', 'updated', 'status')} | {'n': len(c.get('messages', []))})
+    return sorted(out, key=lambda c: c['updated'] or 0, reverse=True)
+
+
+def chat_get(cid):
+    return _cload(cid)
+
+
+def chat_send(req):
+    """Add a question to a chat (a new one when no id) and queue the answer. Returns the chat."""
+    names = {m['id']: m['model'] for m in _last.get('models', [])} or {'qwen38': 'qwen3.8:27b', 'gemma4': 'gemma4:26b',
+                                                                       'coder': 'qwen3-coder:30b', 'small': 'qwen3:4b-instruct-2507-q4_K_M'}
+    text = str(req.get('text') or '').strip()[:20000]
+    if not text:
+        raise ValueError('nothing to send')
+    with _clock:
+        c = _cload(req.get('id')) if req.get('id') else None
+        if c and c['status'] in ('answering', 'waiting'):
+            raise ValueError('this chat is still answering')
+        mid = req.get('model') if req.get('model') in names else (c or {}).get('model_id')
+        if mid not in names:
+            raise ValueError('pick a model')
+        if not c:
+            now = time.strftime('%Y%m%d-%H%M%S')
+            c = {'id': f'c-{now}-{os.urandom(2).hex()}', 'created': time.time(), 'title': text.split('\n')[0][:80], 'messages': []}
+        c.update(model_id=mid, model=names[mid], status='waiting', note='')
+        c['messages'] += [{'role': 'user', 'content': text, 'at': time.time()},
+                          {'role': 'assistant', 'content': '', 'at': time.time(), 'model': names[mid]}]
+        _csave(c)
+    _queue.put(c['id'])
+    return c
+
+
+def chat_stop(cid):
+    c = _cload(cid)
+    if not c:
+        raise ValueError('unknown chat')
+    _stop.add(cid)
+    if c['status'] == 'waiting':                   # not started yet: just mark it
+        c.update(status='stopped', note='stopped before it started'); _csave(c)
+
+
+def chat_delete(cid):
+    c = _cload(cid)
+    if not c:
+        raise ValueError('unknown chat')
+    if c['status'] in ('answering', 'waiting'):
+        raise ValueError('stop it first')
+    os.remove(_cpath(cid))
+
+
+def _answer(cid):
+    c = _cload(cid)
+    if not c or c['status'] != 'waiting' or cid in _stop:
+        _stop.discard(cid)
+        return
+    c['status'] = 'answering'; _csave(c)
+    msgs = [{'role': m['role'], 'content': m['content']} for m in c['messages'][:-1]][-40:]
+    ans, done, last_save = c['messages'][-1], False, 0
     try:
-        r = urllib.request.urlopen(urllib.request.Request(C.OLLAMA + '/api/chat', data=body, headers={'Content-Type': 'application/json'}),
-                                   timeout=300)
+        body = json.dumps({'model': c['model'], 'messages': msgs, 'stream': True, 'think': False,
+                           'keep_alive': '30m'}).encode()             # same as the panel's Load, not Ollama's default
+        req = urllib.request.Request(C.OLLAMA + '/api/chat', data=body, headers={'Content-Type': 'application/json'})
+        with urllib.request.urlopen(req, timeout=300) as r:
+            for line in r:
+                if cid in _stop:
+                    break
+                if not line.strip():
+                    continue
+                j = json.loads(line)
+                if j.get('error'):
+                    raise RuntimeError(j['error'])
+                ans['content'] += (j.get('message') or {}).get('content', '')
+                done = bool(j.get('done'))
+                if time.time() - last_save > 0.7:      # the page follows the saved file
+                    _csave(c); last_save = time.time()
+        if cid in _stop:
+            c.update(status='stopped', note='stopped')
+        elif done:
+            c.update(status='done', note='')
+        else:
+            c.update(status='cut off', note='the answer ended early (model unloaded or the PC went to sleep)')
     except Exception as e:
-        return handler.send_json({'error': 'the PC did not answer' if 'timed out' in str(e) or 'refused' in str(e) else str(e)[:200]}, 502)
-    handler.send_response(200)
-    handler.send_header('Content-Type', 'application/x-ndjson'); handler.send_header('Cache-Control', 'no-store')
-    handler.send_header('Connection', 'close'); handler.end_headers()
-    handler.close_connection = True
-    with r:
-        for line in r:
-            try:
-                handler.wfile.write(line); handler.wfile.flush()
-            except (BrokenPipeError, ConnectionResetError):
-                return                                   # the phone pressed Stop or left: closing r stops Ollama too
+        why = 'the PC did not answer (asleep?)' if 'timed out' in str(e) or 'refused' in str(e) or 'unreachable' in str(e) else str(e)[:160]
+        c.update(status='cut off', note=why)
+    finally:
+        _stop.discard(cid)
+        _csave(c)
+
+
+def chat_worker():
+    for c in chats():                              # after a restart: nothing is running any more
+        if c['status'] in ('answering', 'waiting'):
+            full = _cload(c['id']); full.update(status='cut off', note='Home Deck restarted while it was answering'); _csave(full)
+    while True:
+        _answer(_queue.get())
 
 
 def valid_id(s):
