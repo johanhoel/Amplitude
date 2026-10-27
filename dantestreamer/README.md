@@ -55,6 +55,23 @@ AirPlay (iOS/macOS)  │  Google Cast (Android)  │  Dante Network
 
 ---
 
+## Screenshots
+
+The control panel (Virgil Control) runs on the DanteStreamer host at
+`http://127.0.0.1:8480/`.
+
+| | |
+|---|---|
+| ![Status](docs/screenshots/status.jpg)<br>**Status**: Dante clock lock and leader, sample rate and channels, network address, apps playing | ![Meters](docs/screenshots/meters.jpg)<br>**Meters**: live levels per Dante channel, both directions (AirPlay plays on transmit 1 and 2) |
+| ![Diagnostics](docs/screenshots/diagnostics.jpg)<br>**Dropouts and diagnostics**: dropouts per minute by cause, what to do about them, and an event log | ![Routing](docs/screenshots/routing.jpg)<br>**Routing**: how DanteStreamer appears in Dante Controller |
+| ![Settings](docs/screenshots/settings.jpg)<br>**Settings**: device and channel names, interface, sample rate, latency, clock, remote access, start/stop | |
+
+| Phone |
+|---|
+| <img src="docs/screenshots/phone-panel.jpg" width="300"> |
+
+---
+
 ## Quick Start
 
 ### Prerequisites
