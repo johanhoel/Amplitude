@@ -10,13 +10,13 @@ Self-hosted camera service for one RTSP camera: motion and object detection (YOL
 - **Detection**: cheap pixel motion gates YOLOv8 (person, car, truck, motorcycle, bicycle, dog, cat, …); parked vehicles are ignored automatically; loitering alerts.
 - **Zones** drawn in the web UI: ignore, trigger (alerts say "person at door"), house/street (arrived/left), parking (car arrived/left).
 - **Alerts** via ntfy (server, topic and login set in Settings) with snapshot and **Open / Star / Snooze 1h** buttons; arm/disarm with schedule; snooze a camera; camera offline alerts; daily summary.
-- **Several cameras** (up to 4), added in Settings with **Find** (network scan + ONVIF reads the stream addresses); a walk past several cameras is **one visit** with one push and *Play all*.
+- **Several cameras** (up to 4), added in Settings with **Find** (network scan + ONVIF reads the stream addresses); a walk past several cameras is one visit with one push and *Play all*.
 - **Unusual activity**: each camera learns when people, cars and animals normally appear; a visit at an unusual time or place gets an urgent push.
 - **Faces**: offline matching of recorded clips against `photos/<Person>/`; tag faces in the UI to improve matching; automatic re-check when the library changes.
 - **Number plates** of arriving/moving vehicles, known plates with names.
 - **Presence log** in MariaDB: visits, who, direction, cars coming and going.
 - **Dashboard** (`/dashboard`): today at a glance and a tile for every page.
-- **Weekly report** (`/report`) with per-day/hour charts and a **heatmap** of where people walk; weekly push.
+- **Weekly report** (`/report`) with per-day/hour charts and a heatmap of where people walk; weekly push.
 - **Packages**: draw a package zone on the doorstep to get "delivered" / "picked up" alerts.
 - **Timelapse**: the whole day in a minute plus a highlights reel of every event, built nightly.
 - **Share a blurred copy** of a clip (faces and plates pixelated, sound removed).
@@ -71,7 +71,7 @@ sudo mariadb -e "CREATE DATABASE camwatch; CREATE USER 'camwatch'@'localhost' ID
 Then:
 
 ```bash
-git clone https://github.com/<you>/camwatch.git && cd camwatch
+git clone https://github.com/johanhoel/amplitude.git && cd amplitude/CamWatch
 cp .env.example .env        # set RTSP_URL, NTFY_TOPIC, TZ, paths, WEB_BASE_URL, WEB_PASSWORD, DB_PASSWORD
 sudo ./deploy.sh            # installs Docker if needed, copies to /opt/camwatch, builds and starts
 ```

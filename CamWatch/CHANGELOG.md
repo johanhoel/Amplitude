@@ -4,6 +4,7 @@ Newest first.
 
 ## 2026-10-27
 
+- README: install clones `amplitude` and works in `CamWatch/` (the old command pointed at a standalone repo)
 - README: screenshots of every page (desktop and phone), from demo data with `dev/screenshots.py`
 - Camera 1 can be switched off (removed) like the other cameras
 - Version indicator (2026.10.27) on every page and in `/api/version`

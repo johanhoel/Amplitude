@@ -1,7 +1,7 @@
 # Amplitude
 
-A collection of AV and audio projects. Each project lives in its own folder
-with its own README, Dockerfile and config.
+Johan's AV, audio and home-lab projects, one folder each. Every folder has
+its own README, changelog and setup.
 
 | Project | What it does |
 |---------|--------------|
@@ -22,16 +22,16 @@ amplitude/
 To add a project, create a new top-level folder, put everything it needs
 inside it, and add a row to the table above with a link to its `CHANGELOG.md`.
 
-Every project's README has a **Screenshots** section showing each of its
-features, kept up to date as features change. See [AGENTS.md](AGENTS.md)
-for the format.
+Every project's README has a Screenshots section with one screenshot per
+feature, updated whenever a feature changes. All READMEs, changelogs and
+commit messages follow the no-AI-slop writing rules. Both rules are in
+[AGENTS.md](AGENTS.md).
 
 ## Working on a project
 
 ```bash
 git clone https://github.com/johanhoel/amplitude.git
-cd amplitude/dantestreamer
-docker compose up -d --build
+cd amplitude/<project>      # then follow that project's README
 ```
 
-Changes go on a short-lived branch and are merged into `main` by pull request.
+Changes go on a short-lived branch and are merged into `main`.

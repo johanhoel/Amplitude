@@ -49,8 +49,8 @@ It installs the code, pages, services and commands, starts the panels, then prin
 Run it again any time with `sudo homedeck-onboard`. Running `install.sh` again updates the code and keeps
 settings, token and layouts.
 
-Not covered by the install: the secrets are entered in the wizard / panel settings, and layouts made on the old
-server (walls, boards, Studio) stay there unless copied from `/var/lib/panel-wrapper`.
+The install doesn't bring over secrets or old layouts. Enter secrets in the wizard or the panel settings. Layouts
+made on the old server (walls, boards, Studio) stay there unless you copy them from `/var/lib/panel-wrapper`.
 
 | | |
 |---|---|

@@ -1,59 +1,20 @@
 # DanteStreamer
 
-**Stream audio to Dante networks from any device — AirPlay, Google Cast, or native Dante.**
+DanteStreamer plays AirPlay audio from an iPhone, iPad or Mac into a Dante
+network. It shows up in Dante Controller as a Dante device with 8 transmit
+and 8 receive channels. AirPlay plays on transmit channels 1 and 2, which you
+route to any Dante speaker, amp or mixer.
 
-Self-hosted Dante player built on [Inferno](https://github.com/teodly/inferno) (open-source Dante protocol implementation) with multi-source input support.
+It runs in one Docker container on a Linux host. The Dante side is
+[Virgil](https://github.com/Audbol/virgil-virtual-soundcard), a virtual
+soundcard built on [Inferno](https://github.com/teodly/inferno), the
+open-source Dante implementation. AirPlay comes in through
+[Shairport Sync](https://github.com/mikebrady/shairport-sync).
 
 ```
-AirPlay (iOS/macOS)  │  Google Cast (Android)  │  Dante Network
-        │                      │                        │
-        └──────────┬───────────┴────────────┬───────────┘
-                   │                        │
-              ┌────▼────────────────────────▼────┐
-              │    DanteStreamer Container       │
-              │  (AirPlay + Chromecast Receiver) │
-              │  (DanteStreamer Engine)         │
-              └────┬─────────────────────────────┘
-                   │
-              ┌────▼──────────┐
-              │  Dante Network │
-              │  (Speakers,    │
-              │   Monitors,    │
-              │   Mixers, etc) │
-              └───────────────┘
+iPhone / Mac ──AirPlay──> Shairport Sync ──> ALSA "virgil" device ──> Virgil ──> Dante network
+                          (in the DanteStreamer container)              TX 1-2     (Dante Controller routes it)
 ```
-
----
-
-## Features
-
-✅ **Multi-Source Input**
-- AirPlay from iOS, macOS, iTunes
-- Google Cast from Android, Chromecast devices
-- Native Dante network audio
-
-✅ **Single Output**
-- Dante network (128 channels @ 44.1–96 kHz)
-- Route to any Dante-capable device (speakers, monitors, mixers)
-
-✅ **Easy Deployment**
-- Docker container (Linux, Mac, Windows)
-- Runs on Raspberry Pi, VM, or server
-- No Dante hardware dongle required* (*if joining existing network)
-
-✅ **Control & Monitoring**
-- HTTP REST API
-- Web dashboard
-- CLI management
-- Real-time level meters & clock sync status
-
-✅ **Production-Ready**
-- Low-latency audio (configurable 0.25–4 ms)
-- Automatic network failover
-- Dropout detection & logging
-- PTP clock synchronization
-
----
 
 ## Screenshots
 
@@ -70,330 +31,182 @@ The control panel (Virgil Control) runs on the DanteStreamer host at
 |---|
 | <img src="docs/screenshots/phone-panel.jpg" width="300"> |
 
----
+## Features
 
-## Quick Start
+- AirPlay receiver, named whatever you like, mixed into Dante transmit 1 and 2.
+- Dante device with up to 128 channels each way at 44.1, 48, 88.2 or 96 kHz
+  (8 by 8 at 48 kHz by default), following the network's Dante clock leader.
+  It can lead the clock itself when no other Dante device does.
+- Device, AirPlay and channel names set in one `.env` file.
+- Control panel with clock status, level meters, dropout diagnostics and
+  settings, plus a REST API on the same port.
+- Renames made in Dante Controller and Stop/Start in the panel are saved
+  across restarts.
 
-### Prerequisites
-- Docker + Docker Compose
-- Ethernet connection (for Dante network)
-- One device on the same network (to send audio: iPhone, Android, Mac, Chromecast)
+Google Cast is not supported yet. The image includes Snapcast, but Snapcast
+is not a Cast receiver, so it is switched off (`CHROMECAST_ENABLED=false`).
 
-### Run (3 commands)
+## Requirements
+
+- A Linux host on the same wired network as your Dante devices: a VM with a
+  bridged network card, a mini PC or a Raspberry Pi. Docker Desktop on Mac
+  or Windows does not work, because Dante needs the host's network for PTP
+  and multicast.
+- Docker with the Compose plugin.
+- A Dante clock leader on the network, usually any Dante hardware. Without
+  one, tick "Become clock leader" in the panel (`master_capable = true`).
+
+Tested on Debian 13 in a Proxmox VM with Docker 29.
+
+## Install
+
 ```bash
 git clone https://github.com/johanhoel/amplitude.git
 cd amplitude/dantestreamer
+cp .env.example .env            # set the names, see below
 docker compose up -d --build
 ```
 
-**That's it.** DanteStreamer is now running:
-- 🎵 Send AirPlay from your iPhone → plays on Dante network
-- 📱 Send Google Cast from Android → plays on Dante network
-- 📡 Connect native Dante devices → routes seamlessly
+The first build compiles Virgil from source and takes a few minutes. Then:
 
-### Access Control Panel
-```
-http://localhost:8080
-```
+1. On an iPhone, open Control Center, long-press the music player, tap the
+   AirPlay icon and pick DanteStreamer (or the name you set).
+2. In Dante Controller, subscribe your speaker's receive channels to
+   DanteStreamer's transmit 1 and 2 (`AirPlay L` and `AirPlay R`).
 
----
+## Names
 
-## How It Works
-
-### Architecture
-```
-┌─────────────────────────────────────┐
-│  Input Layer                        │
-│  • Shairport-sync (AirPlay RX)      │
-│  • Snapcast (Google Cast RX)        │
-│  • ALSA input (native audio)        │
-└────────────┬────────────────────────┘
-             │
-        ┌────▼──────────────┐
-        │  ALSA Mixer       │  Combines all sources
-        │  (multiple streams)
-        └────┬──────────────┘
-             │
-        ┌────▼──────────────────┐
-        │  DanteStreamer Engine │  Encodes to Dante
-        │  (Inferno protocol)   │
-        └────┬──────────────────┘
-             │
-        ┌────▼─────────────┐
-        │  Dante Network    │  Routable to any device
-        │  (UDP multicast)  │
-        └──────────────────┘
-```
-
-### Flow
-1. **AirPlay device** (iPhone) sends audio → Shairport-sync receives it
-2. **Chromecast device** (Android) sends audio → Snapcast receives it
-3. Both streams → ALSA mixer (combines into single output)
-4. **DanteStreamer** reads ALSA mixer, encodes as Dante packets
-5. **Dante network** receives audio, routes to speakers/monitors
-
----
-
-## Configuration
-
-### Names (Dante, AirPlay, channels)
 Give each DanteStreamer its own name so it's easy to find in Dante
-Controller and on your phone. Names live in `.env` next to
+Controller and on your phone. The names are in `.env` next to
 `docker-compose.yml`:
 
 ```bash
-cp .env.example .env
 nano .env                 # DEVICE_NAME, AIRPLAY_NAME, TX_CHANNEL_NAMES
-docker compose up -d      # applies the new names
+docker compose up -d      # applies the new names (a few seconds of silence)
 ```
 
 - `DEVICE_NAME`: name in Dante Controller (letters, digits, `-`, `_`,
   spaces; max 31). It is reapplied on every start, so rename the device
   here rather than in Dante Controller.
-- `AIRPLAY_NAME`: name your phone shows. Empty = same as `DEVICE_NAME`.
+- `AIRPLAY_NAME`: name your phone shows. Empty means the same as
+  `DEVICE_NAME`.
 - `TX_CHANNEL_NAMES` / `RX_CHANNEL_NAMES`: comma-separated channel names,
-  e.g. `AirPlay L,AirPlay R`. AirPlay plays on TX 1 and TX 2. Leave
-  empty to keep names set in Dante Controller.
+  e.g. `AirPlay L,AirPlay R`. Leave them empty to keep names set in Dante
+  Controller.
 
-The live Virgil config is `data/virgil.conf` (created from
-`config/dantestreamer.conf` on first start).
+A name that breaks Dante's rules stops the container with a message in
+`docker compose logs` instead of starting with a bad name.
 
-### Edit Settings
+## Other settings
+
+Virgil's live config is `data/virgil.conf`, created from
+`config/dantestreamer.conf` on first start. Change settings in the panel's
+Settings section, or edit the file and run
+`docker compose restart dantestreamer`.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `interface` | empty (first wired adapter) | Network adapter on the Dante network, by name or IPv4 address |
+| `sample_rate` | `48000` | Must match the other Dante devices |
+| `tx_channels` / `rx_channels` | `8` / `8` | Dante channels each way, up to 128 |
+| `latency_us` / `tx_latency_us` | `4000` | Receive buffer and transmit lead in microseconds; transmit needs at least 3.5 ms |
+| `master_capable` | `false` | Lead the Dante clock when no other device does. Only one device per network should. |
+| `remote_access` | `false` | Open the panel to other computers; needs `remote_password` |
+
+The full reference is `config/virgil.conf.example` in the Virgil repo.
+
+## Control panel and API
+
+The panel and API listen only on the host itself, at `127.0.0.1:8480`.
+To open the panel from another computer, either set `remote_access = true`
+and a `remote_password` (plain HTTP, so only on a trusted network), or use
+an SSH tunnel. The local port must be 8480, because Virgil checks it:
+
 ```bash
-vim config/dantestreamer.conf
+ssh -L 8480:127.0.0.1:8480 <user>@<host>      # then open http://localhost:8480/
 ```
 
-**Key settings:**
-```toml
-[device]
-name = "DanteStreamer"      # Name in Dante Controller
-enabled = true
+API endpoints, all under `http://127.0.0.1:8480`:
 
-[network]
-interface = ""              # Auto-detect (or specify eth0, en0, etc)
-tx_latency_us = 4000        # Transmit ahead (4 ms default)
-latency_us = 4000           # Receive buffer depth
+| Endpoint | What it returns or does |
+|---|---|
+| `GET /api/status` | Device, clock state, channel names, meters, dropouts, connected apps |
+| `GET /api/config`, `POST /api/config` | Read or change the settings |
+| `GET /api/diagnostics` | Dropout history and events (`/api/diagnostics/report` for a full report) |
+| `GET /api/interfaces` | Network adapters Virgil can use |
+| `POST /api/start`, `/api/stop`, `/api/restart` | Join or leave the Dante network, restart the audio engine |
 
-[audio]
-sample_rate = 48000         # 44.1, 48, or 96 kHz
-channels = 8                # How many channels output to Dante
-
-[inputs]
-airplay_enabled = true      # Listen for AirPlay
-airplay_port = 5000
-
-chromecast_enabled = true   # Listen for Google Cast
-chromecast_port = 5353
-
-[logging]
-level = "debug"             # info, warn, error
-file = "/var/log/dantestreamer.log"
-```
-
-### Restart After Changes
 ```bash
-docker-compose restart dantestreamer
+curl -s http://127.0.0.1:8480/api/status | python3 -m json.tool
 ```
 
----
+## Network ports
 
-## Usage Examples
+The container uses the host's network (`network_mode: host`), so these ports
+are open on the host itself:
 
-### iOS → Dante
-1. Open **Control Center** (swipe down from top-right)
-2. Long-press **Music** or **AirPlay**
-3. Select **DanteStreamer**
-4. Play music → appears on Dante network
+| Port | Use |
+|---|---|
+| UDP 319, 320 | PTP, the Dante clock |
+| UDP 5353 | mDNS: Dante and AirPlay discovery |
+| UDP 4440, 4455, 8700, 8800 | Dante control |
+| TCP 5000 | AirPlay |
+| TCP 8480 (localhost) | Control panel and API |
 
-### Android → Dante
-1. Open **Google Home** or **Chromecast app**
-2. Select **DanteStreamer** as cast target
-3. Play music → appears on Dante network
-
-### Route Dante Audio
-Use **Dante Controller** (on any device on network):
-1. Open Dante Controller
-2. Find **DanteStreamer** in device list
-3. Drag channel to your speaker/monitor
-4. Audio routes automatically
-
----
-
-## API Endpoints
-
-### Status
-```bash
-curl http://localhost:8080/status
-```
-
-Response:
-```json
-{
-  "device_name": "DanteStreamer",
-  "enabled": true,
-  "clock_locked": true,
-  "sample_rate": 48000,
-  "channels": 8,
-  "inputs": {
-    "airplay": {"connected": true, "level_db": -18.5},
-    "chromecast": {"connected": false},
-    "dante": {"connected": true, "level_db": -22.0}
-  },
-  "output": {
-    "dante": {"level_db": -20.2}
-  }
-}
-```
-
-### Control
-```bash
-# Stop DanteStreamer
-curl -X POST http://localhost:8080/control/stop
-
-# Start DanteStreamer
-curl -X POST http://localhost:8080/control/start
-
-# Get diagnostics
-curl http://localhost:8080/diagnostics
-```
-
----
-
-## Deployment
-
-### Docker
-Single container, all services included:
-```bash
-docker-compose up -d
-docker-compose logs -f
-```
-
-### Systemd (Linux)
-```bash
-sudo cp systemd/dantestreamer.service /etc/systemd/system/
-sudo systemctl enable dantestreamer
-sudo systemctl start dantestreamer
-```
-
-### Kubernetes
-```bash
-kubectl apply -f k8s/dantestreamer-deployment.yaml
-```
-
-### Raspberry Pi
-Pre-built installer:
-```bash
-sudo apt install dantestreamer-rpi
-sudo systemctl start dantestreamer
-```
-
----
-
-## Architecture Details
-
-**Components:**
-- **DanteStreamer Engine** – Dante protocol implementation (based on Inferno library)
-- **Shairport-sync** – AirPlay receiver
-- **Snapcast** – Google Cast receiver
-- **ALSA** – Audio mixing & I/O
-- **HTTP API** – Control panel & REST endpoints
-
-**Networking:**
-- UDP 319/320 – PTP (Dante clock sync)
-- UDP 5353 – mDNS (device discovery)
-- TCP/UDP 4440, 4455, 8700, 8800 – Dante control
-- Audio flows on UDP multicast (224.x.x.x / 239.x.x.x)
-
-**Latency:**
-- AirPlay → Dante: ~100–200 ms (typical)
-- Chromecast → Dante: ~200–500 ms (typical)
-- Dante → Speaker: Configurable (0.25–4 ms)
-- Total: ~200–700 ms end-to-end
-
----
+Audio travels as UDP multicast. If another Dante program on the host already
+uses the control ports, Virgil moves to 24440-24443 (`ports = auto`).
 
 ## Troubleshooting
 
-### "No input devices detected"
 ```bash
-docker exec dantestreamer aplay -l
-docker exec dantestreamer arecord -l
+docker compose ps                     # should say "healthy"
+docker compose logs -f dantestreamer  # startup, clock and AirPlay messages
 ```
 
-### "AirPlay not appearing in Control Center"
-- Verify `airplay_enabled = true` in config
-- Check firewall allows UDP 5000
-- Restart container: `docker-compose restart dantestreamer`
+- **DanteStreamer missing from Dante Controller.** The host must be on the
+  same network segment as the Dante devices, with a bridged (not NAT)
+  network card if it's a VM. Check `interface` and the address on the
+  panel's Status card.
+- **Clock not locked.** Give PTP 10 to 30 seconds after start. If it never
+  locks, no device leads the clock: enable "Become clock leader" on exactly
+  one device.
+- **No AirPlay device on the phone.** The phone and the host must be on the
+  same network, and mDNS (UDP 5353) and TCP 5000 must get through.
+  `docker exec dantestreamer avahi-browse -rt _raop._tcp` lists what is
+  advertised.
+- **AirPlay connects but Dante is silent.** Check the transmit meters in the
+  panel. If 1 and 2 move, the subscription in Dante Controller is missing.
+- **Dropouts.** The panel's diagnostics section names the cause. A VM can
+  lose clock timing under load; wired Ethernet and a quiet host help, and
+  bare metal is more reliable than a VM.
 
-### "Dante clock not locked"
-```bash
-curl http://localhost:8080/status | grep clock_locked
-```
-- Wait 10–30 seconds (PTP convergence)
-- Verify network connectivity
-- Check if another Dante device is on network (should provide master clock)
+## Files
 
-### "No audio on Dante network"
-```bash
-curl http://localhost:8080/status | grep input
-```
-- Verify audio is playing on source device (AirPlay/Chromecast)
-- Check input levels (should show negative dB, not 0)
-- Verify Dante routes in Dante Controller
+| File | What |
+|---|---|
+| `docker-compose.yml` | The container, its capabilities, volumes and settings |
+| `Dockerfile` | Builds Virgil from source, then the runtime image with Shairport Sync |
+| `docker-entrypoint.sh` | Applies names, then starts D-Bus, Avahi, Virgil and Shairport Sync |
+| `.env.example` | Names template; copy to `.env` |
+| `config/` | Templates for Virgil, Shairport Sync, ALSA and Snapcast |
+| `data/`, `logs/` | Created at runtime: live Virgil config and logs (not in git) |
 
-### High latency or dropouts
-- Reduce `tx_latency_us` in config (minimum 1000)
-- Check network: wired > Wi-Fi, gigabit > 100 Mbps
-- Monitor CPU load: `docker stats dantestreamer`
-
----
-
-## Building from Source
-
-See [BUILD_AND_TEST.md](BUILD_AND_TEST.md) for development setup.
-
----
-
-## API Integration
-
-For custom apps & integrations, see [VIRGIL_API_REFERENCE.md](VIRGIL_API_REFERENCE.md).
-
----
-
-## Docker Details
-
-See [DOCKER_SETUP.md](DOCKER_SETUP.md) for container configuration, networking, and production deployment.
-
----
-
-## License
-
-Built on [Inferno](https://github.com/teodly/inferno) (open-source Dante protocol implementation, GPLv3).  
-DanteStreamer is also GPLv3. See [LICENSE](LICENSE) for details.
-
----
-
-## Support & Contributing
-
-- **Issues:** [GitHub Issues](https://github.com/johanhoel/dantestreamer/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/johanhoel/dantestreamer/discussions)
-- **Contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md)
-
----
+`BUILD_AND_TEST.md`, `DOCKER_SETUP.md`, `MULTI_SOURCE_AUDIO.md`,
+`DANTE_PLAYER_PROJECT.md` and `VIRGIL_API_REFERENCE.md` are older design
+notes. Parts of them describe plans that were never built, such as the
+Google Cast input and an API on port 8080.
 
 ## Roadmap
 
-- [x] Dante receiver (Inferno protocol base)
-- [x] AirPlay input (Shairport-sync)
-- [x] Google Cast input (Snapcast)
-- [x] ALSA mixer integration
+- [x] AirPlay to Dante
 - [x] Docker deployment
-- [ ] Web dashboard (enhanced UI)
+- [x] Editable device, AirPlay and channel names
+- [ ] Google Cast input
 - [ ] Recording to file (MP3/WAV)
-- [ ] Multi-output (simultaneous Dante + analog)
-- [ ] Mobile app (iOS companion)
-- [ ] Dante transmit (send to network)
+- [ ] Output to Dante and analog at the same time
+- [ ] iOS companion app
 
----
+## License
 
-**Built for ProAV, Broadcast, and Home Audio.** Deploy anywhere, stream from anywhere.
+Virgil and Inferno are GPLv3, and DanteStreamer is GPLv3 too. A `LICENSE`
+file has not been added to this folder yet.
