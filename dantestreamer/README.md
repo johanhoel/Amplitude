@@ -119,6 +119,28 @@ http://localhost:8080
 
 ## Configuration
 
+### Names (Dante, AirPlay, channels)
+Give each DanteStreamer its own name so it's easy to find in Dante
+Controller and on your phone. Names live in `.env` next to
+`docker-compose.yml`:
+
+```bash
+cp .env.example .env
+nano .env                 # DEVICE_NAME, AIRPLAY_NAME, TX_CHANNEL_NAMES
+docker compose up -d      # applies the new names
+```
+
+- `DEVICE_NAME`: name in Dante Controller (letters, digits, `-`, `_`,
+  spaces; max 31). It is reapplied on every start, so rename the device
+  here rather than in Dante Controller.
+- `AIRPLAY_NAME`: name your phone shows. Empty = same as `DEVICE_NAME`.
+- `TX_CHANNEL_NAMES` / `RX_CHANNEL_NAMES`: comma-separated channel names,
+  e.g. `AirPlay L,AirPlay R`. AirPlay plays on TX 1 and TX 2. Leave
+  empty to keep names set in Dante Controller.
+
+The live Virgil config is `data/virgil.conf` (created from
+`config/dantestreamer.conf` on first start).
+
 ### Edit Settings
 ```bash
 vim config/dantestreamer.conf

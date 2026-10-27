@@ -1,0 +1,5 @@
+# Per-machine names and runtime state
+.env
+data/
+logs/
+output/
