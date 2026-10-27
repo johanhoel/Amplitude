@@ -20,7 +20,7 @@ amplitude/
 ```
 
 To add a project, create a new top-level folder, put everything it needs
-inside it, add a row to the table above with a link to its `CHANGELOG.md`.
+inside it, and add a row to the table above with a link to its `CHANGELOG.md`.
 
 Every project's README has a **Screenshots** section showing each of its
 features, kept up to date as features change. See [AGENTS.md](AGENTS.md)
