@@ -6,12 +6,14 @@ with its own README, Dockerfile and config.
 | Project | What it does |
 |---------|--------------|
 | [dantestreamer](dantestreamer/) | Streams AirPlay audio to a Dante network, using the Virgil engine (Inferno-based) in Docker |
+| [panels](panels/) | Home Deck: wall panels, phone pages, Studio, boards, cameras and the Android app for the home lab. [Latest changes](panels/CHANGELOG.md) |
 
 ## Layout
 
 ```
 amplitude/
   dantestreamer/   one folder per project
+  panels/          Home Deck
   README.md        this index
 ```
 
