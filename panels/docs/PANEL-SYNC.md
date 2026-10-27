@@ -23,6 +23,9 @@ To see what would go up without pushing:
 - Leaves out the coordinator and the developer-tooling files, and refuses to push if any of them are left.
 - Adds one commit on top of `main` (author Alex Demo) that replaces only `panels/`.
   Everything else in Amplitude (`dantestreamer/`, `README.md`, other branches) is never touched.
+- Keeps the project list in Amplitude's top `README.md` up to date: adds the `panels` row (with a link to the
+  change log) and the Layout line if they're missing. Rows you edit yourself are left alone.
+- Writes `panels/CHANGELOG.md`: the latest 50 changes, newest first, grouped by date.
 - Stops instead of overwriting if someone pushed to `main` in the meantime. Just run it again.
 
 ## Settings (files in `~/homedeck-tools/`)
@@ -32,6 +35,7 @@ To see what would go up without pushing:
 | `panel-remote` | `git@github.com:johanhoel/Amplitude.git` | repo to push to |
 | `panel-branch` | `main` | branch |
 | `panel-prefix` | `panels` | folder in the repo (empty file = whole repo) |
+| `panel-description` | one line | text for the README row |
 
 ## Access
 
