@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Setup | Home Deck</title>
+<style>
+:root { --accent: #7c5cff; --glass: rgba(18,20,30,.6); --line: rgba(255,255,255,.11); --text: #f4f5fb; --mute: rgba(244,245,251,.6);
+  --ok: #34d399; --warn: #fbbf24; --bad: #f87171; --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
+* { box-sizing: border-box; }
+html { background: #06070c; }
+body { margin: 0; min-height: 100vh; color: var(--text); font: 15px/1.55 var(--font); padding: calc(env(safe-area-inset-top) + 24px) 16px 120px;
+  background: radial-gradient(50% 40% at 12% 8%, rgba(91,60,255,.5), transparent 70%), radial-gradient(40% 35% at 90% 5%, rgba(0,160,220,.3), transparent 70%), #06070c; background-attachment: fixed; }
+main { max-width: 760px; margin: 0 auto; }
+h1 { font-weight: 250; font-size: clamp(32px, 7vw, 46px); letter-spacing: -.02em; margin: 0 0 2px; }
+.lead { color: var(--mute); margin: 0 0 18px; }
+.rail { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 18px; }
+.rail span { font-size: 12.5px; padding: 5px 11px; border-radius: 99px; background: rgba(255,255,255,.06); color: var(--mute); border: 1px solid var(--line); }
+.rail span.on { background: var(--accent); color: #fff; border-color: transparent; }
+.rail span.done { color: var(--ok); }
+.card { background: var(--glass); border: 1px solid var(--line); border-radius: 22px; padding: 18px 20px; margin-bottom: 14px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+.card h2 { margin: 0 0 4px; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); font-weight: 600; }
+.card h3 { margin: 0 0 2px; font-size: 17px; font-weight: 600; }
+.help { color: var(--mute); font-size: 13.5px; margin: 0 0 10px; }
+input[type=text], input[type=password] { width: 100%; padding: 13px 14px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--text); font: inherit; margin: 8px 0; }
+button { padding: 12px 18px; border-radius: 14px; border: 0; background: var(--accent); color: #fff; font: inherit; font-weight: 650; cursor: pointer; }
+button.ghost { background: rgba(255,255,255,.08); }
+button:disabled { opacity: .45; cursor: default; }
+.opt { display: flex; gap: 12px; align-items: flex-start; padding: 9px 10px; border-radius: 12px; cursor: pointer; }
+.opt:hover { background: rgba(255,255,255,.05); }
+.opt input { margin-top: 4px; accent-color: var(--accent); width: 17px; height: 17px; flex: none; }
+.opt b { font-weight: 600; } .opt small { display: block; color: var(--mute); font-size: 12.5px; }
+.tag { font-size: 11px; padding: 1px 7px; border-radius: 99px; margin-left: 6px; vertical-align: 1px; }
+.tag.seen { background: rgba(52,211,153,.15); color: var(--ok); } .tag.miss { background: rgba(251,191,36,.15); color: var(--warn); }
+.tag.chg { background: rgba(124,92,255,.25); color: #cfc4ff; }
+.info { margin: 8px 0 0; padding: 8px 12px; border-radius: 12px; background: rgba(255,255,255,.04); color: var(--mute); font-size: 13px; }
+.bar { height: 8px; border-radius: 6px; background: rgba(255,255,255,.08); overflow: hidden; margin: 12px 0 6px; }
+.bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), #22d3ee); transition: width .4s; }
+.msg { min-height: 1.4em; margin-top: 6px; } .msg.ok { color: var(--ok); } .msg.bad { color: var(--bad); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.chips span { background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 12px; padding: 6px 10px; font-size: 13px; }
+.chips b { color: var(--ok); margin-right: 4px; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; } td, th { text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--mute); font-weight: 600; }
+pre { white-space: pre-wrap; word-break: break-all; font-size: 12px; background: rgba(0,0,0,.35); padding: 12px; border-radius: 12px; max-height: 420px; overflow: auto; }
+pre .a { color: var(--ok); } pre .d { color: var(--bad); } pre .h { color: var(--mute); }
+.nav { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(env(safe-area-inset-bottom) + 12px); background: rgba(6,7,12,.85); backdrop-filter: blur(16px); border-top: 1px solid var(--line); }
+.nav div { max-width: 760px; margin: 0 auto; display: flex; justify-content: space-between; gap: 10px; }
+details summary { cursor: pointer; color: var(--mute); }
+.consent { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 14px; background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.25); margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Home Deck setup</h1>
+  <p class="lead" id="lead">Finds what's on your network, suggests the settings, and you confirm each one.</p>
+  <div class="rail" id="rail"></div>
+  <div id="view"></div>
+</main>
+<div class="nav" id="nav" hidden><div><button class="ghost" id="back">Back</button><button id="next">Next</button></div></div>
+<script>
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const api = async (path, body) => {
+  const r = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({ error: 'no answer' }));
+  if (!r.ok && !j.error) j.error = 'HTTP ' + r.status;
+  return j;
+};
+const PAGES = ['welcome', 'scan', 'ha', 'home', 'media', 'cameras', 'lab', 'people', 'review'];
+const NAMES = { welcome: 'Start', scan: 'Scan', ha: 'Home Assistant', home: 'Home', media: 'Media', cameras: 'Cameras', lab: 'Lab', people: 'People', review: 'Review' };
+let page = 0, PLAN = null, CH = {}, consent = false, tokenSaved = false;
+
+function rail() {
+  $('#rail').innerHTML = PAGES.map((p, i) => `<span class="${i === page ? 'on' : i < page ? 'done' : ''}">${i < page ? '✓ ' : ''}${NAMES[p]}</span>`).join('');
+  $('#nav').hidden = page === 0;
+  $('#back').disabled = page <= 1;
+  $('#next').textContent = page === PAGES.length - 1 ? 'Save and start' : 'Next';
+}
+async function go(i) { page = Math.max(0, Math.min(PAGES.length - 1, i)); rail(); await VIEWS[PAGES[page]](); scrollTo(0, 0); }
+$('#back').onclick = () => go(page - 1);
+$('#next').onclick = async () => {
+  if (PAGES[page] === 'scan' && !PLAN) return;
+  if (PAGES[page] === 'review') return finish();
+  if (PAGES[page] === 'ha') PLAN = await api('/api/plan');
+  go(page + 1);
+};
+
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+function fieldHtml(f) {
+  const val = CH[f.key], multi = f.kind === 'many';
+  const changed = !same(val, f.current) ? '<span class="tag chg">changes</span>' : '';
+  const opts = f.options.map((o, i) => {
+    const on = multi ? (val || []).includes(o.value) : val === o.value;
+    return `<label class="opt"><input type="${multi ? 'checkbox' : 'radio'}" name="${esc(f.key)}" data-k="${esc(f.key)}" data-i="${i}" ${on ? 'checked' : ''}>
+      <span><b>${esc(o.label)}</b><span class="tag ${o.seen ? 'seen' : 'miss'}">${o.seen ? 'found' : 'not found now'}</span><small>${esc(o.why || '')}</small></span></label>`;
+  }).join('') || '<div class="help">Nothing found for this. The current setting is kept.</div>';
+  const other = multi ? '' : `<label class="opt"><input type="radio" name="${esc(f.key)}" data-k="${esc(f.key)}" data-other ${val != null && !f.options.some(o => o.value === val) ? 'checked' : ''}>
+      <span><b>Something else</b><input type="text" data-otherval="${esc(f.key)}" placeholder="type it" value="${val != null && !f.options.some(o => o.value === val) ? esc(val) : ''}"></span></label>`;
+  return `<section class="card"><h3>${esc(f.label)} ${changed}</h3><p class="help">${esc(f.help)}</p>${opts}${other}
+    ${f.info.length ? `<div class="info">Also seen: ${f.info.map(esc).join(' · ')}</div>` : ''}</section>`;
+}
+function bindFields(fields) {
+  document.querySelectorAll('input[data-k]').forEach(el => el.onchange = () => {
+    const f = fields.find(x => x.key === el.dataset.k);
+    if (el.dataset.other !== undefined) { CH[f.key] = document.querySelector(`[data-otherval="${CSS.escape(f.key)}"]`).value.trim() || f.current; }
+    else if (f.kind === 'many') {
+      CH[f.key] = f.options.filter((o, i) => document.querySelector(`input[data-k="${CSS.escape(f.key)}"][data-i="${i}"]`).checked).map(o => o.value);
+    } else CH[f.key] = f.options[+el.dataset.i].value;
+    const h = el.closest('.card').querySelector('h3 .chg'), ch = !same(CH[f.key], f.current);
+    if (ch && !h) el.closest('.card').querySelector('h3').insertAdjacentHTML('beforeend', '<span class="tag chg">changes</span>'); else if (!ch && h) h.remove();
+  });
+  document.querySelectorAll('[data-otherval]').forEach(el => el.oninput = () => {
+    const r = el.closest('.opt').querySelector('input[type=radio]'); r.checked = true; CH[el.dataset.otherval] = el.value.trim();
+  });
+}
+function stepFields(step) {
+  const fs = PLAN.fields.filter(f => f.step === step);
+  fs.forEach(f => { if (!(f.key in CH)) CH[f.key] = f.suggest; });
+  return fs;
+}
+
+const VIEWS = {
+  async welcome() {
+    const s = await api('/api/session');
+    tokenSaved = s.token_saved;
+    if (s.ok) return go(1);
+    $('#view').innerHTML = `<section class="card"><h2>Setup code</h2>
+      <p class="help">The installer printed a setup code. To see it again, run <b>homedeck-onboard</b> on the Home Deck server.</p>
+      <input type="text" id="code" inputmode="numeric" autocomplete="one-time-code" placeholder="123-456">
+      <button id="go">Start setup</button><div class="msg" id="msg"></div></section>
+      <section class="card"><h2>What happens</h2><p class="help" style="margin:0">1. The network is scanned (it only asks devices what they are; nothing is changed).
+      2. Connect Home Assistant. 3. For every setting you see what is set now, what was found, and a suggestion. Tick what you want.
+      4. Review the changes and save. The panels restart and roll back by themselves if anything goes wrong.</p></section>`;
+    $('#go').onclick = async () => {
+      const r = await api('/api/login', { code: $('#code').value });
+      if (r.ok) go(1); else { $('#msg').className = 'msg bad'; $('#msg').textContent = r.error; }
+    };
+    $('#code').onkeydown = e => e.key === 'Enter' && $('#go').click();
+  },
+  async scan() {
+    $('#view').innerHTML = `<section class="card"><h2>Network scan</h2><p class="help">Looking for Home Assistant, speakers, cameras, servers and phones on this network. About 15 seconds.</p>
+      <div class="bar"><i id="bar"></i></div><div id="stext" class="help"></div><div id="sres"></div>
+      <button class="ghost" id="again" hidden>Scan again</button></section>`;
+    $('#next').disabled = true;
+    const st = await api('/api/scan');
+    if (!st.done || st.running) await api('/api/scan', {});
+    for (;;) {
+      const s = await api('/api/scan');
+      $('#bar').style.width = s.pct + '%'; $('#stext').textContent = s.text;
+      if (!s.running && s.done) break;
+      if (!s.running && !s.done) { $('#stext').className = 'msg bad'; return; }
+      await new Promise(r => setTimeout(r, 700));
+    }
+    PLAN = await api('/api/plan');
+    const LBL = { homeassistant: 'Home Assistant', pihole: 'Pi-hole', proxmox: 'Proxmox', pbs: 'Backup server', prometheus: 'Prometheus', grafana: 'Grafana',
+      labpanel: 'Lab panel', camfeed: 'Camera feed', camera: 'Cameras', nvr: 'NVR', sonos: 'Sonos', cast: 'Google Cast', appletv: 'Apple TV',
+      airplay: 'AirPlay', dante: 'Dante', pc: 'PC', phone: 'Phones', router: 'Router' };
+    const roles = foundRoles(PLAN.devices);
+    $('#sres').innerHTML = `<div class="chips">${Object.entries(roles).map(([r, n]) => `<span><b>${n}</b>${esc(LBL[r] || r)}</span>`).join('')}</div>
+      <details style="margin-top:12px"><summary>All ${PLAN.devices.length} devices on ${esc(PLAN.scan.subnet)}</summary>
+      <table><tr><th>Address</th><th>Name</th><th>Maker</th><th>What</th></tr>${PLAN.devices.map(d => `<tr><td>${esc(d.ip)}</td><td>${esc(d.name)}${d.self ? ' (this server)' : ''}</td>
+      <td>${esc(d.private_mac ? 'private address' : d.maker)}</td><td>${esc(d.what.join(', '))}${d.phone ? ' · phone?' : ''}</td></tr>`).join('')}</table></details>`;
+    $('#again').hidden = false; $('#again').onclick = async () => { await api('/api/scan', {}); VIEWS.scan(); };
+    $('#next').disabled = false;
+  },
+  async ha() {
+    const f = stepFields('ha')[0];
+    $('#view').innerHTML = fieldHtml(f) + `<section class="card"><h2>Connect</h2>
+      ${tokenSaved ? '<p class="help">A token is already saved on this server. Leave the box empty to use it.</p>' : `<ol class="help">
+        <li>Open <a id="prof" href="#" target="_blank" rel="noopener" style="color:#b9a9ff">your Home Assistant profile → Security</a> (log in as an administrator).</li>
+        <li><b>Long-lived access tokens → Create token</b>, name it <i>Home Deck</i>, copy the code (it is shown only once).</li></ol>`}
+      <input type="password" id="tok" autocomplete="off" placeholder="${tokenSaved ? 'Leave empty to keep the saved token' : 'Paste the token here'}">
+      <button id="conn">Connect and read devices</button><div class="msg" id="hmsg"></div>
+      <p class="help" style="margin-top:8px">The token stays on the Home Deck server and is never shown on the panels. Without it the wizard can still set the network parts.</p></section>`;
+    bindFields([f]);
+    const upd = () => { const p = $('#prof'); if (p) p.href = (CH['homeassistant.url'] || '').replace(/\/$/, '') + '/profile/security'; };
+    upd(); document.querySelectorAll('input[data-k]').forEach(el => el.addEventListener('change', upd));
+    $('#conn').onclick = async () => {
+      $('#hmsg').className = 'msg'; $('#hmsg').textContent = 'Connecting ...';
+      const r = await api('/api/ha', { url: CH['homeassistant.url'], token: $('#tok').value });
+      if (r.error) { $('#hmsg').className = 'msg bad'; $('#hmsg').textContent = r.error; return; }
+      $('#tok').value = '';
+      $('#hmsg').className = 'msg ok';
+      $('#hmsg').textContent = `Connected to ${[r.name || 'Home Assistant', r.version].filter(Boolean).join(' ')}: ${Object.entries(r.counts).map(([k, n]) => n + ' ' + k.replace('_', ' ') + (n === 1 ? '' : k === 'switch' ? 'es' : 's')).join(', ')}.`;
+      PLAN = await api('/api/plan');
+      for (const k of Object.keys(CH)) if (k !== 'homeassistant.url') delete CH[k];   // suggestions now know your devices
+    };
+  },
+  home() { return fieldPage('home', 'Things in the house that the panels show and control. Suggestions come from Home Assistant.'); },
+  media() { return fieldPage('media', 'Speakers and players. Found on the network and in Home Assistant.'); },
+  cameras() { return fieldPage('cameras', 'Camera visits and alerts.'); },
+  lab() { return fieldPage('lab', 'Servers and network services the Lab and Network pages use.'); },
+  people() {
+    const fs = stepFields('people');
+    $('#view').innerHTML = `<label class="consent"><input type="checkbox" id="consent" ${consent ? 'checked' : ''} style="margin-top:4px;accent-color:var(--accent)">
+      <span><b>Use phones on Wi-Fi to see who is home</b><br><span class="help">Home Deck checks whether these phones are on the home Wi-Fi. Nothing leaves the house.
+      Phones are never ticked for you: tick each person's own phone. Phones with a private (random) address may change it; turn that off for the home Wi-Fi on the phone.</span></span></label>
+      <div id="pf"${consent ? '' : ' hidden'}>${fs.map(fieldHtml).join('')}</div>
+      <p class="help" id="pfoff"${consent ? ' hidden' : ''}>Off: the phones that are set now stay as they are.</p>`;
+    bindFields(fs);
+    $('#consent').onchange = e => { consent = e.target.checked; $('#pf').hidden = !consent; $('#pfoff').hidden = consent; };
+  },
+  async review() {
+    $('#view').innerHTML = '<section class="card"><h2>Review</h2><div class="help">Working ...</div></section>';
+    const r = await api('/api/preview', { choices: choices() });
+    const lines = (r.diff || '').split('\n').map(l => `<span class="${l.startsWith('+') ? 'a' : l.startsWith('-') ? 'd' : l.startsWith('@') ? 'h' : ''}">${esc(l)}</span>`).join('\n');
+    $('#view').innerHTML = `<section class="card"><h2>Review</h2>
+      ${r.error ? `<div class="msg bad">${esc(r.error)}</div>` : ''}
+      ${(r.problems || []).length ? `<div class="msg bad">Fix these first (go back):<br>${r.problems.map(esc).join('<br>')}</div>` : ''}
+      ${r.diff ? `<p class="help">These lines in homedeck.toml change (green new, red old). A copy of the old file is kept.</p><pre>${lines}</pre>` : '<p class="help">No settings change.</p>'}
+      ${r.token_new ? '<p class="help">✓ The Home Assistant token will be saved.</p>' : ''}</section><div id="fin"></div>`;
+    $('#next').disabled = !!(r.problems || []).length || !!r.error || (!r.diff && !r.token_new);
+  },
+};
+function foundRoles(devs) {                       // what the scan found, as counts for the chips
+  const roles = {}, cnt = re => devs.filter(d => d.what.some(w => re.test(w))).length;
+  const add = (k, n) => { if (n) roles[k] = n; };
+  add('homeassistant', cnt(/^Home Assistant/)); add('pihole', cnt(/^Pi-hole/)); add('proxmox', cnt(/^Proxmox VE/)); add('camera', cnt(/^Camera \(/));
+  add('nvr', cnt(/Scrypted|Frigate/)); add('sonos', cnt(/^Sonos/)); add('cast', cnt(/Google Cast|googlecast/)); add('appletv', cnt(/^Apple TV/));
+  add('dante', cnt(/^Dante/)); add('labpanel', cnt(/^Lab panel/)); add('camfeed', cnt(/^Camera feed/)); add('prometheus', cnt(/^Prometheus/));
+  add('phone', devs.filter(d => d.phone).length);
+  return roles;
+}
+function fieldPage(step, intro) {
+  const fs = stepFields(step);
+  $('#view').innerHTML = `<p class="help">${esc(intro)}${PLAN.ha.connected ? '' : ' Home Assistant is not connected, so only the current settings and the network scan are shown.'}</p>` + fs.map(fieldHtml).join('');
+  bindFields(fs);
+}
+function choices() {
+  const c = {};
+  for (const [k, v] of Object.entries(CH)) if (!k.startsWith('presence.phones.') || consent) c[k] = v;
+  const pl = PLAN.fields.find(f => f.key === 'players');
+  if (pl) c._labels = Object.fromEntries(pl.options.map(o => [o.value, o.label]));
+  return c;
+}
+async function finish() {
+  $('#next').disabled = true; $('#back').disabled = true;
+  $('#fin').innerHTML = '<section class="card"><h2>Saving</h2><p class="help">Checking the settings, restarting the panels and waiting for them to answer. Up to half a minute.</p></section>';
+  const r = await api('/api/finish', { choices: choices() });
+  const panels = `http://${location.hostname}/start`;
+  $('#fin').innerHTML = `<section class="card"><h2>${r.ok ? 'Done' : 'Not saved'}</h2>
+    ${(r.steps || []).map(s => `<div class="msg ok">✓ ${esc(s)}</div>`).join('')}
+    ${r.error ? `<div class="msg bad">${esc(r.error)}</div>` : ''}${(r.problems || []).map(p => `<div class="msg bad">${esc(p)}</div>`).join('')}
+    ${r.output ? `<details ${r.ok ? '' : 'open'}><summary>Details</summary><pre>${esc(r.output)}</pre></details>` : ''}
+    ${r.ok ? `<p style="margin:14px 0 0"><a href="${panels}"><button>Open the panels</button></a></p>
+      <p class="help">This setup page now switches itself off. Run <b>homedeck-onboard</b> on the server to use it again.</p>` : '<p class="help">The panels keep running the previous settings. Go back and change what is listed above.</p>'}</section>`;
+  if (!r.ok) { $('#back').disabled = false; } else $('#nav').hidden = true;
+}
+go(0);
+</script>
+</body>
+</html>

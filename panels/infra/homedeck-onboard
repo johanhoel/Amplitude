@@ -1,0 +1,17 @@
+#!/bin/bash
+# homedeck-onboard - start the Home Deck setup wizard (again) with a new one-time setup code.
+#   homedeck-onboard          new code, start the wizard on :8089, print where to open it
+#   homedeck-onboard --stop   stop the wizard now (it also stops by itself after "Save and start")
+set -eu
+[ "$(id -u)" -eq 0 ] || { echo "run as root"; exit 1; }
+if [ "${1:-}" = "--stop" ]; then systemctl disable --now homedeck-onboard >/dev/null 2>&1; echo "Setup wizard stopped."; exit 0; fi
+code=$(printf '%03d-%03d' $((RANDOM % 1000)) $((RANDOM % 1000)))
+umask 077; echo "$code" > /etc/homedeck-onboard.code
+systemctl enable homedeck-onboard >/dev/null 2>&1; systemctl restart homedeck-onboard
+IP=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src") print $(i+1)}')
+echo
+echo "  Setup wizard:  http://${IP:-THIS-ADDRESS}:8089"
+echo "  Setup code:    $code"
+echo
+echo "  It scans the network, connects Home Assistant and suggests every setting; you confirm."
+echo "  It switches itself off after you save. Stop it earlier with: homedeck-onboard --stop"

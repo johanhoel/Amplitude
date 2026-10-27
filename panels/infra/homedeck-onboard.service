@@ -1,0 +1,10 @@
+[Unit]
+Description=Home Deck setup wizard (network scan + settings, port 8089; stops itself when done)
+After=network-online.target
+
+[Service]
+ExecStart=/opt/panel-wrapper/venv/bin/python3 /opt/homedeck-onboard/onboard.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
