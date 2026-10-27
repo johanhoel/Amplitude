@@ -4,6 +4,7 @@ Newest first.
 
 ## 2026-10-27
 
+- README: screenshots of every page (desktop and phone), from demo data with `dev/screenshots.py`
 - Camera 1 can be switched off (removed) like the other cameras
 - Version indicator (2026.10.27) on every page and in `/api/version`
 - release.sh no longer stops silently when `.env` has no `CAMWATCH_PREFIX`

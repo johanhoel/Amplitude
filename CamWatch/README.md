@@ -32,6 +32,22 @@ Self-hosted camera service for one RTSP camera: motion and object detection (YOL
 - **Off-site storage** (Settings): copies to iCloud Drive, Google Drive, OneDrive, Dropbox, Backblaze B2, S3 or a NAS (SFTP/SMB) via rclone; encrypted by default; alarms uploaded within a minute, the rest nightly; retention and speed limit.
 - **Optional extras**: read-only JSON feed for dashboard panels; copy starred clips to iCloud Drive via a Windows share.
 
+## Screenshots
+
+Taken from demo data (drawn pictures, no real footage) with `python dev/screenshots.py`.
+
+| | |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.jpg)<br>**Dashboard**: today at a glance, live cameras and a tile for every page | ![Clips](docs/screenshots/clips.jpg)<br>**Clips**: recordings by day with a timeline, filters and tags (unusual, 🔗 same visit) |
+| ![Clip](docs/screenshots/clip.jpg)<br>**Clip**: player, a visit seen by several cameras with *Play all*, face tagging | ![Live](docs/screenshots/live.jpg)<br>**Live**: every camera live, and the end-to-end test button |
+| ![Zones](docs/screenshots/zones.jpg)<br>**Zones**: draw trigger, ignore, package and parking zones per camera | ![Report](docs/screenshots/report.jpg)<br>**Report**: visits per day and hour, and a heatmap of where people walk |
+| ![Strangers](docs/screenshots/strangers.jpg)<br>**Strangers**: unknown faces seen again and again, named once | ![Cameras](docs/screenshots/settings-cameras.jpg)<br>**Settings - cameras**: up to 4 cameras, *Find* scans the network |
+| ![Off-site](docs/screenshots/settings-offsite.jpg)<br>**Settings - off-site storage and Home Assistant**: iCloud, Google Drive, B2, NAS...; MQTT | |
+
+| Phone: home | Phone: cameras | Phone: settings |
+|---|---|---|
+| <img src="docs/screenshots/phone-home.jpg" width="300"> | <img src="docs/screenshots/phone-wall.jpg" width="300"> | <img src="docs/screenshots/phone-settings.jpg" width="300"> |
+
 ## Containers
 
 | Container | What it does |
