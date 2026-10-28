@@ -20,100 +20,103 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore dantestreamer-desktop/windows/DanteStreamerController.csproj
+      - name: Build Windows app (self-contained)
+        working-directory: dantestreamer-desktop/windows
+        run: dotnet publish DanteStreamerController.csproj -c Release -o publish -r win-x64 --self-contained=true
 
-      - name: Build Windows app
-        run: dotnet publish dantestreamer-desktop/windows/DanteStreamerController.csproj -c Release -o dantestreamer-desktop/windows/publish
-
-      - name: Create installer (MSI)
-        run: |
-          cd dantestreamer-desktop/windows/publish
-          7z a -tzip DanteStreamerController-win-x64.zip DanteStreamerController.exe *.dll *.pdb
+      - name: Create ZIP archive
+        working-directory: dantestreamer-desktop/windows
+        run: powershell -Command "Compress-Archive -Path publish/* -DestinationPath DanteStreamerController-win-x64.zip -Force"
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DanteStreamerController-Windows
-          path: dantestreamer-desktop/windows/publish/DanteStreamerController-win-x64.zip
+          name: windows-build
+          path: dantestreamer-desktop/windows/DanteStreamerController-win-x64.zip
+          retention-days: 7
 
   build-macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build macOS app
-        run: |
-          cd dantestreamer-desktop/macos
-          swift build -c release
-          mkdir -p build/DanteStreamerController.app/Contents/{MacOS,Resources}
-          cp .build/release/DanteStreamerController build/DanteStreamerController.app/Contents/MacOS/
+      - name: Build Swift release binary
+        working-directory: dantestreamer-desktop/macos
+        run: swift build -c release -Xswiftc -suppress-warnings
 
-      - name: Create macOS app bundle info
+      - name: Create macOS app bundle
+        working-directory: dantestreamer-desktop/macos
         run: |
-          cat > dantestreamer-desktop/macos/build/DanteStreamerController.app/Contents/Info.plist <<'EOF'
+          BINARY=.build/release/DanteStreamerController
+          APP=DanteStreamerController.app
+          mkdir -p "$APP/Contents/MacOS"
+          mkdir -p "$APP/Contents/Resources"
+          cp "$BINARY" "$APP/Contents/MacOS/"
+          chmod +x "$APP/Contents/MacOS/DanteStreamerController"
+
+      - name: Add Info.plist
+        working-directory: dantestreamer-desktop/macos
+        run: |
+          cat > DanteStreamerController.app/Contents/Info.plist << 'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
-            <key>CFBundleDevelopmentRegion</key>
-            <string>en</string>
             <key>CFBundleExecutable</key>
             <string>DanteStreamerController</string>
             <key>CFBundleIdentifier</key>
             <string>com.dantestreamer.controller</string>
-            <key>CFBundleInfoDictionaryVersion</key>
-            <string>6.0</string>
             <key>CFBundleName</key>
             <string>DanteStreamer Controller</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
-            <key>CFBundleShortVersionString</key>
-            <string>1.0.0</string>
             <key>CFBundleVersion</key>
-            <string>1</string>
+            <string>1.0.0</string>
             <key>LSMinimumSystemVersion</key>
             <string>12.0</string>
             <key>NSHighResolutionCapable</key>
             <true/>
-            <key>NSHumanReadableCopyright</key>
-            <string>GPLv3 - DanteStreamer Project</string>
           </dict>
           </plist>
-          EOF
+          PLIST
 
       - name: Create DMG
-        run: |
-          cd dantestreamer-desktop/macos
-          hdiutil create -volname "DanteStreamer Controller" -srcfolder build -ov -format UDZO DanteStreamerController-mac.dmg
+        working-directory: dantestreamer-desktop/macos
+        run: hdiutil create -volname "DanteStreamer Controller" -srcfolder DanteStreamerController.app -ov -format UDZO DanteStreamerController-mac.dmg
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DanteStreamerController-macOS
+          name: macos-build
           path: dantestreamer-desktop/macos/DanteStreamerController-mac.dmg
+          retention-days: 7
 
-  create-release:
+  release:
     needs: [build-windows, build-macos]
     runs-on: ubuntu-latest
     if: success()
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download all artifacts
+      - name: Download Windows build
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          name: windows-build
+          path: ./release
+
+      - name: Download macOS build
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-build
+          path: ./release
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            artifacts/DanteStreamerController-Windows/*
-            artifacts/DanteStreamerController-macOS/*
+          files: release/*
           tag_name: desktop-v1.0.${{ github.run_number }}
           draft: false
-          prerelease: false
+          prerelease: true
           body: |
             ## DanteStreamer Desktop v1.0
 
@@ -124,8 +127,7 @@ jobs:
             - Requires macOS 12.0 or later
 
             ### Windows
-            - `DanteStreamerController-win-x64.zip` – Extract and run `DanteStreamerController.exe`
-            - Requires Windows 10 or later with .NET 8 Runtime
-            - Download .NET 8 Runtime: https://dotnet.microsoft.com/en-us/download/dotnet/8.0
+            - `DanteStreamerController-win-x64.zip` – Extract and run
+            - Requires Windows 10 or later (.NET 8 included)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
