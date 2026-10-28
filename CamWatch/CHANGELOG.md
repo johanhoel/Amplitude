@@ -4,6 +4,10 @@ Newest changes first.
 
 ## 2026-10-28
 
+- The Clips page has a Select button. You tick several clips at once.
+- Download gives the ticked clips as one zip file: each video and its picture.
+- Delete removes the ticked clips after one question. It tells you when starred clips are among them.
+- The version is now 2026.10.28.6.
 - New page: Request a feature. The link sits at the bottom of every page and in Settings → Updates.
 - Each request becomes an issue on GitHub, so the developer gets it.
 - The page lists your requests and shows which ones are done.
