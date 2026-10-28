@@ -1,5 +1,6 @@
 """Web UI: browse and play recordings, tag people manually, delete clips."""
 import datetime as dt
+import io
 import ipaddress
 import json
 import re
@@ -8,6 +9,7 @@ import shutil
 import subprocess
 import threading
 import time
+import zipfile
 from pathlib import Path
 
 from flask import Flask, Response, abort, redirect, render_template, request, send_from_directory, url_for
@@ -1857,6 +1859,80 @@ def delete_clip(day, stem):
     return redirect(url_for("index", day=day))
 
 
+MAX_PICKED = 500
+
+
+def picked_clips():
+    """The clips ticked on the Clips page: [(folder, day, stem)] from the form's "clip" = "day/stem" values."""
+    out = []
+    for value in request.form.getlist("clip")[:MAX_PICKED]:
+        day, _, stem = value.partition("/")
+        out.append((check(day, stem), day, stem))
+    return out
+
+
+@app.post("/clips/delete")
+def delete_clips():
+    picked = picked_clips()
+    for folder, day, stem in picked:
+        if folder.is_dir():
+            delete_event(folder, stem, log)
+            if not any(folder.iterdir()):
+                folder.rmdir()
+    log.info("deleted %d clips at once", len(picked))
+    back = request.form.get("back") or ""
+    return redirect(back if back.startswith("/") and not back.startswith("//") else url_for("index"))
+
+
+class _Pipe(io.RawIOBase):
+    """Write-only buffer that zipfile streams into; the response takes the bytes out as they come."""
+    def __init__(self):
+        self.chunks = []
+
+    def writable(self):
+        return True
+
+    def write(self, b):
+        self.chunks.append(bytes(b))
+        return len(b)
+
+    def take(self):
+        out = b"".join(self.chunks)
+        self.chunks.clear()
+        return out
+
+
+@app.post("/clips/download")
+def download_clips():
+    """The ticked clips (video and snapshot) as one zip, streamed: no copy on the server's disk."""
+    files = []
+    for folder, day, stem in picked_clips():
+        for path in sorted(folder.glob(f"{stem}.*")):
+            if path.is_file() and (path.suffix.lower() in VIDEO_EXT or path.name == f"{stem}.jpg"):
+                files.append((path, f"{day}_{path.name}"))
+    if not files:
+        abort(404)
+
+    def stream():
+        pipe = _Pipe()
+        with zipfile.ZipFile(pipe, "w", zipfile.ZIP_STORED, allowZip64=True) as zf:   # video is compressed already
+            for path, name in files:
+                try:
+                    info = zipfile.ZipInfo.from_file(path, name)
+                    with path.open("rb") as src, zf.open(info, "w", force_zip64=True) as dst:
+                        while chunk := src.read(1 << 20):
+                            dst.write(chunk)
+                            yield pipe.take()
+                except FileNotFoundError:      # deleted (or pruned) while downloading
+                    continue
+        yield pipe.take()
+
+    name = f"camwatch-clips-{dt.datetime.now():%Y%m%d-%H%M}.zip"
+    log.info("download of %d files as %s", len(files), name)
+    return Response(stream(), mimetype="application/zip",
+                    headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
+
 # ---------- templates ----------
 
 TEMPLATES = {
@@ -2003,7 +2079,8 @@ ol li,ul li{margin:4px 0}
 {% for c in cameras %}<a class="pill {{ 'on' if c.name == camera }}" href="{{ url_for('index', day=day, camera=c.name) }}">{{ c.name }}</a>{% endfor %}</nav>{% endif %}
 <nav class="days"><a class="pill {{ 'on' if starred }}" href="{{ url_for('index', starred=1) }}">★ Starred</a>
 {% for d in days %}<a class="pill {{ 'on' if d == day and not person and not starred }}" href="{{ url_for('index', day=d) }}">{{ d }}</a>{% endfor %}</nav>
-<h1>{{ heading }} <span class="muted">· {{ clips|length }} clip{{ '' if clips|length == 1 else 's' }}</span></h1>
+<div class="row"><h1>{{ heading }} <span class="muted">· {{ clips|length }} clip{{ '' if clips|length == 1 else 's' }}</span></h1>
+{% if clips %}<span style="margin-left:auto"></span><button type="button" id="pick-start" onclick="picking(true)">☑ Select</button>{% endif %}</div>
 {% if timeline %}
 <svg class="timeline" viewBox="0 0 1440 56" preserveAspectRatio="none" role="img" aria-label="Events over the day">
 <rect class="bg" x="0" y="0" width="1440" height="38" rx="6"/>
@@ -2020,7 +2097,8 @@ ol li,ul li{margin:4px 0}
 {% endif %}
 {% if not clips %}<p class="muted">Nothing here yet. Clips appear when the camera sees motion.</p>{% endif %}
 <div class="grid">
-{% for c in clips %}<a class="card" href="{{ url_for('clip_page', day=c.day, stem=c.stem) }}">
+{% for c in clips %}<a class="card" href="{{ url_for('clip_page', day=c.day, stem=c.stem) }}" data-clip="{{ c.day }}/{{ c.stem }}"{% if c.starred %} data-starred="1"{% endif %}>
+<span class="pick" aria-hidden="true"></span>
 {% if c.snapshot %}<img loading="lazy" src="{{ url_for('media', day=c.day, name=c.snapshot) }}" alt="">{% else %}<div class="ph"></div>{% endif %}
 <div class="meta"><span class="time">{% if c.starred %}<span style="color:#f5b301">★</span> {% endif %}{% if person or starred %}{{ c.day }} {% endif %}{{ c.time }}</span>
 {% if c.duration is not none %}<span class="muted">{{ c.duration }}s</span>{% endif %}</div>
@@ -2028,6 +2106,70 @@ ol li,ul li{margin:4px 0}
 {% if c.unknown %}<span class="tag u">{{ c.unknown }} unknown</span>{% endif %}
 {% if c.faces is none %}<span class="muted">not analysed yet</span>{% endif %}</div></a>
 {% endfor %}</div>
+{% if clips %}
+<!-- Select: tick clips, then download them as one zip or delete them -->
+<style>
+.card{position:relative}
+.card .pick{display:none;position:absolute;top:8px;left:8px;z-index:2;width:28px;height:28px;border-radius:8px;
+  border:2px solid #fff;background:rgba(0,0,0,.45);box-shadow:0 1px 4px rgba(0,0,0,.5)}
+body.picking .card .pick{display:block}
+body.picking .card.sel{outline:3px solid var(--accent);outline-offset:-3px}
+body.picking .card.sel .pick{background:var(--accent);border-color:var(--accent)}
+body.picking .card.sel .pick::after{content:"✓";display:block;text-align:center;line-height:24px;font-weight:800;color:#0b1220}
+#pickbar{display:none;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:20;gap:8px;align-items:center;flex-wrap:wrap;
+  justify-content:center;max-width:calc(100vw - 24px);padding:10px 14px;border-radius:18px;background:var(--card);border:1px solid var(--line);
+  box-shadow:0 8px 30px rgba(0,0,0,.5)}
+body.picking #pickbar{display:flex}
+body.picking main{padding-bottom:110px}
+</style>
+<form id="pickbar" method="post">
+<b id="pick-count">0 selected</b>
+<button type="button" onclick="pickAll()">Select all</button>
+<button type="submit" class="primary" formaction="{{ url_for('download_clips') }}" id="pick-dl" disabled>⬇ Download</button>
+<button type="submit" class="danger" formaction="{{ url_for('delete_clips') }}" id="pick-del" disabled>🗑 Delete</button>
+<button type="button" onclick="picking(false)">Cancel</button>
+<input type="hidden" name="back" value="{{ request.full_path }}">
+<span id="pick-inputs"></span>
+</form>
+<script>
+const cards = () => [...document.querySelectorAll('.grid .card[data-clip]')];
+function picking(on) {
+  document.body.classList.toggle('picking', on);
+  if (!on) cards().forEach(c => c.classList.remove('sel'));
+  pickCount();
+}
+function pickCount() {
+  const sel = cards().filter(c => c.classList.contains('sel'));
+  document.getElementById('pick-count').textContent = `${sel.length} selected`;
+  document.getElementById('pick-dl').disabled = document.getElementById('pick-del').disabled = !sel.length;
+  document.getElementById('pick-inputs').replaceChildren(...sel.map(c => Object.assign(document.createElement('input'),
+    {type: 'hidden', name: 'clip', value: c.dataset.clip})));
+}
+function pickAll() {
+  const all = cards(), every = all.every(c => c.classList.contains('sel'));
+  all.forEach(c => c.classList.toggle('sel', !every));
+  pickCount();
+}
+document.querySelector('.grid').addEventListener('click', e => {
+  const card = e.target.closest('.card[data-clip]');
+  if (!card || !document.body.classList.contains('picking')) return;
+  e.preventDefault();
+  card.classList.toggle('sel');
+  pickCount();
+});
+document.getElementById('pickbar').addEventListener('submit', e => {
+  const sel = cards().filter(c => c.classList.contains('sel'));
+  if (e.submitter && e.submitter.id === 'pick-del') {
+    const stars = sel.filter(c => c.dataset.starred).length;
+    if (!confirm(`Delete ${sel.length} clip${sel.length === 1 ? '' : 's'} for good?` +
+                 (stars ? ` ${stars} of them ${stars === 1 ? 'is' : 'are'} starred.` : ''))) e.preventDefault();
+  } else {
+    setTimeout(() => picking(false), 500);   // the zip downloads; the page stays
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') picking(false); });
+</script>
+{% endif %}
 {% endblock %}""",
 
     "clip.html": """{% extends "base.html" %}

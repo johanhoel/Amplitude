@@ -105,4 +105,32 @@ with webui.app.test_request_context("/report"):
     html = webui.render_template("report.html", r=fake, error=None, monday=monday, label="person", people=[],
                                  prev_week=monday - dt.timedelta(days=7), next_week=monday + dt.timedelta(days=7), this_monday=monday)
 print(f"{'PASS' if 'Week' in html and 'Alex' in html and 'Family car' in html else 'FAIL'} report template renders ({len(html)} B)")
+
+# Select on the Clips page: download several clips as one zip, delete several at once
+import io  # noqa: E402
+import zipfile  # noqa: E402
+old = (today - dt.timedelta(days=2)).isoformat()
+page = c.get(f"/?day={old}").get_data(as_text=True)
+good = "☑ Select" in page and f'data-clip="{old}/camera1_100000"' in page and "pickbar" in page
+ok &= good
+print(f"{'PASS' if good else 'FAIL'} the Clips page has Select, and every clip card carries its clip")
+r = c.post("/clips/download", data={"clip": [f"{old}/camera1_100000", f"{old}/camera1_110000"]})
+names = sorted(zipfile.ZipFile(io.BytesIO(r.data)).namelist()) if r.status_code == 200 else []
+good = names == [f"{old}_camera1_100000.jpg", f"{old}_camera1_100000.mp4", f"{old}_camera1_110000.jpg", f"{old}_camera1_110000.mp4"] \
+    and "attachment" in r.headers.get("Content-Disposition", "")
+ok &= good
+print(f"{'PASS' if good else 'FAIL'} Download gives one zip with the videos and pictures: {names}")
+r = c.post("/clips/download", data={"clip": ["../etc/camera1_100000"]})
+ok &= r.status_code == 404
+print(f"{'PASS' if r.status_code == 404 else 'FAIL'} Download refuses a path outside the recordings ({r.status_code})")
+r = c.post("/clips/delete", data={"clip": [f"{old}/camera1_100000", f"{old}/camera1_110000"], "back": f"/?day={old}"})
+left = sorted(p.name for p in (root / "recordings" / old).iterdir() if p.name.startswith(("camera1_100000", "camera1_110000")))
+good = r.status_code == 302 and r.headers["Location"].endswith(f"/?day={old}") and not left \
+    and (root / "recordings" / old / "camera1_120000.mp4").exists()
+ok &= good
+print(f"{'PASS' if good else 'FAIL'} Delete removes only the ticked clips and goes back to the same list (left: {left})")
+r = c.post("/clips/delete", data={"clip": [f"{old}/camera1_120000"], "back": "//evil.example"})
+good = not r.headers["Location"].startswith("//evil")
+ok &= good
+print(f"{'PASS' if good else 'FAIL'} Delete never sends you to another site")
 print("ALL PASS" if ok else "SOME FAILED")
