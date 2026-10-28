@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#101418">
 <meta name="apple-mobile-web-app-title" content="camwatch">
 <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
-<link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png"><link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="icon" type="image/svg+xml" href="/static/logo.svg"><link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png"><link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <script>if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 <title>camwatch</title>
 <style>
@@ -60,7 +60,7 @@ header h1 { flex: 1; margin: 0; font-size: 26px; font-weight: 750; } header h1 s
 </head>
 <body>
 <div class="wrap">
-  <header><h1>camwatch <small id="cam"></small></h1><form method="post" action="/arm"><button class="arm" id="arm"></button></form></header>
+  <header><h1><img src="/static/logo-mark.svg" alt="" width="42" height="34" style="vertical-align:-6px;margin-right:8px">camwatch <small id="cam"></small></h1><form method="post" action="/arm"><button class="arm" id="arm"></button></form></header>
 
   <div class="stats">
     <div class="stat"><span>Camera</span><b id="s-cam">…</b><span id="s-cam2"></span></div>

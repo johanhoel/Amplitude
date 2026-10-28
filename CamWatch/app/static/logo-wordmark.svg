@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 512" width="750" height="256" role="img" aria-label="camwatch">
+<svg x="0" y="0" width="512" height="512" viewBox="0 0 512 512"><defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2631"/><stop offset="1" stop-color="#0b1015"/></linearGradient>
+  <linearGradient id="lid" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7dd3fc"/><stop offset="1" stop-color="#0ea5e9"/></linearGradient>
+  <radialGradient id="iris" cx=".42" cy=".38" r=".75"><stop offset="0" stop-color="#7dd3fc"/><stop offset=".55" stop-color="#0ea5e9"/><stop offset="1" stop-color="#075985"/></radialGradient>
+  <radialGradient id="rec" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#fca5a5"/><stop offset=".45" stop-color="#ef4444"/><stop offset="1" stop-color="#b91c1c"/></radialGradient>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="9"/></filter>
+  <clipPath id="eyeclip"><path d="M 40 272 C 132 124, 380 124, 472 272 C 380 420, 132 420, 40 272 Z"/></clipPath>
+</defs>
+<rect x="0" y="0" width="512" height="512" rx="116" fill="url(#bg)"/><rect x="6" y="6" width="500" height="500" rx="110" fill="none" stroke="#ffffff" stroke-opacity=".06" stroke-width="2"/>
+<g clip-path="url(#eyeclip)">
+  <rect x="0" y="0" width="512" height="512" fill="#06121b"/>
+  <circle cx="256" cy="272" r="122" fill="#38bdf8" opacity=".22" filter="url(#glow)"/>
+  <circle cx="256" cy="272" r="108" fill="url(#iris)"/>
+  <circle cx="256" cy="272" r="108" fill="none" stroke="#0c4a6e" stroke-width="7"/>
+  <g stroke="#0c4a6e" stroke-width="8" stroke-linecap="round" opacity=".85"><line x1="256.0" y1="226.0" x2="322.5" y2="186.9"/><line x1="295.8" y1="249.0" x2="362.9" y2="287.0"/><line x1="295.8" y1="295.0" x2="296.5" y2="372.1"/><line x1="256.0" y1="318.0" x2="189.5" y2="357.1"/><line x1="216.2" y1="295.0" x2="149.1" y2="257.0"/><line x1="216.2" y1="249.0" x2="215.5" y2="171.9"/></g>
+  <polygon points="256.0,226.0 295.8,249.0 295.8,295.0 256.0,318.0 216.2,295.0 216.2,249.0" fill="#05090d" stroke="#0c4a6e" stroke-width="5" stroke-linejoin="round"/>
+  <ellipse cx="220" cy="230" rx="24" ry="15" fill="#ffffff" opacity=".9" transform="rotate(-28 220 230)"/>
+  <circle cx="290" cy="312" r="7" fill="#ffffff" opacity=".55"/>
+</g>
+<path d="M 40 272 C 132 124, 380 124, 472 272 C 380 420, 132 420, 40 272 Z" fill="none" stroke="url(#lid)" stroke-width="26" stroke-linejoin="round"/>
+<circle cx="410" cy="96" r="44" fill="#ef4444" opacity=".35" filter="url(#glow)"/>
+<circle cx="410" cy="96" r="30" fill="url(#rec)"/>
+</svg>
+<text x="572" y="318" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="196" font-weight="800" letter-spacing="-6"
+  fill="#eef2f6">cam<tspan fill="#38bdf8">watch</tspan></text>
+</svg>

@@ -1,3 +1,5 @@
+<p align="center"><img src="app/static/logo-wordmark.svg" alt="camwatch" width="460"></p>
+
 # camwatch
 
 Self-hosted camera service for one RTSP camera: motion and object detection (YOLOv8), push alerts with snapshots (ntfy), event recordings with pre/post-roll, offline face identification against your own photo library, number-plate reading, a "who came and when" presence log, a web UI and Home Assistant integration. Runs as a Docker Compose stack on a small Debian VM or Proxmox LXC; everything stays on your LAN.

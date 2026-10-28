@@ -205,7 +205,7 @@ check("public camera address refused", r.status_code == 400)
 page = c.get("/settings").get_data(as_text=True)
 check("empty slot card starts a scan", "openSlot(this, true)" in page and "finds the cameras on your network" in page)
 check("settings has the Find button and the finder outside the camera form",
-      "🔍 Find" in page and page.index('id="finder"') > page.index("Renamed cameras start a new name"))
+      "🔍 Find" in page and page.index('id="finder"') > page.index("A renamed camera saves new clips"))
 
 # ---------- ntfy settings ----------
 before = common.Ntfy(logging.getLogger("n"))
