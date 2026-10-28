@@ -37,6 +37,7 @@ PAGES = [
     ("strangers", "/strangers", 1280, 820, False),
     ("settings-cameras", "/settings#cameras", 1280, 1000, False),
     ("settings-offsite", "/settings#offsite", 1280, 900, False),
+    ("settings-updates", "/settings#updates", 1280, 760, False),
     ("phone-home", "/m", PHONE_W, PHONE_H, True),
     ("phone-wall", "/view", PHONE_W, PHONE_H, True),
     ("phone-settings", "/settings#cameras", PHONE_W, PHONE_H, True),
@@ -61,6 +62,7 @@ def main():
     import numpy as np
     import settings
     demo_data(root, settings, cv2, np)
+    demo_update()
 
     def site(environ, start_response):
         """The web UI, plus /__frame: each page is shot inside a frame of the wanted size - headless Chrome won't go below
@@ -73,7 +75,7 @@ def main():
         body = (f'<body style="margin:0;background:#101418"><iframe id="f" src="{html.escape(q["src"])}" width="{int(q["w"])}" '
                 f'height="{int(q["h"])}" style="border:0;display:block"></iframe><script>'
                 "const f = document.getElementById('f');"
-                "f.onload = () => setTimeout(() => { const id = location.search.match(/%23([\w-]+)/);"
+                "f.onload = () => setTimeout(() => { const id = location.search.match(/%23([\\w-]+)/);"
                 "  const el = id && f.contentDocument.getElementById(id[1]);"
                 "  if (el) f.contentWindow.scrollTo(0, el.getBoundingClientRect().top + f.contentWindow.scrollY - 76); }, 1500);"
                 "</script></body>").encode()
@@ -175,6 +177,26 @@ def face(cv2, np, colour, w=200, h=240):
         cv2.circle(img, (ex, int(h * 0.52)), 7, (40, 40, 40), -1)
     cv2.ellipse(img, (w // 2, int(h * 0.70)), (int(w * 0.12), int(h * 0.05)), 0, 0, 180, (60, 60, 140), 4)
     return img
+
+
+def demo_update():
+    """Settings -> Updates with a new version on a fake GitHub and the host helper installed."""
+    import json
+    import updates
+
+    def github(path, token, raw=False):
+        if "/commits?" in path:
+            return [{"sha": "4c1d9e2" + "0" * 33, "commit": {"committer": {"date": "2026-10-29T08:00:00Z"},
+                                                            "message": "CamWatch: quiet hours for pushes"}}]
+        if "/contents/" in path:
+            return "2026.10.29"
+        return {"status": "ahead"}
+    updates._get = github
+    updates.DIR.mkdir(parents=True, exist_ok=True)
+    updates.STATUS.write_text(json.dumps({"helper": True, "state": "done", "finished": "2026-10-28T09:12:40",
+                                          "message": "updated to 2026.10.28 (3b35f6f)"}))
+    import settings
+    settings.update(update={"repo": "johanhoel/Amplitude", "folder": "CamWatch", "branch": "main", "token": "demo"})
 
 
 def demo_data(root, settings, cv2, np):

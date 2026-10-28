@@ -4,6 +4,13 @@ Newest changes first.
 
 ## 2026-10-28
 
+- Settings has a new section: Updates.
+- Updates shows the version that runs on the server.
+- Updates checks GitHub for a newer version.
+- When a newer version exists, Update now installs it from the web page.
+- A helper on the server does the update. `deploy.sh` and `release.sh` install it.
+- A failed update puts the old version back by itself.
+- A private repository needs an access key. You enter it in Updates.
 - Zones show in the same place on a phone and on a computer.
 - Before this fix, the zone editor drew on the button row above the picture too. Zones moved up on a phone.
 - Zones drawn before this fix can sit slightly too high: up to about 7% of the picture at the top. Check them in Zones.
