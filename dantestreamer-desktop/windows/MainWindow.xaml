@@ -26,7 +26,9 @@
 
             <!-- Sidebar: Instances List -->
             <StackPanel Grid.Column="0" Background="White">
-                <TextBlock Text="Instances" Padding="12,12,12,8" FontSize="14" FontWeight="Bold" Foreground="#333"/>
+                <Border Padding="12,12,12,8">
+                    <TextBlock Text="Instances" FontSize="14" FontWeight="Bold" Foreground="#333"/>
+                </Border>
                 <ListBox ItemsSource="{Binding Instances}" SelectedItem="{Binding SelectedInstance}"
                          BorderThickness="0" Background="White">
                     <ListBox.ItemTemplate>
