@@ -57,4 +57,18 @@ namespace DanteStreamerController
             throw new NotImplementedException();
         }
     }
+
+    // Visible when a count is above zero.
+    public class CountToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        {
+            return value is int n && n > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }

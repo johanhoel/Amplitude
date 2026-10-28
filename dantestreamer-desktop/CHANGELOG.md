@@ -2,6 +2,23 @@
 
 Newest first.
 
+## 2026-10-28 (5)
+
+- Start page with the two setups. A: this PC or Mac plays to the Dante
+  speakers through Virgil, with no other box; Download Virgil and Use this
+  computer buttons, and the steps for Desktop audio and Dante Controller.
+  B: a DanteStreamer box on the network.
+- On first start the app checks for Virgil on this computer and adds it by
+  itself when it runs.
+- Find on network: lists DanteStreamer boxes by their AirPlay receiver
+  (Shairport Sync), skipping Apple TVs and HomePods, and fills in the
+  address.
+- Setup guide button and "How do I connect?" link open the new guide in the
+  README: step by step for both setups on Windows and macOS, and a table of
+  every connection message with what to do.
+- Error messages name the fix: install or start Virgil, set
+  `REMOTE_PASSWORD` on the box, or correct the password.
+
 ## 2026-10-28 (4)
 
 - When a host refuses the port, both apps say what to do: use `localhost`

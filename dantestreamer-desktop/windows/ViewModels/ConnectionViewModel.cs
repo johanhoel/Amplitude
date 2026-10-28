@@ -38,7 +38,10 @@ namespace DanteStreamerController.ViewModels
             set
             {
                 if (SetProperty(ref _selectedInstance, value))
+                {
+                    OnPropertyChanged(nameof(IsConnecting));
                     OnInstanceSelected();
+                }
             }
         }
 
@@ -46,8 +49,14 @@ namespace DanteStreamerController.ViewModels
         public DeviceStatus? Status
         {
             get => _status;
-            set => SetProperty(ref _status, value);
+            set
+            {
+                if (SetProperty(ref _status, value)) OnPropertyChanged(nameof(IsConnecting));
+            }
         }
+
+        // A host is selected but has not answered yet.
+        public bool IsConnecting => SelectedInstance != null && Status == null;
 
         private List<MeterRow> _txMeters = new();
         public List<MeterRow> TxMeters
@@ -73,7 +82,7 @@ namespace DanteStreamerController.ViewModels
         // Add/edit form. _editing is the host being edited, or null when adding.
         private DanteInstance? _editing;
 
-        private string _formTitle = "Add instance";
+        private string _formTitle = "Add DanteStreamer";
         public string FormTitle { get => _formTitle; set => SetProperty(ref _formTitle, value); }
 
         private bool _showAddForm;
@@ -95,6 +104,37 @@ namespace DanteStreamerController.ViewModels
         private string _newPassword = "";
         public string NewPassword { get => _newPassword; set => SetProperty(ref _newPassword, value); }
 
+        // Virgil's Windows installer (DanteStreamer's Dante engine) is on its releases page.
+        public const string VirgilDownloadUrl = "https://github.com/Audbol/Virgil-Virtual-Soundcard/releases";
+        public const string ThisComputer = "localhost";
+
+        public IRelayCommand UseThisComputerCommand { get; }
+        public IRelayCommand DownloadVirgilCommand { get; }
+        public IAsyncRelayCommand FindFromStartCommand { get; }
+
+        public const string GuideUrl = "https://github.com/johanhoel/Amplitude/blob/main/dantestreamer-desktop/README.md#connect-to-your-dantestreamer";
+
+        // "Find on network" results in the Add form
+        public ObservableCollection<FoundHost> FoundHosts { get; } = new();
+
+        private string? _findMessage;
+        public string? FindMessage { get => _findMessage; set => SetProperty(ref _findMessage, value); }
+
+        private FoundHost? _selectedFound;
+        public FoundHost? SelectedFound
+        {
+            get => _selectedFound;
+            set
+            {
+                if (!SetProperty(ref _selectedFound, value) || value == null) return;
+                NewName = value.Name;
+                NewHost = value.Address;
+                NewPort = "8480";
+            }
+        }
+
+        public IAsyncRelayCommand FindCommand { get; }
+        public IRelayCommand OpenGuideCommand { get; }
         public IRelayCommand ToggleAddFormCommand { get; }
         public IRelayCommand EditSelectedCommand { get; }
         public IRelayCommand OpenPanelCommand { get; }
@@ -107,6 +147,15 @@ namespace DanteStreamerController.ViewModels
         public ConnectionViewModel()
         {
             ToggleAddFormCommand = new RelayCommand(ToggleAddForm);
+            FindCommand = new AsyncRelayCommand(FindOnNetwork);
+            OpenGuideCommand = new RelayCommand(() => OpenUrl(GuideUrl));
+            UseThisComputerCommand = new RelayCommand(UseThisComputer);
+            DownloadVirgilCommand = new RelayCommand(() => OpenUrl(VirgilDownloadUrl));
+            FindFromStartCommand = new AsyncRelayCommand(async () =>
+            {
+                if (!ShowAddForm) ToggleAddForm();
+                await FindOnNetwork();
+            });
             EditSelectedCommand = new RelayCommand(EditSelected);
             OpenPanelCommand = new RelayCommand(OpenPanel);
             SaveInstanceCommand = new RelayCommand(SaveNewInstance);
@@ -118,10 +167,10 @@ namespace DanteStreamerController.ViewModels
             _pollTimer.Tick += async (_, _) => await FetchStatus();
 
             LoadInstances();
-            if (Instances.Count == 0)
-                ToggleAddForm();
-            else
+            if (Instances.Count > 0)
                 SelectedInstance = Instances[0];
+            else
+                _ = DetectThisComputer();
         }
 
         private void OnInstanceSelected()
@@ -144,7 +193,9 @@ namespace DanteStreamerController.ViewModels
                 return;
             }
             _editing = null;
-            FormTitle = "Add instance";
+            FormTitle = "Add DanteStreamer";
+            FoundHosts.Clear();
+            FindMessage = null;
             NewName = "";
             NewHost = "localhost";
             NewPort = "8480";
@@ -157,7 +208,9 @@ namespace DanteStreamerController.ViewModels
         {
             if (SelectedInstance == null) return;
             _editing = SelectedInstance;
-            FormTitle = "Edit instance";
+            FormTitle = "Edit DanteStreamer";
+            FoundHosts.Clear();
+            FindMessage = null;
             NewName = _editing.Name;
             NewHost = _editing.Host;
             NewPort = _editing.Port.ToString();
@@ -169,16 +222,67 @@ namespace DanteStreamerController.ViewModels
         // The view sets the PasswordBox, which cannot be bound.
         public event Action<string>? PasswordReset;
 
-        private void OpenPanel()
+        // First start: if Virgil already runs on this PC, add it without asking.
+        private async Task DetectThisComputer()
         {
-            if (SelectedInstance == null) return;
             try
             {
-                Process.Start(new ProcessStartInfo(SelectedInstance.PanelUrl) { UseShellExecute = true });
+                using var response = await _httpClient.GetAsync($"http://{ThisComputer}:8480/api/status");
+                if (response.IsSuccessStatusCode && Instances.Count == 0) UseThisComputer();
+            }
+            catch { /* Virgil is not installed or not running: the start page shows the choices */ }
+        }
+
+        private void UseThisComputer()
+        {
+            var existing = Instances.FirstOrDefault(i => i.Host is ThisComputer or "127.0.0.1");
+            if (existing == null)
+            {
+                existing = new DanteInstance("This computer", ThisComputer);
+                Instances.Add(existing);
+                SaveInstances();
+            }
+            ShowAddForm = false;
+            if (SelectedInstance == existing) OnInstanceSelected();
+            else SelectedInstance = existing;
+        }
+
+        private void OpenPanel()
+        {
+            if (SelectedInstance != null) OpenUrl(SelectedInstance.PanelUrl);
+        }
+
+        private void OpenUrl(string url)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
             }
             catch (Exception ex)
             {
                 Error = $"Cannot open the browser: {ex.Message}";
+            }
+        }
+
+        private async Task FindOnNetwork()
+        {
+            FoundHosts.Clear();
+            FindMessage = "Searching the network...";
+            try
+            {
+                var hosts = await Discovery.FindAsync(TimeSpan.FromSeconds(3));
+                foreach (var h in hosts) FoundHosts.Add(h);
+                FindMessage = hosts.Count switch
+                {
+                    0 => "No DanteStreamer found. Check that it is switched on and on the same network, or type its IP address below.",
+                    1 => "Found 1 DanteStreamer. It is filled in below.",
+                    _ => $"Found {hosts.Count}. Pick one from the list.",
+                };
+                if (hosts.Count >= 1) SelectedFound = hosts[0];
+            }
+            catch (Exception ex)
+            {
+                FindMessage = $"Search failed: {ex.Message}. Type the IP address below.";
             }
         }
 
@@ -314,9 +418,10 @@ namespace DanteStreamerController.ViewModels
         {
             bool local = host is "localhost" or "127.0.0.1";
             return local
-                ? $"Nothing answers on {host}:{port}. Start DanteStreamer, or open the SSH tunnel: ssh -L 8480:127.0.0.1:8480 user@host"
-                : $"{host} refused port {port}. If Virgil runs on this computer, use host localhost. " +
-                  "If it runs on another computer, turn on remote access in its web panel (Settings), or use an SSH tunnel to localhost.";
+                ? "Virgil is not running on this computer. Install it (Download Virgil below) or start Virgil Control " +
+                  "from the Start menu; this page connects by itself once it runs. For a DanteStreamer box on the network, add it by its IP address instead."
+                : $"{host} does not accept connections on port {port}. Remote access is probably off on that DanteStreamer: " +
+                  "add REMOTE_PASSWORD to its .env file and run docker compose up -d, then enter that password here. Click Setup guide for the steps.";
         }
 
         private static string DescribeHttpError(int code, string body)
@@ -326,7 +431,7 @@ namespace DanteStreamerController.ViewModels
             catch { /* body is not Virgil's JSON error */ }
             return code switch
             {
-                401 => "Wrong or missing password (Virgil remote_password).",
+                401 => "Wrong or missing password. Use the REMOTE_PASSWORD from DanteStreamer's .env file: select the host and click Edit.",
                 403 => message ?? "Refused. Turn on remote access in Virgil, or use an SSH tunnel to localhost.",
                 429 => "Too many wrong passwords. Wait a minute and try again.",
                 _ => $"HTTP {code}: {message ?? body}",

@@ -118,9 +118,19 @@ The full reference is `config/virgil.conf.example` in the Virgil repo.
 ## Control panel and API
 
 The panel and API listen only on the host itself, at `127.0.0.1:8480`.
-To open the panel from another computer, either set `remote_access = true`
-and a `remote_password` (plain HTTP, so only on a trusted network), or use
-an SSH tunnel. The local port must be 8480, because Virgil checks it:
+To open them to other computers, for example for the
+[desktop apps](../dantestreamer-desktop/), add a password of at least 8
+characters to `.env` and run `docker compose up -d`:
+
+```
+REMOTE_PASSWORD=choose-a-password
+```
+
+This turns on `remote_access` in `data/virgil.conf` on every start. It is
+plain HTTP, so use it only on your own network or through a VPN. Removing
+the line leaves remote access as it is; turn it off in the panel's
+Settings. The other way in is an SSH tunnel. The local port must be 8480,
+because Virgil checks it:
 
 ```bash
 ssh -L 8480:127.0.0.1:8480 <user>@<host>      # then open http://localhost:8480/
@@ -195,7 +205,7 @@ Once running on any Linux host, control it **entirely from your Mac**:
 
 #### Access the Control Panel
 
-If `remote_access = true` in `.env`:
+If `REMOTE_PASSWORD` is set in `.env`:
 ```bash
 # Direct access (HTTP only, trusted network only)
 http://<linux-host-ip>:8480/

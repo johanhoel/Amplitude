@@ -101,7 +101,11 @@ jobs:
               <true/>
             </dict>
             <key>NSLocalNetworkUsageDescription</key>
-            <string>DanteStreamer Controller connects to DanteStreamer hosts on your network.</string>
+            <string>DanteStreamer Controller finds and connects to DanteStreamer on your network.</string>
+            <key>NSBonjourServices</key>
+            <array>
+              <string>_raop._tcp</string>
+            </array>
           </dict>
           </plist>
           EOF

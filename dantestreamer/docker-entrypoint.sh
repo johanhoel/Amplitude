@@ -15,6 +15,9 @@ DEVICE_NAME=${DEVICE_NAME:-DanteStreamer}
 AIRPLAY_NAME=${AIRPLAY_NAME:-$DEVICE_NAME}
 TX_CHANNEL_NAMES=${TX_CHANNEL_NAMES:-}
 RX_CHANNEL_NAMES=${RX_CHANNEL_NAMES:-}
+# Remote access (set in .env): a password turns on the panel and API for
+# other computers, e.g. the DanteStreamer desktop apps. Empty = no change.
+REMOTE_PASSWORD=${REMOTE_PASSWORD:-}
 
 VIRGIL_CONF=/app/data/virgil.conf
 SHAIRPORT_CONF=/run/shairport-sync.conf
@@ -22,6 +25,22 @@ SHAIRPORT_CONF=/run/shairport-sync.conf
 fail() {
     echo "[!] $*" >&2
     exit 1
+}
+
+# Turn on remote access with REMOTE_PASSWORD: rewrite remote_access and
+# remote_password in [device]. awk reads the password from the environment,
+# so characters like / & \ need no escaping.
+set_remote_password() {
+    [ -n "$REMOTE_PASSWORD" ] || return 0
+    [ ${#REMOTE_PASSWORD} -ge 8 ] || fail "REMOTE_PASSWORD must be at least 8 characters"
+    [[ "$REMOTE_PASSWORD" =~ [[:space:]\"] ]] && fail "REMOTE_PASSWORD may not contain spaces or \""
+    awk '
+        function put() { print "remote_access = true"; print "remote_password = " ENVIRON["REMOTE_PASSWORD"]; done = 1 }
+        /^\[/ { if (dev && !done) put(); dev = ($0 == "[device]") }
+        dev && /^#?[ \t]*remote_(access|password)[ \t]*=/ { if (!done) put(); next }
+        { print }
+        END { if (!done) { if (!dev) print "[device]"; put() } }
+    ' "$VIRGIL_CONF" > "$VIRGIL_CONF.new" && mv "$VIRGIL_CONF.new" "$VIRGIL_CONF"
 }
 
 # Write channel names into [channel_names]: $1 = tx|rx, $2 = "Name 1,Name 2,..."
@@ -64,6 +83,8 @@ mkdir -p /app/data
 sed -i "s/^name = .*/name = $DEVICE_NAME/" "$VIRGIL_CONF"
 set_channel_names tx "$TX_CHANNEL_NAMES"
 set_channel_names rx "$RX_CHANNEL_NAMES"
+set_remote_password
+[ -z "$REMOTE_PASSWORD" ] || echo "[*] Remote access on: control panel and API at http://<this-host>:8480/"
 echo "[*] Dante name: $DEVICE_NAME, AirPlay name: $AIRPLAY_NAME"
 
 # AirPlay name

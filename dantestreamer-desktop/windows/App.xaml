@@ -9,6 +9,7 @@
             <local:NullToVisibilityConverter x:Key="NullToVis"/>
             <local:NotNullToVisibilityConverter x:Key="NotNullToVis"/>
             <local:BoolToColorConverter x:Key="BoolToColor"/>
+            <local:CountToVisibilityConverter x:Key="CountToVis"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

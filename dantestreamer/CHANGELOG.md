@@ -2,6 +2,12 @@
 
 Newest first.
 
+## 2026-10-28
+
+- `REMOTE_PASSWORD` in `.env` turns on remote access for the panel and API
+  (at least 8 characters, no spaces). The DanteStreamer desktop apps
+  connect with it. Before, it meant editing `data/virgil.conf` by hand.
+
 ## 2026-10-27
 
 - `BUILD_AND_TEST.md` rewritten: how the image is built, what to run after

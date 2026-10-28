@@ -44,6 +44,7 @@ services:
       - AIRPLAY_NAME=${AIRPLAY_NAME:-}
       - TX_CHANNEL_NAMES=${TX_CHANNEL_NAMES:-}
       - RX_CHANNEL_NAMES=${RX_CHANNEL_NAMES:-}
+      - REMOTE_PASSWORD=${REMOTE_PASSWORD:-}
 
       # Logging
       - DANTE_LOG_LEVEL=info

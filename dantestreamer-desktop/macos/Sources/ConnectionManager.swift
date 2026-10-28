@@ -24,6 +24,11 @@ final class ConnectionManager: ObservableObject {
 
     var selected: DanteInstance? { instances.first { $0.id == selectedID } }
 
+    static let thisComputer = "localhost"
+    // Virgil's macOS installer (DanteStreamer's Dante engine) is on its releases page.
+    static let virgilDownloadURL = URL(string: "https://github.com/Audbol/Virgil-Virtual-Soundcard/releases")!
+    static let guideURL = URL(string: "https://github.com/johanhoel/Amplitude/blob/main/dantestreamer-desktop/README.md#connect-to-your-dantestreamer")!
+
     init() {
         if let data = UserDefaults.standard.data(forKey: Self.defaultsKey),
            let saved = try? JSONDecoder().decode([DanteInstance].self, from: data) {
@@ -31,6 +36,24 @@ final class ConnectionManager: ObservableObject {
         }
         selectedID = instances.first?.id
         restartPolling()
+        if instances.isEmpty { Task { await detectThisComputer() } }
+    }
+
+    // First start: if Virgil already runs on this Mac, add it without asking.
+    private func detectThisComputer() async {
+        guard let url = URL(string: "http://\(Self.thisComputer):8480/api/status"),
+              let result = try? await session.data(from: url),
+              (result.1 as? HTTPURLResponse)?.statusCode == 200,
+              instances.isEmpty else { return }
+        useThisComputer()
+    }
+
+    func useThisComputer() {
+        if let existing = instances.first(where: { $0.host == Self.thisComputer || $0.host == "127.0.0.1" }) {
+            if selectedID == existing.id { restartPolling() } else { selectedID = existing.id }
+            return
+        }
+        save(DanteInstance(name: "This Mac", host: Self.thisComputer))
     }
 
     // Adds a new host, or replaces the saved one with the same id.
@@ -140,16 +163,17 @@ final class ConnectionManager: ObservableObject {
     // only on 127.0.0.1 until remote access is turned on.
     private static func refusedHint(_ i: DanteInstance) -> String {
         if i.host == "localhost" || i.host == "127.0.0.1" {
-            return "Nothing answers on \(i.address). Start DanteStreamer, or open the SSH tunnel: ssh -L 8480:127.0.0.1:8480 user@host"
+            return "Virgil is not running on this Mac. Install it (Download Virgil below) or open Virgil Control from Applications; "
+                + "this page connects by itself once it runs. For a DanteStreamer box on the network, add it by its IP address instead."
         }
-        return "\(i.host) refused port \(i.port). If Virgil runs on this Mac, use host localhost. "
-            + "If it runs on another computer, turn on remote access in its web panel (Settings), or use an SSH tunnel to localhost."
+        return "\(i.host) does not accept connections on port \(i.port). Remote access is probably off on that DanteStreamer: "
+            + "add REMOTE_PASSWORD to its .env file and run docker compose up -d, then enter that password here. Click Setup guide for the steps."
     }
 
     private static func describeHTTPError(_ code: Int, _ body: Data) -> String {
         let message = (try? JSONSerialization.jsonObject(with: body) as? [String: Any])?["error"] as? String
         switch code {
-        case 401: return "Wrong or missing password (Virgil remote_password)."
+        case 401: return "Wrong or missing password. Use the REMOTE_PASSWORD from DanteStreamer's .env file: select the host and click Edit."
         case 403: return message ?? "Refused. Turn on remote access in Virgil, or use an SSH tunnel to localhost."
         case 429: return "Too many wrong passwords. Wait a minute and try again."
         default: return "HTTP \(code): \(message ?? String(decoding: body, as: UTF8.self))"

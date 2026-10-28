@@ -59,14 +59,20 @@
                         BorderBrush="#E0E0E0" Visibility="{Binding ShowAddForm, Converter={StaticResource BoolToVis}}">
                     <StackPanel>
                         <TextBlock Text="{Binding FormTitle}" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <Button Content="Find on network" Command="{Binding FindCommand}" Padding="8,4" Margin="0,0,0,6"/>
+                        <TextBlock Text="{Binding FindMessage}" TextWrapping="Wrap" Foreground="#666" Margin="0,0,0,6"
+                                   Visibility="{Binding FindMessage, Converter={StaticResource NotNullToVis}}"/>
+                        <ListBox ItemsSource="{Binding FoundHosts}" SelectedItem="{Binding SelectedFound}" MaxHeight="90" Margin="0,0,0,8"
+                                 Visibility="{Binding FoundHosts.Count, Converter={StaticResource CountToVis}}"/>
                         <TextBlock Text="Name (optional)" Foreground="#666"/>
                         <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
                         <TextBlock Text="Host or IP" Foreground="#666"/>
                         <TextBox Text="{Binding NewHost, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
                         <TextBlock Text="Port" Foreground="#666"/>
                         <TextBox Text="{Binding NewPort, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
-                        <TextBlock Text="Remote password (blank for localhost)" Foreground="#666"/>
+                        <TextBlock Text="Password (REMOTE_PASSWORD; blank for this computer)" Foreground="#666" TextWrapping="Wrap"/>
                         <PasswordBox x:Name="NewPasswordBox" PasswordChanged="NewPasswordBox_PasswordChanged" Margin="0,2,0,10"/>
+                        <TextBlock Margin="0,0,0,8"><Hyperlink Command="{Binding OpenGuideCommand}">How do I connect?</Hyperlink></TextBlock>
                         <Button Content="Save" Command="{Binding SaveInstanceCommand}"
                                 Padding="8,4" Background="#2196F3" Foreground="White" BorderThickness="0"/>
                     </StackPanel>
@@ -108,9 +114,45 @@
             </Border>
 
             <Grid>
-                <TextBlock Text="Add or select an instance" FontSize="16" FontWeight="Bold" Foreground="#999"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Visibility="{Binding Status, Converter={StaticResource NullToVis}}"/>
+                <!-- Start page: shown until a DanteStreamer answers -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding Status, Converter={StaticResource NullToVis}}">
+                    <StackPanel Margin="24" MaxWidth="640" HorizontalAlignment="Left">
+                        <TextBlock Text="Set up DanteStreamer" FontSize="20" FontWeight="Bold" Margin="0,0,0,4"/>
+                        <TextBlock Text="{Binding SelectedInstance.Name, StringFormat='Connecting to {0}...'}" Foreground="#666" Margin="0,0,0,12"
+                                   Visibility="{Binding IsConnecting, Converter={StaticResource BoolToVis}}"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="#444" Margin="0,0,0,16"
+                                   Text="DanteStreamer sends sound to Dante speakers and amplifiers. Pick the setup that matches yours."/>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="A. This computer plays to the Dante speakers" FontSize="15" FontWeight="Bold" Margin="0,0,0,4"/>
+                                <TextBlock TextWrapping="Wrap" Foreground="#666" Margin="0,0,0,10"
+                                           Text="No other equipment needed: this PC joins the Dante network and sends its own sound (Spotify, a browser, everything) to the speakers."/>
+                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6" Text="1. Install Virgil, the free Dante engine DanteStreamer uses. Download Virgil-…-win64-setup.exe from the newest release and run it. Allow it through the firewall when Windows asks."/>
+                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6" Text="2. Click Use this computer. This app then shows the status and the meters."/>
+                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6" Text="3. Send the PC's sound to Dante: right-click the Virgil icon next to the clock, choose Desktop audio…, click Add…, pick Default output device (or one app, like spotify.exe) on transmit channels 1 and 2."/>
+                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,12" Text="4. In Dante Controller, route this PC's transmit channels 1 and 2 to your speakers."/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Download Virgil" Command="{Binding DownloadVirgilCommand}" Style="{StaticResource ToolButton}"/>
+                                    <Button Content="Use this computer" Command="{Binding UseThisComputerCommand}" Style="{StaticResource ToolButton}"
+                                            Background="#2196F3" Foreground="White" BorderThickness="0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Text="B. A DanteStreamer box on the network" FontSize="15" FontWeight="Bold" Margin="0,0,0,4"/>
+                                <TextBlock TextWrapping="Wrap" Foreground="#666" Margin="0,0,0,10"
+                                           Text="DanteStreamer already runs on another computer, for example a small Linux box that phones play to with AirPlay. That box needs remote access turned on once: REMOTE_PASSWORD in its .env file. The setup guide shows how."/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Find on network" Command="{Binding FindFromStartCommand}" Style="{StaticResource ToolButton}"/>
+                                    <Button Content="Setup guide" Command="{Binding OpenGuideCommand}" Style="{StaticResource ToolButton}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
 
                 <TabControl Margin="12" Visibility="{Binding Status, Converter={StaticResource NotNullToVis}}">
                     <TabItem Header="Status" Padding="12,4">
