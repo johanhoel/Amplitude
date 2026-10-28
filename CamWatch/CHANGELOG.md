@@ -4,6 +4,16 @@ Newest changes first.
 
 ## 2026-10-28
 
+- Settings has a new section: Storage.
+- Keep clips sets how long clips stay and how much disk stays free. Before, you set this in `.env`.
+- Keep clips also shows how full the disk is and the date of the oldest clip.
+- Where recordings go moves the recordings to another folder, another disk or a network share.
+- A network share can be NFS or SMB (Windows, most NAS boxes).
+- CamWatch copies the recordings first and keeps recording while it copies.
+- When the new place does not work, CamWatch goes back to the old folder. The old copy stays until you delete it.
+- A Proxmox container cannot connect to a network share itself. Settings then shows the Proxmox steps.
+- Updates also work when an old or wrong access key is saved. CamWatch then asks GitHub without the key.
+- The version is now 2026.10.28.9.
 - The amplitude repository is public now. Updates need no access key.
 - Request a feature works without a key: GitHub opens with your request filled in, and you press Submit.
 - With a key, CamWatch still sends requests by itself. The key is optional now.

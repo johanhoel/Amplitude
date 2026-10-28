@@ -870,7 +870,79 @@ def settings_page():
                            nt=settings.ntfy(conf), ntfy_result=request.args.get("ntfy"), link_url=settings.web_base_url(conf), priorities=settings.NTFY_PRIORITIES,
                            off=offsite.options(conf), off_connected=offsite.connected(), off_status=offsite.status(),
                            off_types=offsite.TYPES, off_queue=len(list(offsite.QUEUE.glob("*.json"))) if offsite.QUEUE.is_dir() else 0,
-                           upd=updates.options(conf), upd_status=updates.status())
+                           upd=updates.options(conf), upd_status=updates.status(),
+                           store=settings.storage(conf), disk=disk_info(), host=updates.host(), st=updates.storage_status(),
+                           rec_dir=str(REC_DIR))
+
+
+def disk_info():
+    """How full the recordings disk is, and the oldest day with clips."""
+    try:
+        u = shutil.disk_usage(REC_DIR)
+    except OSError:
+        return {"used_gb": 0, "total_gb": 0, "free_gb": 0, "pct": 0, "oldest": None}
+    found = days()
+    return {"used_gb": round(u.used / 1e9), "total_gb": round(u.total / 1e9), "free_gb": round(u.free / 1e9),
+            "pct": round(100 * u.used / u.total) if u.total else 0, "oldest": found[-1] if found else None}
+
+
+@app.post("/settings/storage")
+def save_storage():
+    f = request.form
+    try:
+        keep = {"retention_days": int(f.get("retention_days") or 0), "keep_days": int(f.get("keep_days") or 0),
+                "min_free_gb": float(f.get("min_free_gb") or 0)}
+    except ValueError:
+        return settings_error("Keep clips: enter whole numbers")
+    if not (0 <= keep["retention_days"] <= 3650 and 0 <= keep["keep_days"] <= 3650 and 0 <= keep["min_free_gb"] <= 100000):
+        return settings_error("Keep clips: days go from 0 to 3650")
+    settings.update(storage=keep)
+    return redirect(url_for("settings_page", saved="storage") + "#storage")
+
+
+SHARE_SERVER_RE = re.compile(r"^[A-Za-z0-9.:\[\]-]{1,253}$")
+SHARE_NAME_RE = re.compile(r"^[\w .$/-]{1,200}$")
+
+
+@app.post("/settings/storage/move")
+def move_storage():
+    f = request.form
+    if not updates.status()["helper"]:
+        return settings_error("Storage: the helper on the server is not installed. Run sudo ./deploy.sh once.")
+    if updates.storage_status()["state"] in ("waiting", "running") or updates.status()["state"] in ("waiting", "running"):
+        return redirect(url_for("settings_page") + "#storage-where")
+    kind, copy = f.get("kind"), f.get("copy") == "1"
+    if kind == "folder":
+        path = (f.get("path") or "").strip().rstrip("/")
+        if not path.startswith("/") or ".." in path.split("/") or not re.match(r"^[\w ./-]{2,250}$", path):
+            return settings_error("Storage: enter a full folder path, e.g. /mnt/disk2/camwatch/recordings")
+        updates.ask_host({"action": "storage", "path": path, "copy": copy})
+    elif kind in ("nfs", "smb"):
+        server, share = (f.get("server") or "").strip(), (f.get("share") or "").strip().strip("/")
+        if not SHARE_SERVER_RE.match(server) or not SHARE_NAME_RE.match(share) or ".." in share.split("/"):
+            return settings_error("Storage: check the server and the share name")
+        net = {"kind": kind, "server": server, "share": share}
+        if kind == "smb":
+            net.update(user=(f.get("user") or "").strip()[:100], password=f.get("password") or "")
+        updates.ask_host({"action": "storage", "network": net, "copy": copy})
+    else:
+        abort(400)
+    log.info("recordings move requested (%s)", kind)
+    return redirect(url_for("settings_page") + "#storage-where")
+
+
+@app.post("/settings/storage/disks")
+def refresh_disks():
+    if updates.status()["helper"] and not updates._waiting():
+        updates.ask_host({"action": "disks"})
+        time.sleep(2)           # the helper answers within a second or two
+    return redirect(url_for("settings_page") + "#storage-where")
+
+
+@app.get("/api/storage/status")
+def api_storage_status():
+    s = updates.storage_status()
+    return as_json({key: s.get(key) for key in ("state", "message", "started", "finished")})
 
 
 def settings_error(message):
@@ -1993,6 +2065,7 @@ video{width:100%;max-height:70vh;background:#000;border-radius:18px;display:bloc
 button,select,input[type=text],input[type=password],input[type=number],input[type=time],input[type=file]{font:inherit;color:var(--fg);background:var(--card-hi);
   border:1px solid var(--line);border-radius:10px;padding:0 12px;min-height:38px}
 input[type=file]{padding:6px 10px}
+[hidden]{display:none !important}
 textarea{font:inherit;color:var(--fg);background:var(--card-hi);border:1px solid var(--line);border-radius:10px;padding:8px 12px;width:100%;resize:vertical}
 .field{display:grid;gap:4px}
 .field>span{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -2678,11 +2751,7 @@ A VPN only works here if its traffic reaches camwatch with the VPN address (rout
 <span style="margin-left:auto"></span>{% for m, t in [(60, '1 h'), (240, '4 h'), (720, '12 h')] %}
 <form class="inline" method="post" action="{{ url_for('snooze') }}"><input type="hidden" name="camera" value="{{ c.name }}"><input type="hidden" name="minutes" value="{{ m }}"><button>{{ t }}</button></form>{% endfor %}</div>
 {% endfor %}</div>
-
-<h2>Retention</h2>
-<p class="muted">Starred clips are never deleted automatically. Clips where someone was identified or tagged are kept longer
-(<code>RETENTION_KEEP_DAYS</code>) than other clips (<code>RETENTION_DAYS</code>). When the disk runs low, untagged clips go first.
-Retention periods are set in <code>/opt/camwatch/.env</code>.</p>
+<p class="muted">How long clips stay, and where they are stored: <a href="#storage">Storage</a>, below the cameras.</p>
 </section></div>
 
 <h2 id="cameras">Cameras <span class="muted">· up to {{ slots|length }}</span></h2>
@@ -2848,6 +2917,100 @@ function fill(main, det, cam) {
   if (name) { name.focus(); name.select(); }
 }
 </script>
+
+<div class="spair"><section>
+<h2 id="storage">Keep clips</h2>
+<form method="post" action="{{ url_for('save_storage') }}" class="box" style="display:grid;gap:10px">
+<div class="disk"><div class="row"><b>{{ disk.used_gb }} GB</b> <span class="muted">of {{ disk.total_gb }} GB used · {{ disk.free_gb }} GB free
+{% if disk.oldest %}· clips since {{ disk.oldest }}{% endif %}</span></div>
+<div class="bar"><i style="width:{{ disk.pct }}%"></i></div></div>
+<p class="muted" style="margin:0">Starred clips always stay. When the disk runs low, plain clips go first, the oldest first. 0 days = keep until the disk is full.</p>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+<label class="field"><span>Plain clips <i>days</i></span><input type="number" name="retention_days" min="0" max="3650" value="{{ store.retention_days }}"></label>
+<label class="field"><span>Clips with people <i>days · identified or tagged</i></span><input type="number" name="keep_days" min="0" max="3650" value="{{ store.keep_days }}"></label>
+<label class="field"><span>Keep free <i>GB</i></span><input type="number" name="min_free_gb" min="0" max="100000" step="1" value="{{ store.min_free_gb|round(0)|int }}"></label></div>
+<div class="row"><button class="primary">Save</button> <span class="muted">The next cleanup uses it: within 10 minutes.</span></div></form>
+<style>.disk .bar{height:8px;border-radius:5px;background:var(--card-hi);overflow:hidden;margin-top:6px}
+.disk .bar i{display:block;height:100%;background:var(--accent)}</style>
+</section><section>
+<h2 id="storage-where">Where recordings go</h2>
+<div class="box" style="display:grid;gap:10px">
+<div>Now: <code>{{ host.recordings or rec_dir }}</code></div>
+{% if not upd_status.helper %}<div class="warn" style="font-size:14px">The helper on the server is not installed yet. Run <code>sudo ./deploy.sh</code> once.</div>
+{% else %}
+<div id="st-status" class="muted" {{ 'hidden' if st.state == 'idle' }}>
+{% if st.state == 'waiting' %}Waiting for the server to start…
+{% elif st.state == 'running' %}Moving: {{ st.message }}
+{% elif st.state == 'done' %}<span class="ok">✓ {{ st.message[:1]|upper }}{{ st.message[1:] }} ({{ (st.finished or '')|replace('T', ' ') }})</span>
+{% elif st.state == 'failed' %}<span class="bad">⚠ The move failed: {{ st.message }} ({{ (st.finished or '')|replace('T', ' ') }})</span>{% endif %}</div>
+<form method="post" action="{{ url_for('move_storage') }}" style="display:grid;gap:10px" id="st-form"
+ onsubmit="return confirm('Move the recordings now? CamWatch stops for a moment at the end. When the new place does not work, CamWatch goes back to the old folder.')">
+<div class="row" style="gap:14px">
+<label><input type="radio" name="kind" value="folder" checked> A folder or disk on this server</label>
+<label><input type="radio" name="kind" value="nfs"> Network share: NFS</label>
+<label><input type="radio" name="kind" value="smb"> Network share: SMB <i class="muted">(Windows, most NAS)</i></label></div>
+<div data-kind="folder" style="display:grid;gap:10px">
+{% if host.disks %}<label class="field"><span>Disk</span><select id="st-disk">
+{% set roomiest = (host.disks|sort(attribute='free')|last).mount %}
+{% for d in host.disks %}<option value="{{ d.mount }}" {{ 'selected' if d.mount == roomiest }}>{{ d.mount }} · {{ (d.free / 1e9)|round(0)|int }} GB free of {{ (d.size / 1e9)|round(0)|int }} GB{% if d.network %} · network{% endif %}</option>{% endfor %}</select></label>{% endif %}
+<label class="field"><span>Folder</span><input type="text" name="path" id="st-path" placeholder="/mnt/disk2/camwatch/recordings" spellcheck="false"></label></div>
+<div data-kind="net" hidden style="display:grid;gap:10px">
+{% if host.can_mount == false %}<div class="warn" style="font-size:14px">This server cannot connect to a network share itself
+(it runs in an unprivileged Proxmox container). Connect the share on the Proxmox host, as below. It then shows up as a disk here.</div>{% endif %}
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px">
+<label class="field"><span>Server <i>name or address</i></span><input type="text" name="server" placeholder="192.168.1.10" spellcheck="false"></label>
+<label class="field"><span>Share <i>NFS: the exported path</i></span><input type="text" name="share" placeholder="camwatch" spellcheck="false"></label></div>
+<div data-kind="smb" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px">
+<label class="field"><span>User</span><input type="text" name="user" autocomplete="off"></label>
+<label class="field"><span>Password</span><input type="password" name="password" autocomplete="new-password"></label></div></div>
+<label><input type="checkbox" name="copy" value="1" checked> Copy the recordings that are there now <i class="muted">(CamWatch keeps recording while it copies)</i></label>
+<div class="row"><button class="primary">Move recordings</button>
+<button type="submit" formaction="{{ url_for('refresh_disks') }}" formnovalidate onclick="document.getElementById('st-form').onsubmit = null">↻ Look for disks again</button></div>
+</form>
+{% endif %}
+<details><summary class="muted" style="cursor:pointer">A network share on a Proxmox container</summary>
+<div class="muted" style="display:grid;gap:6px;margin-top:8px;font-size:14px">
+<div>An unprivileged container cannot connect to NFS or SMB. The Proxmox host connects instead and passes the share in:</div>
+<ol style="margin:0;padding-left:20px;display:grid;gap:4px">
+<li>On the Proxmox host, connect the share, for example in <code>/etc/fstab</code>. The container's root user writes as user 100000 on the host:
+<pre style="white-space:pre-wrap;margin:4px 0">//192.168.1.10/camwatch /mnt/nas-camwatch cifs credentials=/root/.nas-camwatch,uid=100000,gid=100000,_netdev,nofail 0 0</pre></li>
+<li>Pass it into the container (here {{ host.hostname or 'camwatch' }}; use its number):
+<pre style="white-space:pre-wrap;margin:4px 0">mount /mnt/nas-camwatch && pct set &lt;CTID&gt; -mp1 /mnt/nas-camwatch,mp=/mnt/nas && pct reboot &lt;CTID&gt;</pre></li>
+<li>Press <b>Look for disks again</b>. Pick <code>/mnt/nas</code> as the disk and move the recordings.</li></ol></div></details>
+</div>
+<script>
+(function () {
+  const form = document.getElementById('st-form');
+  if (!form) return;
+  const path = document.getElementById('st-path'), disk = document.getElementById('st-disk');
+  const show = () => {
+    const kind = form.querySelector('[name=kind]:checked').value;
+    form.querySelector('[data-kind=folder]').hidden = kind !== 'folder';
+    form.querySelector('[data-kind=net]').hidden = kind === 'folder';
+    form.querySelector('[data-kind=smb]').hidden = kind !== 'smb';
+    path.required = kind === 'folder';
+    form.querySelector('[name=server]').required = form.querySelector('[name=share]').required = kind !== 'folder';
+  };
+  const suggest = () => { if (disk) path.value = disk.value.replace(/[/]$/, '') + '/camwatch/recordings'; };
+  form.querySelectorAll('[name=kind]').forEach(r => r.addEventListener('change', show));
+  if (disk) { disk.addEventListener('change', suggest); suggest(); }
+  show();
+  {% if st.state in ('waiting', 'running') %}
+  (async function follow() {
+    const box = document.getElementById('st-status');
+    for (;;) {
+      await new Promise(ok => setTimeout(ok, 4000));
+      try {
+        const s = await (await fetch('{{ url_for("api_storage_status") }}', {cache: 'no-store'})).json();
+        if (s.state === 'done' || s.state === 'failed') { location.hash = 'storage-where'; location.reload(); return; }
+        box.textContent = s.state === 'waiting' ? 'Waiting for the server to start…' : 'Moving: ' + s.message;
+      } catch (e) { box.textContent = 'CamWatch restarts with the new folder…'; }
+    }
+  })();
+  {% endif %}
+})();
+</script>
+</section></div>
 
 <div class="spair"><section>
 <h2 id="ntfy">Notifications</h2>

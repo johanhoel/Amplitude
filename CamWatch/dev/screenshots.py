@@ -39,6 +39,7 @@ PAGES = [
     ("settings-cameras", "/settings#cameras", 1280, 1000, False),
     ("settings-offsite", "/settings#offsite", 1280, 900, False),
     ("settings-updates", "/settings#updates", 1280, 760, False),
+    ("settings-storage", "/settings#storage", 1280, 900, False),
     ("requests", "/requests", 1280, 720, False),
     ("phone-home", "/m", PHONE_W, PHONE_H, True),
     ("phone-wall", "/view", PHONE_W, PHONE_H, True),
@@ -197,6 +198,11 @@ def demo_update():
     updates.DIR.mkdir(parents=True, exist_ok=True)
     updates.STATUS.write_text(json.dumps({"helper": True, "state": "done", "finished": "2026-10-28T09:12:40",
                                           "message": "updated to 2026.10.28 (3b35f6f)"}))
+    (updates.DIR / "host.json").write_text(json.dumps({
+        "recordings": "/mnt/hdd/camwatch/recordings", "can_mount": True, "hostname": "camwatch",
+        "disks": [{"mount": "/", "fs": "ext4", "size": 64e9, "free": 41e9, "network": False},
+                  {"mount": "/mnt/hdd", "fs": "ext4", "size": 2000e9, "free": 1310e9, "network": False},
+                  {"mount": "/mnt/camwatch-net/nas-camwatch", "fs": "nfs4", "size": 8000e9, "free": 5200e9, "network": True}]}))
     import settings
     settings.update(update={"repo": "johanhoel/Amplitude", "folder": "CamWatch", "branch": "main", "token": "demo"})
     import feature_requests

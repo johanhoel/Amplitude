@@ -47,6 +47,9 @@ def _get(path, token, raw=False):
         with urllib.request.urlopen(req, timeout=15) as r:
             body = r.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as exc:
+        if token and exc.code in (401, 403):
+            # an old or wrong key: a public repository answers without one
+            return _get(path, "", raw)
         if exc.code == 403 and not token:
             raise GitHubError("GitHub allows 60 checks an hour without an access key - try again later")
         if exc.code in (401, 403, 404):
@@ -103,23 +106,52 @@ def check(force=False):
     return result
 
 
-def status():
-    """What the host helper reports: {"helper": bool, "state": idle|waiting|running|done|failed, "message", ...}."""
+def _waiting():
+    """The action of the request the host helper has not picked up yet, or None."""
     try:
-        data = json.loads(STATUS.read_text(encoding="utf-8"))
+        return json.loads(REQUEST.read_text(encoding="utf-8")).get("action", "update")
+    except (OSError, ValueError):
+        return None
+
+
+def status(path=None, action="update"):
+    """What the host helper reports: {"helper": bool, "state": idle|waiting|running|done|failed, "message", ...}.
+    status.json for updates; storage_status() for moving the recordings."""
+    try:
+        data = json.loads((path or STATUS).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         data = {}
     data.setdefault("state", "idle")
-    data["helper"] = bool(data.get("helper"))
-    if REQUEST.exists():
+    try:
+        data["helper"] = bool(json.loads(STATUS.read_text(encoding="utf-8")).get("helper"))
+    except (OSError, ValueError):
+        data["helper"] = False
+    if _waiting() == action:
         data["state"] = "waiting"
     return data
 
 
-def request_update(sha, version):
-    """Ask the host helper to install this commit."""
+def storage_status():
+    return status(DIR / "storage.json", "storage")
+
+
+def host():
+    """What the host helper saw on the host: {"recordings", "disks": [...], "can_mount", "mount_problem"} or {}."""
+    try:
+        return json.loads((DIR / "host.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def ask_host(request):
+    """Hand a request to the host helper (it starts within a second)."""
     DIR.mkdir(parents=True, exist_ok=True)
     tmp = REQUEST.with_suffix(".tmp")
-    tmp.write_text(json.dumps({"sha": sha, "version": version,
-                               "asked": dt.datetime.now().isoformat(timespec="seconds")}), encoding="utf-8")
+    tmp.write_text(json.dumps({**request, "asked": dt.datetime.now().isoformat(timespec="seconds")}), encoding="utf-8")
+    os.chmod(tmp, 0o600)        # a network share's password passes through here
     os.replace(tmp, REQUEST)
+
+
+def request_update(sha, version):
+    """Ask the host helper to install this commit."""
+    ask_host({"action": "update", "sha": sha, "version": version})

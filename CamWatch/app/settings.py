@@ -165,6 +165,21 @@ def web_base_url(conf=None):
     return (saved if saved is not None else env("WEB_BASE_URL", "") or "").strip().rstrip("/")
 
 
+def storage(conf=None):
+    """How long clips stay and how much disk stays free: as saved in Settings -> Storage, else from .env.
+    {"retention_days": plain clips, "keep_days": clips with identified people, "min_free_gb"}; 0 days = no limit."""
+    saved = (conf or load()).get("storage") or {}
+    out = {}
+    for key, name, default, kind in (("retention_days", "RETENTION_DAYS", 30, int),
+                                      ("keep_days", "RETENTION_KEEP_DAYS", 90, int),
+                                      ("min_free_gb", "MIN_FREE_GB", 20, float)):
+        try:
+            out[key] = kind(saved[key] if key in saved else env(name, default))
+        except (TypeError, ValueError):
+            out[key] = default
+    return out
+
+
 def trusted_networks(conf=None):
     """[{"net", "label"}] whose devices skip the password when lan_no_auth is on: as saved in Settings, else LAN_NETWORKS."""
     conf = conf or load()

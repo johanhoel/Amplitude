@@ -46,6 +46,7 @@ Self-hosted camera service for one RTSP camera: motion and object detection (YOL
 | ![Settings](docs/screenshots/settings.jpg)<br>**Settings**: shows the sections in pairs, side by side on a wide screen. | ![Request a feature](docs/screenshots/requests.jpg)<br>**Request a feature**: sends your idea to GitHub as an issue and shows whether it is done. |
 | ![Strangers](docs/screenshots/strangers.jpg)<br>**Strangers**: groups unknown faces that come back. You name each person once. | ![Cameras](docs/screenshots/settings-cameras.jpg)<br>**Settings, cameras**: holds up to 4 cameras. *Find* searches your network for cameras. |
 | ![Off-site](docs/screenshots/settings-offsite.jpg)<br>**Settings, off-site copies**: copies clips to iCloud, Google Drive or another place. Home Assistant settings follow below. | ![Updates](docs/screenshots/settings-updates.jpg)<br>**Settings, updates**: shows the running version. *Update now* installs a newer version from GitHub. |
+| ![Storage](docs/screenshots/settings-storage.jpg)<br>**Settings, storage**: sets how long clips stay, and moves the recordings to another disk or a network share. | |
 
 | Phone: home | Phone: cameras | Phone: settings |
 |---|---|---|
@@ -104,6 +105,18 @@ Enter it under **Settings → Updates → Where updates come from**.
 The guide [docs/update-key.md](docs/update-key.md) explains each step to make the key.
 CamWatch shows the same guide: **Settings → Updates → How to make the key** (`/settings/update/key`).
 
+### Storage
+
+**Settings → Storage → Keep clips** sets how long clips stay and how much disk stays free.
+The values in `.env` (`RETENTION_DAYS`, `RETENTION_KEEP_DAYS`, `MIN_FREE_GB`) only count until you save there.
+
+**Where recordings go** moves the recordings to another folder, disk or network share (NFS or SMB).
+The update helper on the server does the work: it copies, stops CamWatch, copies the newest clips, switches and starts.
+When CamWatch does not start with the new place, the helper switches back. The old copy stays.
+A network share goes into `/etc/fstab` under `/mnt/camwatch-net/`, and Docker waits for it at boot.
+An unprivileged Proxmox container cannot connect to a share. Connect it on the Proxmox host and pass it in with `pct set`.
+Settings shows the steps.
+
 ### Feature requests
 
 Every page has a **💡 Request a feature** link at the bottom.
@@ -120,7 +133,7 @@ When GitHub refuses a request, **Send again** retries it.
 - **People**: add 3–10 clear face photos per person; faces in clips can be assigned with "This is them".
 - **Zones**: draw ignore areas (trees, street) and optional trigger/house/street/parking zones on the live picture.
 - **Plates**: save known plates with a name; known cars get quiet pushes.
-- **Settings**: arm/disarm or schedule, loitering time. Retention is in `.env` (starred clips are kept forever, clips with identified people longer).
+- **Settings**: arm/disarm or schedule, loitering time. How long clips stay is under **Settings → Storage** (starred clips are kept forever, clips with identified people longer).
 - **Home Assistant**: follow the **Home Assistant** page in the web UI; the MQTT broker (IP, user, password) and webhook are entered under **Settings → Home Assistant**.
 
 ## Optional extras (host services)
