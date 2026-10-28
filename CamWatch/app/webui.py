@@ -668,7 +668,7 @@ def delete_person(name):
 
 @app.get("/homeassistant")
 def ha_page():
-    base = (env("WEB_BASE_URL", "") or request.host_url).rstrip("/")
+    base = settings.web_base_url() or request.host_url.rstrip("/")
     labels = [s.strip() for s in (env("DETECT_OBJECTS", "person") or "").split(",") if s.strip()]
     slug = re.sub(r"[^a-z0-9]+", "_", f"camwatch {CAMERA}".lower()).strip("_")
     person = (people() or ["Anna"])[0]
@@ -863,7 +863,7 @@ def settings_page():
                            on_lan=from_lan(), client=request.remote_addr, slots=slots, integ=integ,
                            networks=networks, suggest=suggest, has_password=bool(WEB_PASSWORD),
                            cams=cameras(), snoozed=snoozes(conf), scan_subnet=scan_default(),
-                           nt=settings.ntfy(conf), ntfy_result=request.args.get("ntfy"), priorities=settings.NTFY_PRIORITIES,
+                           nt=settings.ntfy(conf), ntfy_result=request.args.get("ntfy"), link_url=settings.web_base_url(conf), priorities=settings.NTFY_PRIORITIES,
                            off=offsite.options(conf), off_connected=offsite.connected(), off_status=offsite.status(),
                            off_types=offsite.TYPES, off_queue=len(list(offsite.QUEUE.glob("*.json"))) if offsite.QUEUE.is_dir() else 0)
 
@@ -1004,8 +1004,11 @@ def save_ntfy():
     user = (f.get("user") or "").strip()
     token = (f.get("token") or "").strip() or ("" if f.get("clear_token") else old["token"])
     password = f.get("password") or ("" if f.get("clear_password") or not user else old["password"])
+    link = (f.get("link_url") or "").strip().rstrip("/")
+    if link and not re.match(r"^https?://[^\s/]+(:\d+)?(/\S*)?$", link):
+        return settings_error("Link in pushes: enter the address you open camwatch with, e.g. http://192.168.1.20:8080")
     cfg = {"url": url, "topic": topic, "status_topic": status_topic, "token": token, "user": user,
-           "password": password if user else "", "priority": priority}
+           "password": password if user else "", "priority": priority, "link_url": link}
     settings.update(ntfy=cfg)
     result = None
     if f.get("test"):
@@ -2573,6 +2576,9 @@ On the public ntfy.sh server anyone who knows the topic can read it, so use a lo
 <label class="field"><span>Server</span><input type="text" name="url" value="{{ nt.url }}" placeholder="https://ntfy.sh" spellcheck="false"></label>
 <label class="field"><span>Topic <i>detections</i></span><input type="text" name="topic" value="{{ nt.topic }}" placeholder="camwatch-8f3k2q9x" maxlength="64" spellcheck="false" autocomplete="off"></label>
 <label class="field"><span>Status topic <i>optional · camera offline, recording stalled, backups. Empty = the topic above</i></span><input type="text" name="status_topic" value="{{ nt.status_topic }}" maxlength="64" spellcheck="false" autocomplete="off"></label>
+<label class="field"><span>Link in pushes <i>the address your phone opens camwatch with. Empty: pushes have no links</i></span>
+<div class="row" style="flex-wrap:nowrap"><input type="text" name="link_url" id="link-url" value="{{ link_url }}" placeholder="http://192.168.1.20:8080" spellcheck="false" style="flex:1">
+<button type="button" onclick="document.getElementById('link-url').value = location.origin">Use this address</button></div></label>
 <label class="field"><span>Priority of detection pushes</span><select name="priority">{% for p in priorities %}<option {{ 'selected' if p == nt.priority }}>{{ p }}</option>{% endfor %}</select></label>
 <details {{ 'open' if nt.token or nt.user }}><summary class="muted" style="cursor:pointer">Login <i>(only for a protected topic or your own ntfy server)</i></summary>
 <div style="display:grid;gap:10px;margin-top:8px">
@@ -2759,11 +2765,13 @@ a person walking from a street zone to a house zone <i>arrived</i>, the other wa
 Draw them where people's feet are when they come into view from the street, and when they reach the door.<br>
 <b style="color:#7c3aed">Parking</b> zones: where the car stands when it's home (draw around its wheels). A car appearing there is
 logged as <i>arrived</i>, disappearing as <i>left</i>, even inside an ignore zone.</p>
-<div style="position:relative;max-width:1100px">
+<div style="max-width:1100px">
 <div class="row" style="margin-bottom:8px"><button id="heat" type="button">🔥 Show where people walk (14 days)</button>
 <span class="muted">Helps to draw house/street/trigger zones where people actually go.</span></div>
+<!-- the drawing layer covers the picture only: zone points are fractions of the picture -->
+<div style="position:relative">
 <img id="bg" src="{{ url_for('live_still', camera=camera) }}" alt="Camera view" style="width:100%;display:block;border-radius:10px;background:#000;min-height:200px">
-<canvas id="cv" style="position:absolute;inset:0;width:100%;height:100%;cursor:crosshair"></canvas></div>
+<canvas id="cv" style="position:absolute;inset:0;width:100%;height:100%;cursor:crosshair"></canvas></div></div>
 <div class="row" style="margin-top:10px">
 <input type="text" id="zname" placeholder="Zone name, e.g. door" maxlength="40">
 <select id="ztype"><option value="trigger">Trigger zone</option><option value="ignore">Ignore zone</option>

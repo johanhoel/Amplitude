@@ -22,6 +22,7 @@ import cv2
 import numpy as np
 
 from common import VIDEO_EXT, Ntfy, clip_url, env, env_bool, setup_logging
+import settings
 from homeassistant import HomeAssistant
 import search
 import strangers
@@ -248,7 +249,7 @@ def process_video(video, engine, library):
 def report(video, result, known, unknown, ntfy, ha):
     day, stem = video.parent.name, video.name[: -len(video.suffix)]
     web = ha.links(day, stem)
-    media = (env("WEB_BASE_URL", "") or "").rstrip("/") + f"/media/{day}/"
+    media = settings.web_base_url() + f"/media/{day}/"
     for k in result["known"]:
         payload = ha.event("identified", name=k["name"], score=k["score"],
                            face_url=media + k["crop"] if web else None, **web)

@@ -78,7 +78,9 @@ want = (Path(__file__).resolve().parents[1] / "app" / "VERSION").read_text().str
 print(f"{'PASS' if v['version'] == want and v['text'].startswith(want) else 'FAIL'} version {v['text']} (app/VERSION {want})")
 print(f"{'PASS' if v['version'] == s['version']['version'] else 'FAIL'} /api/status carries the version")
 check("/report", ctype="text/html")          # no database here -> renders the "not available" message
-check("/zones", ctype="text/html")
+zones_html = check("/zones", ctype="text/html").get_data(as_text=True)
+box = zones_html[zones_html.rfind('<div style="position:relative">', 0, zones_html.index('id="cv"')):zones_html.index('id="cv"')]
+print(f"{'PASS' if 'id="bg"' in box and 'id="heat"' not in box and 'class="row"' not in box else 'FAIL'} zone drawing layer covers only the picture (same zones on phone and computer)")
 check("/", ctype="text/html")
 check(f"/clip/{today}/camera1_100000", ctype="text/html")
 # tagging from the wall view: tag an unknown face with a new name, then the plate, then star

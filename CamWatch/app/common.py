@@ -158,7 +158,8 @@ def app_version():
 
 
 def clip_url(day, stem):
-    base = env("WEB_BASE_URL", "")
+    import settings  # settings imports common
+    base = settings.web_base_url()
     return f"{base.rstrip('/')}/clip/{day}/{urllib.parse.quote(stem)}" if base else None
 
 

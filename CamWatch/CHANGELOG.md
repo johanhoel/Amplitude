@@ -4,6 +4,12 @@ Newest changes first.
 
 ## 2026-10-28
 
+- Zones show in the same place on a phone and on a computer.
+- Before this fix, the zone editor drew on the button row above the picture too. Zones moved up on a phone.
+- Zones drawn before this fix can sit slightly too high: up to about 7% of the picture at the top. Check them in Zones.
+- Settings → Notifications has a new field: Link in pushes.
+- Pushes, push buttons, face pushes, Home Assistant and the daily summary use this address.
+- Use this address fills in the address you have open. `WEB_BASE_URL` in `.env` only counts until you save the field.
 - CamWatch has a logo: an eye with a camera aperture as its iris, and a red recording dot.
 - The logo shows in every page header and in the browser tab.
 - The app icons on the phone home screen use the logo.

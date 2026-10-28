@@ -486,7 +486,7 @@ def main():
                     help="print the weekly report for the week containing that day (default this week); --send pushes it")
     ap.add_argument("--send", action="store_true", help="with --summary / --week: also send it to ntfy")
     args = ap.parse_args()
-    web = (env("WEB_BASE_URL", "") or "").rstrip("/")
+    web = settings.web_base_url()
 
     if args.week:
         day = dt.date.today() if args.week == "this" else dt.date.fromisoformat(args.week)
@@ -503,7 +503,7 @@ def main():
         title, message = daily_summary(connect(), day)
         print(f"{title}\n{message}")
         if args.send:
-            web = (env("WEB_BASE_URL", "") or "").rstrip("/")
+            web = settings.web_base_url()
             Ntfy(log).send(message, title=title, tags="calendar", priority="low", click=f"{web}/log" if web else None)
         return
 
@@ -527,7 +527,7 @@ def main():
             if day and not args.once:
                 summary_sent = day
                 title, message = daily_summary(db, day)
-                web = (env("WEB_BASE_URL", "") or "").rstrip("/")
+                web = settings.web_base_url()
                 ntfy.send(message, title=title, tags="calendar", priority="low", click=f"{web}/log" if web else None)
                 log.info("daily summary sent: %s", message.replace("\n", " | "))
             monday = weekly_due(week_sent, dt.datetime.now())

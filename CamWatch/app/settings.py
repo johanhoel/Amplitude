@@ -158,6 +158,13 @@ def ntfy(conf=None):
     return out
 
 
+def web_base_url(conf=None):
+    """The web address pushes link to (clips, push buttons, Home Assistant). Set in Settings -> Notifications,
+    else WEB_BASE_URL from .env. Empty: pushes have no links."""
+    saved = ((conf or load()).get("ntfy") or {}).get("link_url")
+    return (saved if saved is not None else env("WEB_BASE_URL", "") or "").strip().rstrip("/")
+
+
 def trusted_networks(conf=None):
     """[{"net", "label"}] whose devices skip the password when lan_no_auth is on: as saved in Settings, else LAN_NETWORKS."""
     conf = conf or load()
