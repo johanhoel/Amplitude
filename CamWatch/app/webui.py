@@ -20,6 +20,7 @@ import numpy as np
 import alerts
 import offsite
 import settings
+import updates
 from plates import match_known, normalize
 from common import VIDEO_EXT, app_version, delete_event, env, setup_logging
 
@@ -865,7 +866,8 @@ def settings_page():
                            cams=cameras(), snoozed=snoozes(conf), scan_subnet=scan_default(),
                            nt=settings.ntfy(conf), ntfy_result=request.args.get("ntfy"), link_url=settings.web_base_url(conf), priorities=settings.NTFY_PRIORITIES,
                            off=offsite.options(conf), off_connected=offsite.connected(), off_status=offsite.status(),
-                           off_types=offsite.TYPES, off_queue=len(list(offsite.QUEUE.glob("*.json"))) if offsite.QUEUE.is_dir() else 0)
+                           off_types=offsite.TYPES, off_queue=len(list(offsite.QUEUE.glob("*.json"))) if offsite.QUEUE.is_dir() else 0,
+                           upd=updates.options(conf), upd_status=updates.status())
 
 
 def settings_error(message):
@@ -1017,6 +1019,53 @@ def save_ntfy():
         result = "ok" if n.send("If you see this, camwatch push notifications work.", title="camwatch test",
                                 tags="white_check_mark", priority=priority) else (n.last_error or "failed")
     return redirect(url_for("settings_page", saved="ntfy", ntfy=result) + "#ntfy")
+
+
+# ---------- updates (app/updates.py, extras/update.py on the host) ----------
+
+@app.post("/settings/update")
+def save_update():
+    old, f = updates.options(), request.form
+    repo, folder = (f.get("repo") or "").strip(), (f.get("folder") or "").strip().strip("/")
+    branch = (f.get("branch") or "").strip() or "main"
+    if not re.match(r"^[-\w.]+/[-\w.]+$", repo):
+        return settings_error("Updates: the GitHub repository looks like owner/name")
+    if not re.match(r"^[-\w. /]{1,100}$", folder) or ".." in folder or not re.match(r"^[-\w./]{1,100}$", branch):
+        return settings_error("Updates: check the folder and the branch")
+    token = (f.get("token") or "").strip() or ("" if f.get("clear_token") else old["token"])
+    settings.update(update={"repo": repo, "folder": folder, "branch": branch, "token": token})
+    updates.check(force=True)
+    return redirect(url_for("settings_page", saved="update") + "#updates")
+
+
+@app.get("/api/update")
+def api_update():
+    """Is there a newer camwatch on GitHub? Cached 10 minutes; ?force=1 asks GitHub again."""
+    return as_json(updates.check(force=request.args.get("force") == "1"))
+
+
+@app.get("/api/update/status")
+def api_update_status():
+    """What the host helper reports while it updates, plus the running version."""
+    s = updates.status()
+    return as_json({**{key: s.get(key) for key in ("helper", "state", "message", "started", "finished")},
+                    "version": app_version()})
+
+
+@app.post("/settings/update/run")
+def run_update():
+    sha = (request.form.get("sha") or "").strip()
+    if not updates.status()["helper"]:
+        return settings_error("Updates: the update helper is not installed on the server. Run sudo ./deploy.sh once.")
+    if updates.status()["state"] in ("waiting", "running"):
+        return redirect(url_for("settings_page") + "#updates")
+    found = updates.check(force=True)
+    latest = found.get("latest") or {}
+    if found.get("error") or not found.get("newer") or latest.get("sha") != sha:
+        return settings_error("Updates: " + (found.get("error") or "this version is no longer the newest - check again"))
+    updates.request_update(sha, latest["version"])
+    log.info("update to %s (%s) requested", latest["version"], sha[:7])
+    return redirect(url_for("settings_page") + "#updates")
 
 
 # ---------- off-site storage (app/offsite.py) ----------
@@ -2711,6 +2760,63 @@ async function offTest(btn) {
 {% if integ.mqtt_password %}<label><input type="checkbox" name="clear_password" value="1"> Remove the saved password</label>{% endif %}
 <label class="field"><span>Webhook URL <i>optional, instead of or next to MQTT</i></span><input type="text" name="ha_webhook_url" value="{{ integ.ha_webhook_url }}" placeholder="http://192.168.1.10:8123/api/webhook/camwatch" spellcheck="false"></label>
 <div class="row"><button class="primary">Save</button> <span class="muted">Saving tests the MQTT login.</span></div></form>
+
+<h2 id="updates">Updates</h2>
+<div class="box" style="display:grid;gap:10px;max-width:560px">
+<div class="row"><span>This server runs <b>{{ app_version.text }}</b></span>{% if app_version.date %}<span class="muted">from {{ app_version.date }}</span>{% endif %}</div>
+<div id="upd-check" class="muted">Checking GitHub for a new version…</div>
+<div id="upd-new" hidden>
+<div style="margin-bottom:8px"><span class="state on">● New version</span> <b id="upd-version"></b> <span class="muted" id="upd-detail"></span></div>
+<form method="post" action="{{ url_for('run_update') }}" onsubmit="return confirm('Install the new version now? camwatch stops for a few minutes. When the new version fails, the old version comes back by itself.')">
+<input type="hidden" name="sha" id="upd-sha">
+<button class="primary" id="upd-button" {{ 'disabled' if not upd_status.helper }}>⬆ Update now</button></form></div>
+{% if not upd_status.helper %}<div class="warn" style="font-size:14px">The update helper is not installed on the server yet. Run <code>sudo ./deploy.sh</code> once.</div>{% endif %}
+<div id="upd-status" class="muted" {{ 'hidden' if upd_status.state == 'idle' }}>
+{% if upd_status.state == 'waiting' %}Waiting for the server to start the update…
+{% elif upd_status.state == 'running' %}Updating: {{ upd_status.message }}
+{% elif upd_status.state == 'done' %}<span class="ok">✓ Last update: {{ upd_status.message }} ({{ (upd_status.finished or '')|replace('T', ' ') }})</span>
+{% elif upd_status.state == 'failed' %}<span class="bad">⚠ Last update failed: {{ upd_status.message }} ({{ (upd_status.finished or '')|replace('T', ' ') }})</span>
+{% if upd_status.log %}<details><summary style="cursor:pointer">Log</summary><pre style="white-space:pre-wrap;font-size:12px;max-height:300px;overflow:auto">{{ upd_status.log }}</pre></details>{% endif %}{% endif %}</div>
+<form method="post" action="{{ url_for('save_update') }}" style="display:grid;gap:10px">
+<details {{ 'open' if not upd.token }}><summary class="muted" style="cursor:pointer">Where updates come from</summary>
+<div style="display:grid;gap:10px;margin-top:8px">
+<p class="muted" style="margin:0">A private repository needs an access key: a fine-grained GitHub token with read access to <i>Contents</i> of this one repository.</p>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:10px">
+<label class="field"><span>GitHub repository</span><input type="text" name="repo" value="{{ upd.repo }}" placeholder="owner/name" spellcheck="false"></label>
+<label class="field"><span>Folder</span><input type="text" name="folder" value="{{ upd.folder }}" spellcheck="false"></label></div>
+<label class="field"><span>Branch</span><input type="text" name="branch" value="{{ upd.branch }}" spellcheck="false"></label>
+<label class="field"><span>Access key</span><input type="password" name="token" value="" autocomplete="new-password" placeholder="{{ 'saved - leave empty to keep' if upd.token else 'github_pat_…' }}"></label>
+{% if upd.token %}<label><input type="checkbox" name="clear_token" value="1"> Remove the saved access key</label>{% endif %}
+<div class="row"><button class="primary">Save and check</button></div></div></details></form>
+</div>
+<script>
+(async function updates() {
+  const $ = id => document.getElementById(id), running = {{ 'true' if upd_status.state in ('waiting', 'running') else 'false' }};
+  if (running) { $('upd-check').hidden = true; return followUpdate(); }
+  try {
+    const r = await (await fetch('{{ url_for("api_update") }}')).json();
+    if (r.error) { $('upd-check').className = 'bad'; $('upd-check').textContent = '⚠ ' + r.error; return; }
+    if (!r.newer) { $('upd-check').textContent = `✓ Up to date. The newest version on GitHub is ${r.latest.version} (${r.latest.short}).`; return; }
+    $('upd-check').hidden = true; $('upd-new').hidden = false;
+    $('upd-version').textContent = `${r.latest.version} (${r.latest.short})`;
+    $('upd-detail').textContent = `from ${r.latest.date}: ${r.latest.message}`;
+    $('upd-sha').value = r.latest.sha;
+  } catch (e) { $('upd-check').textContent = 'The check for a new version failed: ' + e; }
+})();
+// camwatch restarts during the update: keep asking until the server answers again, then show the result
+async function followUpdate() {
+  const box = document.getElementById('upd-status');
+  box.hidden = false;
+  for (;;) {
+    await new Promise(ok => setTimeout(ok, 4000));
+    try {
+      const s = await (await fetch('{{ url_for("api_update_status") }}', {cache: 'no-store'})).json();
+      if (s.state === 'done' || s.state === 'failed') { location.hash = 'updates'; location.reload(); return; }
+      box.textContent = s.state === 'waiting' ? 'Waiting for the server to start the update…' : 'Updating: ' + s.message;
+    } catch (e) { box.textContent = 'camwatch restarts with the new version…'; }
+  }
+}
+</script>
 <script>
 document.querySelectorAll('.camcard input[name^=name_]').forEach(inp => inp.addEventListener('input', () => {
   inp.closest('.camcard').querySelector('.title').textContent = inp.value.trim() || 'New camera';

@@ -82,6 +82,7 @@ if install_from "$new" && healthy; then
   docker image prune -f >/dev/null
   docker builder prune -f --filter until=72h >/dev/null   # build cache from older releases (it fills the system disk)
   echo ">> $target is running the new version"
+  bash "$dir/extras/install-updater.sh" "$dir" || echo "!! the update button helper did not install" >&2
   exit 0
 fi
 

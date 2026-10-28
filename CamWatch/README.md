@@ -44,7 +44,7 @@ Self-hosted camera service for one RTSP camera: motion and object detection (YOL
 | ![Clip](docs/screenshots/clip.jpg)<br>**Clip**: plays one clip. *Play all* plays every camera in the same visit. You can name the faces. | ![Live](docs/screenshots/live.jpg)<br>**Live**: shows every camera live. A button tests the whole chain from camera to phone alert. |
 | ![Zones](docs/screenshots/zones.jpg)<br>**Zones**: you draw the areas that start, ignore or mark activity for each camera. | ![Report](docs/screenshots/report.jpg)<br>**Report**: counts visits per day and per hour. A map shows where people walk most often. |
 | ![Strangers](docs/screenshots/strangers.jpg)<br>**Strangers**: groups unknown faces that come back. You name each person once. | ![Cameras](docs/screenshots/settings-cameras.jpg)<br>**Settings, cameras**: holds up to 4 cameras. *Find* searches your network for cameras. |
-| ![Off-site](docs/screenshots/settings-offsite.jpg)<br>**Settings, off-site copies**: copies clips to iCloud, Google Drive or another place. Home Assistant settings follow below. | |
+| ![Off-site](docs/screenshots/settings-offsite.jpg)<br>**Settings, off-site copies**: copies clips to iCloud, Google Drive or another place. Home Assistant settings follow below. | ![Updates](docs/screenshots/settings-updates.jpg)<br>**Settings, updates**: shows the running version. *Update now* installs a newer version from GitHub. |
 
 | Phone: home | Phone: cameras | Phone: settings |
 |---|---|---|
@@ -83,6 +83,20 @@ Open `http://<host>:8080`, subscribe to your `NTFY_TOPIC` in the ntfy app, then 
 ### More cameras
 
 Up to 4 cameras: the first is in `.env`, the others are added on the web UI's **Settings → Cameras** (name, RTSP stream, optional detection substream, a *Test picture* button). They start within seconds, no restart needed. Each camera has its own recorder container and zones; clips, live view, heatmap, timelapse and the dashboard show all cameras with a picker.
+
+### Updates
+
+**Settings → Updates** checks GitHub for a newer CamWatch.
+When it finds one, it shows an **Update now** button.
+The button asks a helper on the server to install the new version.
+`deploy.sh` installs this helper (`extras/install-updater.sh`, a systemd path unit).
+The helper runs `extras/release.sh`.
+That script backs up the running version and builds the new one.
+When the new version does not start, the script puts the old version back.
+
+The amplitude repository is private.
+GitHub then needs an access key: a fine-grained token with read access to *Contents* of this one repository.
+Enter it under **Settings → Updates → Where updates come from**.
 
 ## Use
 

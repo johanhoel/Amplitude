@@ -64,5 +64,6 @@ rm -rf cameras.sh docker-compose.cameras.yml
 echo ">> Building and starting"
 docker compose up -d --build --remove-orphans
 docker compose ps
+bash extras/install-updater.sh "$INSTALL_DIR" || echo "The update button helper did not install (Settings -> Updates)" >&2
 echo
 echo "Follow logs with:  cd $INSTALL_DIR && sudo docker compose logs -f"
