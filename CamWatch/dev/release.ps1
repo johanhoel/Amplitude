@@ -1,9 +1,10 @@
 # Release the committed code (HEAD) to the server with automatic rollback (extras/release.sh).
 #   powershell -File dev\release.ps1 staging
 #   powershell -File dev\release.ps1 production      (asks first; staging should have run this commit)
+# The server: -Server root@<address>, or set CAMWATCH_SERVER once, e.g. setx CAMWATCH_SERVER root@192.168.1.20
 # For humans only - coding agents never deploy (AGENTS.md).
 param([Parameter(Mandatory)][ValidateSet("staging", "production")][string]$Target,
-      [string]$Server = "root@192.168.1.81", [switch]$Force)
+      [string]$Server = $(if ($env:CAMWATCH_SERVER) { $env:CAMWATCH_SERVER } else { "root@camwatch.local" }), [switch]$Force)
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
 
