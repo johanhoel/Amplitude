@@ -23,7 +23,7 @@ from common import app_version, env
 DIR = Path(env("DATA_DIR", "/data")) / "update"
 REQUEST, STATUS = DIR / "request.json", DIR / "status.json"
 DEFAULTS = {"repo": "johanhoel/Amplitude", "folder": "CamWatch", "branch": "main", "token": ""}
-CACHE_SECONDS = 600
+CACHE_SECONDS = 180
 _cache = {"at": 0.0, "key": None, "result": None}
 _lock = threading.Lock()
 
@@ -64,7 +64,7 @@ def version_key(text):
 
 
 def check(force=False):
-    """{"current", "latest": {sha, short, version, date, message}, "newer": bool} or {"error": ...}. Cached 10 min."""
+    """{"current", "latest": {sha, short, version, date, message}, "newer": bool} or {"error": ...}. Cached 3 min."""
     opts, current = options(), app_version()
     key = (opts["repo"], opts["folder"], opts["branch"], opts["token"], current["commit"])
     with _lock:

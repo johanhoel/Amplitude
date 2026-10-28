@@ -1077,7 +1077,7 @@ def update_key_page():
 
 @app.get("/api/update")
 def api_update():
-    """Is there a newer camwatch on GitHub? Cached 10 minutes; ?force=1 asks GitHub again."""
+    """Is there a newer camwatch on GitHub? Cached 3 minutes; ?force=1 (Check again) asks GitHub again."""
     return as_json(updates.check(force=request.args.get("force") == "1"))
 
 
@@ -2598,6 +2598,8 @@ yesterday becomes a timelapse and a highlights reel (4 s of every recording with
 {% elif saved == 'offsite-off' %}<p class="box ok">Off-site storage disconnected. Files already uploaded stay where they are.</p>
 {% elif saved == 'integration' %}<p class="box ok">Saved.{% if mqtt == 'ok' %} MQTT login works - camwatch connects within 10 seconds.{% elif mqtt %} <span class="bad">MQTT test failed: {{ mqtt }}</span>{% endif %}</p>
 {% elif saved %}<p class="box ok">Saved. The recorder picks it up within a few seconds.</p>{% endif %}
+<p class="box" id="upd-banner" hidden><span class="state on">● New version</span> <b id="upd-banner-version"></b> is ready.
+<a href="#updates">Go to Updates to install it</a></p>
 <style>
 /* the sections in pairs, side by side on a wide screen; one below the other on a phone */
 main{max-width:1320px}
@@ -2993,7 +2995,8 @@ async function offTest(btn) {
 <h2 id="updates">Updates</h2>
 <div class="box" style="display:grid;gap:10px;max-width:560px">
 <div class="row"><span>This server runs <b>{{ app_version.text }}</b></span>{% if app_version.date %}<span class="muted">from {{ app_version.date }}</span>{% endif %}</div>
-<div id="upd-check" class="muted">Checking GitHub for a new version…</div>
+<div class="row"><span id="upd-check" class="muted">Checking GitHub for a new version…</span>
+<button type="button" id="upd-again" onclick="updates(true)" hidden>↻ Check again</button></div>
 <div class="muted">Missing something? <a href="{{ url_for('requests_page') }}">💡 Request a feature</a></div>
 <div id="upd-new" hidden>
 <div style="margin-bottom:8px"><span class="state on">● New version</span> <b id="upd-version"></b> <span class="muted" id="upd-detail"></span></div>
@@ -3022,11 +3025,14 @@ It needs <i>Contents: Read-only</i>, and <i>Issues: Read and write</i> for <a hr
 <div class="row"><button class="primary">Save and check</button></div></div></details></form>
 </div>
 <script>
-(async function updates() {
+async function updates(force) {
   const $ = id => document.getElementById(id), running = {{ 'true' if upd_status.state in ('waiting', 'running') else 'false' }};
   if (running) { $('upd-check').hidden = true; return followUpdate(); }
+  $('upd-check').className = 'muted'; $('upd-check').textContent = 'Checking GitHub for a new version…';
+  $('upd-again').hidden = true;
   try {
-    const r = await (await fetch('{{ url_for("api_update") }}')).json();
+    const r = await (await fetch('{{ url_for("api_update") }}' + (force ? '?force=1' : ''), {cache: 'no-store'})).json();
+    $('upd-again').hidden = false;
     if (r.error) {
       $('upd-check').className = 'bad'; $('upd-check').textContent = '⚠ ' + r.error + '. ';
       const help = document.createElement('a');
@@ -3035,12 +3041,14 @@ It needs <i>Contents: Read-only</i>, and <i>Issues: Read and write</i> for <a hr
       return;
     }
     if (!r.newer) { $('upd-check').textContent = `✓ Up to date. The newest version on GitHub is ${r.latest.version} (${r.latest.short}).`; return; }
-    $('upd-check').hidden = true; $('upd-new').hidden = false;
-    $('upd-version').textContent = `${r.latest.version} (${r.latest.short})`;
+    $('upd-check').hidden = true; $('upd-again').hidden = true; $('upd-new').hidden = false;
+    $('upd-version').textContent = $('upd-banner-version').textContent = `${r.latest.version} (${r.latest.short})`;
+    $('upd-banner').hidden = false;
     $('upd-detail').textContent = `from ${r.latest.date}: ${r.latest.message}`;
     $('upd-sha').value = r.latest.sha;
-  } catch (e) { $('upd-check').textContent = 'The check for a new version failed: ' + e; }
-})();
+  } catch (e) { $('upd-check').textContent = 'The check for a new version failed: ' + e; $('upd-again').hidden = false; }
+}
+updates(false);
 // camwatch restarts during the update: keep asking until the server answers again, then show the result
 async function followUpdate() {
   const box = document.getElementById('upd-status');
