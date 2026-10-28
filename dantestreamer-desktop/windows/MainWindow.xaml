@@ -58,7 +58,7 @@
                     <TextBlock Text="Select an instance" FontSize="16" FontWeight="Bold" Foreground="#999" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,200,0,0"/>
                 </StackPanel>
 
-                <TabControl ItemsSource="{Binding}" Visibility="{Binding Status, Converter={StaticResource NullToVisPart}}">
+                <TabControl Visibility="{Binding Status, Converter={StaticResource NullToVisPart}}">
                     <TabItem Header="Status" Padding="12,4">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Padding="20" Spacing="20">

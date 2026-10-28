@@ -69,12 +69,14 @@ namespace DanteStreamerController.ViewModels
         public IAsyncRelayCommand<DanteInstance> ConnectCommand { get; }
         public IRelayCommand DisconnectCommand { get; }
         public IRelayCommand<DanteInstance> RemoveInstanceCommand { get; }
+        public IRelayCommand AddInstanceCommand { get; }
 
         public ConnectionViewModel()
         {
             ConnectCommand = new AsyncRelayCommand<DanteInstance>(Connect);
             DisconnectCommand = new RelayCommand(Disconnect);
             RemoveInstanceCommand = new RelayCommand<DanteInstance>(RemoveInstance);
+            AddInstanceCommand = new RelayCommand(AddInstanceDialogOpen);
 
             LoadInstances();
 
@@ -116,6 +118,11 @@ namespace DanteStreamerController.ViewModels
             }
 
             SaveInstances();
+        }
+
+        private void AddInstanceDialogOpen()
+        {
+            // TODO: Open dialog to add new instance
         }
 
         private async void OnInstanceSelected()
