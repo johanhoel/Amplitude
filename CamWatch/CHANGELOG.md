@@ -4,6 +4,10 @@ Newest changes first.
 
 ## 2026-10-28
 
+- On a computer, Settings shows its sections in pairs, side by side.
+- The pairs: Alerts and login with Snooze, Notifications with Off-site storage, Home Assistant with Updates.
+- Cameras keep the full width. On a phone, all sections stay one below the other.
+- The version is now 2026.10.28.4.
 - An update no longer fails because of a container that was broken before the update.
 - `release.sh` lists those containers at the end and skips them in the health check.
 - `presence` waits quietly when `.env` has no `DB_PASSWORD`. Before this fix, it was unhealthy.

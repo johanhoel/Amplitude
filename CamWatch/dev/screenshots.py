@@ -35,6 +35,7 @@ PAGES = [
     ("zones", "/zones", 1280, 980, False),
     ("report", "/report", 1280, 1150, False),
     ("strangers", "/strangers", 1280, 820, False),
+    ("settings", "/settings", 1440, 1050, False),
     ("settings-cameras", "/settings#cameras", 1280, 1000, False),
     ("settings-offsite", "/settings#offsite", 1280, 900, False),
     ("settings-updates", "/settings#updates", 1280, 760, False),

@@ -2389,6 +2389,16 @@ yesterday becomes a timelapse and a highlights reel (4 s of every recording with
 {% elif saved == 'offsite-off' %}<p class="box ok">Off-site storage disconnected. Files already uploaded stay where they are.</p>
 {% elif saved == 'integration' %}<p class="box ok">Saved.{% if mqtt == 'ok' %} MQTT login works - camwatch connects within 10 seconds.{% elif mqtt %} <span class="bad">MQTT test failed: {{ mqtt }}</span>{% endif %}</p>
 {% elif saved %}<p class="box ok">Saved. The recorder picks it up within a few seconds.</p>{% endif %}
+<style>
+/* the sections in pairs, side by side on a wide screen; one below the other on a phone */
+main{max-width:1320px}
+.spair{display:grid;gap:0 24px;align-items:start}
+@media (min-width:980px){.spair{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.spair > section{min-width:0}
+.spair .box{max-width:none !important}
+</style>
+<div class="spair"><section>
+<h2 id="alerts">Alerts and login</h2>
 <form method="post" class="box" style="display:grid;gap:14px;max-width:560px">
 <div><b>Alerts</b><p class="muted" style="margin:4px 0">Recording continues in every mode; disarmed only silences push notifications.
 Home Assistant still receives every event (with <code>armed: false</code>) and has an <b>Armed</b> switch.</p>
@@ -2441,6 +2451,7 @@ function addNet(net, label) {
 A VPN only works here if its traffic reaches camwatch with the VPN address (routed, not NAT/masquerade to the router's address).</p>
 {% else %}<p class="muted" style="margin:4px 0">No password is set (<code>WEB_PASSWORD</code> in <code>.env</code> is empty), so no login is asked anywhere.</p>{% endif %}</div>
 <div><button class="primary">Save</button></div></form>
+</section><section>
 <h2 id="snooze">Snooze</h2>
 <p class="muted">No pushes from one camera for a while (recording and Home Assistant carry on). Pushes also have a <b>Snooze 1h</b> button.</p>
 <div class="box" style="display:grid;gap:8px;max-width:560px">{% for c in cams %}
@@ -2456,6 +2467,7 @@ A VPN only works here if its traffic reaches camwatch with the VPN address (rout
 <p class="muted">Starred clips are never deleted automatically. Clips where someone was identified or tagged are kept longer
 (<code>RETENTION_KEEP_DAYS</code>) than other clips (<code>RETENTION_DAYS</code>). When the disk runs low, untagged clips go first.
 Retention periods are set in <code>/opt/camwatch/.env</code>.</p>
+</section></div>
 
 <h2 id="cameras">Cameras <span class="muted">· up to {{ slots|length }}</span></h2>
 <style>
@@ -2624,6 +2636,7 @@ function fill(main, det, cam) {
 }
 </script>
 
+<div class="spair"><section>
 <h2 id="ntfy">Notifications</h2>
 <form method="post" action="{{ url_for('save_ntfy') }}" class="box" style="display:grid;gap:10px;max-width:560px">
 <p class="muted" style="margin:0">Push notifications go through <a href="https://ntfy.sh" target="_blank" rel="noopener">ntfy</a>: install the ntfy app and subscribe to the topic.
@@ -2645,6 +2658,7 @@ On the public ntfy.sh server anyone who knows the topic can read it, so use a lo
 {% if nt.password %}<label><input type="checkbox" name="clear_password" value="1"> Remove the saved password</label>{% endif %}</div></details>
 <div class="row"><button class="primary">Save</button><button name="test" value="1">Save &amp; send a test push</button></div></form>
 
+</section><section>
 <h2 id="offsite">Off-site storage</h2>
 <div class="box" style="display:grid;gap:12px;max-width:640px">
 <p class="muted" style="margin:0">Copies of clips in the cloud or on a NAS, so the footage survives when this server is stolen or breaks.
@@ -2755,6 +2769,9 @@ async function offTest(btn) {
 }
 </script>
 
+</section></div>
+
+<div class="spair"><section>
 <h2 id="ha">Home Assistant</h2>
 <form method="post" action="{{ url_for('save_integration') }}" class="box" style="display:grid;gap:10px;max-width:560px">
 <p class="muted" style="margin:0"><b style="color:var(--fg)">MQTT broker</b>: the Mosquitto add-on in Home Assistant; empty = off. Setup steps: <a href="{{ url_for('ha_page') }}">Home Assistant</a>.</p>
@@ -2766,7 +2783,7 @@ async function offTest(btn) {
 {% if integ.mqtt_password %}<label><input type="checkbox" name="clear_password" value="1"> Remove the saved password</label>{% endif %}
 <label class="field"><span>Webhook URL <i>optional, instead of or next to MQTT</i></span><input type="text" name="ha_webhook_url" value="{{ integ.ha_webhook_url }}" placeholder="http://192.168.1.10:8123/api/webhook/camwatch" spellcheck="false"></label>
 <div class="row"><button class="primary">Save</button> <span class="muted">Saving tests the MQTT login.</span></div></form>
-
+</section><section>
 <h2 id="updates">Updates</h2>
 <div class="box" style="display:grid;gap:10px;max-width:560px">
 <div class="row"><span>This server runs <b>{{ app_version.text }}</b></span>{% if app_version.date %}<span class="muted">from {{ app_version.date }}</span>{% endif %}</div>
@@ -2830,6 +2847,7 @@ async function followUpdate() {
   }
 }
 </script>
+</section></div>
 <script>
 document.querySelectorAll('.camcard input[name^=name_]').forEach(inp => inp.addEventListener('input', () => {
   inp.closest('.camcard').querySelector('.title').textContent = inp.value.trim() || 'New camera';
