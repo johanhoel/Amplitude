@@ -1,4 +1,5 @@
 using System.Windows;
+using DanteStreamerController.ViewModels;
 
 namespace DanteStreamerController
 {
@@ -7,6 +8,7 @@ namespace DanteStreamerController
         public MainWindow()
         {
             InitializeComponent();
+            DataContext = new ConnectionViewModel();
         }
     }
 }
