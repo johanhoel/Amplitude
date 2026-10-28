@@ -5,9 +5,6 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="pack://application:,,,/Themes/Generic.xaml" />
-            </ResourceDictionary.MergedDictionaries>
             <local:BoolToVisibilityConverter x:Key="BoolToVis"/>
             <local:NullToVisibilityConverter x:Key="NullToVis"/>
             <local:NotNullToVisibilityConverter x:Key="NullToVisPart"/>
