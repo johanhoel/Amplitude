@@ -1,11 +1,16 @@
-# How to make the secret key for CamWatch updates
+# How to make the secret key for CamWatch (optional)
 
-CamWatch wants to look at your code on GitHub.
-Your code is private, like a locked diary.
-You make a special key.
-The key lets CamWatch read the code.
-It can never change the code.
-The key also lets CamWatch send your feature requests to GitHub.
+> ✅ You do not need this key for updates.
+> The CamWatch code on GitHub is public, so CamWatch reads it without a key.
+
+The key does two extra things:
+
+- CamWatch sends feature requests to GitHub by itself.
+  Without the key, GitHub opens with your request filled in, and you press Submit.
+- GitHub allows more update checks per hour.
+
+Only the owner of the GitHub repository can make this key.
+A repository that is private again always needs the key.
 
 Do you have a key already?
 Then open it on <https://github.com/settings/personal-access-tokens> and click **Edit**.
@@ -62,15 +67,11 @@ GitHub shows the full list only after you pick a repository.
 
 ## Part 3: Check that it works
 
-Look at **Updates** again.
-You see one of two messages:
+Open **Request a feature** at the bottom of any CamWatch page.
+The page no longer says that GitHub opens for you.
+That means CamWatch sends requests by itself now.
 
-- **✓ Up to date**: it works.
-  CamWatch has the newest version.
-- **● New version** with an **Update now** button: it works too.
-  Press the button when you want the new version.
-
-You see **GitHub refused**?
+A request says **GitHub refused**?
 Then something went wrong with the key.
 Make a new key and check steps 4, 5 and 6 carefully.
 

@@ -5,7 +5,8 @@ helper (extras/update.py, started by a systemd path unit from extras/install-upd
 installs it with extras/release.sh: backup, build, health check, roll back on failure. It reports in status.json.
 
 settings.json "update": {"repo": "owner/name", "folder": "CamWatch", "branch": "main", "token": "github_pat_…"}
-A private repository needs a token: a fine-grained GitHub token with read access to Contents of that one repository.
+The repository is public, so no token is needed. A token (fine-grained, Contents read-only + Issues read and write)
+lets Request a feature create issues itself, raises GitHub's limit of 60 checks an hour, and is needed when private.
 """
 import datetime as dt
 import json
@@ -46,6 +47,8 @@ def _get(path, token, raw=False):
         with urllib.request.urlopen(req, timeout=15) as r:
             body = r.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as exc:
+        if exc.code == 403 and not token:
+            raise GitHubError("GitHub allows 60 checks an hour without an access key - try again later")
         if exc.code in (401, 403, 404):
             raise GitHubError("GitHub refused: the repository is private or the access key is wrong"
                               if exc.code != 403 else "GitHub refused the access key (or too many checks - try later)")

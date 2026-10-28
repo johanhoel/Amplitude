@@ -135,8 +135,18 @@ def fake_issues(method, path, token, body=None):
     return {"state": "closed"}
 
 
-fake_issues.refuse = True
 feature_requests._api = fake_issues
+# without an access key: the request is kept and GitHub's New issue form opens filled in
+token = updates.options()["token"]
+settings.update(update={**updates.options(), "token": ""})
+r = c.post("/requests", data={"title": "Night mode", "text": "Darker pages at night.", "name": ""})
+page = c.get(r.headers["Location"]).get_data(as_text=True)
+report("One more step" in page and "https://github.com/johanhoel/Amplitude/issues/new?title=%5BCamWatch%5D+Night+mode" in page
+       and "Darker+pages+at+night" in page and not made, "without a key, GitHub's New issue form opens filled in")
+report("Open on GitHub" in c.get("/requests").get_data(as_text=True), "the list offers the GitHub form again")
+feature_requests._save([])
+settings.update(update={**updates.options(), "token": token})
+fake_issues.refuse = True
 page = c.get("/requests").get_data(as_text=True)
 report("Request a feature" in page and "Send request" in page, "the Request a feature page opens")
 report("/requests" in c.get("/settings").get_data(as_text=True), "Settings and the footer link to Request a feature")

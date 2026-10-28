@@ -1058,7 +1058,7 @@ def requests_page():
     sent = next((r for r in rows if r["id"] == request.args.get("sent")), None)
     opts = updates.options()
     return render_template("requests.html", rows=rows, sent=sent, error=request.args.get("error"),
-                           repo=opts["repo"], has_token=bool(opts["token"]))
+                           repo=opts["repo"], has_token=bool(opts["token"]), new_issue_url=feature_requests.new_issue_url)
 
 
 @app.post("/requests/<request_id>/resend")
@@ -2044,15 +2044,19 @@ ol li,ul li{margin:4px 0}
 {% block title %}Request a feature{% endblock %}
 {% block body %}
 <h1>Request a feature</h1>
-{% if sent %}<p class="box {{ 'bad' if sent.error else 'ok' }}">{% if sent.error %}Your request is saved here, but GitHub did not get it: {{ sent.error }}.
+{% if sent %}{% if sent.browser and not sent.number %}<div class="box" style="display:grid;gap:8px">
+<div><b>One more step.</b> GitHub opens with your request filled in. Press <b>Submit new issue</b> there.
+You need a free GitHub account for this.</div>
+<div><a class="pill on" href="{{ new_issue_url(sent) }}" target="_blank" rel="noopener">Open GitHub and send it ↗</a></div></div>
+{% else %}<p class="box {{ 'bad' if sent.error else 'ok' }}">{% if sent.error %}Your request is saved here, but GitHub did not get it: {{ sent.error }}.
 <a href="{{ url_for('update_key_page') }}">How to make the access key</a>.{% else %}✓ Thank you! Your request is on GitHub as
-<a href="{{ sent.url }}" target="_blank" rel="noopener">#{{ sent.number }}</a>.{% endif %}</p>{% endif %}
+<a href="{{ sent.url }}" target="_blank" rel="noopener">#{{ sent.number }}</a>.{% endif %}</p>{% endif %}{% endif %}
 {% if error %}<p class="box bad">{{ error }}</p>{% endif %}
 <div class="spair">
 <form method="post" class="box" style="display:grid;gap:10px;align-self:start">
 <p class="muted" style="margin:0">Tell us what CamWatch should do better. Each request goes to GitHub as an issue in
-<code>{{ repo }}</code>, so the developer gets it.{% if not has_token %} <span class="warn">No access key yet: enter it in
-<a href="{{ url_for('settings_page') }}#updates">Settings → Updates</a> first.</span>{% endif %}</p>
+<code>{{ repo }}</code>, so the developer gets it.{% if not has_token %} After you press Send, GitHub opens with your request
+filled in, and you press Submit there.{% endif %}</p>
 <label class="field"><span>What do you want? <i>one short line</i></span><input type="text" name="title" maxlength="120" required placeholder="e.g. Quiet hours for pushes"></label>
 <label class="field"><span>Tell us more <i>why it helps you, and how it should work</i></span><textarea name="text" rows="6" maxlength="5000" required></textarea></label>
 <label class="field"><span>Your name <i>optional · shows on GitHub</i></span><input type="text" name="name" maxlength="60" autocomplete="off"></label>
@@ -2065,6 +2069,7 @@ ol li,ul li{margin:4px 0}
 <div class="box" style="display:grid;gap:4px"><div class="row"><b>{{ r.title }}</b>
 {% if r.number %}<a class="tag" href="{{ r.url }}" target="_blank" rel="noopener">#{{ r.number }}</a>
 <span class="state {{ 'on' if r.state == 'open' else '' }}">{{ '● open' if r.state == 'open' else '✓ done' if r.state == 'closed' else '' }}</span>
+{% elif r.browser and not has_token %}<a class="tag" href="{{ new_issue_url(r) }}" target="_blank" rel="noopener">Open on GitHub ↗</a>
 {% else %}<span class="warn">not sent</span>
 <form class="inline" method="post" action="{{ url_for('resend_request', request_id=r.id) }}"><button>Send again</button></form>{% endif %}</div>
 <div class="muted" style="white-space:pre-wrap">{{ r.text|truncate(300) }}</div>
@@ -3011,16 +3016,17 @@ async function offTest(btn) {
 {% elif upd_status.state == 'failed' %}<span class="bad">⚠ Last update failed: {{ upd_status.message }} ({{ (upd_status.finished or '')|replace('T', ' ') }})</span>
 {% if upd_status.log %}<details><summary style="cursor:pointer">Log</summary><pre style="white-space:pre-wrap;font-size:12px;max-height:300px;overflow:auto">{{ upd_status.log }}</pre></details>{% endif %}{% endif %}</div>
 <form method="post" action="{{ url_for('save_update') }}" style="display:grid;gap:10px">
-<details {{ 'open' if not upd.token }}><summary class="muted" style="cursor:pointer">Where updates come from</summary>
+<details><summary class="muted" style="cursor:pointer">Where updates come from</summary>
 <div style="display:grid;gap:10px;margin-top:8px">
-<p class="muted" style="margin:0">A private repository needs an access key: a fine-grained GitHub token for this one repository.
-It needs <i>Contents: Read-only</i>, and <i>Issues: Read and write</i> for <a href="{{ url_for('requests_page') }}">feature requests</a>.
+<p class="muted" style="margin:0">Updates come from a public GitHub repository and need no access key.
+The key is optional. With a key, CamWatch sends <a href="{{ url_for('requests_page') }}">feature requests</a> itself,
+and GitHub allows more checks per hour. A private repository always needs a key.
 <a href="{{ url_for('update_key_page') }}">How to make the key, step by step</a>.</p>
 <div style="display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:10px">
 <label class="field"><span>GitHub repository</span><input type="text" name="repo" value="{{ upd.repo }}" placeholder="owner/name" spellcheck="false"></label>
 <label class="field"><span>Folder</span><input type="text" name="folder" value="{{ upd.folder }}" spellcheck="false"></label></div>
 <label class="field"><span>Branch</span><input type="text" name="branch" value="{{ upd.branch }}" spellcheck="false"></label>
-<label class="field"><span>Access key</span><input type="password" name="token" value="" autocomplete="new-password" placeholder="{{ 'saved - leave empty to keep' if upd.token else 'github_pat_…' }}"></label>
+<label class="field"><span>Access key <i>optional</i></span><input type="password" name="token" value="" autocomplete="new-password" placeholder="{{ 'saved - leave empty to keep' if upd.token else 'github_pat_…' }}"></label>
 {% if upd.token %}<label><input type="checkbox" name="clear_token" value="1"> Remove the saved access key</label>{% endif %}
 <div class="row"><button class="primary">Save and check</button></div></div></details></form>
 </div>
@@ -3105,13 +3111,19 @@ async function testCam(btn, slot) {
 {% endblock %}""",
 
     "update_key.html": """{% extends "base.html" %}
-{% block title %}Make the update key{% endblock %}
+{% block title %}Make the access key{% endblock %}
 {% block body %}
 <div style="max-width:680px;line-height:1.6">
-<h1>How to make the secret key for updates</h1>
-<p>CamWatch wants to look at your code on GitHub. Your code is private, like a locked diary.
-You make a special key. The key lets CamWatch read the code. It can never change the code.
-The key also lets CamWatch send your <a href="{{ url_for('requests_page') }}">feature requests</a> to GitHub.</p>
+<h1>How to make the secret key (optional)</h1>
+<p class="box ok">You do not need this key for updates. The CamWatch code on GitHub is public, so CamWatch reads it without a key.</p>
+<p>The key does two extra things:</p>
+<ul>
+<li>CamWatch sends <a href="{{ url_for('requests_page') }}">feature requests</a> to GitHub by itself.
+Without the key, GitHub opens with your request filled in, and you press Submit.</li>
+<li>GitHub allows more update checks per hour.</li>
+</ul>
+<p>Only the owner of the GitHub repository <code>{{ upd.repo }}</code> can make this key.
+A repository that is private again always needs the key.</p>
 <p class="muted">Do you have a key already? Then open it on <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">GitHub</a>,
 click <b>Edit</b>, and do steps 5 and 6. The key stays the same, so CamWatch needs nothing new.</p>
 
@@ -3142,12 +3154,9 @@ GitHub can add <b>Metadata</b> by itself. Leave it there.</li>
 </ol>
 
 <h2>Part 3: Check that it works</h2>
-<p>Look at <b>Updates</b> again. You see one of two messages:</p>
-<ul>
-<li><span class="ok">✓ Up to date</span>: it works. CamWatch has the newest version.</li>
-<li><span class="state on">● New version</span> with an <b>Update now</b> button: it works too. Press the button when you want the new version.</li>
-</ul>
-<p>You see <span class="bad">GitHub refused</span>? Then something went wrong with the key. Make a new key and check steps 4, 5 and 6 carefully.</p>
+<p>Open <a href="{{ url_for('requests_page') }}">Request a feature</a>. The page no longer says that GitHub opens for you.
+That means CamWatch sends requests by itself now.</p>
+<p>A request says <span class="bad">GitHub refused</span>? Then something went wrong with the key. Make a new key and check steps 4, 5 and 6 carefully.</p>
 
 <h2>Two rules for secret keys</h2>
 <ol>
