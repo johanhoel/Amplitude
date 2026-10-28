@@ -19,7 +19,18 @@ Swift/SwiftUI native app for macOS 12+. Uses system audio frameworks for play/re
 ### Windows (`windows/`)
 C# WPF modern Windows app. Uses WASAPI for audio routing.
 
-## Building
+## Downloads
+
+Prebuilt binaries available on [GitHub Releases](https://github.com/johanhoel/Amplitude/releases):
+
+- **macOS**: `DanteStreamerController-mac.dmg` – Requires macOS 12.0+
+- **Windows**: `DanteStreamerController-win-x64.zip` – Requires Windows 10+ and .NET 8 Runtime
+
+### .NET Runtime (Windows only)
+
+Download from [dotnet.microsoft.com/download](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) if needed.
+
+## Building from Source
 
 See `macos/README.md` and `windows/README.md` for build instructions.
 
