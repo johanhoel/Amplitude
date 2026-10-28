@@ -54,6 +54,18 @@ Virgil answers only on `127.0.0.1:8480` unless remote access is on. Pick one:
    a remote password. Add the host's IP address and that password. This is
    plain HTTP, so use it only on a trusted network or over a VPN.
 
+If the app says the host refused the port, nothing listens there for this
+computer. On the DanteStreamer computer itself, use host `localhost`. From
+another computer, turn on remote access or open the tunnel first.
+
+To try the apps without a Dante host, run the mock API, which answers like
+Virgil with moving meters on TX 1 and 2:
+
+```bash
+python3 dantestreamer-desktop/tools/mock_virgil.py            # port 8480
+python3 dantestreamer-desktop/tools/mock_virgil.py --password test
+```
+
 The apps save the host list on the computer. macOS keeps it in the app's
 user defaults and the passwords in the login keychain. Windows keeps both in
 `%APPDATA%\DanteStreamerController\instances.json`, with the password

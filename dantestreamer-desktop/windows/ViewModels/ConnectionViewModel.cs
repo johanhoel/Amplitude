@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -270,6 +271,12 @@ namespace DanteStreamerController.ViewModels
                 RxMeters = MeterRow.Build(status.Meters.Rx, status.RxNames, "RX");
                 Error = status.Error == "" ? null : status.Error;
             }
+            catch (HttpRequestException ex) when (ex.InnerException is SocketException { SocketErrorCode: SocketError.ConnectionRefused })
+            {
+                if (inst != SelectedInstance) return;
+                Status = null;
+                Error = RefusedHint(inst.Host, inst.Port);
+            }
             catch (Exception ex)
             {
                 if (inst != SelectedInstance) return;
@@ -299,6 +306,17 @@ namespace DanteStreamerController.ViewModels
                 Error = ex.Message;
             }
             await FetchStatus();
+        }
+
+        // The computer answered but nothing listens on the port. Virgil listens
+        // only on 127.0.0.1 until remote access is turned on.
+        private static string RefusedHint(string host, int port)
+        {
+            bool local = host is "localhost" or "127.0.0.1";
+            return local
+                ? $"Nothing answers on {host}:{port}. Start DanteStreamer, or open the SSH tunnel: ssh -L 8480:127.0.0.1:8480 user@host"
+                : $"{host} refused port {port}. If Virgil runs on this computer, use host localhost. " +
+                  "If it runs on another computer, turn on remote access in its web panel (Settings), or use an SSH tunnel to localhost.";
         }
 
         private static string DescribeHttpError(int code, string body)

@@ -109,6 +109,10 @@ final class ConnectionManager: ObservableObject {
             rxMeters = MeterRow.build(peaks: s.meters.rx, names: s.rxNames, prefix: "RX")
             error = s.error.isEmpty ? nil : s.error
         } catch is CancellationError {
+        } catch let e as URLError where e.code == .cannotConnectToHost {
+            guard instance.id == selectedID else { return }
+            status = nil
+            error = Self.refusedHint(instance)
         } catch {
             guard instance.id == selectedID else { return }
             status = nil
@@ -130,6 +134,16 @@ final class ConnectionManager: ObservableObject {
             }
             await fetchStatus(instance)
         }
+    }
+
+    // The computer answered but nothing listens on the port. Virgil listens
+    // only on 127.0.0.1 until remote access is turned on.
+    private static func refusedHint(_ i: DanteInstance) -> String {
+        if i.host == "localhost" || i.host == "127.0.0.1" {
+            return "Nothing answers on \(i.address). Start DanteStreamer, or open the SSH tunnel: ssh -L 8480:127.0.0.1:8480 user@host"
+        }
+        return "\(i.host) refused port \(i.port). If Virgil runs on this Mac, use host localhost. "
+            + "If it runs on another computer, turn on remote access in its web panel (Settings), or use an SSH tunnel to localhost."
     }
 
     private static func describeHTTPError(_ code: Int, _ body: Data) -> String {

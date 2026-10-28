@@ -2,6 +2,14 @@
 
 Newest first.
 
+## 2026-10-28 (4)
+
+- When a host refuses the port, both apps say what to do: use `localhost`
+  on the DanteStreamer computer, or turn on remote access or an SSH tunnel
+  from another one. Before, Windows showed only the socket error.
+- `tools/mock_virgil.py`: a fake Virgil API (status, start, stop, restart,
+  optional password) for trying the apps without a Dante host.
+
 ## 2026-10-28 (3)
 
 - Both apps built in CI for the first time (run 40771546912). The release
