@@ -140,6 +140,118 @@ API endpoints, all under `http://127.0.0.1:8480`:
 curl -s http://127.0.0.1:8480/api/status | python3 -m json.tool
 ```
 
+## macOS Usage
+
+### Running DanteStreamer on macOS
+
+**Docker Desktop on Mac does not work for Dante** because Dante requires direct access to the host's network for PTP (clock sync) and UDP multicast. Docker Desktop on Mac runs a lightweight Linux VM that cannot expose the host's Ethernet interface properly.
+
+### Options for macOS Users
+
+#### Option 1: Linux VM on Mac (Recommended)
+
+Run DanteStreamer in a Linux virtual machine with **bridged networking**:
+
+**Using Parallels Desktop:**
+1. Create Ubuntu 24.04 LTS VM
+2. Network adapter → Bridged (connect to host's Ethernet)
+3. Inside VM: `sudo apt install docker.io docker-compose-plugin`
+4. Clone and run DanteStreamer
+
+**Using UTM (free):**
+1. Download Ubuntu Server 24.04 LTS ISO
+2. Create VM: 4GB RAM, 20GB disk minimum
+3. Network → Bridged mode to macOS Ethernet interface
+4. Install Docker: `sudo apt install docker.io docker-compose-plugin`
+
+**Using VMware Fusion:**
+```bash
+# Inside Linux VM on Mac
+git clone https://github.com/johanhoel/amplitude.git
+cd amplitude/dantestreamer
+cp .env.example .env
+docker compose up -d --build
+```
+
+#### Option 2: Separate Linux Device
+
+Deploy on a dedicated device on your Dante network:
+- Raspberry Pi 4/5 (~$70)
+- Intel NUC or mini PC (~$300–500)
+- Used laptop/workstation with Ubuntu
+
+Same setup as above, runs 24/7 if needed.
+
+### Using DanteStreamer from macOS
+
+Once running on any Linux host, control it **entirely from your Mac**:
+
+#### Send AirPlay from Mac
+
+1. **iTunes or Music app** → Now Playing
+2. Click **AirPlay icon** (⌘⌥A)
+3. Select **DanteStreamer**
+4. Play music → routes to Dante network
+
+#### Access the Control Panel
+
+If `remote_access = true` in `.env`:
+```bash
+# Direct access (HTTP only, trusted network only)
+http://<linux-host-ip>:8480/
+```
+
+Or use an SSH tunnel (secure, works anywhere):
+```bash
+ssh -L 8480:127.0.0.1:8480 user@<linux-host-ip>
+# Then open http://localhost:8480/ on your Mac
+```
+
+#### Query the API from Terminal
+
+```bash
+# Check status
+curl -s http://<linux-host-ip>:8480/api/status | python3 -m json.tool
+
+# Read current config
+curl -s http://<linux-host-ip>:8480/api/config | python3 -m json.tool
+
+# Or with SSH tunnel
+ssh -L 8480:127.0.0.1:8480 user@<host> "sleep 999" &
+curl -s http://localhost:8480/api/status | python3 -m json.tool
+```
+
+#### Dante Controller on macOS
+
+Download **Dante Controller** (free, Dante Virtual Soundcard Edition):
+1. Install from [Dante Distributor](https://www.audinate.com/product/dante-controller)
+2. Network: should auto-discover DanteStreamer device
+3. Drag to subscribe to DanteStreamer TX 1–2 on your speakers/mixers
+
+### macOS Network Setup
+
+**Requirements:**
+- Ethernet cable from Mac to Dante network (wired strongly recommended)
+- Linux host also on same wired Dante network
+- Same network subnet
+
+**Verify connectivity:**
+```bash
+# From Mac terminal, ping the Linux host
+ping <linux-host-ip>
+
+# Should respond in < 5ms if on same network
+```
+
+### Typical macOS Workflow
+
+1. **Deploy:** Set up Linux VM or Raspberry Pi with DanteStreamer
+2. **Dante network:** Ethernet from both Mac and Linux host to switch
+3. **Control:** SSH tunnel or direct access to `http://<host>:8480/`
+4. **Send audio:** AirPlay from iTunes, Music, or Spotify on Mac
+5. **Route:** Dante Controller on Mac to subscribe speakers/mixers to TX 1–2
+6. **Monitor:** Panel shows clock lock, levels, dropouts
+
 ## Network ports
 
 The container uses the host's network (`network_mode: host`), so these ports
