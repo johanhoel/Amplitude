@@ -1,5 +1,6 @@
 # Builds the Windows (.exe) and Mac (.dmg) installers for CamWatch, Home Deck and DanteStreamer.
-# Run it by hand (Actions -> installers -> Run workflow), or push a tag like installers-v1 to also publish a release.
+# It runs on every change to installers/ (the files are then under the run's Artifacts), by hand
+# (Actions -> installers -> Run workflow), and on a tag like installers-v1, which also publishes a release.
 # The Mac files are signed and notarized when the MACOS_* and APPLE_* secrets exist (see installers/README.md).
 name: installers
 
@@ -7,6 +8,8 @@ on:
   workflow_dispatch:
   push:
     tags: ["installers-v*"]
+    branches: [main]
+    paths: ["installers/**", ".github/workflows/installers.yml"]
 
 permissions:
   contents: write

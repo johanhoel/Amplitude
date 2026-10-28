@@ -88,8 +88,9 @@ spec = importlib.util.spec_from_file_location("helper", REPO / "extras" / "updat
 helper = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(helper)
 old = Path("/srv/camwatch/recordings")
+helper.DATA = Path("/srv/camwatch/data")      # the test's own data folder is in /tmp, itself a system folder on Linux
 for target, want in (("/etc/camwatch", "system folder"), ("/srv/camwatch/recordings", "already"),
-                     ("/srv/camwatch/recordings/new", "inside"), (str(root / "data" / "rec"), "data folder"),
+                     ("/srv/camwatch/recordings/new", "inside"), ("/srv/camwatch/data/rec", "data folder"),
                      ("/mnt/nas/camwatch/recordings", None)):
     got = helper.check_target(Path(target), old)
     report((got is None) if want is None else (want in (got or "")), f"helper check for {target}: {got}")
