@@ -87,9 +87,25 @@ jobs:
           </plist>
           EOF
 
-      - name: Code sign app (ad-hoc)
+      - name: Import Developer ID Certificate
+        env:
+          CERT_BASE64: ${{ secrets.DEVELOPER_ID_CERT_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.DEVELOPER_ID_CERT_PASSWORD }}
+        run: |
+          echo $CERT_BASE64 | base64 -d > cert.p12
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security import cert.p12 -k build.keychain -P "$CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k "" build.keychain
+
+      - name: Code sign app with Developer ID
         working-directory: dantestreamer-desktop/macos
-        run: codesign -s - --deep --force DanteStreamer.app
+        env:
+          TEAM_ID: ${{ secrets.DEVELOPER_ID_TEAM }}
+        run: |
+          codesign -s "Developer ID Application: Johan Hoel ($TEAM_ID)" --deep --force DanteStreamer.app
+          codesign -v DanteStreamer.app
 
       - name: Create archive
         working-directory: dantestreamer-desktop/macos
