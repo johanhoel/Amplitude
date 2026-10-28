@@ -12,6 +12,12 @@
     <Description>Native Windows control application for DanteStreamer</Description>
   </PropertyGroup>
 
+  <!-- Virgil's installer, put here by CI (build-desktop.yml) after a SHA-256 check.
+       Local builds without it fall back to the download page. -->
+  <ItemGroup Condition="Exists('Virgil\Virgil-setup.exe')">
+    <EmbeddedResource Include="Virgil\Virgil-setup.exe" LogicalName="VirgilSetup.exe" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
     <PackageReference Include="System.Net.Http.Json" Version="8.0.0" />

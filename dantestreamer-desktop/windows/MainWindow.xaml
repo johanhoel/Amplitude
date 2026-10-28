@@ -128,15 +128,19 @@
                                 <TextBlock Text="A. This computer plays to the Dante speakers" FontSize="15" FontWeight="Bold" Margin="0,0,0,4"/>
                                 <TextBlock TextWrapping="Wrap" Foreground="#666" Margin="0,0,0,10"
                                            Text="No other equipment needed: this PC joins the Dante network and sends its own sound (Spotify, a browser, everything) to the speakers."/>
-                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6" Text="1. Install Virgil, the free Dante engine DanteStreamer uses. Download Virgil-…-win64-setup.exe from the newest release and run it. Allow it through the firewall when Windows asks."/>
-                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6" Text="2. Click Use this computer. This app then shows the status and the meters."/>
+                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6" Text="1. Click Install Virgil. Virgil is the free Dante engine DanteStreamer uses, and it comes with this app. Windows asks for permission once: click Yes. The app connects by itself when it is done."/>
+                                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6" Text="2. The Status tab then shows this PC on the Dante network. If Virgil was already installed, click Use this computer instead."/>
                                 <TextBlock TextWrapping="Wrap" Margin="0,0,0,6" Text="3. Send the PC's sound to Dante: right-click the Virgil icon next to the clock, choose Desktop audio…, click Add…, pick Default output device (or one app, like spotify.exe) on transmit channels 1 and 2."/>
                                 <TextBlock TextWrapping="Wrap" Margin="0,0,0,12" Text="4. In Dante Controller, route this PC's transmit channels 1 and 2 to your speakers."/>
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Content="Download Virgil" Command="{Binding DownloadVirgilCommand}" Style="{StaticResource ToolButton}"/>
-                                    <Button Content="Use this computer" Command="{Binding UseThisComputerCommand}" Style="{StaticResource ToolButton}"
+                                    <Button Content="{Binding InstallButtonText}" Command="{Binding InstallVirgilCommand}" Style="{StaticResource ToolButton}"
                                             Background="#2196F3" Foreground="White" BorderThickness="0"/>
+                                    <Button Content="Use this computer" Command="{Binding UseThisComputerCommand}" Style="{StaticResource ToolButton}"/>
                                 </StackPanel>
+                                <TextBlock Text="{Binding InstallMessage}" TextWrapping="Wrap" Foreground="#1565C0" Margin="0,8,0,0"
+                                           Visibility="{Binding InstallMessage, Converter={StaticResource NotNullToVis}}"/>
+                                <TextBlock TextWrapping="Wrap" Foreground="#999" FontSize="11" Margin="0,8,0,0"
+                                           Text="Virgil is free software under the GNU GPL v3. Source: github.com/Audbol/Virgil-Virtual-Soundcard"/>
                             </StackPanel>
                         </Border>
 

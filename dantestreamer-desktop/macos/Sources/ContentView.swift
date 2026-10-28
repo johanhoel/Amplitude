@@ -101,16 +101,23 @@ struct StartView: View {
                         Text("A. This Mac plays to the Dante speakers").font(.headline)
                         Text("No other equipment needed: this Mac joins the Dante network and sends its own sound (Music, Spotify, a browser, everything) to the speakers.")
                             .foregroundColor(.secondary)
-                        step("1.", "Install Virgil, the free Dante engine DanteStreamer uses. Download Virgil-…-macos.pkg from the newest release and open it. Allow incoming connections if macOS asks.")
-                        step("2.", "Click Use this Mac. This app then shows the status and the meters.")
+                        step("1.", "Click Install Virgil. Virgil is the free Dante engine DanteStreamer uses, and it comes with this app. macOS asks for your password once. The app connects by itself when it is done.")
+                        step("2.", "The Status tab then shows this Mac on the Dante network. If Virgil was already installed, click Use this Mac instead.")
                         step("3.", "Send the Mac's sound to Dante: in the menu bar, click the Virgil icon, choose Desktop audio…, click Add…, pick Default output device (or one app, like Spotify) on transmit channels 1 and 2. macOS asks once to allow audio recording: click Allow. This needs macOS 14.2 or later.")
                         step("4.", "In Dante Controller, route this Mac's transmit channels 1 and 2 to your speakers.")
                         HStack {
-                            Button("Download Virgil") { NSWorkspace.shared.open(ConnectionManager.virgilDownloadURL) }
-                            Button("Use this Mac") { manager.useThisComputer() }
+                            Button(ConnectionManager.bundledVirgil == nil ? "Download Virgil" : "Install Virgil") { manager.installVirgil() }
                                 .keyboardShortcut(.defaultAction)
+                                .disabled(manager.installing)
+                            Button("Use this Mac") { manager.useThisComputer() }
                         }
                         .padding(.top, 4)
+                        if let message = manager.installMessage {
+                            Text(message).foregroundColor(.accentColor)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Text("Virgil is free software under the GNU GPL v3. Source: github.com/Audbol/Virgil-Virtual-Soundcard")
+                            .font(.caption).foregroundColor(.secondary)
                     }
                     .padding(8)
                     .frame(maxWidth: .infinity, alignment: .leading)

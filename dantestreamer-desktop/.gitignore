@@ -4,3 +4,4 @@ windows/publish/
 macos/.build/
 macos/*.app
 *.zip
+windows/Virgil/

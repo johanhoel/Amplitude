@@ -54,19 +54,18 @@ You need the computer, the Dante speakers or amplifier, and a network switch
 or router they are all plugged into. A wired network works best; Dante over
 Wi-Fi drops out.
 
-DanteStreamer uses Virgil as its Dante engine. Virgil is free and has its
-own installer.
+DanteStreamer uses Virgil as its Dante engine. Virgil comes inside the app,
+so there is nothing else to download.
 
 **Windows**
 
-1. In DanteStreamer Controller, click **Download Virgil**. This opens
-   Virgil's releases page. Under the newest release, download
-   `Virgil-<version>-win64-setup.exe` and run it.
-2. Windows asks whether to allow Virgil on the network. Click **Allow**
-   (private networks are enough).
-3. Back in DanteStreamer Controller, click **Use this computer**. Within a
-   second the Status tab shows the device name and the clock. The clock
-   turns green (`ptp-locked`) once it hears your Dante speakers.
+1. On the start page, click **Install Virgil**. Windows asks whether the
+   app may make changes to your device: click **Yes**. The install takes
+   about ten seconds and adds the firewall rules Dante needs.
+2. The app connects by itself. The Status tab shows this PC's name and the
+   clock. The clock turns green (`ptp-locked`) once it hears your Dante
+   speakers.
+3. Virgil was already installed? Click **Use this computer** instead.
 4. Send the PC's sound to Dante. Click the arrow next to the clock on the
    taskbar, right-click the **Virgil** icon and choose **Desktop audio…**.
    Click **Add…** and pick **Default output device** to send everything the
@@ -83,14 +82,14 @@ own installer.
 
 **macOS**
 
-1. In DanteStreamer Controller, click **Download Virgil**. Under the newest
-   release, download `Virgil-<version>-macos.pkg` and open it. Follow the
-   installer.
+1. On the start page, click **Install Virgil**. macOS asks for your Mac's
+   password, because Virgil installs a sound driver and a background
+   service. Type it and click **OK**.
 2. If macOS asks whether Virgil may accept incoming network connections,
    click **Allow**.
-3. In DanteStreamer Controller, click **Use this Mac**. The Status tab shows
-   the device name and the clock. The clock turns green (`ptp-locked`) once
-   it hears your Dante speakers.
+3. The app connects by itself. The Status tab shows this Mac's name and the
+   clock. The clock turns green (`ptp-locked`) once it hears your Dante
+   speakers. Virgil was already installed? Click **Use this Mac** instead.
 4. Send the Mac's sound to Dante. Click the **Virgil** icon in the menu bar
    and choose **Desktop audio…**. Click **Add…** and pick **Default output
    device**, or one app such as **Spotify** or **Safari**. Set the channel
@@ -155,13 +154,27 @@ The app shows a red line at the top. What it means:
 
 | The app says | Do this |
 |---|---|
-| Virgil is not running on this computer | Install Virgil (setup A, step 1). If it is installed, start *Virgil Control* from the Start menu or Applications. |
+| Virgil is not running on this computer | Click **Install Virgil** on the start page. If it is installed, start *Virgil Control* from the Start menu or Applications. |
+| Installation cancelled | You clicked *No* or *Cancel* at the permission prompt. Click **Install Virgil** again. |
 | *Host* does not accept connections on port 8480 | Remote access is off on the box. Do setup B on the box, then try again. |
 | Wrong or missing password | Select the host, click **Edit** and type `REMOTE_PASSWORD` from the box's `.env` file. |
 | Too many wrong passwords | Wait a minute, then fix the password. |
 | Cannot reach *host* (timed out) | The box is off, on another network, or the IP address changed. Click **Find on network** again. |
 | No DanteStreamer found | The box is off or on another network segment. Type its IP address instead; your router's list of devices shows it. |
 | Clock stays `free-run` or `stopped` | Virgil does not hear a Dante clock. Check that the speakers are on and on the same network, and that the computer uses the wired adapter (Virgil's *Settings…*). |
+
+## Virgil inside the app
+
+Both apps carry [Virgil](https://github.com/Audbol/Virgil-Virtual-Soundcard)
+0.8.1, free software under the GNU GPL v3; its source is at that link.
+
+- Windows: Virgil's official installer, checked against its published
+  SHA-256 in CI before it goes into the exe.
+- macOS: built from Virgil's source in CI at a pinned commit and signed with
+  the same Developer ID as the app, so it is notarized with it.
+
+To move to a newer Virgil, change `VIRGIL_VERSION`, `VIRGIL_COMMIT` and
+`VIRGIL_WIN_SHA256` at the top of `.github/workflows/build-desktop.yml`.
 
 ## Where the app keeps its settings
 

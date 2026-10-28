@@ -9,6 +9,13 @@ on:
       - main
   workflow_dispatch:
 
+# Virgil (DanteStreamer's Dante engine, GPLv3) ships inside both apps.
+# Update all three together.
+env:
+  VIRGIL_VERSION: v0.8.1
+  VIRGIL_COMMIT: 00703836a7c9b9644d1b5bf6f4496a43539fdfe5
+  VIRGIL_WIN_SHA256: 4c9f347d14767300a2da9d9e4aa0b68637f888931f20e1a1edb6c9d7e6dd786f
+
 jobs:
   build-windows:
     runs-on: windows-latest
@@ -19,6 +26,17 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+
+      # Virgil's official installer goes inside the exe (Install Virgil button).
+      # Pinned version, checked against the SHA-256 GitHub lists for the asset.
+      - name: Bundle Virgil installer
+        shell: pwsh
+        run: |
+          $dir = "dantestreamer-desktop/windows/Virgil"
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Invoke-WebRequest "https://github.com/Audbol/Virgil-Virtual-Soundcard/releases/download/${{ env.VIRGIL_VERSION }}/Virgil-$("${{ env.VIRGIL_VERSION }}".TrimStart('v'))-win64-setup.exe" -OutFile "$dir/Virgil-setup.exe"
+          $hash = (Get-FileHash "$dir/Virgil-setup.exe" -Algorithm SHA256).Hash.ToLower()
+          if ($hash -ne "${{ env.VIRGIL_WIN_SHA256 }}") { throw "Virgil installer checksum mismatch: $hash" }
 
       - name: Build Windows EXE (self-contained)
         working-directory: dantestreamer-desktop/windows
@@ -56,12 +74,68 @@ jobs:
             sed -E "s#^$GITHUB_WORKSPACE/##; s#^([^:]+):([0-9]+):([0-9]+): (error|warning): (.*)\$#::\4 file=\1,line=\2,col=\3::\5#"
           exit $status
 
+      - name: Import Developer ID Certificate
+        env:
+          CERT_BASE64: ${{ secrets.DEVELOPER_ID_CERT_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.DEVELOPER_ID_CERT_PASSWORD }}
+        run: |
+          echo "$CERT_BASE64" | base64 -d > cert.p12
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security import cert.p12 -k build.keychain -P "$CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k "" build.keychain
+          rm cert.p12
+
+      # Build Virgil from source at a pinned commit and sign its engine, Core Audio
+      # driver and Virgil Control with the same Developer ID, so the package inside
+      # the app passes notarization with it. The app installs it with
+      # /usr/sbin/installer, so the .pkg itself needs no Installer certificate;
+      # it is signed too when the .p12 also holds a "Developer ID Installer" identity.
+      - name: Build Virgil (signed)
+        env:
+          TEAM_ID: ${{ secrets.DEVELOPER_ID_TEAM }}
+        run: |
+          set -eu
+          src="$RUNNER_TEMP/virgil"
+          git init -q "$src"
+          git -C "$src" fetch -q --depth 1 https://github.com/Audbol/Virgil-Virtual-Soundcard.git "$VIRGIL_COMMIT"
+          git -C "$src" checkout -q FETCH_HEAD
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
+          # Virgil Control reads audio interface inputs; under the hardened runtime
+          # that needs the audio-input entitlement.
+          ent="$RUNNER_TEMP/virgil-control.entitlements"
+          plutil -create xml1 "$ent"
+          plutil -insert com.apple.security.device.audio-input -bool YES "$ent"
+          python3 - "$src/packaging/macos/build-pkg.sh" "$ent" << 'PY'
+          import sys
+          path, ent = sys.argv[1], sys.argv[2]
+          s = open(path).read()
+          old = '\t\t"$root/Library/Audio/Plug-Ins/HAL/VirgilAudio.driver" "$root/Applications/Virgil Control.app"\n'
+          new = ('\t\t"$root/Library/Audio/Plug-Ins/HAL/VirgilAudio.driver"\n'
+                 '\tcodesign --force --options runtime --timestamp -s "$VIRGIL_CODESIGN_ID" \\\n'
+                 '\t\t--entitlements "' + ent + '" "$root/Applications/Virgil Control.app"\n')
+          if s.count(old) != 1:
+              sys.exit("build-pkg.sh changed: update the Virgil Control signing patch")
+          open(path, "w").write(s.replace(old, new))
+          PY
+
+          export VIRGIL_CODESIGN_ID="Developer ID Application: Johan Hoel ($TEAM_ID)"
+          installer_id=$(security find-identity -v -p basic build.keychain | sed -n 's/.*"\(Developer ID Installer: [^"]*\)".*/\1/p' | head -1)
+          if [ -n "$installer_id" ]; then export VIRGIL_INSTALLER_ID="$installer_id"; else echo "No Developer ID Installer identity: Virgil.pkg is unsigned (its contents are signed)."; fi
+          (cd "$src" && sh packaging/macos/build-pkg.sh)
+          cp "$src"/dist/Virgil-*-macos.pkg "$RUNNER_TEMP/Virgil.pkg"
+          codesign -v --strict "$src/build-macos-release/virgild" || true
+          pkgutil --check-signature "$RUNNER_TEMP/Virgil.pkg" || true
+
       - name: Create app structure
         working-directory: dantestreamer-desktop/macos
         run: |
           mkdir -p DanteStreamer.app/Contents/MacOS
           mkdir -p DanteStreamer.app/Contents/Resources
           cp .build/apple/Products/Release/DanteStreamerController DanteStreamer.app/Contents/MacOS/
+          cp "$RUNNER_TEMP/Virgil.pkg" DanteStreamer.app/Contents/Resources/Virgil.pkg
           chmod +x DanteStreamer.app/Contents/MacOS/DanteStreamerController
           echo "APPL????" > DanteStreamer.app/Contents/PkgInfo
 
@@ -111,19 +185,6 @@ jobs:
           EOF
           plutil -lint DanteStreamer.app/Contents/Info.plist
 
-      - name: Import Developer ID Certificate
-        env:
-          CERT_BASE64: ${{ secrets.DEVELOPER_ID_CERT_BASE64 }}
-          CERT_PASSWORD: ${{ secrets.DEVELOPER_ID_CERT_PASSWORD }}
-        run: |
-          echo "$CERT_BASE64" | base64 -d > cert.p12
-          security create-keychain -p "" build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p "" build.keychain
-          security import cert.p12 -k build.keychain -P "$CERT_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple: -k "" build.keychain
-          rm cert.p12
-
       - name: Code sign app with Developer ID
         working-directory: dantestreamer-desktop/macos
         env:
@@ -148,13 +209,17 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
         run: |
+          # Which secrets this run can see (yes/no only, never the values).
+          for v in TEAM_ID APPLE_ID APPLE_APP_PASSWORD API_KEY_ID API_ISSUER_ID API_KEY_BASE64; do
+            if [ -n "${!v}" ]; then echo "$v: set"; else echo "$v: empty"; fi
+          done
           if [ -n "$API_KEY_ID" ] && [ -n "$API_ISSUER_ID" ] && [ -n "$API_KEY_BASE64" ]; then
             echo "$API_KEY_BASE64" | base64 -d > "$RUNNER_TEMP/AuthKey.p8"
             auth=(--key "$RUNNER_TEMP/AuthKey.p8" --key-id "$API_KEY_ID" --issuer "$API_ISSUER_ID")
           elif [ -n "$APPLE_ID" ] && [ -n "$APPLE_APP_PASSWORD" ]; then
             auth=(--apple-id "$APPLE_ID" --password "$APPLE_APP_PASSWORD" --team-id "$TEAM_ID")
           else
-            echo "::warning::No notarization secrets set; the app is signed but not notarized."
+            echo "::warning::No notarization secrets visible (APPLE_ID + APPLE_APP_PASSWORD, or the APPLE_API_KEY_* set); the app is signed but not notarized."
             exit 0
           fi
           ditto -c -k --keepParent DanteStreamer.app notarize.zip

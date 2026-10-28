@@ -2,6 +2,19 @@
 
 Newest first.
 
+## 2026-10-28 (6)
+
+- Virgil ships inside both apps: Install Virgil on the start page installs
+  it with one permission prompt and connects. No separate download.
+  Windows runs Virgil 0.8.1's official installer silently, checked against
+  its SHA-256 in CI. macOS builds Virgil from source at a pinned commit and
+  signs it with the app's Developer ID; the app runs the package with
+  `/usr/sbin/installer` after the password prompt.
+- Virgil Control on macOS is signed with the audio-input entitlement, so
+  audio interface inputs work under the hardened runtime.
+- CI prints which Apple secrets it can see (set or empty) in the notarize
+  step.
+
 ## 2026-10-28 (5)
 
 - Start page with the two setups. A: this PC or Mac plays to the Dante

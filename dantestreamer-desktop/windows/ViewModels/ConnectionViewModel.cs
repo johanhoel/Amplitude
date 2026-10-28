@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -109,7 +110,16 @@ namespace DanteStreamerController.ViewModels
         public const string ThisComputer = "localhost";
 
         public IRelayCommand UseThisComputerCommand { get; }
-        public IRelayCommand DownloadVirgilCommand { get; }
+        public IAsyncRelayCommand InstallVirgilCommand { get; }
+
+        private const string VirgilResource = "VirgilSetup.exe";
+        // True in release builds, which carry Virgil's installer inside the exe.
+        public bool VirgilBundled { get; } =
+            typeof(ConnectionViewModel).Assembly.GetManifestResourceInfo(VirgilResource) != null;
+        public string InstallButtonText => VirgilBundled ? "Install Virgil" : "Download Virgil";
+
+        private string? _installMessage;
+        public string? InstallMessage { get => _installMessage; set => SetProperty(ref _installMessage, value); }
         public IAsyncRelayCommand FindFromStartCommand { get; }
 
         public const string GuideUrl = "https://github.com/johanhoel/Amplitude/blob/main/dantestreamer-desktop/README.md#connect-to-your-dantestreamer";
@@ -150,7 +160,7 @@ namespace DanteStreamerController.ViewModels
             FindCommand = new AsyncRelayCommand(FindOnNetwork);
             OpenGuideCommand = new RelayCommand(() => OpenUrl(GuideUrl));
             UseThisComputerCommand = new RelayCommand(UseThisComputer);
-            DownloadVirgilCommand = new RelayCommand(() => OpenUrl(VirgilDownloadUrl));
+            InstallVirgilCommand = new AsyncRelayCommand(InstallVirgil);
             FindFromStartCommand = new AsyncRelayCommand(async () =>
             {
                 if (!ShowAddForm) ToggleAddForm();
@@ -231,6 +241,54 @@ namespace DanteStreamerController.ViewModels
                 if (response.IsSuccessStatusCode && Instances.Count == 0) UseThisComputer();
             }
             catch { /* Virgil is not installed or not running: the start page shows the choices */ }
+        }
+
+        // Runs the bundled Virgil installer silently (/S). Windows shows one
+        // permission prompt; then the app connects to Virgil on this PC.
+        private async Task InstallVirgil()
+        {
+            using var setup = typeof(ConnectionViewModel).Assembly.GetManifestResourceStream(VirgilResource);
+            if (setup == null)
+            {
+                OpenUrl(VirgilDownloadUrl);
+                return;
+            }
+
+            var path = Path.Combine(Path.GetTempPath(), "DanteStreamer-Virgil-setup.exe");
+            try
+            {
+                await using (var file = File.Create(path))
+                    await setup.CopyToAsync(file);
+
+                InstallMessage = "Installing Virgil. Windows asks for permission: click Yes.";
+                var process = Process.Start(new ProcessStartInfo(path, "/S") { UseShellExecute = true, Verb = "runas" });
+                if (process == null) throw new InvalidOperationException("the installer did not start");
+                await process.WaitForExitAsync();
+                if (process.ExitCode != 0)
+                {
+                    InstallMessage = $"Virgil setup stopped with code {process.ExitCode}. Click Install Virgil to try again.";
+                    return;
+                }
+            }
+            catch (Win32Exception)
+            {
+                InstallMessage = "Installation cancelled. Click Install Virgil to try again, and click Yes when Windows asks.";
+                return;
+            }
+            catch (Exception ex)
+            {
+                InstallMessage = $"Could not install Virgil: {ex.Message}";
+                return;
+            }
+            finally
+            {
+                try { File.Delete(path); } catch { /* still in use or already gone */ }
+            }
+
+            InstallMessage = "Virgil is installed. Connecting...";
+            await Task.Delay(TimeSpan.FromSeconds(3)); // the Virgil service starts its panel
+            UseThisComputer();
+            InstallMessage = null;
         }
 
         private void UseThisComputer()
@@ -418,7 +476,7 @@ namespace DanteStreamerController.ViewModels
         {
             bool local = host is "localhost" or "127.0.0.1";
             return local
-                ? "Virgil is not running on this computer. Install it (Download Virgil below) or start Virgil Control " +
+                ? "Virgil is not running on this computer. Click Install Virgil below, or start Virgil Control " +
                   "from the Start menu; this page connects by itself once it runs. For a DanteStreamer box on the network, add it by its IP address instead."
                 : $"{host} does not accept connections on port {port}. Remote access is probably off on that DanteStreamer: " +
                   "add REMOTE_PASSWORD to its .env file and run docker compose up -d, then enter that password here. Click Setup guide for the steps.";

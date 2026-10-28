@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 // Saves instances and polls /api/status of the selected one once a second.
@@ -13,6 +14,8 @@ final class ConnectionManager: ObservableObject {
     @Published private(set) var txMeters: [MeterRow] = []
     @Published private(set) var rxMeters: [MeterRow] = []
     @Published var error: String?
+    @Published var installMessage: String?
+    @Published private(set) var installing = false
 
     private var pollTask: Task<Void, Never>?
     private let session: URLSession = {
@@ -46,6 +49,56 @@ final class ConnectionManager: ObservableObject {
               (result.1 as? HTTPURLResponse)?.statusCode == 200,
               instances.isEmpty else { return }
         useThisComputer()
+    }
+
+    // Virgil's package, built and signed in CI (build-desktop.yml) and placed in
+    // the app's Resources. `swift run` builds have none and use the download page.
+    static var bundledVirgil: URL? { Bundle.main.url(forResource: "Virgil", withExtension: "pkg") }
+
+    // Installs the bundled package with /usr/sbin/installer. macOS asks for an
+    // administrator password once; then the app connects to Virgil on this Mac.
+    func installVirgil() {
+        guard let pkg = Self.bundledVirgil else {
+            NSWorkspace.shared.open(Self.virgilDownloadURL)
+            return
+        }
+        // AppleScript string: escape backslashes and quotes; `quoted form of` handles the shell.
+        let path = pkg.path.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+        let script = "do shell script \"/usr/sbin/installer -pkg \" & quoted form of \"\(path)\" & \" -target /\" with administrator privileges"
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        process.arguments = ["-e", script]
+        let stderr = Pipe()
+        process.standardError = stderr
+        process.terminationHandler = { p in
+            let message = String(decoding: stderr.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+            Task { @MainActor in self.installFinished(status: p.terminationStatus, message: message) }
+        }
+        installing = true
+        installMessage = "Installing Virgil. macOS asks for your password."
+        do {
+            try process.run()
+        } catch {
+            installing = false
+            installMessage = "Could not start the installer: \(error.localizedDescription)"
+        }
+    }
+
+    private func installFinished(status: Int32, message: String) {
+        installing = false
+        guard status == 0 else {
+            // -128 = the password dialog was cancelled
+            installMessage = message.contains("-128")
+                ? "Installation cancelled. Click Install Virgil to try again."
+                : "Virgil was not installed: \(message.trimmingCharacters(in: .whitespacesAndNewlines))"
+            return
+        }
+        installMessage = "Virgil is installed. Connecting..."
+        Task {
+            try? await Task.sleep(nanoseconds: 3_000_000_000) // the Virgil service starts its panel
+            useThisComputer()
+            installMessage = nil
+        }
     }
 
     func useThisComputer() {
@@ -163,7 +216,7 @@ final class ConnectionManager: ObservableObject {
     // only on 127.0.0.1 until remote access is turned on.
     private static func refusedHint(_ i: DanteInstance) -> String {
         if i.host == "localhost" || i.host == "127.0.0.1" {
-            return "Virgil is not running on this Mac. Install it (Download Virgil below) or open Virgil Control from Applications; "
+            return "Virgil is not running on this Mac. Click Install Virgil below, or open Virgil Control from Applications; "
                 + "this page connects by itself once it runs. For a DanteStreamer box on the network, add it by its IP address instead."
         }
         return "\(i.host) does not accept connections on port \(i.port). Remote access is probably off on that DanteStreamer: "
