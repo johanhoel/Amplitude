@@ -1,0 +1,6 @@
+windows/bin/
+windows/obj/
+windows/publish/
+macos/.build/
+macos/*.app
+*.zip

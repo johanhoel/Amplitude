@@ -7,7 +7,7 @@
         <ResourceDictionary>
             <local:BoolToVisibilityConverter x:Key="BoolToVis"/>
             <local:NullToVisibilityConverter x:Key="NullToVis"/>
-            <local:NotNullToVisibilityConverter x:Key="NullToVisPart"/>
+            <local:NotNullToVisibilityConverter x:Key="NotNullToVis"/>
             <local:BoolToColorConverter x:Key="BoolToColor"/>
         </ResourceDictionary>
     </Application.Resources>

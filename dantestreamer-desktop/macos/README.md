@@ -1,53 +1,28 @@
-# DanteStreamer Controller – macOS
+# DanteStreamer Controller for macOS
 
-Native SwiftUI application for controlling DanteStreamer from macOS.
+SwiftUI app for macOS 12 or later. No dependencies outside the macOS SDK.
 
-## Features
+## Build and run
 
-- **Instance management** – Save and switch between multiple DanteStreamer instances
-- **Local & VPN** – Connect via local network (mDNS discovery) or over VPN
-- **Status dashboard** – Real-time clock lock, sample rate, device state
-- **Level meters** – Live audio levels for all Dante TX and RX channels
-- **Responsive UI** – Built with SwiftUI for native macOS look and feel
-
-## System Requirements
-
-- macOS 12.0 or later
-- Xcode 14.0 or later (for building)
-
-## Building
+Needs Xcode 15 or later (Swift 5.9).
 
 ```bash
 cd dantestreamer-desktop/macos
-swift build -c release
-```
-
-Output binary: `.build/release/DanteStreamerController`
-
-Or build and run directly:
-
-```bash
 swift run -c release
 ```
 
-## Architecture
+`swift build -c release` puts the binary in
+`.build/release/DanteStreamerController`. The CI workflow wraps it in
+`DanteStreamer.app` with an `Info.plist` and signs it.
 
-- **ConnectionManager** – Manages API connections and polling to DanteStreamer instances
-- **ContentView** – Sidebar with instance list, detail view for selected instance
-- **DetailView** – Status tab (device info, clock state) and meters tab (live levels)
-- **API client** – REST API calls via URLSession (no external dependencies)
+The `Info.plist` must allow plain HTTP (`NSAllowsArbitraryLoads`), because
+Virgil's API has no HTTPS. Without it, macOS blocks every request.
 
-## API Integration
+## Files
 
-Connects to DanteStreamer REST API (default port 8480):
-
-- `GET /api/status` – Fetch device status, meters, channel info
-- `GET /api/config` – Read current configuration (future feature)
-- `POST /api/start`, `/api/stop` – Device control (future feature)
-
-## Future Features
-
-- Audio transmit/receive via WASAPI or CoreAudio
-- Recording to local file
-- Dante routing controls
-- Remote password authentication
+- `Sources/DanteStreamerApp.swift`: app entry point and window.
+- `Sources/ConnectionManager.swift`: saved hosts, polling `/api/status` once
+  a second, start/stop/restart, HTTP Basic auth for the remote password.
+- `Sources/ContentView.swift`: sidebar, Status and Meters tabs, Add sheet.
+- `Sources/Models.swift`: the `/api/status` JSON, matching `status_json()`
+  in Virgil's `src/daemon/control.cpp`.

@@ -1,62 +1,33 @@
-# DanteStreamer Controller – Windows
+# DanteStreamer Controller for Windows
 
-Native WPF application for controlling DanteStreamer from Windows 10+.
+WPF app on .NET 8 for 64-bit Windows 10 or later.
 
-## Features
+## Build and run
 
-- **Instance management** – Save and switch between multiple DanteStreamer instances
-- **Local & VPN** – Connect via local network or over VPN with manual IP entry
-- **Status dashboard** – Real-time clock lock, sample rate, device state, audio configuration
-- **Level meters** – Live audio levels for all Dante TX and RX channels (future)
-- **Modern UI** – WPF with MVVM architecture
-
-## System Requirements
-
-- Windows 10 or later
-- .NET 8.0 Runtime
-- Visual Studio 2022 (for building)
-
-## Building
+Needs the .NET 8 SDK.
 
 ```bash
 cd dantestreamer-desktop/windows
-dotnet build -c Release
-```
-
-Output: `bin/Release/net8.0-windows/DanteStreamerController.exe`
-
-Or build and run:
-
-```bash
 dotnet run -c Release
 ```
 
-## Architecture
+The release build in CI is one self-contained exe:
 
-- **ConnectionViewModel** – MVVM view model handling API calls, polling, instance management
-- **MainWindow** – WPF UI with tabbed interface (Status, Meters)
-- **DanteModels** – Data structures matching DanteStreamer REST API
-- **HTTP client** – REST API integration via HttpClient
-
-## API Integration
-
-Connects to DanteStreamer REST API (default port 8480):
-
-- `GET /api/status` – Device status, meters, channel names
-- `GET /api/config` – Configuration (future)
-- `POST /api/start`, `/api/stop` – Device control (future)
-
-## Data Persistence
-
-Instance profiles stored in:
-```
-%APPDATA%\DanteStreamerController\instances.json
+```bash
+dotnet publish -c Release -r win-x64 --self-contained=true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -o publish
 ```
 
-## Future Features
+On Linux or macOS, add `-p:EnableWindowsTargeting=true` to check that it
+compiles. It cannot run there.
 
-- Audio transmit/receive via WASAPI
-- Recording to local file
-- Dante routing controls
-- Enhanced meter visualization
-- Remote password authentication
+## Files
+
+- `ViewModels/ConnectionViewModel.cs`: saved hosts, polling `/api/status`
+  once a second on the UI thread, start/stop/restart, HTTP Basic auth for
+  the remote password.
+- `MainWindow.xaml`: sidebar with the Add form, Status and Meters tabs.
+- `Models/DanteModels.cs`: the `/api/status` JSON, matching `status_json()`
+  in Virgil's `src/daemon/control.cpp`.
+- `Converters.cs`: visibility and color converters used by the XAML.
+
+Saved hosts: `%APPDATA%\DanteStreamerController\instances.json`.

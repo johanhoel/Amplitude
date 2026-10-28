@@ -1,32 +1,35 @@
-# Changelog
+# dantestreamer-desktop: latest changes
 
-All notable changes to DanteStreamer Desktop will be documented in this file.
+Newest first.
 
-## [1.0.0] – 2026-10-28
+## 2026-10-28 (2)
 
-### Added
+- Windows build fixed. It failed on XAML `StringFormat` escapes (`{{0}}`
+  is not valid XAML; it is now `{}{0}`) and then on missing `System.IO` and
+  `System.Collections.Generic` usings. `App.xaml` loaded
+  `Themes/Generic.xaml`, which does not exist, so the app would also have
+  crashed at start.
+- Both apps now read the real `/api/status` JSON. Virgil nests the fields
+  (`device.name`, `clock.state`, `meters.tx`); the old Windows model
+  expected flat names like `device_name` and would have shown nothing.
+- Windows: the Add form works, selecting a host connects to it, and Start,
+  Stop and Restart audio buttons call the API. Meters show each channel in
+  dBFS. The release is one 72 MB exe instead of a folder of DLLs.
+- macOS: the app was a placeholder that printed "Full UI coming soon". It
+  is now a SwiftUI app with the same features as the Windows app. The
+  bundle allows plain HTTP to reach Virgil and is signed with the hardened
+  runtime.
+- Both apps send the remote password with HTTP Basic auth and explain 401,
+  403 and 429 answers from Virgil.
+- READMEs rewritten to match what the apps do. Removed claims of mDNS
+  discovery, audio routing, WASAPI and CoreAudio playback, which were never
+  built.
+- Screenshots still missing: they need a Mac and a PC connected to a
+  running host.
 
-- **macOS app** (Swift/SwiftUI)
-  - Native control application for macOS 12+
-  - Instance discovery via mDNS on local network
-  - Manual IP entry for VPN connections
-  - Real-time status dashboard (device info, clock lock, sample rate)
-  - Live level meters for TX and RX channels
-  - Instance profiles (save and switch between multiple DanteStreamer instances)
-  - Responsive UI with tabbed interface
+## 2026-10-28
 
-- **Windows app** (C# WPF)
-  - Native control application for Windows 10+
-  - Same feature set as macOS version
-  - MVVM architecture for clean separation of concerns
-  - Instance persistence to AppData
-  - Modern WPF UI with tabbed interface
-
-### Planned
-
-- Audio transmit/receive via CoreAudio (macOS) and WASAPI (Windows)
-- Recording to MP3/WAV/AAC
-- Dante routing controls
-- Enhanced meter visualization with peak hold
-- Remote password authentication
-- mDNS discovery on Windows (for local network instances)
+- First version: a WPF app for Windows, a placeholder for macOS, and the
+  `build-desktop.yml` workflow that builds both and publishes a
+  prerelease. The Windows build did not compile, and the macOS app had no
+  window.

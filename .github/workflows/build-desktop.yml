@@ -23,15 +23,13 @@ jobs:
       - name: Build Windows EXE (self-contained)
         working-directory: dantestreamer-desktop/windows
         run: |
-          dotnet restore
-          dotnet publish DanteStreamerController.csproj -c Release -r win-x64 --self-contained=true --output publish
+          dotnet publish DanteStreamerController.csproj -c Release -r win-x64 --self-contained=true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none --output publish
 
       - name: Create archive
         shell: pwsh
         working-directory: dantestreamer-desktop/windows/publish
         run: |
-          $files = Get-ChildItem -File
-          $files | Compress-Archive -DestinationPath ../DanteStreamerController-windows.zip -Force
+          Compress-Archive -Path DanteStreamerController.exe -DestinationPath ../DanteStreamerController-windows.zip -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -41,27 +39,36 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
+    outputs:
+      notarized: ${{ steps.notarize.outputs.notarized }}
     steps:
       - uses: actions/checkout@v4
 
+      # Universal binary (Apple silicon and Intel). Compiler errors are
+      # repeated as annotations, so they show on the run page without logs.
       - name: Build Swift binary
         working-directory: dantestreamer-desktop/macos
-        run: swift build -c release
+        run: |
+          set +e
+          swift build -c release --arch arm64 --arch x86_64 2>&1 | tee build.log
+          status=${PIPESTATUS[0]}
+          grep -E ': (error|warning): ' build.log | sort -u | head -40 | \
+            sed -E "s#^$GITHUB_WORKSPACE/##; s#^([^:]+):([0-9]+):([0-9]+): (error|warning): (.*)\$#::\4 file=\1,line=\2,col=\3::\5#"
+          exit $status
 
       - name: Create app structure
         working-directory: dantestreamer-desktop/macos
         run: |
           mkdir -p DanteStreamer.app/Contents/MacOS
           mkdir -p DanteStreamer.app/Contents/Resources
-          cp .build/release/DanteStreamerController DanteStreamer.app/Contents/MacOS/
+          cp .build/apple/Products/Release/DanteStreamerController DanteStreamer.app/Contents/MacOS/
           chmod +x DanteStreamer.app/Contents/MacOS/DanteStreamerController
-          touch DanteStreamer.app/Contents/PkgInfo
           echo "APPL????" > DanteStreamer.app/Contents/PkgInfo
 
       - name: Create Info.plist
         working-directory: dantestreamer-desktop/macos
         run: |
-          cat > DanteStreamer.app/Contents/Info.plist << 'EOF'
+          cat > DanteStreamer.app/Contents/Info.plist << EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -72,41 +79,94 @@ jobs:
             <string>com.dantestreamer.controller</string>
             <key>CFBundleName</key>
             <string>DanteStreamer Controller</string>
+            <key>CFBundleDisplayName</key>
+            <string>DanteStreamer Controller</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>CFBundleShortVersionString</key>
-            <string>1.0.0</string>
+            <string>1.0.${{ github.run_number }}</string>
+            <key>CFBundleVersion</key>
+            <string>${{ github.run_number }}</string>
             <key>LSMinimumSystemVersion</key>
             <string>12.0</string>
+            <key>LSApplicationCategoryType</key>
+            <string>public.app-category.utilities</string>
             <key>NSPrincipalClass</key>
             <string>NSApplication</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+            <key>NSAppTransportSecurity</key>
+            <dict>
+              <key>NSAllowsArbitraryLoads</key>
+              <true/>
+            </dict>
+            <key>NSLocalNetworkUsageDescription</key>
+            <string>DanteStreamer Controller connects to DanteStreamer hosts on your network.</string>
           </dict>
           </plist>
           EOF
+          plutil -lint DanteStreamer.app/Contents/Info.plist
 
       - name: Import Developer ID Certificate
         env:
           CERT_BASE64: ${{ secrets.DEVELOPER_ID_CERT_BASE64 }}
           CERT_PASSWORD: ${{ secrets.DEVELOPER_ID_CERT_PASSWORD }}
         run: |
-          echo $CERT_BASE64 | base64 -d > cert.p12
+          echo "$CERT_BASE64" | base64 -d > cert.p12
           security create-keychain -p "" build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p "" build.keychain
           security import cert.p12 -k build.keychain -P "$CERT_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple: -k "" build.keychain
+          rm cert.p12
 
       - name: Code sign app with Developer ID
         working-directory: dantestreamer-desktop/macos
         env:
           TEAM_ID: ${{ secrets.DEVELOPER_ID_TEAM }}
         run: |
-          codesign -s "Developer ID Application: Johan Hoel ($TEAM_ID)" --deep --force DanteStreamer.app
-          codesign -v DanteStreamer.app
+          codesign -s "Developer ID Application: Johan Hoel ($TEAM_ID)" --force --options runtime --timestamp DanteStreamer.app
+          codesign -v --strict --verbose=2 DanteStreamer.app
+
+      # Notarize with an App Store Connect API key (APPLE_API_KEY_ID,
+      # APPLE_API_ISSUER_ID, APPLE_API_KEY_BASE64 = the .p8 file in base64)
+      # or an Apple ID (APPLE_ID, APPLE_APP_PASSWORD = app-specific password).
+      # Without either, the app stays signed but not notarized.
+      - name: Notarize and staple
+        id: notarize
+        working-directory: dantestreamer-desktop/macos
+        env:
+          TEAM_ID: ${{ secrets.DEVELOPER_ID_TEAM }}
+          API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          if [ -n "$API_KEY_ID" ] && [ -n "$API_ISSUER_ID" ] && [ -n "$API_KEY_BASE64" ]; then
+            echo "$API_KEY_BASE64" | base64 -d > "$RUNNER_TEMP/AuthKey.p8"
+            auth=(--key "$RUNNER_TEMP/AuthKey.p8" --key-id "$API_KEY_ID" --issuer "$API_ISSUER_ID")
+          elif [ -n "$APPLE_ID" ] && [ -n "$APPLE_APP_PASSWORD" ]; then
+            auth=(--apple-id "$APPLE_ID" --password "$APPLE_APP_PASSWORD" --team-id "$TEAM_ID")
+          else
+            echo "::warning::No notarization secrets set; the app is signed but not notarized."
+            exit 0
+          fi
+          ditto -c -k --keepParent DanteStreamer.app notarize.zip
+          xcrun notarytool submit notarize.zip "${auth[@]}" --wait --timeout 30m --output-format json | tee notarize.json
+          id=$(plutil -extract id raw notarize.json)
+          if [ "$(plutil -extract status raw notarize.json)" != "Accepted" ]; then
+            xcrun notarytool log "$id" "${auth[@]}" || true
+            echo "::error::Notarization was not accepted"
+            exit 1
+          fi
+          xcrun stapler staple DanteStreamer.app
+          spctl --assess --type execute --verbose DanteStreamer.app
+          echo "notarized=1" >> "$GITHUB_OUTPUT"
 
       - name: Create archive
         working-directory: dantestreamer-desktop/macos
-        run: zip -r DanteStreamer-macos.zip DanteStreamer.app
+        run: ditto -c -k --keepParent DanteStreamer.app DanteStreamer-macos.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -117,6 +177,7 @@ jobs:
   release:
     needs: [build-windows, build-macos]
     runs-on: ubuntu-latest
+    # Publish the macOS build even when the Windows job fails.
     if: always() && needs.build-macos.result == 'success'
     steps:
       - uses: actions/checkout@v4
@@ -130,9 +191,7 @@ jobs:
         run: |
           mkdir -p release
           find downloads -type f -name "*.zip" -exec cp {} release/ \;
-          echo "Files in release folder:"
           ls -lah release/
-          echo "File count: $(find release -type f | wc -l)"
 
       - name: List release files
         run: ls -lah release/ || echo "No release folder"
@@ -147,12 +206,12 @@ jobs:
           body: |
             ## DanteStreamer Desktop v1.0
 
-            Download and extract the ZIP file for your platform.
+            ### macOS
+            Extract the ZIP and open `DanteStreamer.app`. Requires macOS 12 or later,
+            on Apple silicon or Intel. ${{ needs.build-macos.outputs.notarized == '1' && 'Signed with a Developer ID and notarized by Apple.' || 'Signed but not notarized: the first time, right-click it and choose Open.' }}
 
-            **macOS**: Extract ZIP, double-click `DanteStreamer.app` to run. Requires macOS 12.0+
-
-            **Windows**: Extract ZIP, run `DanteStreamerController.exe`. Requires Windows 10+. Includes all dependencies.
-
-            **Note**: Windows build currently unavailable (GitHub Actions issue being investigated).
+            ### Windows
+            Extract the ZIP and run `DanteStreamerController.exe`. Requires Windows 10 or later.
+            The .NET runtime is included.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

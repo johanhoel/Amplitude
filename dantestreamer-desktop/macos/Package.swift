@@ -8,7 +8,7 @@ let package = Package(
     ],
     dependencies: [],
     targets: [
-        .target(
+        .executableTarget(
             name: "DanteStreamerController",
             path: "Sources"
         )
