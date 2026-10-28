@@ -1,0 +1,147 @@
+<Window x:Class="DanteStreamerController.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="DanteStreamer Controller" Height="600" Width="900"
+        Background="#F5F5F5">
+    <DockPanel>
+        <!-- Menu Bar -->
+        <Border DockPanel.Dock="Top" Background="White" BorderThickness="0,0,0,1" BorderBrush="#E0E0E0" Padding="12">
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding AddInstanceCommand}" Padding="8,4" Background="#2196F3" Foreground="White" BorderThickness="0" Margin="0,0,12,0">
+                    <TextBlock Text="➕ Add Instance" VerticalAlignment="Center"/>
+                </Button>
+                <Button Command="{Binding DisconnectCommand}" Padding="8,4" Background="#FF5252" Foreground="White" BorderThickness="0" IsEnabled="{Binding IsConnected}">
+                    <TextBlock Text="✕ Disconnect"/>
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250"/>
+                <ColumnDefinition Width="1"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Sidebar: Instances List -->
+            <StackPanel Grid.Column="0" Background="White">
+                <Border Padding="12,12,12,8">
+                    <TextBlock Text="Instances" FontSize="14" FontWeight="Bold" Foreground="#333"/>
+                </Border>
+                <ListBox ItemsSource="{Binding Instances}" SelectedItem="{Binding SelectedInstance}"
+                         BorderThickness="0" Background="White">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="12,8" BorderThickness="0,0,0,1" BorderBrush="#F0F0F0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding Host, StringFormat={{0}}:8480}" FontSize="11" Foreground="#999"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="✓" FontSize="16" Foreground="#4CAF50" VerticalAlignment="Center"
+                                               Visibility="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected, Converter={StaticResource BoolToVis}}"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </StackPanel>
+
+            <Separator Grid.Column="1" Background="#E0E0E0"/>
+
+            <!-- Main Panel: Status & Meters -->
+            <Grid Grid.Column="2" Background="#FAFAFA">
+                <Border Padding="20" Visibility="{Binding SelectedInstance, Converter={StaticResource NullToVis}}">
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock Text="Select an instance" FontSize="16" FontWeight="Bold" Foreground="#999" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,200,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <TabControl Visibility="{Binding Status, Converter={StaticResource NullToVisPart}}">
+                    <TabItem Header="Status" Padding="12,4">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="20">
+                                <Border Background="White" CornerRadius="4" Padding="16" BorderThickness="1" BorderBrush="#E0E0E0" Margin="0,0,0,20">
+                                    <StackPanel>
+                                        <TextBlock Text="Device" FontSize="14" FontWeight="Bold" Margin="0,0,0,12"/>
+                                        <Grid Margin="0,0,0,12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Name" Foreground="#666"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Status.DeviceName}" FontWeight="Bold"/>
+                                        </Grid>
+                                        <Grid Margin="0,0,0,12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Status" Foreground="#666"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Status.Enabled, StringFormat={{0}}}" FontWeight="Bold"/>
+                                        </Grid>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Clock" Foreground="#666"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Status.ClockLocked, StringFormat={{0}}}" FontWeight="Bold" Foreground="{Binding Status.ClockLocked, Converter={StaticResource BoolToColor}}"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="White" CornerRadius="4" Padding="16" BorderThickness="1" BorderBrush="#E0E0E0">
+                                    <StackPanel>
+                                        <TextBlock Text="Audio" FontSize="14" FontWeight="Bold" Margin="0,0,0,12"/>
+                                        <Grid Margin="0,0,0,12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Sample Rate" Foreground="#666"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Status.SampleRate, StringFormat={{0}} Hz}" FontWeight="Bold"/>
+                                        </Grid>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Channels" Foreground="#666"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Status.TxChannels, StringFormat='TX: {{0}}'}" FontWeight="Bold" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{Binding Status.RxChannels, StringFormat='RX: {{0}}'}" FontWeight="Bold"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <TabItem Header="Meters" Padding="12,4">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="20">
+                                <Border Background="White" CornerRadius="4" Padding="16" BorderThickness="1" BorderBrush="#E0E0E0" Margin="0,0,0,20">
+                                    <StackPanel>
+                                        <TextBlock Text="Transmit (TX)" FontSize="14" FontWeight="Bold"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="White" CornerRadius="4" Padding="16" BorderThickness="1" BorderBrush="#E0E0E0">
+                                    <StackPanel>
+                                        <TextBlock Text="Receive (RX)" FontSize="14" FontWeight="Bold"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                </TabControl>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</Window>
