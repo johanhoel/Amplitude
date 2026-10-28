@@ -58,6 +58,7 @@
                 <Border DockPanel.Dock="Top" Padding="12" Background="#FAFAFA" BorderThickness="0,1"
                         BorderBrush="#E0E0E0" Visibility="{Binding ShowAddForm, Converter={StaticResource BoolToVis}}">
                     <StackPanel>
+                        <TextBlock Text="{Binding FormTitle}" FontWeight="Bold" Margin="0,0,0,8"/>
                         <TextBlock Text="Name (optional)" Foreground="#666"/>
                         <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,0,8"/>
                         <TextBlock Text="Host or IP" Foreground="#666"/>
@@ -72,7 +73,10 @@
                 </Border>
 
                 <Border DockPanel.Dock="Bottom" Padding="12" BorderThickness="0,1,0,0" BorderBrush="#E0E0E0">
-                    <Button Content="Remove selected" Command="{Binding RemoveInstanceCommand}" Padding="8,4"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Edit" Command="{Binding EditSelectedCommand}" Padding="8,4" Margin="0,0,8,0"/>
+                        <Button Content="Remove" Command="{Binding RemoveInstanceCommand}" Padding="8,4"/>
+                    </StackPanel>
                 </Border>
 
                 <ListBox ItemsSource="{Binding Instances}" SelectedItem="{Binding SelectedInstance}"
@@ -140,6 +144,8 @@
                                             <Button Content="Start" Command="{Binding StartCommand}" Style="{StaticResource ToolButton}"/>
                                             <Button Content="Stop" Command="{Binding StopCommand}" Style="{StaticResource ToolButton}"/>
                                             <Button Content="Restart audio" Command="{Binding RestartCommand}" Style="{StaticResource ToolButton}"/>
+                                            <Button Content="Open web panel" Command="{Binding OpenPanelCommand}" Style="{StaticResource ToolButton}"
+                                                    ToolTip="Settings, routing and diagnostics in Virgil's own panel"/>
                                         </StackPanel>
                                     </Grid>
                                 </Border>

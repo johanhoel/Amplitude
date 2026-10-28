@@ -27,19 +27,27 @@ final class ConnectionManager: ObservableObject {
     init() {
         if let data = UserDefaults.standard.data(forKey: Self.defaultsKey),
            let saved = try? JSONDecoder().decode([DanteInstance].self, from: data) {
-            instances = saved
+            instances = saved.map { var i = $0; i.password = Keychain.password(for: i.id); return i }
         }
         selectedID = instances.first?.id
         restartPolling()
     }
 
-    func add(_ instance: DanteInstance) {
-        instances.append(instance)
+    // Adds a new host, or replaces the saved one with the same id.
+    func save(_ instance: DanteInstance) {
+        Keychain.setPassword(instance.password, for: instance.id)
+        if let i = instances.firstIndex(where: { $0.id == instance.id }) {
+            instances[i] = instance
+            restartPolling()
+        } else {
+            instances.append(instance)
+        }
         selectedID = instance.id
     }
 
     func removeSelected() {
         guard let id = selectedID else { return }
+        Keychain.setPassword("", for: id)
         instances.removeAll { $0.id == id }
         selectedID = instances.first?.id
     }

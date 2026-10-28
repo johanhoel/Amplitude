@@ -7,9 +7,13 @@ struct DanteInstance: Codable, Identifiable, Hashable {
     var host: String
     var port: Int = 8480
     // Virgil remote_password; empty when reached through an SSH tunnel on localhost.
+    // Kept in the keychain, not in user defaults (see CodingKeys).
     var password: String = ""
 
+    enum CodingKeys: String, CodingKey { case id, name, host, port }
+
     var address: String { "\(host):\(port)" }
+    var panelURL: URL? { URL(string: "http://\(address)/") }
 }
 
 // GET /api/status, as built by status_json() in Virgil's src/daemon/control.cpp.

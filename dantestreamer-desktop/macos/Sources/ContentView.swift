@@ -1,8 +1,10 @@
+import AppKit
 import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var manager: ConnectionManager
-    @State private var showAdd = false
+    // The host being added or edited; nil when the sheet is closed.
+    @State private var editing: DanteInstance?
 
     var body: some View {
         NavigationView {
@@ -22,8 +24,11 @@ struct ContentView: View {
             .frame(minWidth: 220)
             .toolbar {
                 ToolbarItemGroup {
-                    Button { showAdd = true } label: { Label("Add", systemImage: "plus") }
+                    Button { editing = DanteInstance(name: "", host: "localhost") } label: { Label("Add", systemImage: "plus") }
                         .help("Add a DanteStreamer instance")
+                    Button { editing = manager.selected } label: { Label("Edit", systemImage: "pencil") }
+                        .help("Edit the selected instance")
+                        .disabled(manager.selected == nil)
                     Button { manager.removeSelected() } label: { Label("Remove", systemImage: "minus") }
                         .help("Remove the selected instance")
                         .disabled(manager.selectedID == nil)
@@ -32,11 +37,13 @@ struct ContentView: View {
 
             DetailView()
         }
-        .sheet(isPresented: $showAdd) {
-            AddInstanceView { manager.add($0) }
+        .sheet(item: $editing) { instance in
+            InstanceForm(instance: instance, isNew: manager.instances.allSatisfy { $0.id != instance.id }) {
+                manager.save($0)
+            }
         }
         .onAppear {
-            if manager.instances.isEmpty { showAdd = true }
+            if manager.instances.isEmpty { editing = DanteInstance(name: "", host: "localhost") }
         }
     }
 }
@@ -88,6 +95,11 @@ struct StatusTab: View {
                             Button("Start") { manager.start() }
                             Button("Stop") { manager.stop() }
                             Button("Restart audio") { manager.restart() }
+                            Spacer()
+                            if let url = manager.selected?.panelURL {
+                                Button("Open web panel") { NSWorkspace.shared.open(url) }
+                                    .help("Settings, routing and diagnostics in Virgil's own panel")
+                            }
                         }
                         .padding(.top, 4)
                     }
@@ -150,13 +162,15 @@ struct MetersTab: View {
     }
 }
 
-struct AddInstanceView: View {
+struct InstanceForm: View {
     @Environment(\.dismiss) private var dismiss
+    let instance: DanteInstance
+    let isNew: Bool
     let onSave: (DanteInstance) -> Void
 
     @State private var name = ""
-    @State private var host = "localhost"
-    @State private var port = "8480"
+    @State private var host = ""
+    @State private var port = ""
     @State private var password = ""
 
     private var portNumber: Int? {
@@ -166,7 +180,7 @@ struct AddInstanceView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Add instance").font(.headline)
+            Text(isNew ? "Add instance" : "Edit instance").font(.headline)
             Form {
                 TextField("Name (optional)", text: $name)
                 TextField("Host or IP", text: $host)
@@ -183,7 +197,12 @@ struct AddInstanceView: View {
                 Button("Save") {
                     let h = host.trimmingCharacters(in: .whitespaces)
                     let n = name.trimmingCharacters(in: .whitespaces)
-                    onSave(DanteInstance(name: n.isEmpty ? h : n, host: h, port: portNumber ?? 8480, password: password))
+                    var saved = instance
+                    saved.name = n.isEmpty ? h : n
+                    saved.host = h
+                    saved.port = portNumber ?? 8480
+                    saved.password = password
+                    onSave(saved)
                     dismiss()
                 }
                 .keyboardShortcut(.defaultAction)
@@ -192,5 +211,11 @@ struct AddInstanceView: View {
         }
         .padding(20)
         .frame(width: 400)
+        .onAppear {
+            name = instance.name
+            host = instance.host
+            port = String(instance.port)
+            password = instance.password
+        }
     }
 }

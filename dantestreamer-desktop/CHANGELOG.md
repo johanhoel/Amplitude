@@ -2,6 +2,21 @@
 
 Newest first.
 
+## 2026-10-28 (3)
+
+- Both apps built in CI for the first time (run 40771546912). The release
+  job failed because its token could not write releases; it now has
+  `contents: write` and uses `action-gh-release@v2`.
+- Edit a saved host (name, address, port, password) on both apps.
+- Open web panel button: opens Virgil's panel in the browser for settings,
+  routing and diagnostics.
+- Passwords no longer saved in plain text: macOS uses the login keychain,
+  Windows encrypts them with DPAPI. Old Windows files still load.
+- macOS: universal binary (Apple silicon and Intel), notarized and stapled
+  when the `APPLE_ID` and `APPLE_APP_PASSWORD` secrets exist (or an App
+  Store Connect API key). Version in `Info.plist` follows the CI run number.
+- CI shows Swift compiler errors as annotations on the run page.
+
 ## 2026-10-28 (2)
 
 - Windows build fixed. It failed on XAML `StringFormat` escapes (`{{0}}`

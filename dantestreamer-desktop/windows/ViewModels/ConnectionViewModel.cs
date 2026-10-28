@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -68,7 +69,12 @@ namespace DanteStreamerController.ViewModels
             set => SetProperty(ref _error, value);
         }
 
-        // "Add instance" form
+        // Add/edit form. _editing is the host being edited, or null when adding.
+        private DanteInstance? _editing;
+
+        private string _formTitle = "Add instance";
+        public string FormTitle { get => _formTitle; set => SetProperty(ref _formTitle, value); }
+
         private bool _showAddForm;
         public bool ShowAddForm
         {
@@ -89,6 +95,8 @@ namespace DanteStreamerController.ViewModels
         public string NewPassword { get => _newPassword; set => SetProperty(ref _newPassword, value); }
 
         public IRelayCommand ToggleAddFormCommand { get; }
+        public IRelayCommand EditSelectedCommand { get; }
+        public IRelayCommand OpenPanelCommand { get; }
         public IRelayCommand SaveInstanceCommand { get; }
         public IRelayCommand RemoveInstanceCommand { get; }
         public IAsyncRelayCommand StartCommand { get; }
@@ -97,7 +105,9 @@ namespace DanteStreamerController.ViewModels
 
         public ConnectionViewModel()
         {
-            ToggleAddFormCommand = new RelayCommand(() => ShowAddForm = !ShowAddForm);
+            ToggleAddFormCommand = new RelayCommand(ToggleAddForm);
+            EditSelectedCommand = new RelayCommand(EditSelected);
+            OpenPanelCommand = new RelayCommand(OpenPanel);
             SaveInstanceCommand = new RelayCommand(SaveNewInstance);
             RemoveInstanceCommand = new RelayCommand(RemoveSelected);
             StartCommand = new AsyncRelayCommand(() => Post("/api/start"));
@@ -108,7 +118,7 @@ namespace DanteStreamerController.ViewModels
 
             LoadInstances();
             if (Instances.Count == 0)
-                ShowAddForm = true;
+                ToggleAddForm();
             else
                 SelectedInstance = Instances[0];
         }
@@ -123,6 +133,52 @@ namespace DanteStreamerController.ViewModels
             if (SelectedInstance == null) return;
             _pollTimer.Start();
             _ = FetchStatus();
+        }
+
+        private void ToggleAddForm()
+        {
+            if (ShowAddForm && _editing == null)
+            {
+                ShowAddForm = false;
+                return;
+            }
+            _editing = null;
+            FormTitle = "Add instance";
+            NewName = "";
+            NewHost = "localhost";
+            NewPort = "8480";
+            NewPassword = "";
+            PasswordReset?.Invoke("");
+            ShowAddForm = true;
+        }
+
+        private void EditSelected()
+        {
+            if (SelectedInstance == null) return;
+            _editing = SelectedInstance;
+            FormTitle = "Edit instance";
+            NewName = _editing.Name;
+            NewHost = _editing.Host;
+            NewPort = _editing.Port.ToString();
+            NewPassword = _editing.Password ?? "";
+            PasswordReset?.Invoke(NewPassword);
+            ShowAddForm = true;
+        }
+
+        // The view sets the PasswordBox, which cannot be bound.
+        public event Action<string>? PasswordReset;
+
+        private void OpenPanel()
+        {
+            if (SelectedInstance == null) return;
+            try
+            {
+                Process.Start(new ProcessStartInfo(SelectedInstance.PanelUrl) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Error = $"Cannot open the browser: {ex.Message}";
+            }
         }
 
         private void SaveNewInstance()
@@ -140,14 +196,32 @@ namespace DanteStreamerController.ViewModels
             }
 
             var name = NewName.Trim() == "" ? host : NewName.Trim();
-            var instance = new DanteInstance(name, host, port, NewPassword == "" ? null : NewPassword);
-            Instances.Add(instance);
+            var password = NewPassword == "" ? null : NewPassword;
+            var instance = _editing ?? new DanteInstance();
+            instance.Name = name;
+            instance.Host = host;
+            instance.Port = port;
+            instance.Password = password;
+
+            if (_editing == null)
+            {
+                Instances.Add(instance);
+            }
+            else
+            {
+                // Replace the item so the list shows the new name and address.
+                var i = Instances.IndexOf(_editing);
+                Instances[i] = instance;
+            }
             SaveInstances();
 
+            _editing = null;
             NewName = "";
             NewPassword = "";
+            PasswordReset?.Invoke("");
             ShowAddForm = false;
             SelectedInstance = instance;
+            OnInstanceSelected();
         }
 
         private void RemoveSelected()

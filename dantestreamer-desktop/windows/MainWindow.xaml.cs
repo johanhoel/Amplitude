@@ -11,12 +11,8 @@ namespace DanteStreamerController
         {
             InitializeComponent();
             DataContext = _vm;
-            // PasswordBox.Password cannot be bound, so clear it here once the form closes.
-            _vm.PropertyChanged += (_, e) =>
-            {
-                if (e.PropertyName == nameof(ConnectionViewModel.ShowAddForm) && !_vm.ShowAddForm)
-                    NewPasswordBox.Clear();
-            };
+            // PasswordBox.Password cannot be bound, so the view model sets it through this event.
+            _vm.PasswordReset += password => NewPasswordBox.Password = password;
         }
 
         private void NewPasswordBox_PasswordChanged(object sender, RoutedEventArgs e)

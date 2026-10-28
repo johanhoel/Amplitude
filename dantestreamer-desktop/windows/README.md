@@ -25,9 +25,12 @@ compiles. It cannot run there.
 - `ViewModels/ConnectionViewModel.cs`: saved hosts, polling `/api/status`
   once a second on the UI thread, start/stop/restart, HTTP Basic auth for
   the remote password.
-- `MainWindow.xaml`: sidebar with the Add form, Status and Meters tabs.
+- `MainWindow.xaml`: sidebar with the Add/Edit form, Status and Meters tabs.
 - `Models/DanteModels.cs`: the `/api/status` JSON, matching `status_json()`
   in Virgil's `src/daemon/control.cpp`.
 - `Converters.cs`: visibility and color converters used by the XAML.
 
-Saved hosts: `%APPDATA%\DanteStreamerController\instances.json`.
+Saved hosts: `%APPDATA%\DanteStreamerController\instances.json`. The
+password is stored as `password_dpapi`, encrypted for the current Windows
+user. Files from the first version had a plain `password` field; the app
+reads it and writes it back encrypted on the next save.

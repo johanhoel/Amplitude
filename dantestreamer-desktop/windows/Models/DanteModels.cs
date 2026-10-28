@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json.Serialization;
 
 namespace DanteStreamerController.Models
@@ -21,8 +23,36 @@ namespace DanteStreamerController.Models
         public int Port { get; set; } = 8480;
 
         // Virgil remote_password; empty when reached through an SSH tunnel on localhost.
-        [JsonPropertyName("password")]
+        // Saved encrypted with DPAPI for the current Windows user (see ProtectedPassword).
+        [JsonIgnore]
         public string? Password { get; set; }
+
+        [JsonPropertyName("password_dpapi")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? ProtectedPassword
+        {
+            get => string.IsNullOrEmpty(Password)
+                ? null
+                : Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(Password), null, DataProtectionScope.CurrentUser));
+            set
+            {
+                if (string.IsNullOrEmpty(value)) return;
+                try { Password = Encoding.UTF8.GetString(ProtectedData.Unprotect(Convert.FromBase64String(value), null, DataProtectionScope.CurrentUser)); }
+                catch (CryptographicException) { Password = null; /* saved by another Windows user */ }
+            }
+        }
+
+        // Read-only: files from the first version kept the password in plain text.
+        [JsonPropertyName("password")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? LegacyPassword
+        {
+            get => null;
+            set { if (!string.IsNullOrEmpty(value)) Password = value; }
+        }
+
+        [JsonIgnore]
+        public string PanelUrl => $"http://{Host}:{Port}/";
 
         public DanteInstance() { }
 
