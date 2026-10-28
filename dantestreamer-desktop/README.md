@@ -23,12 +23,8 @@ C# WPF modern Windows app. Uses WASAPI for audio routing.
 
 Prebuilt binaries available on [GitHub Releases](https://github.com/johanhoel/Amplitude/releases):
 
-- **macOS**: `DanteStreamerController-mac.dmg` – Requires macOS 12.0+
-- **Windows**: `DanteStreamerController-win-x64.zip` – Requires Windows 10+ and .NET 8 Runtime
-
-### .NET Runtime (Windows only)
-
-Download from [dotnet.microsoft.com/download](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) if needed.
+- **macOS**: `DanteStreamer-macos.zip` – Extract and run `DanteStreamer.app`. Requires macOS 12.0+
+- **Windows**: `DanteStreamerController-windows.zip` – Extract and run `DanteStreamerController.exe`. Requires Windows 10+. Includes all dependencies (no .NET runtime needed).
 
 ## Building from Source
 
