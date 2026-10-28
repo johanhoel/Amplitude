@@ -2517,7 +2517,7 @@ Its recordings stay. Switch it on again to bring it back.</p>
 <label class="switch"><input type="checkbox" name="enabled_{{ c.slot }}" value="1" {{ 'checked' if c.enabled or not c.saved }}> On</label>
 <button type="button" onclick="openFinder({{ c.slot }})">🔍 Find</button>
 <button type="button" onclick="testCam(this, {{ c.slot }})">📷 Test picture</button>
-{% if c.enabled or (c.saved and c.slot != 1) %}<button type="button" class="danger" onclick="removeCam(this, {{ c.slot }}, {{ c.name|tojson }})">🗑 Remove</button>{% endif %}
+{% if c.enabled or (c.saved and c.slot != 1) %}<button type="button" class="danger" onclick='removeCam(this, {{ c.slot }}, {{ c.name|tojson }})'>🗑 Remove</button>{% endif %}
 <span class="msg" data-msg hidden></span></div>
 </div>{% endfor %}
 </div>
