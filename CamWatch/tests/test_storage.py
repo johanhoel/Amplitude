@@ -93,6 +93,11 @@ for target, want in (("/etc/camwatch", "system folder"), ("/srv/camwatch/recordi
                      ("/mnt/nas/camwatch/recordings", None)):
     got = helper.check_target(Path(target), old)
     report((got is None) if want is None else (want in (got or "")), f"helper check for {target}: {got}")
+code = helper.move_storage({"action": "storage", "path": "/etc/camwatch", "copy": True})
+st = json.loads((root / "data" / "update" / "storage.json").read_text())
+report(code == 1 and st["state"] == "failed" and "system folder" in st["message"] and "Nothing changed" in st["message"]
+       and "CamWatch" not in (host_dir / ".env").read_text().split("RECORDINGS_PATH=")[1][:5],
+       f"a move to a refused folder reports why and changes nothing: {st['message']}")
 helper.set_env("RECORDINGS_PATH", "/mnt/nas/camwatch/recordings")
 env = (host_dir / ".env").read_text()
 report("RECORDINGS_PATH=/mnt/nas/camwatch/recordings" in env and env.count("RECORDINGS_PATH=") == 1 and "TZ=x" in env,

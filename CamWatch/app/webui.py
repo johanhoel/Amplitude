@@ -307,7 +307,8 @@ def auth():
 @app.context_processor
 def inject_status():
     conf = settings.load()
-    return {"armed": settings.is_armed(conf), "arm_mode": conf["mode"], "app_version": app_version()}
+    return {"armed": settings.is_armed(conf), "arm_mode": conf["mode"], "app_version": app_version(),
+            "update_ready": updates.ready()}
 
 
 @app.get("/")
@@ -2066,6 +2067,9 @@ button,select,input[type=text],input[type=password],input[type=number],input[typ
   border:1px solid var(--line);border-radius:10px;padding:0 12px;min-height:38px}
 input[type=file]{padding:6px 10px}
 [hidden]{display:none !important}
+.upd-pill{display:inline-flex;align-items:center;min-height:38px;padding:0 14px;border-radius:999px;white-space:nowrap;font-weight:700;
+  color:#04140b;background:#34d399;text-decoration:none}
+.upd-pill:hover{background:#6ee7b7}
 textarea{font:inherit;color:var(--fg);background:var(--card-hi);border:1px solid var(--line);border-radius:10px;padding:8px 12px;width:100%;resize:vertical}
 .field{display:grid;gap:4px}
 .field>span{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -2106,7 +2110,8 @@ ol li,ul li{margin:4px 0}
   ('live', '📡 Live'), ('log_page', '📋 Log'), ('report_page', '📊 Report'), ('timelapse_page', '⏩ Timelapse'), ('people_page', '🧑 People'), ('strangers_page', '❔ Strangers'),
   ('plates_page', '🚗 Plates'), ('zones_page', '🗺 Zones'), ('settings_page', '⚙️ Settings'), ('ha_page', '🏠 Home Assistant')] %}
 <a href="{{ url_for(ep) }}" class="{{ 'on' if request.endpoint == ep }}">{{ label }}</a>{% endfor %}</nav>
-<div class="tools">{% if people %}<form method="get" action="{{ url_for('index') }}"><select name="person" onchange="this.form.submit()" aria-label="Filter by person">
+<div class="tools">{% if update_ready %}<a class="upd-pill" href="{{ url_for('settings_page') }}#updates" title="Version {{ update_ready }} is ready">⬆ Update</a>{% endif %}
+{% if people %}<form method="get" action="{{ url_for('index') }}"><select name="person" onchange="this.form.submit()" aria-label="Filter by person">
 <option value="">Person…</option>{% for p in people %}<option {{ 'selected' if p == person }}>{{ p }}</option>{% endfor %}</select></form>{% endif %}
 <form method="post" action="{{ url_for('quick_arm') }}" title="Mode: {{ arm_mode }}"><button class="{{ 'armed' if armed }}">{{ '🛡 Armed' if armed else '🔕 Disarmed' }}</button></form></div>
 </header>
@@ -3423,5 +3428,6 @@ app.jinja_env.globals["timedelta"] = dt.timedelta
 
 
 if __name__ == "__main__":
+    updates.start_background_check()      # the ⬆ Update button in the top bar
     log.info("web UI on :8080%s", " (password protected)" if WEB_PASSWORD else "")
     serve(app, host="0.0.0.0", port=8080, threads=8)
