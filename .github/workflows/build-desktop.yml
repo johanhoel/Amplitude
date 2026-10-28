@@ -209,10 +209,12 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
         run: |
-          # Which secrets this run can see (yes/no only, never the values).
+          # Which secrets this run can see (set/empty only, never the values).
+          seen=""
           for v in TEAM_ID APPLE_ID APPLE_APP_PASSWORD API_KEY_ID API_ISSUER_ID API_KEY_BASE64; do
-            if [ -n "${!v}" ]; then echo "$v: set"; else echo "$v: empty"; fi
+            if [ -n "${!v}" ]; then seen="$seen $v=set"; else seen="$seen $v=empty"; fi
           done
+          echo "::notice title=Apple secrets::$seen"
           if [ -n "$API_KEY_ID" ] && [ -n "$API_ISSUER_ID" ] && [ -n "$API_KEY_BASE64" ]; then
             echo "$API_KEY_BASE64" | base64 -d > "$RUNNER_TEMP/AuthKey.p8"
             auth=(--key "$RUNNER_TEMP/AuthKey.p8" --key-id "$API_KEY_ID" --issuer "$API_ISSUER_ID")
