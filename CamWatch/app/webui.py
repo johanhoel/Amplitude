@@ -1038,6 +1038,12 @@ def save_update():
     return redirect(url_for("settings_page", saved="update") + "#updates")
 
 
+@app.get("/settings/update/key")
+def update_key_page():
+    """Step by step: make the GitHub access key for Settings -> Updates."""
+    return render_template("update_key.html", upd=updates.options())
+
+
 @app.get("/api/update")
 def api_update():
     """Is there a newer camwatch on GitHub? Cached 10 minutes; ?force=1 asks GitHub again."""
@@ -2780,7 +2786,8 @@ async function offTest(btn) {
 <form method="post" action="{{ url_for('save_update') }}" style="display:grid;gap:10px">
 <details {{ 'open' if not upd.token }}><summary class="muted" style="cursor:pointer">Where updates come from</summary>
 <div style="display:grid;gap:10px;margin-top:8px">
-<p class="muted" style="margin:0">A private repository needs an access key: a fine-grained GitHub token with read access to <i>Contents</i> of this one repository.</p>
+<p class="muted" style="margin:0">A private repository needs an access key: a fine-grained GitHub token with read access to <i>Contents</i> of this one repository.
+<a href="{{ url_for('update_key_page') }}">How to make the key, step by step</a>.</p>
 <div style="display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:10px">
 <label class="field"><span>GitHub repository</span><input type="text" name="repo" value="{{ upd.repo }}" placeholder="owner/name" spellcheck="false"></label>
 <label class="field"><span>Folder</span><input type="text" name="folder" value="{{ upd.folder }}" spellcheck="false"></label></div>
@@ -2795,7 +2802,13 @@ async function offTest(btn) {
   if (running) { $('upd-check').hidden = true; return followUpdate(); }
   try {
     const r = await (await fetch('{{ url_for("api_update") }}')).json();
-    if (r.error) { $('upd-check').className = 'bad'; $('upd-check').textContent = '⚠ ' + r.error; return; }
+    if (r.error) {
+      $('upd-check').className = 'bad'; $('upd-check').textContent = '⚠ ' + r.error + '. ';
+      const help = document.createElement('a');
+      help.href = '{{ url_for("update_key_page") }}'; help.textContent = 'How to make the access key';
+      $('upd-check').append(help);
+      return;
+    }
     if (!r.newer) { $('upd-check').textContent = `✓ Up to date. The newest version on GitHub is ${r.latest.version} (${r.latest.short}).`; return; }
     $('upd-check').hidden = true; $('upd-new').hidden = false;
     $('upd-version').textContent = `${r.latest.version} (${r.latest.short})`;
@@ -2855,6 +2868,54 @@ async function testCam(btn, slot) {
   btn.disabled = false;
 }
 </script>
+{% endblock %}""",
+
+    "update_key.html": """{% extends "base.html" %}
+{% block title %}Make the update key{% endblock %}
+{% block body %}
+<div style="max-width:680px;line-height:1.6">
+<h1>How to make the secret key for updates</h1>
+<p>CamWatch wants to look at your code on GitHub. Your code is private, like a locked diary.
+You make a special key. The key lets CamWatch read the code. It can never change the code.</p>
+
+<h2>Part 1: Make the key on GitHub</h2>
+<ol>
+<li>Open this page: <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>. If GitHub asks you to log in, log in.</li>
+<li>Find the box <b>Token name</b>. Type <code>CamWatch updates</code>.</li>
+<li>Find <b>Expiration</b>. Pick <b>Custom</b> and choose a date one year from today. The key stops working on that date. Then you make a new key.</li>
+<li>Find <b>Repository access</b>. Click <b>Only select repositories</b>. Click <b>{{ upd.repo.split('/')[-1] }}</b> in the list.</li>
+<li>Find <b>Permissions</b> and click <b>Add permissions</b>. Type <code>contents</code> in the search box. Tick <b>Contents</b>.
+Click outside the list to close it.</li>
+<li><b>Contents</b> now shows with a small menu next to it. Make sure the menu says <b>Read-only</b>.
+If it says <b>Read and write</b>, click it and choose <b>Read-only</b>. GitHub can add <b>Metadata</b> by itself. Leave it there.</li>
+<li>Scroll to the bottom. Click the green <b>Generate token</b> button. If GitHub asks again, click <b>Generate token</b> again.</li>
+<li>GitHub shows your key. It is a long line that starts with <code>github_pat_</code>. Click the small copy button next to it.
+<br><span class="warn">⚠ GitHub shows the key only once. Keep this page open until you finish Part 2.</span></li>
+</ol>
+<p class="muted">Can't find <b>Contents</b>? Check step 4. GitHub shows the full list only after you pick a repository.</p>
+
+<h2>Part 2: Give the key to CamWatch</h2>
+<ol start="9">
+<li>Open <a href="{{ url_for('settings_page') }}#updates">Settings → Updates</a>.</li>
+<li>Click <b>Where updates come from</b>. A small box opens.</li>
+<li>Click in the box <b>Access key</b>. Paste the key: press <b>Ctrl</b> and <b>V</b> together.</li>
+<li>Click <b>Save and check</b>.</li>
+</ol>
+
+<h2>Part 3: Check that it works</h2>
+<p>Look at <b>Updates</b> again. You see one of two messages:</p>
+<ul>
+<li><span class="ok">✓ Up to date</span>: it works. CamWatch has the newest version.</li>
+<li><span class="state on">● New version</span> with an <b>Update now</b> button: it works too. Press the button when you want the new version.</li>
+</ul>
+<p>You see <span class="bad">GitHub refused</span>? Then something went wrong with the key. Make a new key and check steps 4, 5 and 6 carefully.</p>
+
+<h2>Two rules for secret keys</h2>
+<ol>
+<li>Never show the key to anyone. Do not send it in a message or put it in a photo.</li>
+<li>You can close the GitHub page now. CamWatch keeps the key safe and never shows it again.</li>
+</ol>
+</div>
 {% endblock %}""",
 
     "zones.html": """{% extends "base.html" %}

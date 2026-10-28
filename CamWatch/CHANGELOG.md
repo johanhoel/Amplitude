@@ -4,6 +4,9 @@ Newest changes first.
 
 ## 2026-10-28
 
+- Updates links to a step-by-step guide for the GitHub access key.
+- The guide also opens when GitHub refuses the key.
+- The version is now 2026.10.28.1. This release also tests the update button.
 - Settings has a new section: Updates.
 - Updates shows the version that runs on the server.
 - Updates checks GitHub for a newer version.
