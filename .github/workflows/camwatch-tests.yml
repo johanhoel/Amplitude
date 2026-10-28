@@ -1,0 +1,25 @@
+# CamWatch: the quick test suite on every push and pull request that changes CamWatch/ (the same gate the `ai` command uses).
+name: camwatch-tests
+on:
+  push:
+    paths: ["CamWatch/**", ".github/workflows/camwatch-tests.yml"]
+  pull_request:
+    paths: ["CamWatch/**", ".github/workflows/camwatch-tests.yml"]
+  workflow_dispatch:
+jobs:
+  quick:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: CamWatch
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: CamWatch/requirements.txt
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - run: pip install -r requirements.txt
+      - run: python tests/run.py --quick
