@@ -5,16 +5,16 @@
         Background="#F5F5F5">
     <DockPanel>
         <!-- Menu Bar -->
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Background="White" Padding="12" BorderThickness="0,0,0,1" BorderBrush="#E0E0E0">
-            <Button Command="{Binding AddInstanceCommand}" Padding="8,4" Background="#2196F3" Foreground="White" BorderThickness="0" CornerRadius="4" Margin="0,0,12,0">
-                <StackPanel Orientation="Horizontal">
+        <Border DockPanel.Dock="Top" Background="White" BorderThickness="0,0,0,1" BorderBrush="#E0E0E0" Padding="12">
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding AddInstanceCommand}" Padding="8,4" Background="#2196F3" Foreground="White" BorderThickness="0" Margin="0,0,12,0">
                     <TextBlock Text="➕ Add Instance" VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
-            <Button Command="{Binding DisconnectCommand}" Padding="8,4" Background="#FF5252" Foreground="White" BorderThickness="0" CornerRadius="4" IsEnabled="{Binding IsConnected}">
-                <TextBlock Text="✕ Disconnect"/>
-            </Button>
-        </StackPanel>
+                </Button>
+                <Button Command="{Binding DisconnectCommand}" Padding="8,4" Background="#FF5252" Foreground="White" BorderThickness="0" IsEnabled="{Binding IsConnected}">
+                    <TextBlock Text="✕ Disconnect"/>
+                </Button>
+            </StackPanel>
+        </Border>
 
         <!-- Main Content -->
         <Grid>
@@ -61,11 +61,11 @@
                 <TabControl Visibility="{Binding Status, Converter={StaticResource NullToVisPart}}">
                     <TabItem Header="Status" Padding="12,4">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <StackPanel Padding="20" Spacing="20">
-                                <Border Background="White" CornerRadius="4" Padding="16" BorderThickness="1" BorderBrush="#E0E0E0">
-                                    <StackPanel Spacing="12">
-                                        <TextBlock Text="Device" FontSize="14" FontWeight="Bold"/>
-                                        <Grid>
+                            <StackPanel Margin="20">
+                                <Border Background="White" CornerRadius="4" Padding="16" BorderThickness="1" BorderBrush="#E0E0E0" Margin="0,0,0,20">
+                                    <StackPanel>
+                                        <TextBlock Text="Device" FontSize="14" FontWeight="Bold" Margin="0,0,0,12"/>
+                                        <Grid Margin="0,0,0,12">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
@@ -73,7 +73,7 @@
                                             <TextBlock Grid.Column="0" Text="Name" Foreground="#666"/>
                                             <TextBlock Grid.Column="1" Text="{Binding Status.DeviceName}" FontWeight="Bold"/>
                                         </Grid>
-                                        <Grid>
+                                        <Grid Margin="0,0,0,12">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
@@ -93,9 +93,9 @@
                                 </Border>
 
                                 <Border Background="White" CornerRadius="4" Padding="16" BorderThickness="1" BorderBrush="#E0E0E0">
-                                    <StackPanel Spacing="12">
-                                        <TextBlock Text="Audio" FontSize="14" FontWeight="Bold"/>
-                                        <Grid>
+                                    <StackPanel>
+                                        <TextBlock Text="Audio" FontSize="14" FontWeight="Bold" Margin="0,0,0,12"/>
+                                        <Grid Margin="0,0,0,12">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
@@ -109,8 +109,8 @@
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="Channels" Foreground="#666"/>
-                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
-                                                <TextBlock Text="{Binding Status.TxChannels, StringFormat=TX: {0}}" FontWeight="Bold"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Status.TxChannels, StringFormat=TX: {0}}" FontWeight="Bold" Margin="0,0,12,0"/>
                                                 <TextBlock Text="{Binding Status.RxChannels, StringFormat=RX: {0}}" FontWeight="Bold"/>
                                             </StackPanel>
                                         </Grid>
@@ -122,14 +122,14 @@
 
                     <TabItem Header="Meters" Padding="12,4">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <StackPanel Padding="20" Spacing="20">
-                                <Border Background="White" CornerRadius="4" Padding="16" BorderThickness="1" BorderBrush="#E0E0E0">
-                                    <StackPanel Spacing="12">
+                            <StackPanel Margin="20">
+                                <Border Background="White" CornerRadius="4" Padding="16" BorderThickness="1" BorderBrush="#E0E0E0" Margin="0,0,0,20">
+                                    <StackPanel>
                                         <TextBlock Text="Transmit (TX)" FontSize="14" FontWeight="Bold"/>
                                     </StackPanel>
                                 </Border>
                                 <Border Background="White" CornerRadius="4" Padding="16" BorderThickness="1" BorderBrush="#E0E0E0">
-                                    <StackPanel Spacing="12">
+                                    <StackPanel>
                                         <TextBlock Text="Receive (RX)" FontSize="14" FontWeight="Bold"/>
                                     </StackPanel>
                                 </Border>
