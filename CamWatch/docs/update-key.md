@@ -5,6 +5,12 @@ Your code is private, like a locked diary.
 You make a special key.
 The key lets CamWatch read the code.
 It can never change the code.
+The key also lets CamWatch send your feature requests to GitHub.
+
+Do you have a key already?
+Then open it on <https://github.com/settings/personal-access-tokens> and click **Edit**.
+Do steps 5 and 6.
+The key stays the same, so CamWatch needs nothing new.
 
 CamWatch shows this guide too: **Settings → Updates → Where updates come from → How to make the key, step by step**.
 
@@ -24,10 +30,11 @@ CamWatch shows this guide too: **Settings → Updates → Where updates come fro
 5. Find **Permissions** and click **Add permissions**.
    Type `contents` in the search box.
    Tick **Contents**.
+   Then type `issues` and tick **Issues**.
    Click outside the list to close it.
-6. **Contents** now shows with a small menu next to it.
-   Make sure the menu says **Read-only**.
-   If it says **Read and write**, click it and choose **Read-only**.
+6. **Contents** and **Issues** now show, each with a small menu next to it.
+   Set **Contents** to **Read-only**: CamWatch only reads the code.
+   Set **Issues** to **Read and write**: CamWatch sends your feature requests there.
    GitHub can add **Metadata** by itself.
    Leave it there.
 7. Scroll to the bottom.

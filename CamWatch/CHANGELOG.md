@@ -4,6 +4,12 @@ Newest changes first.
 
 ## 2026-10-28
 
+- New page: Request a feature. The link sits at the bottom of every page and in Settings → Updates.
+- Each request becomes an issue on GitHub, so the developer gets it.
+- The page lists your requests and shows which ones are done.
+- CamWatch keeps every request, also when GitHub refuses it. Send again retries.
+- The access key now also needs Issues: Read and write. The guide shows how to add it to your key.
+- The version is now 2026.10.28.5.
 - On a computer, Settings shows its sections in pairs, side by side.
 - The pairs: Alerts and login with Snooze, Notifications with Off-site storage, Home Assistant with Updates.
 - Cameras keep the full width. On a phone, all sections stay one below the other.

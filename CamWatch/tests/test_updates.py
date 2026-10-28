@@ -120,6 +120,54 @@ page = c.get("/settings").get_data(as_text=True)
 report("Waiting for the server" in page, "Settings shows the waiting update")
 updates.REQUEST.unlink()
 
+# ---------- feature requests ----------
+import feature_requests  # noqa: E402
+
+made = []
+
+
+def fake_issues(method, path, token, body=None):
+    made.append((method, path, token, body))
+    if fake_issues.refuse:
+        raise feature_requests.GitHubError("GitHub refused: the access key needs Issues - Read and write (see the guide)")
+    if method == "POST":
+        return {"number": 42, "html_url": "https://github.com/johanhoel/Amplitude/issues/42"}
+    return {"state": "closed"}
+
+
+fake_issues.refuse = True
+feature_requests._api = fake_issues
+page = c.get("/requests").get_data(as_text=True)
+report("Request a feature" in page and "Send request" in page, "the Request a feature page opens")
+report("/requests" in c.get("/settings").get_data(as_text=True), "Settings and the footer link to Request a feature")
+r = c.post("/requests", data={"title": "Quiet  hours", "text": "No pushes at night, please.", "name": ""})
+page = c.get(r.headers["Location"]).get_data(as_text=True)
+rows = feature_requests.load()
+report(len(rows) == 1 and rows[0]["title"] == "Quiet hours" and not rows[0].get("number"),
+       "a request GitHub refuses is still saved")
+report("did not get it" in page and "Send again" in page and "Issues - Read and write" in page,
+       "the page says GitHub refused, why, and offers Send again")
+fake_issues.refuse = False
+c.post(f"/requests/{rows[0]['id']}/resend")
+rows = feature_requests.load()
+post = [m for m in made if m[0] == "POST"][-1]
+report(rows[0].get("number") == 42 and rows[0]["url"].endswith("/42"), "Send again creates the GitHub issue")
+report(post[1] == "/repos/johanhoel/Amplitude/issues" and post[2] == "github_pat_SECRET123"
+       and post[3]["title"] == "[CamWatch] Quiet hours" and "feature request" in post[3]["labels"]
+       and "No pushes at night" in post[3]["body"], f"the issue goes to the update repository with a clear title: {post[3]['title']}")
+c.post("/requests", data={"title": "Bigger buttons", "text": "On the phone.", "name": "Alex"})
+rows = feature_requests.load()
+report(len(rows) == 2 and rows[0]["title"] == "Bigger buttons" and "Alex" in [m for m in made if m[0] == "POST"][-1][3]["body"],
+       "a new request goes first, with the optional name")
+feature_requests._states["at"] = 0
+page = c.get("/requests").get_data(as_text=True)
+report("✓ done" in page, "a closed issue shows as done")
+r = c.post("/requests", data={"title": "", "text": "x"})
+report("error=" in r.headers["Location"] and len(feature_requests.load()) == 2, "an empty request is refused")
+report("SECRET123" not in page, "the requests page never shows the access key")
+guide = c.get("/settings/update/key").get_data(as_text=True)
+report("Issues" in guide and "Read and write" in guide, "the guide adds Issues - Read and write to the key")
+
 # ---------- the host helper ----------
 bash = shutil.which("bash")
 if os.name == "nt":    # System32\bash.exe is WSL; use Git Bash
