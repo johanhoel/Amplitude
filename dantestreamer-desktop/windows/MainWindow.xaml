@@ -39,7 +39,7 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="Bold"/>
-                                        <TextBlock Text="{Binding Host, StringFormat='{0}:8480'}" FontSize="11" Foreground="#999"/>
+                                        <TextBlock Text="{Binding Host, StringFormat={{0}}:8480}" FontSize="11" Foreground="#999"/>
                                     </StackPanel>
                                     <TextBlock Grid.Column="1" Text="✓" FontSize="16" Foreground="#4CAF50" VerticalAlignment="Center"
                                                Visibility="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected, Converter={StaticResource BoolToVis}}"/>
@@ -79,7 +79,7 @@
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="Status" Foreground="#666"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Status.Enabled, StringFormat='{0}'}" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Status.Enabled, StringFormat={{0}}}" FontWeight="Bold"/>
                                         </Grid>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -87,7 +87,7 @@
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="Clock" Foreground="#666"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Status.ClockLocked, StringFormat='{0}'}" FontWeight="Bold" Foreground="{Binding Status.ClockLocked, Converter={StaticResource BoolToColor}}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Status.ClockLocked, StringFormat={{0}}}" FontWeight="Bold" Foreground="{Binding Status.ClockLocked, Converter={StaticResource BoolToColor}}"/>
                                         </Grid>
                                     </StackPanel>
                                 </Border>
@@ -101,7 +101,7 @@
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="Sample Rate" Foreground="#666"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Status.SampleRate, StringFormat='{0} Hz'}" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Status.SampleRate, StringFormat={{0}} Hz}" FontWeight="Bold"/>
                                         </Grid>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -110,8 +110,8 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="Channels" Foreground="#666"/>
                                             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                                <TextBlock Text="{Binding Status.TxChannels, StringFormat='TX: {0}'}" FontWeight="Bold" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{Binding Status.RxChannels, StringFormat='RX: {0}'}" FontWeight="Bold"/>
+                                                <TextBlock Text="{Binding Status.TxChannels, StringFormat='TX: {{0}}'}" FontWeight="Bold" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{Binding Status.RxChannels, StringFormat='RX: {{0}}'}" FontWeight="Bold"/>
                                             </StackPanel>
                                         </Grid>
                                     </StackPanel>
