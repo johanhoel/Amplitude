@@ -134,8 +134,10 @@ jobs:
           ls -lah release/
           echo "File count: $(find release -type f | wc -l)"
 
+      - name: List release files
+        run: ls -lah release/ || echo "No release folder"
+
       - name: Create Release
-        if: success()
         uses: softprops/action-gh-release@v1
         with:
           files: release/*.zip
