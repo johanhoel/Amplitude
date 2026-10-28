@@ -129,9 +129,8 @@ jobs:
       - name: Prepare release files
         run: |
           mkdir -p release
-          if [ -d "downloads/windows" ]; then cp downloads/windows/* release/ || true; fi
-          if [ -d "downloads/macos" ]; then cp downloads/macos/* release/ || true; fi
-          ls -lah release/
+          find downloads -type f -name "*.zip" -exec cp {} release/ \; || true
+          ls -lah release/ || echo "No artifacts found"
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
