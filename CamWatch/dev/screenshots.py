@@ -39,6 +39,7 @@ PAGES = [
     ("settings-cameras", "/settings#cameras", 1280, 1000, False),
     ("settings-offsite", "/settings#offsite", 1280, 900, False),
     ("settings-updates", "/settings#updates", 1280, 760, False),
+    ("requests", "/requests", 1280, 720, False),
     ("phone-home", "/m", PHONE_W, PHONE_H, True),
     ("phone-wall", "/view", PHONE_W, PHONE_H, True),
     ("phone-settings", "/settings#cameras", PHONE_W, PHONE_H, True),
@@ -198,6 +199,15 @@ def demo_update():
                                           "message": "updated to 2026.10.28 (3b35f6f)"}))
     import settings
     settings.update(update={"repo": "johanhoel/Amplitude", "folder": "CamWatch", "branch": "main", "token": "demo"})
+    import feature_requests
+    feature_requests._states["at"] = 9e99      # no state check against GitHub
+    feature_requests._save([
+        {"id": "20261021090000000000", "created": "2026-10-21T09:00:00", "title": "Quiet hours for pushes",
+         "text": "No pushes between 23:00 and 06:00, except for strangers.", "number": 12, "state": "closed",
+         "url": "https://github.com/johanhoel/Amplitude/issues/12", "version": "2026.10.21"},
+        {"id": "20261028101500000000", "created": "2026-10-28T10:15:00", "title": "Show the battery of wireless cameras",
+         "text": "A small battery icon on the camera card, and a push when it is low.", "number": 31, "state": "open",
+         "url": "https://github.com/johanhoel/Amplitude/issues/31", "version": "2026.10.28"}])
 
 
 def demo_data(root, settings, cv2, np):

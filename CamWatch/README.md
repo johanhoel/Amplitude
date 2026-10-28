@@ -43,7 +43,7 @@ Self-hosted camera service for one RTSP camera: motion and object detection (YOL
 | ![Dashboard](docs/screenshots/dashboard.jpg)<br>**Dashboard**: shows a summary of today, the live cameras and a tile for every page. | ![Clips](docs/screenshots/clips.jpg)<br>**Clips**: lists the clips of each day on a timeline. You can filter and tag the clips. |
 | ![Clip](docs/screenshots/clip.jpg)<br>**Clip**: plays one clip. *Play all* plays every camera in the same visit. You can name the faces. | ![Live](docs/screenshots/live.jpg)<br>**Live**: shows every camera live. A button tests the whole chain from camera to phone alert. |
 | ![Zones](docs/screenshots/zones.jpg)<br>**Zones**: you draw the areas that start, ignore or mark activity for each camera. | ![Report](docs/screenshots/report.jpg)<br>**Report**: counts visits per day and per hour. A map shows where people walk most often. |
-| ![Settings](docs/screenshots/settings.jpg)<br>**Settings**: shows the sections in pairs, side by side on a wide screen. | |
+| ![Settings](docs/screenshots/settings.jpg)<br>**Settings**: shows the sections in pairs, side by side on a wide screen. | ![Request a feature](docs/screenshots/requests.jpg)<br>**Request a feature**: sends your idea to GitHub as an issue and shows whether it is done. |
 | ![Strangers](docs/screenshots/strangers.jpg)<br>**Strangers**: groups unknown faces that come back. You name each person once. | ![Cameras](docs/screenshots/settings-cameras.jpg)<br>**Settings, cameras**: holds up to 4 cameras. *Find* searches your network for cameras. |
 | ![Off-site](docs/screenshots/settings-offsite.jpg)<br>**Settings, off-site copies**: copies clips to iCloud, Google Drive or another place. Home Assistant settings follow below. | ![Updates](docs/screenshots/settings-updates.jpg)<br>**Settings, updates**: shows the running version. *Update now* installs a newer version from GitHub. |
 
@@ -100,6 +100,15 @@ GitHub then needs an access key: a fine-grained token with read access to *Conte
 Enter it under **Settings → Updates → Where updates come from**.
 The guide [docs/update-key.md](docs/update-key.md) explains each step to make the key.
 CamWatch shows the same guide: **Settings → Updates → How to make the key** (`/settings/update/key`).
+
+### Feature requests
+
+Every page has a **💡 Request a feature** link at the bottom.
+A request becomes an issue in the GitHub repository from Settings → Updates.
+It gets the labels `feature request` and `camwatch`.
+The access key then also needs **Issues: Read and write**.
+CamWatch keeps every request in `DATA_PATH/feature_requests.jsonl`.
+When GitHub refuses a request, **Send again** retries it.
 
 ## Use
 

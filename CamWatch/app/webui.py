@@ -18,6 +18,7 @@ import cv2
 import numpy as np
 
 import alerts
+import feature_requests
 import offsite
 import settings
 import updates
@@ -1038,6 +1039,34 @@ def save_update():
     return redirect(url_for("settings_page", saved="update") + "#updates")
 
 
+@app.route("/requests", methods=["GET", "POST"])
+def requests_page():
+    """Request a feature: kept here and sent to GitHub as an issue (app/feature_requests.py)."""
+    sent = None
+    if request.method == "POST":
+        title = " ".join((request.form.get("title") or "").split())[:120]
+        text = (request.form.get("text") or "").strip()[:5000]
+        if not title or not text:
+            return redirect(url_for("requests_page", error="Fill in what you want and tell us more."))
+        sent = feature_requests.submit(title, text, " ".join((request.form.get("name") or "").split())[:60])
+        log.info("feature request %r: %s", title, f"issue #{sent['number']}" if sent.get("number") else sent.get("error"))
+        return redirect(url_for("requests_page", sent=sent["id"]))
+    feature_requests.refresh_states()
+    rows = feature_requests.load()
+    sent = next((r for r in rows if r["id"] == request.args.get("sent")), None)
+    opts = updates.options()
+    return render_template("requests.html", rows=rows, sent=sent, error=request.args.get("error"),
+                           repo=opts["repo"], has_token=bool(opts["token"]))
+
+
+@app.post("/requests/<request_id>/resend")
+def resend_request(request_id):
+    row = feature_requests.resend(request_id)
+    if row is None:
+        abort(404)
+    return redirect(url_for("requests_page", sent=request_id))
+
+
 @app.get("/settings/update/key")
 def update_key_page():
     """Step by step: make the GitHub access key for Settings -> Updates."""
@@ -1888,6 +1917,11 @@ video{width:100%;max-height:70vh;background:#000;border-radius:18px;display:bloc
 button,select,input[type=text],input[type=password],input[type=number],input[type=time],input[type=file]{font:inherit;color:var(--fg);background:var(--card-hi);
   border:1px solid var(--line);border-radius:10px;padding:0 12px;min-height:38px}
 input[type=file]{padding:6px 10px}
+textarea{font:inherit;color:var(--fg);background:var(--card-hi);border:1px solid var(--line);border-radius:10px;padding:8px 12px;width:100%;resize:vertical}
+.field{display:grid;gap:4px}
+.field>span{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.field>span i{font-style:normal;font-weight:500;letter-spacing:0;text-transform:none;color:var(--faint)}
+.field input{width:100%}
 select{padding-right:8px}
 button{cursor:pointer;font-weight:650;border-radius:999px;padding:0 15px}
 button:hover{border-color:rgba(255,255,255,.25)}
@@ -1928,7 +1962,40 @@ ol li,ul li{margin:4px 0}
 <form method="post" action="{{ url_for('quick_arm') }}" title="Mode: {{ arm_mode }}"><button class="{{ 'armed' if armed }}">{{ '🛡 Armed' if armed else '🔕 Disarmed' }}</button></form></div>
 </header>
 <main>{% block body %}{% endblock %}</main>
-<footer class="ver">camwatch {{ app_version.text }}{% if app_version.date %} · {{ app_version.date }}{% endif %}</footer></body></html>""",
+<footer class="ver">camwatch {{ app_version.text }}{% if app_version.date %} · {{ app_version.date }}{% endif %} · <a href="{{ url_for('requests_page') }}">💡 Request a feature</a></footer></body></html>""",
+
+    "requests.html": """{% extends "base.html" %}
+{% block title %}Request a feature{% endblock %}
+{% block body %}
+<h1>Request a feature</h1>
+{% if sent %}<p class="box {{ 'bad' if sent.error else 'ok' }}">{% if sent.error %}Your request is saved here, but GitHub did not get it: {{ sent.error }}.
+<a href="{{ url_for('update_key_page') }}">How to make the access key</a>.{% else %}✓ Thank you! Your request is on GitHub as
+<a href="{{ sent.url }}" target="_blank" rel="noopener">#{{ sent.number }}</a>.{% endif %}</p>{% endif %}
+{% if error %}<p class="box bad">{{ error }}</p>{% endif %}
+<div class="spair">
+<form method="post" class="box" style="display:grid;gap:10px;align-self:start">
+<p class="muted" style="margin:0">Tell us what CamWatch should do better. Each request goes to GitHub as an issue in
+<code>{{ repo }}</code>, so the developer gets it.{% if not has_token %} <span class="warn">No access key yet: enter it in
+<a href="{{ url_for('settings_page') }}#updates">Settings → Updates</a> first.</span>{% endif %}</p>
+<label class="field"><span>What do you want? <i>one short line</i></span><input type="text" name="title" maxlength="120" required placeholder="e.g. Quiet hours for pushes"></label>
+<label class="field"><span>Tell us more <i>why it helps you, and how it should work</i></span><textarea name="text" rows="6" maxlength="5000" required></textarea></label>
+<label class="field"><span>Your name <i>optional · shows on GitHub</i></span><input type="text" name="name" maxlength="60" autocomplete="off"></label>
+<div class="row"><button class="primary">Send request</button></div>
+</form>
+<div>
+<h2 style="margin-top:0">Your requests</h2>
+{% if not rows %}<p class="muted">No requests yet.</p>{% endif %}
+<div style="display:grid;gap:8px">{% for r in rows %}
+<div class="box" style="display:grid;gap:4px"><div class="row"><b>{{ r.title }}</b>
+{% if r.number %}<a class="tag" href="{{ r.url }}" target="_blank" rel="noopener">#{{ r.number }}</a>
+<span class="state {{ 'on' if r.state == 'open' else '' }}">{{ '● open' if r.state == 'open' else '✓ done' if r.state == 'closed' else '' }}</span>
+{% else %}<span class="warn">not sent</span>
+<form class="inline" method="post" action="{{ url_for('resend_request', request_id=r.id) }}"><button>Send again</button></form>{% endif %}</div>
+<div class="muted" style="white-space:pre-wrap">{{ r.text|truncate(300) }}</div>
+<div class="muted" style="font-size:12px">{{ r.created|replace('T', ' ') }}{% if r.error and not r.number %} · <span class="bad">{{ r.error }}</span>{% endif %}</div></div>
+{% endfor %}</div></div></div>
+<style>.spair{display:grid;gap:24px;align-items:start}@media (min-width:980px){.spair{grid-template-columns:repeat(2,minmax(0,1fr))}}</style>
+{% endblock %}""",
 
     "index.html": """{% extends "base.html" %}
 {% block body %}
@@ -2486,10 +2553,7 @@ Retention periods are set in <code>/opt/camwatch/.env</code>.</p>
 .state.on{color:var(--known);background:rgba(34,197,94,.1)}.state.wait{color:var(--unknown);background:rgba(245,158,11,.1)}
 .state.off{color:var(--muted)}
 .camcard .fields{display:grid;gap:10px;padding:8px 14px 4px}
-.field{display:grid;gap:4px}
-.field>span{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.field>span i{font-style:normal;font-weight:500;letter-spacing:0;text-transform:none;color:var(--faint)}
-.field input{width:100%;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13.5px}
+.field input{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:13.5px}
 .field input[name^=name_]{font-family:inherit;font-size:15px}
 .camcard .foot{display:flex;align-items:center;gap:10px;padding:10px 14px 14px;margin-top:auto;flex-wrap:wrap}
 .camcard .msg{font-size:12.5px;color:var(--muted);flex-basis:100%}.camcard .msg.ok{color:var(--known)}.camcard .msg.bad{color:#ef4444}
@@ -2788,6 +2852,7 @@ async function offTest(btn) {
 <div class="box" style="display:grid;gap:10px;max-width:560px">
 <div class="row"><span>This server runs <b>{{ app_version.text }}</b></span>{% if app_version.date %}<span class="muted">from {{ app_version.date }}</span>{% endif %}</div>
 <div id="upd-check" class="muted">Checking GitHub for a new version…</div>
+<div class="muted">Missing something? <a href="{{ url_for('requests_page') }}">💡 Request a feature</a></div>
 <div id="upd-new" hidden>
 <div style="margin-bottom:8px"><span class="state on">● New version</span> <b id="upd-version"></b> <span class="muted" id="upd-detail"></span></div>
 <form method="post" action="{{ url_for('run_update') }}" onsubmit="return confirm('Install the new version now? camwatch stops for a few minutes. When the new version fails, the old version comes back by itself.')">
@@ -2803,7 +2868,8 @@ async function offTest(btn) {
 <form method="post" action="{{ url_for('save_update') }}" style="display:grid;gap:10px">
 <details {{ 'open' if not upd.token }}><summary class="muted" style="cursor:pointer">Where updates come from</summary>
 <div style="display:grid;gap:10px;margin-top:8px">
-<p class="muted" style="margin:0">A private repository needs an access key: a fine-grained GitHub token with read access to <i>Contents</i> of this one repository.
+<p class="muted" style="margin:0">A private repository needs an access key: a fine-grained GitHub token for this one repository.
+It needs <i>Contents: Read-only</i>, and <i>Issues: Read and write</i> for <a href="{{ url_for('requests_page') }}">feature requests</a>.
 <a href="{{ url_for('update_key_page') }}">How to make the key, step by step</a>.</p>
 <div style="display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:10px">
 <label class="field"><span>GitHub repository</span><input type="text" name="repo" value="{{ upd.repo }}" placeholder="owner/name" spellcheck="false"></label>
@@ -2894,7 +2960,10 @@ async function testCam(btn, slot) {
 <div style="max-width:680px;line-height:1.6">
 <h1>How to make the secret key for updates</h1>
 <p>CamWatch wants to look at your code on GitHub. Your code is private, like a locked diary.
-You make a special key. The key lets CamWatch read the code. It can never change the code.</p>
+You make a special key. The key lets CamWatch read the code. It can never change the code.
+The key also lets CamWatch send your <a href="{{ url_for('requests_page') }}">feature requests</a> to GitHub.</p>
+<p class="muted">Do you have a key already? Then open it on <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">GitHub</a>,
+click <b>Edit</b>, and do steps 5 and 6. The key stays the same, so CamWatch needs nothing new.</p>
 
 <h2>Part 1: Make the key on GitHub</h2>
 <ol>
@@ -2903,9 +2972,11 @@ You make a special key. The key lets CamWatch read the code. It can never change
 <li>Find <b>Expiration</b>. Pick <b>Custom</b> and choose a date one year from today. The key stops working on that date. Then you make a new key.</li>
 <li>Find <b>Repository access</b>. Click <b>Only select repositories</b>. Click <b>{{ upd.repo.split('/')[-1] }}</b> in the list.</li>
 <li>Find <b>Permissions</b> and click <b>Add permissions</b>. Type <code>contents</code> in the search box. Tick <b>Contents</b>.
-Click outside the list to close it.</li>
-<li><b>Contents</b> now shows with a small menu next to it. Make sure the menu says <b>Read-only</b>.
-If it says <b>Read and write</b>, click it and choose <b>Read-only</b>. GitHub can add <b>Metadata</b> by itself. Leave it there.</li>
+Then type <code>issues</code> and tick <b>Issues</b>. Click outside the list to close it.</li>
+<li><b>Contents</b> and <b>Issues</b> now show, each with a small menu next to it.
+Set <b>Contents</b> to <b>Read-only</b>: CamWatch only reads the code.
+Set <b>Issues</b> to <b>Read and write</b>: CamWatch sends your feature requests there.
+GitHub can add <b>Metadata</b> by itself. Leave it there.</li>
 <li>Scroll to the bottom. Click the green <b>Generate token</b> button. If GitHub asks again, click <b>Generate token</b> again.</li>
 <li>GitHub shows your key. It is a long line that starts with <code>github_pat_</code>. Click the small copy button next to it.
 <br><span class="warn">⚠ GitHub shows the key only once. Keep this page open until you finish Part 2.</span></li>
