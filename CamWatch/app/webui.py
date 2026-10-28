@@ -1780,7 +1780,7 @@ TEMPLATES = {
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="camwatch">
 <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
-<link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png"><link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="icon" type="image/svg+xml" href="/static/logo.svg"><link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png"><link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <script>if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 <title>{% block title %}Clips{% endblock %} · camwatch</title>
 <style>
@@ -1795,7 +1795,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 var(--font);-w
 a{color:var(--accent);text-decoration:none}
 a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 header{position:sticky;top:0;z-index:20;display:flex;gap:10px;align-items:center;padding:10px 14px;background:rgba(16,20,24,.97);border-bottom:1px solid var(--line)}
-header .brand{font-weight:750;font-size:20px;color:var(--fg);flex:none}
+header .brand{font-weight:750;font-size:20px;color:var(--fg);flex:none;display:inline-flex;align-items:center;gap:8px}
 header nav{display:flex;gap:6px;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none;padding:2px 0}
 header nav::-webkit-scrollbar{display:none}
 header nav a{flex:none;min-height:36px;padding:0 13px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);
@@ -1860,7 +1860,7 @@ ol li,ul li{margin:4px 0}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 </style></head><body>
-<header><a class="brand" href="{{ url_for('dashboard') }}">camwatch</a>
+<header><a class="brand" href="{{ url_for('dashboard') }}"><img src="/static/logo-mark.svg" alt="" width="36" height="29">camwatch</a>
 <nav aria-label="Pages">{% for ep, label in [('dashboard', '🏠 Home'), ('wall_view', '📱 View'), ('index', '🎞 Clips'), ('search_page', '🔍 Search'),
   ('live', '📡 Live'), ('log_page', '📋 Log'), ('report_page', '📊 Report'), ('timelapse_page', '⏩ Timelapse'), ('people_page', '🧑 People'), ('strangers_page', '❔ Strangers'),
   ('plates_page', '🚗 Plates'), ('zones_page', '🗺 Zones'), ('settings_page', '⚙️ Settings'), ('ha_page', '🏠 Home Assistant')] %}
@@ -2447,8 +2447,8 @@ Retention periods are set in <code>/opt/camwatch/.env</code>.</p>
 <span class="title">{{ c.name or 'New camera' }}</span>
 {% if c.online %}<span class="state on">● Online</span>{% elif c.enabled %}<span class="state wait">No picture</span>{% elif c.saved %}<span class="state off">Off</span>{% endif %}</div>
 <div class="fields">
-{% if c.slot == 1 %}<p class="muted" style="margin:0">Name <code>{{ c.name }}</code> is set in .env. Switch it off to remove it:
-its recordings stay, and switching it on again brings it back.</p>
+{% if c.slot == 1 %}<p class="muted" style="margin:0">The name <code>{{ c.name }}</code> comes from .env. Switch it off to remove it.
+Its recordings stay. Switch it on again to bring it back.</p>
 {% else %}<label class="field"><span>Name <i>lowercase, e.g. garden</i></span>
 <input type="text" name="name_{{ c.slot }}" value="{{ c.name }}" placeholder="garden" maxlength="24" pattern="[a-z0-9][a-z0-9_]*" autocomplete="off"></label>{% endif %}
 <label class="field"><span>Stream</span>
@@ -2459,12 +2459,13 @@ its recordings stay, and switching it on again brings it back.</p>
 <label class="switch"><input type="checkbox" name="enabled_{{ c.slot }}" value="1" {{ 'checked' if c.enabled or not c.saved }}> On</label>
 <button type="button" onclick="openFinder({{ c.slot }})">🔍 Find</button>
 <button type="button" onclick="testCam(this, {{ c.slot }})">📷 Test picture</button>
+{% if c.enabled or (c.saved and c.slot != 1) %}<button type="button" class="danger" onclick="removeCam(this, {{ c.slot }}, {{ c.name|tojson }})">🗑 Remove</button>{% endif %}
 <span class="msg" data-msg hidden></span></div>
 </div>{% endfor %}
 </div>
 <div class="savebar"><button class="primary">Save cameras</button>
-<span class="muted">Saved passwords show as •••••• - leave them as they are to keep them. To remove a camera, clear its name and stream.
-Renamed cameras start a new name for their clips.</span></div></form>
+<span class="muted">Saved passwords show as ••••••. Leave the dots as they are to keep a password.
+<b>🗑 Remove</b> stops a camera. Its recordings stay. A renamed camera saves new clips under the new name.</span></div></form>
 <dialog id="finder" class="finder">
 <div class="fhead"><b>Find cameras</b> <span class="muted" id="f-slot"></span><button type="button" aria-label="Close" onclick="this.closest('dialog').close()">✕</button></div>
 <div class="row"><input type="text" id="f-subnet" value="{{ scan_subnet }}" spellcheck="false" style="flex:1;font-family:ui-monospace,Consolas,monospace">
@@ -2708,6 +2709,20 @@ async function offTest(btn) {
 document.querySelectorAll('.camcard input[name^=name_]').forEach(inp => inp.addEventListener('input', () => {
   inp.closest('.camcard').querySelector('.title').textContent = inp.value.trim() || 'New camera';
 }));
+function removeCam(btn, slot, name) {
+  const msg = slot === 1
+    ? `Remove camera 1 (${name})? It stops recording. Its recordings stay. Switch it on again to bring it back.`
+    : `Remove camera ${slot} (${name})? It stops recording. Its recordings stay.`;
+  if (!confirm(msg)) return;
+  const card = btn.closest('.camcard');
+  if (slot === 1) {
+    card.querySelector('[name=enabled_1]').checked = false;   // camera 1 comes from .env: switched off, not erased
+  } else {
+    card.querySelectorAll(`[name=name_${slot}], [name=rtsp_${slot}], [name=detect_${slot}]`).forEach(i => { i.value = ''; });
+  }
+  btn.disabled = true;
+  btn.closest('form').submit();
+}
 function openSlot(btn, find) {
   const card = btn.closest('.camcard');
   card.classList.remove('empty');

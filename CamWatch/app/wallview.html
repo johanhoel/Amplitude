@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#101418">
 <meta name="apple-mobile-web-app-title" content="Cameras">
 <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
-<link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png"><link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="icon" type="image/svg+xml" href="/static/logo.svg"><link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png"><link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <script>if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 <title>Cameras · camwatch</title>
 <style>
@@ -96,7 +96,7 @@ header .arm.on { border-color: var(--accent); color: var(--accent); }
 </head>
 <body>
 <div class="wrap">
-  <header><h1>Cameras</h1>
+  <header><h1><img src="/static/logo-mark.svg" alt="" width="34" height="27" style="vertical-align:-4px;margin-right:8px">Cameras</h1>
     <select class="arm" id="camsel" hidden aria-label="Camera"></select>
     <form method="post" action="/arm"><button class="arm" id="arm" title="Tap to switch"></button></form>
     <a href="/dashboard">‹ Home</a></header>
