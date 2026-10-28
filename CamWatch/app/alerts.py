@@ -78,8 +78,9 @@ def _sign(action, camera, day, stem, exp):
 
 
 def action_url(action, camera, day, stem):
-    """URL for a push button, or None without WEB_BASE_URL (the phone must be able to reach the web UI)."""
-    base = (env("WEB_BASE_URL", "") or "").rstrip("/")
+    """URL for a push button, or None without a link address (Settings -> Notifications; the phone must reach it)."""
+    import settings  # settings imports common, alerts is imported by settings' users
+    base = settings.web_base_url()
     if not base:
         return None
     exp = int(time.time()) + ACTION_HOURS * 3600

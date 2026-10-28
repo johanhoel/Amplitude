@@ -243,4 +243,18 @@ check(f"/m -> {r.status_code}, tab bar + manifest", r.status_code == 200 and "na
 st = c.get("/api/status").get_json()
 check(f"status has unusual_today/strangers/offsite: {[k for k in ('unusual_today', 'strangers', 'offsite') if k in st]}", all(k in st for k in ("unusual_today", "strangers", "offsite")))
 check("dashboard links the phone view", 'href="/m"' in c.get("/dashboard").get_data(as_text=True))
+
+# ---------- link in pushes (Settings -> Notifications) ----------
+saved_ntfy = dict(settings.load().get("ntfy") or {}); saved_ntfy.pop("link_url", None); settings.update(ntfy=saved_ntfy)
+check("before saving: the link comes from WEB_BASE_URL", settings.web_base_url() == "http://cam.example:8080")
+page = c.get("/settings").get_data(as_text=True)
+check("settings shows the link field, filled in", 'name="link_url"' in page and 'value="http://cam.example:8080"' in page)
+c.post("/settings/ntfy", data={"url": "https://push.example", "topic": "cam-abc_123", "priority": "high", "link_url": "https://cam.home.example/"})
+check(f"saved link: {settings.web_base_url()}", settings.web_base_url() == "https://cam.home.example")
+check(f"push link to a clip: {common.clip_url('2026-10-28', 'garden_120000')}", common.clip_url("2026-10-28", "garden_120000") == "https://cam.home.example/clip/2026-10-28/garden_120000")
+check("push buttons use the saved link", alerts.action_url("star", "garden", "2026-10-28", "garden_120000").startswith("https://cam.home.example/a/star?"))
+r = c.post("/settings/ntfy", data={"url": "https://push.example", "topic": "cam-abc_123", "priority": "high", "link_url": "cam.home.example"})
+check("a link without http:// is refused", "error=" in r.headers["Location"] and settings.web_base_url() == "https://cam.home.example")
+c.post("/settings/ntfy", data={"url": "https://push.example", "topic": "cam-abc_123", "priority": "high", "link_url": ""})
+check("an empty link means pushes without links", settings.web_base_url() == "" and common.clip_url("2026-10-28", "x") is None and alerts.action_url("star", "a", "b", "c") is None)
 print("ALL PASS" if ok else "SOME FAILED")

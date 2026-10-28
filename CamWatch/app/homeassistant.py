@@ -39,7 +39,6 @@ class HomeAssistant:
         self.camera = env("CAMERA_NAME", "camera")
         self.base = f"{env('MQTT_TOPIC_PREFIX', 'camwatch')}/{self.camera}"
         self.discovery_prefix = env("MQTT_DISCOVERY_PREFIX", "homeassistant")
-        self.web = (env("WEB_BASE_URL", "") or "").rstrip("/")
         self.webhook = None
         self.labels = list(labels)
         self.role = role
@@ -114,8 +113,8 @@ class HomeAssistant:
         uid = f"camwatch_{self.camera}"
         device = {"identifiers": [uid], "name": f"camwatch {self.camera}", "manufacturer": "camwatch",
                   "model": "RTSP recorder"}
-        if self.web:
-            device["configuration_url"] = self.web
+        if settings.web_base_url():
+            device["configuration_url"] = settings.web_base_url()
         config = {"device": device, "availability_topic": f"{self.base}/availability",
                   "unique_id": f"{uid}_{key}", "has_entity_name": True, **config}
         self.client.publish(f"{self.discovery_prefix}/{component}/{uid}/{key}/config",
@@ -187,9 +186,10 @@ class HomeAssistant:
         self._retain(key, json.dumps(payload))
 
     def links(self, day, stem):
-        if not self.web:
+        web = settings.web_base_url()
+        if not web:
             return {}
-        return {"clip_url": f"{self.web}/clip/{day}/{stem}", "snapshot_url": f"{self.web}/media/{day}/{stem}.jpg"}
+        return {"clip_url": f"{web}/clip/{day}/{stem}", "snapshot_url": f"{web}/media/{day}/{stem}.jpg"}
 
     def event(self, event_type, **data):
         payload = {"event_type": event_type, "camera": self.camera,
