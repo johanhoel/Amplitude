@@ -4,6 +4,11 @@ Newest changes first.
 
 ## 2026-10-28
 
+- A green ⬆ Update button shows in the top bar of every page when a new version is ready.
+- CamWatch asks GitHub every 30 minutes in the background. A page never waits for GitHub.
+- Where recordings go works now. Before this fix, the helper on the server stopped at the start of a move.
+- New guide: CamWatch on Windows and macOS (`docs/install-windows-mac.md`).
+- The version is now 2026.10.28.10.
 - Settings has a new section: Storage.
 - Keep clips sets how long clips stay and how much disk stays free. Before, you set this in `.env`.
 - Keep clips also shows how full the disk is and the date of the oldest clip.

@@ -82,6 +82,8 @@ sudo ./deploy.sh            # installs Docker if needed, copies to /opt/camwatch
 
 Open `http://<host>:8080`, subscribe to your `NTFY_TOPIC` in the ntfy app, then on the **Live** page press **Simulate motion** to test the whole chain (push → clip → clip page).
 
+On Windows or a Mac, CamWatch runs in a small Linux system on the same computer: [docs/install-windows-mac.md](docs/install-windows-mac.md).
+
 ### More cameras
 
 Up to 4 cameras: the first is in `.env`, the others are added on the web UI's **Settings → Cameras** (name, RTSP stream, optional detection substream, a *Test picture* button). They start within seconds, no restart needed. Each camera has its own recorder container and zones; clips, live view, heatmap, timelapse and the dashboard show all cameras with a picker.

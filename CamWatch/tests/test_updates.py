@@ -57,11 +57,16 @@ report(r.get("newer") and r["latest"]["version"] == "2026.10.29" and r["latest"]
        f"a newer commit on GitHub is a new version: {r.get('latest')}")
 report(any("path=CamWatch" in p for p, _ in seen), "the check looks at the CamWatch folder only")
 n = len(seen)
+top = c.get("/").get_data(as_text=True)
+report('class="upd-pill"' in top and "Version 2026.10.29 is ready" in top and len(seen) == n,
+       "the top bar shows ⬆ Update, without asking GitHub again")
+n = len(seen)
 c.get("/api/update")
 report(len(seen) == n, "a second check within 3 minutes uses the cached answer")
 fake_github.compare = "behind"
 r = c.get("/api/update?force=1").get_json()
 report(r.get("newer") is False, "a running commit newer than GitHub's is not an update")
+report('class="upd-pill"' not in c.get("/").get_data(as_text=True), "without a new version, the top bar has no Update button")
 fake_github.compare = "ahead"
 
 

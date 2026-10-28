@@ -106,6 +106,28 @@ def check(force=False):
     return result
 
 
+def ready():
+    """The newer version from the last check (for the top bar), or None. Never asks GitHub itself."""
+    r = _cache["result"]
+    if r and r.get("newer") and _cache["key"] and _cache["key"][-1] == app_version()["commit"] \
+            and time.time() - _cache["at"] < 6 * 3600:
+        return r["latest"]["version"]
+    return None
+
+
+def start_background_check(every=1800):
+    """Ask GitHub every 30 minutes, so the top bar knows about a new version without making a page wait."""
+    def loop():
+        time.sleep(20)
+        while True:
+            try:
+                check(force=True)
+            except Exception:       # never let the check stop the web UI
+                pass
+            time.sleep(every)
+    threading.Thread(target=loop, daemon=True, name="update-check").start()
+
+
 def _waiting():
     """The action of the request the host helper has not picked up yet, or None."""
     try:

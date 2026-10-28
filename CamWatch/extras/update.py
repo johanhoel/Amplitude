@@ -66,13 +66,13 @@ def write_json(path, data):
     os.replace(tmp, path)
 
 
-def status(path=STATUS, **changes):
+def status(_file=STATUS, **changes):
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(_file.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         data = {}
     data.update(changes, helper=True)
-    write_json(path, data)
+    write_json(_file, data)
 
 
 def source():
