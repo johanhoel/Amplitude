@@ -4,6 +4,10 @@ Newest changes first.
 
 ## 2026-10-28
 
+- A banner at the top of Settings shows when a new version is ready.
+- Updates has a Check again button. It asks GitHub at once.
+- CamWatch now keeps GitHub's answer for 3 minutes, not 10.
+- The version is now 2026.10.28.7.
 - The Clips page has a Select button. You tick several clips at once.
 - Download gives the ticked clips as one zip file: each video and its picture.
 - Delete removes the ticked clips after one question. It tells you when starred clips are among them.
