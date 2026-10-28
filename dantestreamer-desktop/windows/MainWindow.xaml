@@ -109,7 +109,10 @@
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="Channels" Foreground="#666"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Status.TxChannels, StringFormat=TX: {0}, RX: }" FontWeight="Bold"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                                                <TextBlock Text="{Binding Status.TxChannels, StringFormat=TX: {0}}" FontWeight="Bold"/>
+                                                <TextBlock Text="{Binding Status.RxChannels, StringFormat=RX: {0}}" FontWeight="Bold"/>
+                                            </StackPanel>
                                         </Grid>
                                     </StackPanel>
                                 </Border>
