@@ -90,11 +90,9 @@ DATA_DIR = Path(env("DATA_DIR", "/data"))
 NOTIFY_COOLDOWN = env("NOTIFY_COOLDOWN_SECONDS", 60, int)
 NOTIFY_SNAPSHOT = env_bool("NOTIFY_SNAPSHOT", True)
 
-RETENTION_DAYS = env("RETENTION_DAYS", 30, int)
-# With several cameras only one recorder (the primary) cleans up the shared recordings folder
+# With several cameras only one recorder (the primary) cleans up the shared recordings folder.
+# How long clips stay: Settings -> Storage (settings.storage()), read at every cleanup.
 PRUNE = env_bool("PRUNE_RECORDINGS", True)
-RETENTION_KEEP_DAYS = env("RETENTION_KEEP_DAYS", 90, int)  # clips with identified people
-MIN_FREE_GB = env("MIN_FREE_GB", 20, float)
 
 # Alert snapshots are scaled down to this width: a full 4 MP JPEG makes the push arrive noticeably later
 NOTIFY_WIDTH = env("NOTIFY_WIDTH", 1280, int)
@@ -471,7 +469,8 @@ class Housekeeper(threading.Thread):
             if PRUNE and time.time() - self.last_prune > 600 and settings.pruning_camera() == CAMERA:
                 self.last_prune = time.time()
                 try:
-                    prune_recordings(REC_DIR, RETENTION_DAYS, RETENTION_KEEP_DAYS, MIN_FREE_GB, log)
+                    keep = settings.storage()
+                    prune_recordings(REC_DIR, keep["retention_days"], keep["keep_days"], keep["min_free_gb"], log)
                 except Exception:
                     log.exception("retention cleanup failed")
 
