@@ -34,6 +34,10 @@ echo ">> Copying files to $INSTALL_DIR"
 mkdir -p "$INSTALL_DIR"
 cp -r Dockerfile docker-compose.yml requirements.txt .env.example README.md HANDOVER.md deploy.sh app models extras "$INSTALL_DIR"/
 [ -f .env ] && [ ! -f "$INSTALL_DIR/.env" ] && cp .env "$INSTALL_DIR/.env"
+# A git clone has no commit in app/BUILD (only `git archive` fills it in); without it the update check can't tell versions apart
+if grep -q '^\$Format' "$INSTALL_DIR/app/BUILD" 2>/dev/null; then
+  git log -1 --format='%h %cs' > "$INSTALL_DIR/app/BUILD" 2>/dev/null || true
+fi
 if [ ! -f "$INSTALL_DIR/.env" ]; then
   cp .env.example "$INSTALL_DIR/.env"
   chmod 600 "$INSTALL_DIR/.env"
