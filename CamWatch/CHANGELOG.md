@@ -2,6 +2,20 @@
 
 Newest changes first.
 
+## 2026-10-28
+
+- CamWatch has a logo: an eye with a camera aperture as its iris, and a red recording dot.
+- The logo shows in every page header and in the browser tab.
+- The app icons on the phone home screen use the logo.
+- The README starts with the logo and the name.
+- `dev/make_logo.py` makes all logo files.
+- Each camera card in Settings has a 🗑 Remove button.
+- Remove asks first. Camera 1 then switches off. The other cameras lose their name and address.
+- The recordings of a removed camera stay.
+- Releases show their own commit again. `app/BUILD` held a fixed commit (a96c889) after the move into amplitude.
+- The version is now 2026.10.28.
+- All screenshots are new: they show the logo and the Remove button.
+
 ## 2026-10-27
 
 - The README install steps now copy `amplitude` and work in `CamWatch/`.
