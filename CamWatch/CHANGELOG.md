@@ -4,6 +4,9 @@ Newest changes first.
 
 ## 2026-10-28
 
+- The 🗑 Remove button on a camera card works now.
+- Before this fix, a click on Remove did nothing. The camera name broke the button's code.
+- The version is now 2026.10.28.2.
 - Updates links to a step-by-step guide for the GitHub access key.
 - The guide also opens when GitHub refuses the key.
 - The same guide is in `docs/update-key.md`.

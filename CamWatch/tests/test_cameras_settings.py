@@ -98,6 +98,10 @@ i = settings.integration()
 check("integration stored", (i["mqtt_host"], i["mqtt_port"], i["mqtt_user"], i["mqtt_password"]) == ("127.0.0.1", 9, "camwatch", "mq-pass"))
 page = c.get("/settings").get_data(as_text=True)
 check("MQTT password never shown", "mq-pass" not in page and "saved - leave empty to keep" in page)
+import re  # noqa: E402
+calls = re.findall(r"""onclick=(["'])(removeCam\(.*?)\1""", page)
+check(f"every Remove button calls removeCam with the whole camera name: {[c[1] for c in calls]}",
+      calls and all(re.fullmatch(r'removeCam\(this, \d, "[^"]*"\)', c[1]) for c in calls))
 c.post("/settings/integration", data={"mqtt_host": "127.0.0.1", "mqtt_port": "9", "mqtt_user": "camwatch", "mqtt_password": "",
                                      "ha_webhook_url": "", "lan_networks": "192.168.1.0/24"})
 check("empty password field keeps the password", settings.integration()["mqtt_password"] == "mq-pass" and settings.integration()["ha_webhook_url"] == "")
