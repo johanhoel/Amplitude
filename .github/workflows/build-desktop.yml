@@ -117,7 +117,7 @@ jobs:
   release:
     needs: [build-windows, build-macos]
     runs-on: ubuntu-latest
-    if: success()
+    if: always() && needs.build-macos.result == 'success'
     steps:
       - uses: actions/checkout@v4
 
@@ -129,8 +129,8 @@ jobs:
       - name: Prepare release files
         run: |
           mkdir -p release
-          cp downloads/windows/* release/
-          cp downloads/macos/* release/
+          if [ -d "downloads/windows" ]; then cp downloads/windows/* release/ || true; fi
+          if [ -d "downloads/macos" ]; then cp downloads/macos/* release/ || true; fi
           ls -lah release/
 
       - name: Create Release
