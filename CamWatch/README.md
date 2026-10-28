@@ -97,7 +97,8 @@ When the new version does not start, the script puts the old version back.
 The amplitude repository is private.
 GitHub then needs an access key: a fine-grained token with read access to *Contents* of this one repository.
 Enter it under **Settings → Updates → Where updates come from**.
-CamWatch has a step-by-step guide for the key: **Settings → Updates → How to make the key** (`/settings/update/key`).
+The guide [docs/update-key.md](docs/update-key.md) explains each step to make the key.
+CamWatch shows the same guide: **Settings → Updates → How to make the key** (`/settings/update/key`).
 
 ## Use
 

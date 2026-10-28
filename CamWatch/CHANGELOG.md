@@ -6,6 +6,7 @@ Newest changes first.
 
 - Updates links to a step-by-step guide for the GitHub access key.
 - The guide also opens when GitHub refuses the key.
+- The same guide is in `docs/update-key.md`.
 - The version is now 2026.10.28.1. This release also tests the update button.
 - Settings has a new section: Updates.
 - Updates shows the version that runs on the server.
