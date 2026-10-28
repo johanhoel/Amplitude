@@ -197,40 +197,20 @@ jobs:
         run: ls -lah release/ || echo "No release folder"
 
       - name: Create Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="desktop-v1.0.${{ github.run_number }}"
-          BODY='## DanteStreamer Desktop v1.0
 
-          ### macOS
-          Extract the ZIP and open `DanteStreamer.app`. Requires macOS 12 or later, on Apple silicon or Intel. Signed with a Developer ID and notarized by Apple.
+          # Create release using gh CLI
+          gh release create "$TAG" \
+            --title "DanteStreamer Desktop v1.0" \
+            --notes "## DanteStreamer Desktop v1.0
 
-          ### Windows
-          Extract the ZIP and run `DanteStreamerController.exe`. Requires Windows 10 or later. The .NET runtime is included.'
+### macOS
+Extract the ZIP and open \`DanteStreamer.app\`. Requires macOS 12 or later, on Apple silicon or Intel. Signed with a Developer ID and notarized by Apple.
 
-          # Create release
-          RESPONSE=$(curl -s -X POST \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ github.repository }}/releases \
-            -d "{\"tag_name\":\"$TAG\",\"name\":\"DanteStreamer Desktop v1.0\",\"body\":\"$BODY\",\"draft\":false,\"prerelease\":true}")
-
-          RELEASE_ID=$(echo "$RESPONSE" | jq -r '.id // empty')
-          if [ -z "$RELEASE_ID" ]; then
-            echo "Failed to create release:"
-            echo "$RESPONSE" | jq .
-            exit 1
-          fi
-
-          echo "Release created with ID: $RELEASE_ID"
-
-          # Upload artifacts
-          for file in release/*.zip; do
-            if [ -f "$file" ]; then
-              echo "Uploading $file..."
-              curl -s -X POST \
-                -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                -H "Content-Type: application/zip" \
-                --data-binary "@$file" \
-                "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=$(basename $file)"
-            fi
-          done
+### Windows
+Extract the ZIP and run \`DanteStreamerController.exe\`. Requires Windows 10 or later. The .NET runtime is included." \
+            --prerelease \
+            release/*.zip
