@@ -211,12 +211,13 @@ jobs:
         id: notarize
         working-directory: dantestreamer-desktop/macos
         env:
-          TEAM_ID: ${{ secrets.APPLE_TEAM_ID || secrets.DEVELOPER_ID_TEAM }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID || secrets.MACOS_NOTARY_TEAM_ID || secrets.DEVELOPER_ID_TEAM }}
           API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
           API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          # Accepts the common names for the same two secrets.
+          APPLE_ID: ${{ secrets.APPLE_ID || secrets.MACOS_NOTARY_APPLE_ID || secrets.APPLE_ID_EMAIL || secrets.APPLE_USERNAME || secrets.NOTARIZATION_APPLE_ID || secrets.AC_USERNAME }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD || secrets.MACOS_NOTARY_PASSWORD || secrets.APPLE_APP_SPECIFIC_PASSWORD || secrets.APPLE_PASSWORD || secrets.NOTARIZATION_PASSWORD || secrets.AC_PASSWORD }}
         run: |
           # Which secrets this run can see (set/empty only, never the values).
           seen=""
