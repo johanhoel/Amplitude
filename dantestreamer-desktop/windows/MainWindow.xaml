@@ -54,9 +54,11 @@
 
             <!-- Main Panel: Status & Meters -->
             <Grid Grid.Column="2" Background="#FAFAFA">
-                <StackPanel Orientation="Vertical" Padding="20" Visibility="{Binding SelectedInstance, Converter={StaticResource NullToVis}}">
-                    <TextBlock Text="Select an instance" FontSize="16" FontWeight="Bold" Foreground="#999" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,200,0,0"/>
-                </StackPanel>
+                <Border Padding="20" Visibility="{Binding SelectedInstance, Converter={StaticResource NullToVis}}">
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock Text="Select an instance" FontSize="16" FontWeight="Bold" Foreground="#999" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,200,0,0"/>
+                    </StackPanel>
+                </Border>
 
                 <TabControl Visibility="{Binding Status, Converter={StaticResource NullToVisPart}}">
                     <TabItem Header="Status" Padding="12,4">
