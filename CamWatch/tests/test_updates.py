@@ -78,6 +78,10 @@ updates._get = fake_github
 page = c.get("/settings").get_data(as_text=True)
 report('id="updates"' in page and "Update now" in page, "Settings has an Updates section with an Update now button")
 report("not installed on the server" in page, "Settings says when the host helper is missing")
+report("/settings/update/key" in page, "Settings links to the guide for the access key")
+guide = c.get("/settings/update/key").get_data(as_text=True)
+report("Generate token" in guide and "Read-only" in guide and "<b>Amplitude</b>" in guide,
+       "the guide explains each step and names the repository")
 c.post("/settings/update", data={"repo": "johanhoel/Amplitude", "folder": "CamWatch", "branch": "main",
                                  "token": "github_pat_SECRET123"})
 report(updates.options()["token"] == "github_pat_SECRET123", "the access key is saved")
