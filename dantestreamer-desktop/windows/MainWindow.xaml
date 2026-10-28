@@ -169,7 +169,7 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Grid.RowDefinitions>
-                                            <RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/>
+                                            <RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/>
                                         </Grid.RowDefinitions>
                                         <TextBlock Grid.Row="0" Text="Device" Style="{StaticResource Label}"/>
                                         <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Status.Device.Name}" Style="{StaticResource Value}"/>
@@ -186,6 +186,8 @@
                                         </TextBlock>
                                         <TextBlock Grid.Row="3" Text="Virgil version" Style="{StaticResource Label}"/>
                                         <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Status.Version}" Style="{StaticResource Value}"/>
+                                        <TextBlock Grid.Row="5" Grid.ColumnSpan="2" Text="{Binding ActionMessage}" Foreground="#1565C0" TextWrapping="Wrap" Margin="0,8,0,0"
+                                                   Visibility="{Binding ActionMessage, Converter={StaticResource NotNullToVis}}"/>
                                         <StackPanel Grid.Row="4" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,8,0,0">
                                             <Button Content="Start" Command="{Binding StartCommand}" Style="{StaticResource ToolButton}"/>
                                             <Button Content="Stop" Command="{Binding StopCommand}" Style="{StaticResource ToolButton}"/>

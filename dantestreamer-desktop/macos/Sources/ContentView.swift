@@ -166,9 +166,9 @@ struct StatusTab: View {
                         row("Network", "\(status.device.address) (\(status.device.interface))")
                         row("Virgil version", status.version)
                         HStack {
-                            Button("Start") { manager.start() }
-                            Button("Stop") { manager.stop() }
-                            Button("Restart audio") { manager.restart() }
+                            Button("Start") { manager.start() }.disabled(!manager.engineStopped)
+                            Button("Stop") { manager.stop() }.disabled(manager.engineStopped)
+                            Button("Restart audio") { manager.restart() }.disabled(manager.engineStopped)
                             Spacer()
                             if let url = manager.selected?.panelURL {
                                 Button("Open web panel") { NSWorkspace.shared.open(url) }
@@ -176,6 +176,10 @@ struct StatusTab: View {
                             }
                         }
                         .padding(.top, 4)
+                        if let message = manager.actionMessage {
+                            Text(message).foregroundColor(.accentColor)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                     .padding(8)
                 }

@@ -52,9 +52,30 @@ namespace DanteStreamerController.ViewModels
             get => _status;
             set
             {
-                if (SetProperty(ref _status, value)) OnPropertyChanged(nameof(IsConnecting));
+                if (!SetProperty(ref _status, value)) return;
+                OnPropertyChanged(nameof(IsConnecting));
+                StartCommand.NotifyCanExecuteChanged();
+                StopCommand.NotifyCanExecuteChanged();
+                RestartCommand.NotifyCanExecuteChanged();
+                if (_waitingFor != null && value != null &&
+                    (value.State == _waitingFor || DateTime.UtcNow - _actionSince > TimeSpan.FromSeconds(20)))
+                {
+                    ActionMessage = value.State == _waitingFor ? null : $"Virgil is {value.State}. Check its log (Virgil icon, Open log).";
+                    _waitingFor = null;
+                }
             }
         }
+
+        // Start is offered only while the engine is stopped, Stop and Restart
+        // only while it is not, so a click always changes something.
+        private bool EngineStopped => Status?.State is "stopped" or "error";
+
+        // Result of Start/Stop/Restart. Kept apart from Error, which every status
+        // poll rewrites, and cleared once the engine reaches the new state.
+        private string? _actionMessage;
+        public string? ActionMessage { get => _actionMessage; set => SetProperty(ref _actionMessage, value); }
+        private string? _waitingFor;   // "running", "stopped" or null
+        private DateTime _actionSince;
 
         // A host is selected but has not answered yet.
         public bool IsConnecting => SelectedInstance != null && Status == null;
@@ -170,9 +191,9 @@ namespace DanteStreamerController.ViewModels
             OpenPanelCommand = new RelayCommand(OpenPanel);
             SaveInstanceCommand = new RelayCommand(SaveNewInstance);
             RemoveInstanceCommand = new RelayCommand(RemoveSelected);
-            StartCommand = new AsyncRelayCommand(() => Post("/api/start"));
-            StopCommand = new AsyncRelayCommand(() => Post("/api/stop"));
-            RestartCommand = new AsyncRelayCommand(() => Post("/api/restart"));
+            StartCommand = new AsyncRelayCommand(() => Post("/api/start", "Starting Virgil..."), () => EngineStopped);
+            StopCommand = new AsyncRelayCommand(() => Post("/api/stop", "Stopping Virgil..."), () => !EngineStopped);
+            RestartCommand = new AsyncRelayCommand(() => Post("/api/restart", "Restarting the audio engine..."), () => !EngineStopped);
 
             _pollTimer.Tick += async (_, _) => await FetchStatus();
 
@@ -189,6 +210,8 @@ namespace DanteStreamerController.ViewModels
             TxMeters = new();
             RxMeters = new();
             Error = null;
+            ActionMessage = null;
+            _waitingFor = null;
             _pollTimer.Stop();
             if (SelectedInstance == null) return;
             _pollTimer.Start();
@@ -451,9 +474,10 @@ namespace DanteStreamerController.ViewModels
             }
         }
 
-        private async Task Post(string path)
+        private async Task Post(string path, string busyText)
         {
             if (SelectedInstance == null) return;
+            ActionMessage = busyText;
             try
             {
                 var req = NewRequest(HttpMethod.Post, path);
@@ -461,11 +485,17 @@ namespace DanteStreamerController.ViewModels
                 req.Headers.Add("X-Virgil-Request", "1");
                 using var response = await _httpClient.SendAsync(req);
                 if (!response.IsSuccessStatusCode)
-                    Error = DescribeHttpError((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+                {
+                    ActionMessage = DescribeHttpError((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+                    return;
+                }
+                _waitingFor = path == "/api/stop" ? "stopped" : "running";
+                _actionSince = DateTime.UtcNow;
             }
             catch (Exception ex)
             {
-                Error = ex.Message;
+                ActionMessage = $"Virgil did not answer: {ex.Message}";
+                return;
             }
             await FetchStatus();
         }

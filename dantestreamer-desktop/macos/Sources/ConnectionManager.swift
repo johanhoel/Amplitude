@@ -128,9 +128,30 @@ final class ConnectionManager: ObservableObject {
         selectedID = instances.first?.id
     }
 
-    func start() { post("/api/start") }
-    func stop() { post("/api/stop") }
-    func restart() { post("/api/restart") }
+    func start() { post("/api/start", busy: "Starting Virgil...") }
+    func stop() { post("/api/stop", busy: "Stopping Virgil...") }
+    func restart() { post("/api/restart", busy: "Restarting the audio engine...") }
+
+    // Start is offered only while the engine is stopped, Stop and Restart only
+    // while it is not, so a click always changes something.
+    var engineStopped: Bool { status?.status == "stopped" || status?.status == "error" }
+
+    // Result of Start/Stop/Restart. Kept apart from `error`, which every status
+    // poll rewrites, and cleared once the engine reaches the new state.
+    @Published var actionMessage: String?
+    private var waitingFor: String?
+    private var actionSince = Date()
+
+    private func checkAction(_ s: DeviceStatus) {
+        guard let want = waitingFor else { return }
+        if s.status == want {
+            actionMessage = nil
+            waitingFor = nil
+        } else if Date().timeIntervalSince(actionSince) > 20 {
+            actionMessage = "Virgil is \(s.status). Check its log (Virgil menu, Open log)."
+            waitingFor = nil
+        }
+    }
 
     private func saveInstances() {
         if let data = try? JSONEncoder().encode(instances) {
@@ -144,6 +165,8 @@ final class ConnectionManager: ObservableObject {
         txMeters = []
         rxMeters = []
         error = nil
+        actionMessage = nil
+        waitingFor = nil
         guard let instance = selected else { return }
         pollTask = Task { [weak self] in
             while !Task.isCancelled {
@@ -181,6 +204,7 @@ final class ConnectionManager: ObservableObject {
             }
             let s = try JSONDecoder().decode(DeviceStatus.self, from: data)
             status = s
+            checkAction(s)
             txMeters = MeterRow.build(peaks: s.meters.tx, names: s.txNames, prefix: "TX")
             rxMeters = MeterRow.build(peaks: s.meters.rx, names: s.rxNames, prefix: "RX")
             error = s.error.isEmpty ? nil : s.error
@@ -196,17 +220,24 @@ final class ConnectionManager: ObservableObject {
         }
     }
 
-    private func post(_ path: String) {
+    private func post(_ path: String, busy: String) {
         guard let instance = selected, var req = request(instance, path, method: "POST") else { return }
         // Virgil refuses POSTs without this header (its CSRF guard).
         req.setValue("1", forHTTPHeaderField: "X-Virgil-Request")
+        actionMessage = busy
         Task {
             do {
                 let (data, response) = try await session.data(for: req)
                 let code = (response as? HTTPURLResponse)?.statusCode ?? 0
-                if code != 200 { error = Self.describeHTTPError(code, data) }
+                guard code == 200 else {
+                    actionMessage = Self.describeHTTPError(code, data)
+                    return
+                }
+                waitingFor = path == "/api/stop" ? "stopped" : "running"
+                actionSince = Date()
             } catch {
-                self.error = error.localizedDescription
+                actionMessage = "Virgil did not answer: \(error.localizedDescription)"
+                return
             }
             await fetchStatus(instance)
         }

@@ -2,6 +2,14 @@
 
 Newest first.
 
+## 2026-10-28 (7)
+
+- Start, Stop and Restart audio show what happens: "Starting Virgil..."
+  stays until the engine is running, and errors stay visible. Before, the
+  next status poll (every second) cleared them, so a click looked like
+  nothing happened. Start is only clickable while Virgil is stopped; Stop
+  and Restart only while it runs.
+
 ## 2026-10-28 (6)
 
 - Virgil ships inside both apps: Install Virgil on the start page installs
