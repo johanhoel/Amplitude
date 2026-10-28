@@ -58,6 +58,8 @@ jobs:
           mkdir -p DanteStreamer.app/Contents/Resources
           cp .build/release/DanteStreamerController DanteStreamer.app/Contents/MacOS/
           chmod +x DanteStreamer.app/Contents/MacOS/DanteStreamerController
+          touch DanteStreamer.app/Contents/PkgInfo
+          echo "APPL????" > DanteStreamer.app/Contents/PkgInfo
 
       - name: Create Info.plist
         working-directory: dantestreamer-desktop/macos
@@ -79,9 +81,15 @@ jobs:
             <string>1.0.0</string>
             <key>LSMinimumSystemVersion</key>
             <string>12.0</string>
+            <key>NSPrincipalClass</key>
+            <string>NSApplication</string>
           </dict>
           </plist>
           EOF
+
+      - name: Code sign app (ad-hoc)
+        working-directory: dantestreamer-desktop/macos
+        run: codesign -s - --deep --force DanteStreamer.app
 
       - name: Create archive
         working-directory: dantestreamer-desktop/macos
