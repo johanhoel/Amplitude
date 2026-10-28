@@ -20,44 +20,49 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Build Windows app (self-contained)
+      - name: Build Windows EXE (self-contained)
         working-directory: dantestreamer-desktop/windows
-        run: dotnet publish DanteStreamerController.csproj -c Release -o publish -r win-x64 --self-contained=true
+        run: |
+          dotnet publish DanteStreamerController.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained=true `
+            --output publish
 
-      - name: Create ZIP archive
-        working-directory: dantestreamer-desktop/windows
-        run: powershell -Command "Compress-Archive -Path publish/* -DestinationPath DanteStreamerController-win-x64.zip -Force"
+      - name: Create archive
+        shell: pwsh
+        working-directory: dantestreamer-desktop/windows/publish
+        run: |
+          $files = Get-ChildItem -File
+          $files | Compress-Archive -DestinationPath ../DanteStreamerController-windows.zip -Force
 
-      - name: Upload Windows artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows-build
-          path: dantestreamer-desktop/windows/DanteStreamerController-win-x64.zip
-          retention-days: 7
+          name: windows
+          path: dantestreamer-desktop/windows/DanteStreamerController-windows.zip
 
   build-macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build Swift release binary
+      - name: Build Swift binary
         working-directory: dantestreamer-desktop/macos
-        run: swift build -c release -Xswiftc -suppress-warnings
+        run: swift build -c release
 
-      - name: Create macOS app bundle
+      - name: Create app structure
         working-directory: dantestreamer-desktop/macos
         run: |
-          BINARY=.build/release/DanteStreamerController
-          APP=DanteStreamerController.app
-          mkdir -p "$APP/Contents/MacOS"
-          mkdir -p "$APP/Contents/Resources"
-          cp "$BINARY" "$APP/Contents/MacOS/"
-          chmod +x "$APP/Contents/MacOS/DanteStreamerController"
+          mkdir -p DanteStreamer.app/Contents/MacOS
+          mkdir -p DanteStreamer.app/Contents/Resources
+          cp .build/release/DanteStreamerController DanteStreamer.app/Contents/MacOS/
+          chmod +x DanteStreamer.app/Contents/MacOS/DanteStreamerController
 
-      - name: Add Info.plist
+      - name: Create Info.plist
         working-directory: dantestreamer-desktop/macos
         run: |
-          cat > DanteStreamerController.app/Contents/Info.plist << 'PLIST'
+          cat > DanteStreamer.app/Contents/Info.plist << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -70,26 +75,23 @@ jobs:
             <string>DanteStreamer Controller</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
-            <key>CFBundleVersion</key>
+            <key>CFBundleShortVersionString</key>
             <string>1.0.0</string>
             <key>LSMinimumSystemVersion</key>
             <string>12.0</string>
-            <key>NSHighResolutionCapable</key>
-            <true/>
           </dict>
           </plist>
-          PLIST
+          EOF
 
-      - name: Create DMG
+      - name: Create archive
         working-directory: dantestreamer-desktop/macos
-        run: hdiutil create -volname "DanteStreamer Controller" -srcfolder DanteStreamerController.app -ov -format UDZO DanteStreamerController-mac.dmg
+        run: zip -r DanteStreamer-macos.zip DanteStreamer.app
 
-      - name: Upload macOS artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: macos-build
-          path: dantestreamer-desktop/macos/DanteStreamerController-mac.dmg
-          retention-days: 7
+          name: macos
+          path: dantestreamer-desktop/macos/DanteStreamer-macos.zip
 
   release:
     needs: [build-windows, build-macos]
@@ -98,17 +100,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download Windows build
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: windows-build
-          path: ./release
+          path: ./downloads
 
-      - name: Download macOS build
-        uses: actions/download-artifact@v4
-        with:
-          name: macos-build
-          path: ./release
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          cp downloads/windows/* release/
+          cp downloads/macos/* release/
+          ls -lah release/
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -120,14 +122,12 @@ jobs:
           body: |
             ## DanteStreamer Desktop v1.0
 
-            Native control applications for macOS and Windows.
-
             ### macOS
-            - `DanteStreamerController-mac.dmg` – Double-click to install
-            - Requires macOS 12.0 or later
+            Extract ZIP, double-click `DanteStreamer.app` to run.
+            Requires macOS 12.0+
 
             ### Windows
-            - `DanteStreamerController-win-x64.zip` – Extract and run
-            - Requires Windows 10 or later (.NET 8 included)
+            Extract ZIP, run `DanteStreamerController.exe`.
+            Requires Windows 10+. Includes all dependencies.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

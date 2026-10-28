@@ -6,21 +6,10 @@ let package = Package(
     platforms: [
         .macOS(.v12)
     ],
-    products: [
-        .executable(
-            name: "DanteStreamerController",
-            targets: ["DanteStreamerController"]
-        )
-    ],
-    dependencies: [
-        .package(url: "https://github.com/apple/swift-async-algorithms.git", from: "1.0.0")
-    ],
+    dependencies: [],
     targets: [
-        .executableTarget(
+        .target(
             name: "DanteStreamerController",
-            dependencies: [
-                .product(name: "AsyncAlgorithms", package: "swift-async-algorithms")
-            ],
             path: "Sources"
         )
     ]
