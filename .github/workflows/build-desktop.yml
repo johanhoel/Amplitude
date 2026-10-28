@@ -231,8 +231,8 @@ jobs:
           elif [ -n "$APPLE_ID" ] && [ -n "$APPLE_APP_PASSWORD" ]; then
             auth=(--apple-id "$APPLE_ID" --password "$APPLE_APP_PASSWORD" --team-id "$TEAM_ID")
           else
-            echo "::warning::No notarization secrets visible (APPLE_ID + APPLE_APP_PASSWORD, or the APPLE_API_KEY_* set); the app is signed but not notarized."
-            exit 0
+            echo "::error::Notarization secrets required (APPLE_API_KEY_ID + APPLE_API_ISSUER_ID + APPLE_API_KEY_BASE64, or APPLE_ID + APPLE_APP_PASSWORD)"
+            exit 1
           fi
           ditto -c -k --keepParent DanteStreamer.app notarize.zip
           xcrun notarytool submit notarize.zip "${auth[@]}" --wait --timeout 30m --output-format json | tee notarize.json
