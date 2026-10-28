@@ -4,6 +4,11 @@ Newest changes first.
 
 ## 2026-10-28
 
+- The amplitude repository is public now. Updates need no access key.
+- Request a feature works without a key: GitHub opens with your request filled in, and you press Submit.
+- With a key, CamWatch still sends requests by itself. The key is optional now.
+- The key guide and the README explain the new way.
+- The version is now 2026.10.28.8.
 - A banner at the top of Settings shows when a new version is ready.
 - Updates has a Check again button. It asks GitHub at once.
 - CamWatch now keeps GitHub's answer for 3 minutes, not 10.

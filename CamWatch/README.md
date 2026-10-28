@@ -95,8 +95,11 @@ The helper runs `extras/release.sh`.
 That script backs up the running version and builds the new one.
 When the new version does not start, the script puts the old version back.
 
-The amplitude repository is private.
-GitHub then needs an access key: a fine-grained token with read access to *Contents* of this one repository.
+The amplitude repository is public, so updates need no access key.
+GitHub allows 60 update checks an hour without a key. CamWatch makes at most a few per check.
+
+The access key is optional: a fine-grained token for this one repository.
+Only the owner of the repository can make it.
 Enter it under **Settings → Updates → Where updates come from**.
 The guide [docs/update-key.md](docs/update-key.md) explains each step to make the key.
 CamWatch shows the same guide: **Settings → Updates → How to make the key** (`/settings/update/key`).
@@ -105,8 +108,10 @@ CamWatch shows the same guide: **Settings → Updates → How to make the key** 
 
 Every page has a **💡 Request a feature** link at the bottom.
 A request becomes an issue in the GitHub repository from Settings → Updates.
-It gets the labels `feature request` and `camwatch`.
-The access key then also needs **Issues: Read and write**.
+Without an access key, GitHub opens with the request filled in.
+You press **Submit new issue** there, with your own GitHub account.
+With a key that has **Issues: Read and write**, CamWatch creates the issue itself.
+It then gets the labels `feature request` and `camwatch`.
 CamWatch keeps every request in `DATA_PATH/feature_requests.jsonl`.
 When GitHub refuses a request, **Send again** retries it.
 

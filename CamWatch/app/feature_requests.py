@@ -1,13 +1,16 @@
 """Request a feature: each request becomes a GitHub issue in the repository that Settings -> Updates points at.
 
-It uses the same access key as updates, which then also needs "Issues: Read and write". Every request is also kept in
-DATA_DIR/feature_requests.jsonl, so nothing is lost when GitHub refuses it: "Send again" retries.
+Two ways, by whether Settings -> Updates holds an access key:
+- no key: the page opens GitHub's "New issue" form, filled in; you press Submit there with your own GitHub account.
+- a key with "Issues: Read and write": CamWatch creates the issue itself.
+Every request is also kept in DATA_DIR/feature_requests.jsonl, so nothing is lost when GitHub refuses it.
 """
 import datetime as dt
 import json
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -60,18 +63,30 @@ def _save(rows):
     tmp.replace(FILE)
 
 
+def _body(row, limit=None):
+    text = row["text"] if not limit or len(row["text"]) <= limit else row["text"][:limit] + " …"
+    return (f"{text}\n\n---\nSent from CamWatch {row['version']}"
+            f"{' · from ' + row['name'] if row.get('name') else ''}")
+
+
+def new_issue_url(row):
+    """GitHub's "New issue" form, filled in with this request (for a server without an access key)."""
+    query = urllib.parse.urlencode({"title": f"[CamWatch] {row['title']}", "body": _body(row, 3000),
+                                    "labels": ",".join(LABELS)})
+    return f"https://github.com/{updates.options()['repo']}/issues/new?{query}"
+
+
 def _send(row):
-    """Create the GitHub issue for this request; fills in number/url, or error."""
+    """Create the GitHub issue for this request; fills in number/url, or error. Without a key: nothing to do here."""
     opts = updates.options()
     if not opts["token"]:
-        row["error"] = "no access key yet: enter it in Settings -> Updates"
+        row.update(browser=True, error=None)
         return row
-    body = (f"{row['text']}\n\n---\nSent from the CamWatch Settings page · CamWatch {row['version']}"
-            f"{' · from ' + row['name'] if row.get('name') else ''}")
+    body = _body(row)
     try:
         issue = _api("POST", f"/repos/{opts['repo']}/issues", opts["token"],
                      {"title": f"[CamWatch] {row['title']}", "body": body, "labels": LABELS})
-        row.update(number=issue["number"], url=issue["html_url"], state="open", error=None)
+        row.update(number=issue["number"], url=issue["html_url"], state="open", error=None, browser=False)
     except (GitHubError, KeyError, TypeError) as exc:
         row["error"] = str(exc)
     return row
