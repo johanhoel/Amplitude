@@ -507,6 +507,14 @@ def main():
             Ntfy(log).send(message, title=title, tags="calendar", priority="low", click=f"{web}/log" if web else None)
         return
 
+    if not env("DB_PASSWORD", "") and not args.once:
+        # no database set up: the visit log is off, and that is not a fault (an update must not fail over it)
+        log.warning("no DB_PASSWORD in .env: the visit log (Log page, daily summary) is off. "
+                    "Set up MariaDB as in the README to switch it on.")
+        while True:
+            HEALTH_FILE.touch()
+            time.sleep(60)
+
     ntfy = Ntfy(log)
     # Starting after today's summary time counts as "already sent" so a restart doesn't repeat it
     summary_sent = dt.date.today() if summary_due(None, dt.datetime.now()) else None

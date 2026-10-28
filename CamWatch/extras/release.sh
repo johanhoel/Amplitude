@@ -45,6 +45,10 @@ if [ "$force" != --force ] && docker logs --since 3m "$prefix-webui" 2>&1 | grep
   exit 3
 fi
 
+# Containers that are already broken before the update (e.g. presence without a database) must not make the update
+# fail: the health check below skips them, and lists them at the end
+broken_before=$(docker compose ps -a --format '{{.Name}} {{.Status}}' 2>/dev/null | grep -E 'unhealthy|Restarting|Exited' | cut -d' ' -f1 || true)
+
 stamp=$(date +%Y%m%d-%H%M%S)
 backup="$dir/.releases/$stamp"
 first_install=true
@@ -68,7 +72,9 @@ healthy() {
   # every container up; those with a healthcheck healthy. Recorders need up to 2 min for their first video.
   for _ in $(seq 60); do
     states=$(docker compose ps -a --format '{{.Name}} {{.Status}}')
-    if ! echo "$states" | grep -qE 'health: starting|unhealthy|Restarting|Exited|Created'; then
+    judged=$states
+    for c in $broken_before; do judged=$(echo "$judged" | grep -v "^$c " || true); done
+    if ! echo "$judged" | grep -qE 'health: starting|unhealthy|Restarting|Exited|Created'; then
       echo "$states"; return 0
     fi
     sleep 5
@@ -82,6 +88,7 @@ if install_from "$new" && healthy; then
   docker image prune -f >/dev/null
   docker builder prune -f --filter until=72h >/dev/null   # build cache from older releases (it fills the system disk)
   echo ">> $target is running the new version"
+  [ -n "$broken_before" ] && echo ">> these did not work before the update either, so they did not count: $(echo $broken_before)"
   bash "$dir/extras/install-updater.sh" "$dir" || echo "!! the update button helper did not install" >&2
   exit 0
 fi

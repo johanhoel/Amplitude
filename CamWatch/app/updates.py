@@ -55,6 +55,14 @@ def _get(path, token, raw=False):
     return body if raw else json.loads(body)
 
 
+def version_key(text):
+    """2026.10.28.1 -> (2026, 10, 28, 1); "dev" or junk -> () (lower than any version)."""
+    try:
+        return tuple(int(part) for part in text.strip().split("."))
+    except ValueError:
+        return ()
+
+
 def check(force=False):
     """{"current", "latest": {sha, short, version, date, message}, "newer": bool} or {"error": ...}. Cached 10 min."""
     opts, current = options(), app_version()
@@ -72,7 +80,10 @@ def check(force=False):
         info = commits[0]["commit"]
         version = _get(f"/repos/{opts['repo']}/contents/{q(opts['folder'])}/app/VERSION?ref={sha}",
                        opts["token"], raw=True).strip()
-        newer = not current["commit"] or not sha.startswith(current["commit"])
+        if current["commit"]:
+            newer = not sha.startswith(current["commit"])
+        else:       # an install from a git clone may not know its commit: then only a higher version number counts
+            newer = version_key(version) > version_key(current["version"])
         if current["commit"] and newer:
             try:      # the running commit can be newer than the last change in the folder (or not on GitHub)
                 state = _get(f"/repos/{opts['repo']}/compare/{current['commit']}...{sha}", opts["token"])["status"]

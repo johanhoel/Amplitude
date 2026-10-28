@@ -65,6 +65,16 @@ report(r.get("newer") is False, "a running commit newer than GitHub's is not an 
 fake_github.compare = "ahead"
 
 
+real_version = updates.app_version
+for running_version, want in (("2026.10.29", False), ("2026.10.28.9", True), ("dev", True)):
+    updates.app_version = lambda v=running_version: {"version": v, "commit": "", "date": "", "text": v}
+    r = c.get("/api/update?force=1").get_json()
+    report(r.get("newer") is want, f"without a known commit, {running_version} vs 2026.10.29 on GitHub: newer={r.get('newer')}")
+updates.app_version = real_version
+report(updates.version_key("2026.10.28.1") > updates.version_key("2026.10.28") > updates.version_key("dev"),
+       "version numbers compare part by part")
+
+
 def github_down(path, token, raw=False):
     raise updates.GitHubError("GitHub refused: the repository is private or the access key is wrong")
 

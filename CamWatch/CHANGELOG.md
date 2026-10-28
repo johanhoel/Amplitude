@@ -4,6 +4,14 @@ Newest changes first.
 
 ## 2026-10-28
 
+- An update no longer fails because of a container that was broken before the update.
+- `release.sh` lists those containers at the end and skips them in the health check.
+- `presence` waits quietly when `.env` has no `DB_PASSWORD`. Before this fix, it was unhealthy.
+- Without `DB_PASSWORD`, the visit log stays off.
+- A server installed from a git clone now knows its own commit. `deploy.sh` writes it into `app/BUILD`.
+- Before this fix, Updates offered the same version again and again on such a server.
+- A server without a known commit only gets an update with a higher version number.
+- The version is now 2026.10.28.3.
 - The 🗑 Remove button on a camera card works now.
 - Before this fix, a click on Remove did nothing. The camera name broke the button's code.
 - The version is now 2026.10.28.2.
