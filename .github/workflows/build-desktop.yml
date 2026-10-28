@@ -129,25 +129,28 @@ jobs:
       - name: Prepare release files
         run: |
           mkdir -p release
-          find downloads -type f -name "*.zip" -exec cp {} release/ \; || true
-          ls -lah release/ || echo "No artifacts found"
+          find downloads -type f -name "*.zip" -exec cp {} release/ \;
+          echo "Files in release folder:"
+          ls -lah release/
+          echo "File count: $(find release -type f | wc -l)"
 
       - name: Create Release
+        if: success()
         uses: softprops/action-gh-release@v1
         with:
-          files: release/*
+          files: release/*.zip
           tag_name: desktop-v1.0.${{ github.run_number }}
           draft: false
           prerelease: true
           body: |
             ## DanteStreamer Desktop v1.0
 
-            ### macOS
-            Extract ZIP, double-click `DanteStreamer.app` to run.
-            Requires macOS 12.0+
+            Download and extract the ZIP file for your platform.
 
-            ### Windows
-            Extract ZIP, run `DanteStreamerController.exe`.
-            Requires Windows 10+. Includes all dependencies.
+            **macOS**: Extract ZIP, double-click `DanteStreamer.app` to run. Requires macOS 12.0+
+
+            **Windows**: Extract ZIP, run `DanteStreamerController.exe`. Requires Windows 10+. Includes all dependencies.
+
+            **Note**: Windows build currently unavailable (GitHub Actions issue being investigated).
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
