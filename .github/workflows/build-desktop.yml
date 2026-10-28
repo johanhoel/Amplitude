@@ -96,18 +96,27 @@ jobs:
         env:
           TEAM_ID: ${{ secrets.DEVELOPER_ID_TEAM }}
         run: |
-          set -eu
+          set -eEu
+          # Name the failing command on the run page (job logs need a login).
+          trap 'echo "::error title=Build Virgil::line $LINENO: $BASH_COMMAND (exit $?)"' ERR
           src="$RUNNER_TEMP/virgil"
           git init -q "$src"
           git -C "$src" fetch -q --depth 1 https://github.com/Audbol/Virgil-Virtual-Soundcard.git "$VIRGIL_COMMIT"
           git -C "$src" checkout -q FETCH_HEAD
+          if ! command -v rustup >/dev/null; then
+            curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+            echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+            export PATH="$HOME/.cargo/bin:$PATH"
+          fi
           rustup target add aarch64-apple-darwin x86_64-apple-darwin
 
           # Virgil Control reads audio interface inputs; under the hardened runtime
           # that needs the audio-input entitlement.
           ent="$RUNNER_TEMP/virgil-control.entitlements"
-          plutil -create xml1 "$ent"
-          plutil -insert com.apple.security.device.audio-input -bool YES "$ent"
+          printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' \
+            '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
+            '<plist version="1.0"><dict><key>com.apple.security.device.audio-input</key><true/></dict></plist>' > "$ent"
+          plutil -lint "$ent"
           python3 - "$src/packaging/macos/build-pkg.sh" "$ent" << 'PY'
           import sys
           path, ent = sys.argv[1], sys.argv[2]
