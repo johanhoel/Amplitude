@@ -22,12 +22,7 @@ jobs:
 
       - name: Build Windows EXE (self-contained)
         working-directory: dantestreamer-desktop/windows
-        run: |
-          dotnet publish DanteStreamerController.csproj `
-            -c Release `
-            -r win-x64 `
-            --self-contained=true `
-            --output publish
+        run: dotnet publish DanteStreamerController.csproj -c Release -r win-x64 --self-contained=true --output publish
 
       - name: Create archive
         shell: pwsh
