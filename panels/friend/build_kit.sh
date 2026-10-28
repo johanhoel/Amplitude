@@ -29,7 +29,12 @@ chmod +x "$STAGE/install-homedeck.sh" "$STAGE/bin/"*
 ( cd "$STAGE/app" && sed 's#__HA_URL__#http://127.0.0.1:8123#' homedeck.toml > /tmp/hd-check.toml && \
   HOMEDECK_ROOT="$STAGE/app" HOMEDECK_CONFIG=/tmp/hd-check.toml STATE_DIRECTORY="$(mktemp -d)" HOMEDECK_READONLY=1 python3 -m homedeck.check )
 if grep -rIl -i -E "claude|anthropic|\bllm\b|chatgpt" "$STAGE" "$H/kit/homedeck.sh"; then echo "AI mention found - not publishing"; exit 1; fi
-if grep -rIl -E "see-private-words-txt" "$STAGE/app" "$STAGE/editor"; then echo "personal data found"; exit 1; fi
+# personal words (names, street, entity ids) live in friend/private-words.txt: one per line, kept out of git
+if [ -s "$H/private-words.txt" ]; then
+  if grep -rIl -i -F -f "$H/private-words.txt" "$STAGE/app" "$STAGE/editor"; then echo "personal data found"; exit 1; fi
+else
+  echo "warning: $H/private-words.txt is missing - the personal data check is skipped" >&2
+fi
 tar czf "$OUT/homedeck-kit.tar.gz" --owner=0 --group=0 -C "$OUT" homedeck-kit
 ( cd "$OUT" && sha256sum homedeck-kit.tar.gz > homedeck-kit.tar.gz.sha256 )
 cp "$H/kit/homedeck.sh" "$OUT/"

@@ -58,7 +58,7 @@ GitHub shows the full list only after you pick a repository.
 ## Part 2: Give the key to CamWatch
 
 9. Open CamWatch and go to **Settings → Updates**.
-   Production: <http://192.168.1.81:8080/settings#updates>
+   For example: `http://192.168.1.20:8080/settings#updates` (use your server's address)
 10. Click **Where updates come from**.
     A small box opens.
 11. Click in the box **Access key**.
