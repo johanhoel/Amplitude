@@ -1,0 +1,69 @@
+# Builds the Windows (.exe) and Mac (.dmg) installers for CamWatch, Home Deck and DanteStreamer.
+# Run it by hand (Actions -> installers -> Run workflow), or push a tag like installers-v1 to also publish a release.
+# The Mac files are signed and notarized when the MACOS_* and APPLE_* secrets exist (see installers/README.md).
+name: installers
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["installers-v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the .exe files
+        shell: powershell
+        run: |
+          Install-Module ps2exe -Scope CurrentUser -Force
+          New-Item -ItemType Directory -Force dist | Out-Null
+          $projects = [ordered]@{ camwatch = 'CamWatch'; homedeck = 'HomeDeck'; dantestreamer = 'DanteStreamer' }
+          foreach ($p in $projects.GetEnumerator()) {
+            $script = (Get-Content installers/windows/Install.ps1 -Raw) -replace '__PROJECT__', $p.Key
+            Set-Content -Path "build-$($p.Key).ps1" -Value $script -Encoding UTF8
+            Invoke-ps2exe -inputFile "build-$($p.Key).ps1" -outputFile "dist/$($p.Value)-Setup.exe" -requireAdmin `
+              -title "$($p.Value) Setup" -product $p.Value -company 'johanhoel/amplitude' -version '1.0.0.0'
+          }
+          Get-ChildItem dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/*.exe
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the .dmg files
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: bash installers/macos/build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: dist/*.dmg
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/installers-v')
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Installers ${{ github.ref_name }}
+          body: |
+            Windows: download <Project>-Setup.exe and run it. Mac: open <Project>.dmg and drag the app to Applications.
+            How it works and what to expect: installers/README.md in the repository.
+          files: dist/*

@@ -4,6 +4,9 @@ Newest changes first.
 
 ## 2026-10-28
 
+- New: installers for Windows (`CamWatch-Setup.exe`) and Mac (`CamWatch.dmg`). See `installers/README.md` in amplitude.
+- The installers set up CamWatch without a camera. You add the camera in Settings → Cameras.
+- `deploy.sh` now installs Docker on Ubuntu too. Before this fix, it only worked on Debian.
 - A green ⬆ Update button shows in the top bar of every page when a new version is ready.
 - CamWatch asks GitHub every 30 minutes in the background. A page never waits for GitHub.
 - Where recordings go works now. Before this fix, the helper on the server stopped at the start of a move.
