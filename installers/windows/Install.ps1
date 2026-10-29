@@ -7,7 +7,7 @@
 #   3. runs installers/linux/setup.sh from GitHub in it: Docker, the project, its first settings
 #   4. keeps it running after you log in (a hidden task), adds a desktop shortcut and an entry in Apps -> Uninstall
 #   <Project>-Setup.exe -Uninstall removes all of it again, recordings included.
-param([string]$Project = '__PROJECT__', [switch]$Uninstall)
+param([string]$Project = '__PROJECT__', [switch]$Uninstall, [switch]$Stop, [switch]$Start)
 $ErrorActionPreference = 'Stop'
 
 $Info = @{
@@ -41,6 +41,24 @@ Start-Transcript -Path (Join-Path $Dir 'install.log') -Append | Out-Null
 Write-Host "$Name for Windows" -ForegroundColor White
 
 # ---------------------------------------------------------------- remove
+# Stopping it was only possible by removing it. A logon task keeps the distro
+# alive, so stopping means ending that task and shutting the distro down;
+# starting means running the task again. Neither touches recordings or
+# settings, which is the difference from -Uninstall.
+if ($Stop) {
+    Say 'Stopping'
+    Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    if (DistroExists) { Wsl --terminate $Distro | Out-Null }
+    Write-Host "$Name is stopped. It starts again at the next logon, or now with:" -ForegroundColor Yellow
+    Write-Host "  `"$(Join-Path $Dir "$Distro-Setup.exe")`" -Start"
+    Done 0
+}
+if ($Start) {
+    Say 'Starting'
+    Start-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    Write-Host "$Name is starting. $($P.Url)"
+    Done 0
+}
 if ($Uninstall) {
     $answer = Read-Host "Remove $Name and everything in it, recordings and settings included? Type yes"
     if ($answer -ne 'yes') { Write-Host 'Nothing removed.'; Done 0 }
@@ -173,6 +191,10 @@ Copy-Item -Force $Self (Join-Path $Dir "$Distro-Setup.exe") -ErrorAction Silentl
 $shell = New-Object -ComObject WScript.Shell
 $lnk = $shell.CreateShortcut((Join-Path $menu "Uninstall $Name.lnk"))
 $lnk.TargetPath = Join-Path $Dir "$Distro-Setup.exe"; $lnk.Arguments = '-Uninstall'; $lnk.Save()
+foreach ($verb in 'Stop', 'Start') {
+    $s2 = $shell.CreateShortcut((Join-Path $menu "$verb $Name.lnk"))
+    $s2.TargetPath = Join-Path $Dir "$Distro-Setup.exe"; $s2.Arguments = "-$verb"; $s2.Save()
+}
 $key = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Amplitude$Distro"
 New-Item -Force -Path $key | Out-Null
 Set-ItemProperty -Path $key -Name DisplayName -Value $Name
@@ -186,7 +208,28 @@ Say 'Done'
 Write-Host ''
 Write-Host "On this PC: $($P.Url)   (shortcut on the desktop)"
 Write-Host "From a phone: the PC's address instead of localhost, e.g. http://192.168.1.20:$($P.Ports[-1])"
+Write-Host "Stop or start it: Start menu -> $Name -> Stop $Name / Start $Name"
 Write-Host "Remove it again: Settings -> Apps -> $Name -> Uninstall"
+
+# The service is only just starting, so opening the browser straight away
+# lands on "can't reach this page" and looks like the install failed. Wait for
+# the port to answer first, up to a minute, then open. If it never answers the
+# page still opens, because the address and the error are more use than
+# nothing - and the line above has already printed it.
+$deadline = (Get-Date).AddSeconds(60)
+$port = $P.Ports[-1]
+Write-Host -NoNewline 'Waiting for it to start '
+while ((Get-Date) -lt $deadline) {
+    $up = $false
+    try {
+        $c = New-Object Net.Sockets.TcpClient
+        $up = $c.ConnectAsync('127.0.0.1', $port).Wait(700)
+    } catch { $up = $false } finally { if ($c) { $c.Dispose() } }
+    if ($up) { break }
+    Write-Host -NoNewline '.'
+    Start-Sleep -Milliseconds 800
+}
+Write-Host ''
 Start-Process $P.Url
 Stop-Transcript | Out-Null
 Done 0

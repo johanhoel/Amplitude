@@ -75,5 +75,27 @@ check("the exe is still built with -requireAdmin", "-requireAdmin" in wf)
 for name, text in (("Install.ps1", ps1), ("installers.yml", wf)):
     check(f"{name} says DStreamer, not DanteStreamer", "DanteStreamer" not in text)
 
+PS1 = (ROOT / "installers" / "windows" / "Install.ps1").read_text(encoding="utf-8")
+
+# Opening the browser the instant the install finishes lands on "can't reach
+# this page" - the service is still starting. The wait is what makes the
+# shortcut useful rather than alarming.
+wait_at, open_at = PS1.find("Waiting for it to start"), PS1.find("Start-Process $P.Url")
+check("the installer waits for the port before opening the browser", wait_at != -1)
+check("the wait comes before the browser opens", -1 < wait_at < open_at)
+check("the wait gives up rather than hanging", "AddSeconds(60)" in PS1)
+
+# Stopping it used to mean removing it, recordings and all.
+check("the installer can stop without uninstalling", "if ($Stop) {" in PS1)
+check("and start again", "if ($Start) {" in PS1)
+check("-Stop and -Start are accepted on the command line",
+      "[switch]$Stop" in PS1 and "[switch]$Start" in PS1)
+check("stopping leaves the distro registered",
+      "--terminate" in PS1.split("if ($Stop) {")[1].split("if ($Uninstall)")[0]
+      and "--unregister" not in PS1.split("if ($Stop) {")[1].split("if ($Uninstall)")[0],
+      "terminate stops it; unregister would delete it")
+check("there are Start-menu shortcuts for both", "foreach ($verb in 'Stop', 'Start')" in PS1)
+check("the installer says how to stop it", "Stop or start it:" in PS1)
+
 print(f"\n{sum(results)}/{len(results)} passed")
 sys.exit(0 if all(results) else 1)
