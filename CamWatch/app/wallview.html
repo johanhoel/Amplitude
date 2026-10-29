@@ -190,7 +190,7 @@ async function loadDay(d) {
     + (vs.length ? `<div class="list">${vs.map(v => { const i = shown.push(v) - 1;
         return `<button class="v" data-i="${i}"><img loading="lazy" src="/api/thumb/${esc(v.day)}/${esc(v.stem)}.jpg?w=480" alt="">
           <span class="dur">${secs(v)} s</span>${v.star ? '<span class="star"><i class="icon icon-star" aria-hidden="true"></i></span>' : ''}
-          <div class="meta"><b>${hm(v.start)}</b>${camCount > 1 ? ` <span class="w" style="display:inline">· ${esc(v.camera)}${v.visit && v.visit.length ? ` <i class="icon icon-link" aria-hidden="true"></i> ${esc([...new Set(v.visit)].join(', '))}` : ''}</span>` : ''}${v.unusual ? ` <span class="w unknown" style="display:inline" title="${esc(v.unusual)}">⚠ unusual</span>` : ''}<span class="w ${v.people.length ? 'known' : ''}">${esc(who(v))}</span></div></button>`; }).join('')}</div>`
+          <div class="meta"><b>${hm(v.start)}</b>${camCount > 1 ? ` <span class="w" style="display:inline">· ${esc(v.camera)}${v.visit && v.visit.length ? ` <i class="icon icon-link" aria-hidden="true"></i> ${esc([...new Set(v.visit)].join(', '))}` : ''}</span>` : ''}${v.unusual ? ` <span class="w unknown" style="display:inline" title="${esc(v.unusual)}"><i class="icon icon-alert" aria-hidden="true"></i> unusual</span>` : ''}<span class="w ${v.people.length ? 'known' : ''}">${esc(who(v))}</span></div></button>`; }).join('')}</div>`
       : `<div class="empty">Nothing ${filter === 'all' ? '' : 'matching '}this day.</div>`);
   $('#days').appendChild(sec);
 }

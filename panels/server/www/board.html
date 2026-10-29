@@ -245,7 +245,7 @@ function build() { document.getElementById('title').textContent = L.title || NAM
   const card = (m, i) => `<section class="mod${MODULES[m.type]?.bare ? ' bare' : ''}" data-i="${i}" data-sz="${esc(m.size)}" style="${esc(style(m))}"><div class="mbody"></div><i class="rz" title="Drag to resize"></i>
       <div class="medit"><b>${MODULES[m.type] ? `<i class="icon icon-${MODULES[m.type].icon}" aria-hidden="true"></i> ` : ''}${esc(MODULES[m.type]?.name || m.type)}</b><small>${esc(SIZES[m.size]?.[0] || '')}</small>
         <div class="eb"><button data-e="left" aria-label="Move earlier"><i class="icon icon-left" aria-hidden="true"></i></button><button data-e="right" aria-label="Move later"><i class="icon icon-right" aria-hidden="true"></i></button>
-        <button data-e="size" aria-label="Change size">⤢</button><button data-e="set" aria-label="Settings"><i class="icon icon-gear" aria-hidden="true"></i></button></div></div></section>`;
+        <button data-e="size" aria-label="Change size"><i class="icon icon-frame" aria-hidden="true"></i></button><button data-e="set" aria-label="Settings"><i class="icon icon-gear" aria-hidden="true"></i></button></div></div></section>`;
   document.body.classList.toggle('canvas', canvas); document.body.classList.toggle('preview', /[?&]preview\b/.test(location.search));
   const inCorner = m => col && m.size === 'c';
   const order = L.modules.map((m, i) => i);

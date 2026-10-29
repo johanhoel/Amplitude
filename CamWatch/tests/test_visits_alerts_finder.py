@@ -93,7 +93,7 @@ check("clip page: same visit, play all with both videos", "Same visit" in page a
 check("clip page: unusual banner", "Unusual:</b> no person on garden" in page)
 idx = c.get(f"/?day={day}").get_data(as_text=True)
 check("clip list: same-visit tag and unusual tag",
-      '<i class="icon icon-link" aria-hidden="true"></i> garden' in idx and "⚠ unusual" in idx)
+      '<i class="icon icon-link" aria-hidden="true"></i> garden' in idx and '<i class="icon icon-alert" aria-hidden="true"></i> unusual' in idx)
 vis = {v["stem"]: v for v in c.get(f"/api/visits?day={day}").get_json()}
 check(f"/api/visits: visit + unusual {vis['garden_200050']['visit']}", vis["garden_200050"]["visit"] == ["camera1"] and vis["garden_200050"]["unusual"] and vis["drive_200300"]["visit"] == [])
 
