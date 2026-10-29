@@ -23,7 +23,7 @@ ROOTS = ("panels", "CamWatch")
 SKIP = {"network.html"}          # embeds a base64 font, not a page we ship logic in
 # Test and dev tooling builds HTML inside Python strings, so a <script> there
 # is a template, not source we ship. This file's own docstring is one too.
-SKIP_PARTS = {"tests", "dev", ".drafts", "node_modules"}
+SKIP_PARTS = {"tests", "dev", ".drafts", "node_modules", ".venv"}   # .venv: the dev setup's packages (CamWatch/dev/setup.ps1)
 
 NODE = next((p for p in ("/opt/nodejs/bin/node", shutil.which("node") or "")
              if p and Path(p).exists()), None)

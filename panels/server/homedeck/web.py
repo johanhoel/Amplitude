@@ -350,6 +350,8 @@ class Handler(SimpleHTTPRequestHandler):
                         return self.send_json(studio.apply())
                     if self.path == '/api/studio/undo':
                         return self.send_json(studio.undo())
+                    if self.path == '/api/studio/camwatch':          # link or unlink CamWatch (Overview)
+                        return self.send_json(studio.camwatch_remove() if req.get('remove') else studio.camwatch_set(req.get('url'), req.get('key')))
                 except (ValueError, KeyError) as e:
                     return self.send_json({'error': str(e)}, 400)
                 return self.send_json({'error': 'unknown'}, 404)

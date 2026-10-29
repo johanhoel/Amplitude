@@ -22,6 +22,7 @@ import numpy as np
 import accel
 import alerts
 import feature_requests
+import homedeck
 import offsite
 import settings
 import updates
@@ -67,7 +68,7 @@ def check(day, stem=None):
 
 def cameras():
     """[{name, primary, online}] of the cameras that are on (Settings -> Cameras), in slot order."""
-    return [{"name": c["name"], "primary": c["slot"] == 1,
+    return [{"name": c["name"], "slot": c["slot"], "primary": c["slot"] == 1,
              "online": time.time() - _mtime(LIVE_DIR / c["name"] / "alive") < 60}
             for c in settings.camera_slots() if c["enabled"]]
 
@@ -292,6 +293,10 @@ def from_lan():
 
 @app.before_request
 def auth():
+    if request.path.startswith("/api/link/"):     # Home Deck (homedeck.py): only with the link key
+        if homedeck.authorized(request.headers.get("Authorization")):
+            return None
+        return as_json({"error": "wrong or missing link key"}), 401
     if not WEB_PASSWORD or request.path in ("/healthz", "/manifest.webmanifest", "/sw.js") \
             or request.path.startswith(("/a/", "/static/")):
         return None     # app icon/manifest hold nothing private; /a/... are push buttons with their own signed token
@@ -304,6 +309,11 @@ def auth():
 
 
 # ---------- routes ----------
+
+@app.template_filter("homedeck_time")
+def homedeck_time(ts):
+    return dt.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M")
+
 
 @app.context_processor
 def inject_status():
@@ -599,7 +609,9 @@ def people_page():
         photos = sorted(p for p in (PHOTOS_DIR / name).rglob("*") if p.suffix.lower() in IMG_EXT)
         rows.append({"name": name, "count": len(photos),
                      "cover": photos[0].relative_to(PHOTOS_DIR / name).as_posix() if photos else None})
-    return render_template("people.html", rows=rows, people=people())
+    have = {n.lower() for n in people()}
+    missing = [n for n in homedeck.synced().get("people", []) if n.lower() not in have]
+    return render_template("people.html", rows=rows, people=people(), hd_missing=missing)
 
 
 @app.post("/people")
@@ -875,7 +887,8 @@ def settings_page():
                            upd=updates.options(conf), upd_status=updates.status(),
                            store=settings.storage(conf), disk=disk_info(), host=updates.host(), st=updates.storage_status(),
                            rec_dir=str(REC_DIR), proc=settings.processing(conf), accel_parts=accel.reports(),
-                           gpu_st=updates.gpu_status())
+                           gpu_st=updates.gpu_status(), hd_key=homedeck.key(conf), hd=homedeck.synced(),
+                           my_url=request.host_url.rstrip("/"))
 
 
 def disk_info():
@@ -940,6 +953,27 @@ def refresh_disks():
         updates.ask_host({"action": "disks"})
         time.sleep(2)           # the helper answers within a second or two
     return redirect(url_for("settings_page") + "#storage-where")
+
+
+@app.post("/api/link/sync")
+def link_sync():
+    """Home Deck sends its network devices and people, and gets the cameras and the face library (homedeck.py)."""
+    homedeck.save_sync(request.get_json(silent=True) or {})
+    return as_json(homedeck.status(cameras(), people()))
+
+
+@app.post("/settings/homedeck/key")
+def homedeck_key():
+    homedeck.new_key()
+    log.info("Home Deck link key made")
+    return redirect(url_for("settings_page", saved="homedeck") + "#homedeck")
+
+
+@app.post("/settings/homedeck/remove")
+def homedeck_remove():
+    homedeck.remove()
+    log.info("Home Deck link removed")
+    return redirect(url_for("settings_page", saved="homedeck-off") + "#homedeck")
 
 
 @app.post("/settings/processing")
@@ -1081,7 +1115,14 @@ def scan_cameras():
         host = re.split(r"[:/?]", login[3] if login else c["rtsp_url"].partition("://")[2], maxsplit=1)[0]
         if host:
             used[host] = c["name"]
-    return as_json({"found": [{**f, "used_by": used.get(f["ip"])} for f in found]})
+    known = homedeck.devices_by_ip()
+    found = [{**f, "used_by": used.get(f["ip"]), "name": known.get(f["ip"], {}).get("name", "")} for f in found]
+    seen = {f["ip"] for f in found}
+    for d in homedeck.camera_devices():         # cameras Home Deck knows that did not answer on a video port
+        if d["ip"] not in seen:
+            found.append({"ip": d["ip"], "rtsp_port": None, "onvif_port": None, "maker": d["vendor"].split(",")[0],
+                          "model": "", "name": d["name"], "homedeck": True, "used_by": used.get(d["ip"])})
+    return as_json({"found": found})
 
 
 @app.post("/settings/cameras/onvif")
@@ -2441,8 +2482,11 @@ and the clip appears under <a href="{{ url_for('index') }}">Clips</a> about 20 s
 <div class="meta"><span class="time">{{ r.name }}</span><span class="muted">{{ r.count }} photo{{ '' if r.count == 1 else 's' }}</span></div></a>
 {% endfor %}</div>
 <h2>Add a person</h2>
+{% if hd_missing %}<p class="muted">Home Deck knows these people, and they have no photos here yet:
+{% for n in hd_missing %}<button type="button" class="pill" onclick="document.getElementById('new-person').value = this.textContent">{{ n|capitalize }}</button> {% endfor %}
+Click a name, then add photos.</p>{% endif %}
 <form class="box" method="post" action="{{ url_for('create_person') }}" enctype="multipart/form-data" style="display:grid;gap:8px;max-width:420px">
-<input type="text" name="name" placeholder="Name" required maxlength="40">
+<input type="text" name="name" id="new-person" placeholder="Name" required maxlength="40">
 <input type="file" name="photos" accept="image/*" multiple>
 <button class="primary">Add person</button></form>
 {% endblock %}""",
@@ -2722,6 +2766,8 @@ yesterday becomes a timelapse and a highlights reel (4 s of every recording with
 {% elif saved == 'cameras' %}<p class="box ok">Cameras saved. Changed cameras restart within about 10 seconds (after a recording in progress is saved).</p>
 {% elif saved == 'ntfy' %}<p class="box {{ 'bad' if ntfy_result and ntfy_result != 'ok' else 'ok' }}">Notification settings saved.{% if ntfy_result == 'ok' %} Test push sent - check your phone.{% elif ntfy_result %} <span class="bad">Test push failed: {{ ntfy_result }}</span>{% endif %}</p>
 {% elif saved == 'offsite' %}<p class="box ok">Off-site storage settings saved.</p>
+{% elif saved == 'homedeck' %}<p class="box ok">The link key is ready. Enter it in Home Deck's Studio, as the Home Deck section below shows.</p>
+{% elif saved == 'homedeck-off' %}<p class="box ok">The link with Home Deck is removed. Home Deck can no longer reach CamWatch.</p>
 {% elif saved == 'processing' %}<p class="box ok">Saved. Each model switches the next time it runs. Recording does not stop.</p>
 {% elif saved == 'offsite-run' %}<p class="box ok">Upload started - it runs in the background; the status below updates when it's done.</p>
 {% elif saved == 'offsite-off' %}<p class="box ok">Off-site storage disconnected. Files already uploaded stay where they are.</p>
@@ -2918,8 +2964,10 @@ async function scanNet() {
     found.forEach(f => {
       const b = document.createElement('button'); b.type = 'button';
       const what = [f.maker, f.model].filter(Boolean).join(' ');
-      b.innerHTML = `<span style="display:grid;gap:2px"><span>${what ? `<b style="font-family:inherit">${esc(what)}</b> · ` : ''}<b>${f.ip}</b></span>
-        <span class="muted">${f.onvif_port ? 'ONVIF ✓ - only the login is needed' : 'video port only - enter the stream path yourself'}</span></span>${f.used_by ? `<span class="tag" style="margin-left:auto">already ${esc(f.used_by)}</span>` : ''}`;
+      const how = f.homedeck ? 'from Home Deck - the scan found no video port: enter the address yourself'
+        : f.onvif_port ? 'ONVIF ✓ - only the login is needed' : 'video port only - enter the stream path yourself';
+      b.innerHTML = `<span style="display:grid;gap:2px"><span>${f.name ? `<b style="font-family:inherit">${esc(f.name)}</b> · ` : ''}${what ? `${esc(what)} · ` : ''}<b>${f.ip}</b></span>
+        <span class="muted">${how}</span></span>${f.used_by ? `<span class="tag" style="margin-left:auto">already ${esc(f.used_by)}</span>` : ''}`;
       b.onclick = () => pickCam(f, b);
       $f('f-list').append(b);
     });
@@ -3396,6 +3444,30 @@ then restart the server.</p>
 })();
 </script>{% endif %}
 </section></div>
+<div class="spair"><section>
+<h2 id="homedeck">Home Deck</h2>
+<div class="box" style="display:grid;gap:10px">
+<p class="muted" style="margin:0">Link CamWatch with Home Deck's Studio. The Studio then shows the cameras and when each person was last seen.
+CamWatch gets Home Deck's network list and people: the camera finder names the cameras, and People shows who still needs photos.</p>
+{% if not hd_key %}
+<form method="post" action="{{ url_for('homedeck_key') }}"><button class="primary">Make a link key</button></form>
+{% else %}
+<label class="field"><span>Link key</span>
+<span class="row"><input type="password" id="hd-key" value="{{ hd_key }}" readonly style="flex:1;min-width:0">
+<button type="button" onclick="const k = document.getElementById('hd-key'); k.type = k.type === 'password' ? 'text' : 'password'">Show</button>
+<button type="button" onclick="navigator.clipboard.writeText(document.getElementById('hd-key').value).then(() => this.textContent = 'Copied')">Copy</button></span></label>
+<ol style="margin:0;padding-left:20px;display:grid;gap:4px">
+<li>Open Home Deck's Studio, and go to Overview.</li>
+<li>Under CamWatch, enter the address <code>{{ my_url }}</code> and the key.</li>
+<li>Click Link. Home Deck calls CamWatch within a minute.</li></ol>
+{% if hd.at %}<p style="margin:0">{% if hd.fresh %}<span class="state on">● Linked</span>{% else %}<span class="bad">Home Deck has not called for a while.</span>{% endif %}
+<span class="muted">Last call {{ hd.at|int|homedeck_time }}: {{ hd.devices|length }} network devices, {{ hd.people|length }} people.</span></p>
+{% else %}<p class="muted" style="margin:0">Home Deck has not called yet.</p>{% endif %}
+<form method="post" action="{{ url_for('homedeck_remove') }}" onsubmit="return confirm('Remove the link? Home Deck can no longer reach CamWatch, and CamWatch forgets its list.')">
+<button>Remove the link</button></form>
+{% endif %}
+</div>
+</section><section></section></div>
 <script>
 document.querySelectorAll('.camcard input[name^=name_]').forEach(inp => inp.addEventListener('input', () => {
   inp.closest('.camcard').querySelector('.title').textContent = inp.value.trim() || 'New camera';

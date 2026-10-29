@@ -4,6 +4,12 @@ Newest changes first.
 
 ## 2026-10-29
 
+- New: CamWatch links with the Studio in Home Deck. Settings → Home Deck makes the link key.
+- The Studio lists CamWatch's cameras. A watched camera sends a notice when it goes offline.
+- The Studio's People page shows when a camera last saw each person.
+- The camera finder names cameras with Home Deck's names. It also lists cameras that the scan missed.
+- The People page lists Home Deck's people who have no photos yet.
+- The version is now 2026.10.29.3.
 - New in Settings: Image processing. The image models can now use a GPU.
 - Each model switches the next time it runs. Recording does not stop.
 - Settings shows what each part runs on: objects, number plates, faces and search.

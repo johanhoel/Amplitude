@@ -10,13 +10,18 @@ presence is written to settings.json 'phones' (the override presence already rea
 
 Health watch: devices added with "watch" get an online dot; one that stays offline for [studio] watch_after_s sends a
 home notice (ntfy), and another one when it is back.
+
+CamWatch (optional): with CamWatch's address and link key (secrets.json 'camwatch', set on the Overview), every inventory
+calls CamWatch's POST /api/link/sync. Home Deck sends its network devices and people; CamWatch answers with its cameras
+(source 'cw', so they can be added and watched like any device) and the people in its face library with when they
+were last seen (summary 'camera_people', shown on People).
 """
-import json, os, re, threading, time, urllib.request
+import json, os, re, threading, time, urllib.error, urllib.request
 
 from .config import C, STATE
 from .ha import ha_states
 from .notify import ntfy
-from .store import SETTINGS, load, phones, save
+from .store import SECRETS, SETTINGS, load, phones, save
 
 DIR = os.path.join(STATE, 'studio')
 REG = os.path.join(DIR, 'registry.json')
@@ -27,6 +32,7 @@ NET_ONLINE = 900                                      # a network device with a 
 _lock = threading.Lock()
 _inv = {'at': 0, 'data': None}
 _watch = {}                                           # key -> {'down_since', 'told'}
+_cw = {'people': [], 'error': '', 'at': 0}            # CamWatch's last answer (people) and the last error
 
 HA_KINDS = {'light': 'light', 'switch': 'switch', 'lock': 'lock', 'media_player': 'player', 'vacuum': 'vacuum', 'camera': 'camera',
             'climate': 'climate', 'cover': 'cover', 'fan': 'fan', 'person': 'person'}
@@ -92,18 +98,83 @@ def _from_proxmox():
              'detail': f'{g.get("node", "")} · {g.get("ip") or ""}'.strip(' ·')} for g in snap.get('guests', [])]
 
 
+def camwatch_link():
+    """{'url', 'key'} of the linked CamWatch, or {}."""
+    return load(SECRETS, {}).get('camwatch') or {}
+
+
+def camwatch_set(url, key):
+    """Link CamWatch (Overview). Tries the link first: a wrong address or key is refused and nothing is saved."""
+    url, key = str(url or '').strip().rstrip('/'), str(key or '').strip()
+    if not re.fullmatch(r'https?://[\w.:\[\]-]{1,200}(/[\w./-]*)?', url):
+        raise ValueError('enter CamWatch\'s address, e.g. http://192.168.1.20:8080')
+    if not re.fullmatch(r'[\w-]{16,100}', key):
+        raise ValueError('enter the link key from CamWatch (Settings, Home Deck)')
+    answer = _camwatch_call(url, key, [], [])
+    sec = load(SECRETS, {}); sec['camwatch'] = {'url': url, 'key': key}
+    save(SECRETS, sec, private=True)
+    _inv['at'] = 0                                    # the next inventory asks CamWatch
+    return {'ok': True, 'cameras': len(answer.get('cameras', []))}
+
+
+def camwatch_remove():
+    sec = load(SECRETS, {}); sec.pop('camwatch', None)
+    save(SECRETS, sec, private=True)
+    _cw.update(people=[], error='', at=0); _inv['at'] = 0
+    return {'ok': True}
+
+
+def _camwatch_call(url, key, devices, people):
+    body = json.dumps({'devices': devices, 'people': people}).encode()
+    req = urllib.request.Request(url + '/api/link/sync', data=body, method='POST',
+                                 headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key})
+    try:
+        with urllib.request.urlopen(req, timeout=6) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:
+        raise ValueError('CamWatch refused the key' if e.code == 401 else f'CamWatch answered {e.code}') from None
+    except (OSError, ValueError) as e:
+        raise ValueError(f'CamWatch is not reachable: {e}') from None
+
+
+def _from_camwatch(net, ha):
+    """CamWatch's cameras as devices. Sends Home Deck's network list and people along (see the module text)."""
+    link = camwatch_link()
+    if not link:
+        return []
+    devices = [{'ip': (d.get('ips') or [''])[0], 'name': d['name'], 'vendor': d.get('vendor', ''), 'mac': d['id']}
+               for d in net if d.get('ips')]
+    people = sorted(set(phones()) | {i['name'].lower() for i in ha if i['kind'] == 'person'})
+    try:
+        answer = _camwatch_call(link['url'], link['key'], devices, people)
+    except ValueError as e:
+        _cw['error'] = str(e)
+        return []
+    _cw.update(people=answer.get('people') or [], error='', at=time.time())
+    return [{'key': 'cw:' + c['name'], 'source': 'cw', 'kind': 'camera', 'name': c['name'], 'id': c['name'],
+             'online': bool(c.get('online')), 'state': 'recording' if c.get('online') else 'no picture',
+             'detail': f'CamWatch camera {c.get("slot") or ""}'.strip()} for c in answer.get('cameras') or []]
+
+
 def inventory(max_age=20):
     """Every device from every source, with what the registry adds (name, room, owner, watch). Cached briefly."""
     with _lock:
         if _inv['data'] is not None and time.time() - _inv['at'] < max_age:
             items = _inv['data']
         else:
-            items = []
-            for fn in (_from_ha, _from_network, _from_proxmox):
+            got = {}
+            for name, fn in (('ha', _from_ha), ('net', _from_network), ('pve', _from_proxmox)):
                 try:
-                    items += fn()
+                    got[name] = fn()
                 except Exception as e:
-                    print('studio: inventory', fn.__name__, e, flush=True)
+                    got[name] = []
+                    print('studio: inventory', name, e, flush=True)
+            try:
+                got['cw'] = _from_camwatch(got['net'], got['ha'])
+            except Exception as e:
+                got['cw'] = []
+                print('studio: inventory camwatch', e, flush=True)
+            items = [i for part in got.values() for i in part]
             _inv.update(at=time.time(), data=items)
     reg = load(REG, {})
     by_key = {i['key']: i for i in items}
@@ -128,7 +199,10 @@ def inventory(max_age=20):
 def summary():
     items = inventory()
     reg = [i for i in items if i['added']]
-    return {'counts': {s: sum(1 for i in items if i['source'] == s) for s in ('ha', 'net', 'pve', 'man')},
+    link = camwatch_link()
+    return {'counts': {s: sum(1 for i in items if i['source'] == s) for s in ('ha', 'net', 'pve', 'cw', 'man')},
+            'camwatch': {'linked': bool(link), 'url': link.get('url', ''), 'error': _cw['error'], 'at': _cw['at']},
+            'camera_people': _cw['people'],
             'added': len(reg), 'watched': sum(1 for i in reg if i['reg'].get('watch')),
             'down': [{'key': i['key'], 'name': i['reg'].get('name') or i['name'], 'since': i.get('down_since')} for i in reg
                      if i['reg'].get('watch') and i.get('online') is False],
@@ -173,7 +247,7 @@ def _clean(c):
         key = 'man:' + (re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-')[:30] or 'device') + '-' + hex(int(time.time()))[-5:]
         op = 'add'
         c = {**c, 'address': str(c.get('address') or '').strip()[:120]}
-    if not re.fullmatch(r'(ha|net|pve|man):[\w.:-]{1,80}', key):
+    if not re.fullmatch(r'(ha|net|pve|cw|man):[\w.:-]{1,80}', key):
         raise ValueError('bad device')
     if op in ('add', 'update'):
         f = {'name': str(c.get('name') or '').strip()[:60], 'room': str(c.get('room') or '').strip()[:40],

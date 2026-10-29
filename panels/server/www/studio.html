@@ -106,7 +106,7 @@ td .s { color: var(--mute); font-size: 13px; } .dot { display: inline-block; wid
 <script>
 const $ = s => document.querySelector(s), esc = Wall.esc, main = $('#main');
 const S = { inv: [], rooms: [], sum: {}, boards: [], draft: [], filt: { src: 'all', q: '', tab: 'discover' } };
-const SRC = { ha: 'Home Assistant', net: 'Network', pve: 'Proxmox', man: 'By hand' };
+const SRC = { ha: 'Home Assistant', net: 'Network', pve: 'Proxmox', cw: 'CamWatch', man: 'By hand' };
 const KIND_ICON = { light: '<i class="icon icon-bulb" aria-hidden="true"></i>', switch: '<i class="icon icon-toggle" aria-hidden="true"></i>', lock: '<i class="icon icon-lock" aria-hidden="true"></i>', player: '<i class="icon icon-music" aria-hidden="true"></i>', vacuum: '<i class="icon icon-vacuum" aria-hidden="true"></i>', camera: '<i class="icon icon-camera" aria-hidden="true"></i>', climate: '<i class="icon icon-thermo" aria-hidden="true"></i>', cover: '<i class="icon icon-window" aria-hidden="true"></i>', fan: '<i class="icon icon-wind" aria-hidden="true"></i>', person: '<i class="icon icon-person" aria-hidden="true"></i>', sensor: '<i class="icon icon-phone" aria-hidden="true"></i>',
   network: '<i class="icon icon-wifi" aria-hidden="true"></i>', phone: '<i class="icon icon-phone" aria-hidden="true"></i>', tablet: '<i class="icon icon-phone" aria-hidden="true"></i>', computer: '<i class="icon icon-laptop" aria-hidden="true"></i>', tv: '<i class="icon icon-tv" aria-hidden="true"></i>', speaker: '<i class="icon icon-speaker" aria-hidden="true"></i>', printer: '<i class="icon icon-printer" aria-hidden="true"></i>', iot: '<i class="icon icon-plug" aria-hidden="true"></i>', server: '<i class="icon icon-desktop" aria-hidden="true"></i>', vm: '<i class="icon icon-desktop" aria-hidden="true"></i>', container: '<i class="icon icon-package" aria-hidden="true"></i>', other: '•' };
 const KINDS = Object.keys(KIND_ICON);
@@ -139,17 +139,37 @@ const SECTIONS = {
         <div class="card"><b class="big">${c.ha || 0}</b><span class="m">Home Assistant devices</span></div>
         <div class="card"><b class="big">${c.net || 0}</b><span class="m">devices on the network</span></div>
         <div class="card"><b class="big">${c.pve || 0}</b><span class="m">Proxmox servers (VMs / containers)</span></div>
+        ${S.sum.camwatch?.linked ? `<div class="card"><b class="big">${c.cw || 0}</b><span class="m">CamWatch cameras</span></div>` : ''}
         <div class="card"><b class="big">${S.sum.added}</b><span class="m">added by you · ${S.sum.watched} watched</span></div>
       </div>
       <h2>Needs attention</h2>
       ${S.sum.down.length ? `<div class="card">${S.sum.down.map(d => `<div><span class="dot bad"></span> <b>${esc(d.name)}</b> is offline${d.since ? ' since ' + ago(d.since).replace(' ago', '') : ''}</div>`).join('')}</div>`
         : `<div class="card">✓ All watched devices are online.</div>`}
       ${S.sum.draft ? `<div class="card" style="margin-top:10px"><i class="icon icon-note" aria-hidden="true"></i> ${S.sum.draft} change${S.sum.draft > 1 ? 's are' : ' is'} waiting. <a href="#changes">Review and apply</a></div>` : ''}
+      <h2>CamWatch</h2>
+      <div class="card" id="cw">${S.sum.camwatch?.linked
+        ? `<div><span class="dot ${S.sum.camwatch.error ? 'bad' : 'ok'}"></span> Linked with <b>${esc(S.sum.camwatch.url)}</b>${S.sum.camwatch.at ? ' · last answer ' + ago(S.sum.camwatch.at) : ''}</div>
+           ${S.sum.camwatch.error ? `<div class="m" style="margin-top:6px">${esc(S.sum.camwatch.error)}</div>` : ''}
+           <p class="m">The cameras are under Devices, source CamWatch. Add one and switch on Watch to get a notice when it goes offline.</p>
+           <button class="btn" id="cw-off">Remove the link</button>`
+        : `<p class="m" style="margin-top:0">Link CamWatch to see its cameras here, and when each person was last seen.
+           In CamWatch, open Settings, then Home Deck, and make a link key.</p>
+           <div style="display:grid;gap:8px;max-width:520px"><label>CamWatch address<input id="cw-url" placeholder="http://192.168.1.20:8080"></label>
+           <label>Link key<input id="cw-key" type="password" autocomplete="off"></label>
+           <div><button class="btn go" id="cw-on">Link</button> <span class="m" id="cw-msg"></span></div></div>`}</div>
       <h2>Start here</h2>
       <div class="wz">${WIZ.map(w => `<button data-w="${w.id}"><span class="i"><i class="icon icon-${w.icon}" aria-hidden="true"></i></span><b>${esc(w.title)}</b><span>${esc(w.desc)}</span></button>`).join('')}</div>
       <p class="noprint" style="margin-top:22px"><button class="btn" id="retour">Show the tour again</button></p>`;
     main.querySelectorAll('[data-w]').forEach(b => b.onclick = () => go('wizards/' + b.dataset.w));
     $('#retour').onclick = () => tour(true);
+    if ($('#cw-on')) $('#cw-on').onclick = async () => {
+      $('#cw-msg').textContent = 'Asking CamWatch…';
+      try { const r = await api('/api/studio/camwatch', { url: $('#cw-url').value, key: $('#cw-key').value });
+        Edit.toast(`CamWatch linked: ${r.cameras} camera${r.cameras === 1 ? '' : 's'}`); S.inv = []; SECTIONS.overview(); }
+      catch (e) { $('#cw-msg').textContent = e.message; } };
+    if ($('#cw-off')) $('#cw-off').onclick = async () => {
+      if (!confirm('Remove the link with CamWatch? Its cameras leave the device list.')) return;
+      await api('/api/studio/camwatch', { remove: true }); S.inv = []; SECTIONS.overview(); };
   },
 
   async devices() {
@@ -157,7 +177,7 @@ const SECTIONS = {
     const f = S.filt;
     main.innerHTML = `<h1>Devices</h1><p class="lead">Everything Home Deck can find. <b>Discover</b> to add devices; <b>Added</b> are the ones you named and watch.</p>
       <div class="bar"><button class="chip ${f.tab === 'discover' ? 'on' : ''}" data-tab="discover">Discover</button><button class="chip ${f.tab === 'added' ? 'on' : ''}" data-tab="added">Added (${S.inv.filter(i => i.added).length})</button>
-        <span style="width:14px"></span>${['all', 'ha', 'net', 'pve', 'man'].map(s => `<button class="chip ${f.src === s ? 'on' : ''}" data-src="${s}">${s === 'all' ? 'All' : SRC[s]}</button>`).join('')}
+        <span style="width:14px"></span>${['all', 'ha', 'net', 'pve', 'cw', 'man'].map(s => `<button class="chip ${f.src === s ? 'on' : ''}" data-src="${s}">${s === 'all' ? 'All' : SRC[s]}</button>`).join('')}
         <input type="search" id="q" placeholder="Search name, IP, MAC…" value="${esc(f.q)}"><label class="m"><input type="checkbox" id="newonly" ${f.newonly ? 'checked' : ''}> new on the network (7 days)</label>
         <span style="flex:1"></span><button class="btn" id="manual">+ Add a device by hand</button><button class="btn" id="reload" title="Look again">↻</button></div>
       <table><thead><tr><th></th><th>Name</th><th>Details</th><th>Source</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table>`;
@@ -186,13 +206,18 @@ const SECTIONS = {
   async people() {
     await loadInv(); S.sum = await api('/api/studio/summary');
     const paired = await api('/api/devices').then(j => j.devices).catch(() => []);
+    const cam = S.sum.camera_people || [], camOf = p => cam.find(c => c.name.toLowerCase() === p);
     main.innerHTML = `<h1>People</h1><p class="lead">Who lives here, which phone tells Home Deck they are home, and which of their devices are paired for the app.</p>
-      <div class="cards">${(S.sum.people || []).map(p => { const ph = S.inv.filter(i => i.presence === p), pd = paired.filter(d => (d.person || '').toLowerCase() === p);
+      <div class="cards">${(S.sum.people || []).map(p => { const ph = S.inv.filter(i => i.presence === p), pd = paired.filter(d => (d.person || '').toLowerCase() === p), cw = camOf(p);
         return `<div class="card"><b style="font-size:19px;text-transform:capitalize">${esc(p)}</b>
           <div class="m" style="margin-top:6px">Presence phone${ph.length > 1 ? 's' : ''}:</div>${ph.map(i => `<div><span class="dot ${i.online ? 'ok' : 'bad'}"></span> ${esc(nameOf(i))} <span class="s">${esc(i.id)}</span></div>`).join('') || '<div class="m">none</div>'}
-          <div class="m" style="margin-top:6px">Paired for the app:</div>${pd.map(d => `<div><i class="icon icon-phone" aria-hidden="true"></i> ${esc(d.name)} <span class="s">seen ${ago(d.last_seen)}</span></div>`).join('') || '<div class="m">none</div>'}</div>`; }).join('')}</div>
+          <div class="m" style="margin-top:6px">Paired for the app:</div>${pd.map(d => `<div><i class="icon icon-phone" aria-hidden="true"></i> ${esc(d.name)} <span class="s">seen ${ago(d.last_seen)}</span></div>`).join('') || '<div class="m">none</div>'}
+          ${S.sum.camwatch?.linked ? `<div class="m" style="margin-top:6px">Seen by a camera:</div><div>${!cw ? '<span class="m">no photos in CamWatch</span>'
+            : cw.last_seen ? `<i class="icon icon-camera" aria-hidden="true"></i> ${ago(Date.parse(cw.last_seen) / 1000)}${cw.camera ? ' · ' + esc(cw.camera) : ''}` : '<span class="m">not yet</span>'}</div>` : ''}</div>`; }).join('')}</div>
       ${(() => { const other = S.inv.filter(i => i.kind === 'person' && !(S.sum.people || []).includes(i.name.toLowerCase())).map(i => i.name);
         return other.length ? `<p class="m" style="margin-top:14px">Also in Home Assistant, without a presence phone: ${esc(other.join(', '))}.</p>` : ''; })()}
+      ${(() => { const only = cam.filter(c => !(S.sum.people || []).includes(c.name.toLowerCase())).map(c => c.name);
+        return only.length ? `<p class="m">Also in CamWatch's face library: ${esc(only.join(', '))}.</p>` : ''; })()}
       <p style="margin-top:18px"><button class="btn go" id="addp">+ New phone or family member</button> <a class="btn" href="/devices">Paired devices (app)</a></p>`;
     $('#addp').onclick = () => go('wizards/phone');
   },

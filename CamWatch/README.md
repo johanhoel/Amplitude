@@ -145,6 +145,23 @@ An Intel GPU uses OpenVINO, and an NVIDIA GPU uses CUDA. CamWatch cannot use AMD
 By hand: set `CAMWATCH_GPU=intel` (or `nvidia`) in `.env`, and add `docker-compose.gpu-intel.yml`
 (or `docker-compose.gpu-nvidia.yml`) to `COMPOSE_FILE`.
 
+### Home Deck
+
+CamWatch can link with the Studio in Home Deck (`panels/` in the amplitude repository). The link is optional.
+
+1. In CamWatch, open **Settings → Home Deck** and click **Make a link key**.
+2. In the Studio, open **Overview → CamWatch**. Enter CamWatch's address and the key, and click **Link**.
+
+Home Deck then calls `POST /api/link/sync` about once a minute. It sends its network devices and its people.
+CamWatch answers with its cameras and the people in its face library. The key opens this one route only.
+
+- **The Studio** lists the cameras under Devices, source CamWatch. Add one and switch on Watch.
+  Home Deck then sends a notice when the camera stops sending pictures.
+- **The Studio's People page** shows when each person was last seen by a camera.
+- **CamWatch's camera finder** names each camera with Home Deck's name for it.
+  It also lists devices from camera makers that the scan missed.
+- **CamWatch's People page** lists Home Deck's people who have no photos yet.
+
 ### Feature requests
 
 Every page has a **💡 Request a feature** link at the bottom.
