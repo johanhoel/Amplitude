@@ -151,6 +151,14 @@ st = json.loads((root / "data" / "update" / "gpu.json").read_text())
 env = (host_dir / ".env").read_text()
 report(code == 1 and st["state"] == "failed" and "no intel GPU" in st["message"] and "Nothing changed" in st["message"]
        and "CAMWATCH_GPU" not in env, f"without the GPU, the helper changes nothing: {st['message']}")
+helper.gpus = lambda: {"cards": cards, "intel": True, "amd": False, "nvidia": False, "nvidia_toolkit": False,
+                       "virt": "lxc", "lxc": True, "build": ""}
+helper.docker_free_gb = lambda: 1.3      # the real server's system disk on 2026-10-29
+code = helper.set_gpu({"action": "gpu", "kind": "intel"})
+st = json.loads((root / "data" / "update" / "gpu.json").read_text())
+report(code == 1 and "needs 6 GB free" in st["message"] and "pct resize" in st["message"]
+       and "CAMWATCH_GPU" not in (host_dir / ".env").read_text(),
+       f"with a nearly full disk, the helper does not start the build: {st['message']}")
 
 print("ALL PASSED" if ok else "SOME FAILED")
 sys.exit(0 if ok else 1)

@@ -10,6 +10,7 @@ Newest changes first.
 - New in Settings: GPU on the server. The update helper scans the server for a GPU.
 - The scan finds GPUs in Proxmox containers, in virtual machines and without a driver. Settings shows the next step.
 - **Add GPU support** builds CamWatch with Intel (OpenVINO) or NVIDIA (CUDA) support. A failed build rolls back.
+- The GPU build needs 6 GB free on Docker's disk. With less, the helper stops and says so.
 - Fix: the recorder log no longer fills with `pthread_setaffinity_np failed` errors.
 - The number plate models now get a fixed number of threads, like the other models.
 - The version is now 2026.10.29.1.

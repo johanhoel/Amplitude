@@ -414,6 +414,19 @@ def compose_files(kind):
     return ":".join(files + ([GPU_FILES[kind]] if kind else []))
 
 
+BUILD_FREE_GB = 6       # the GPU libraries add 1-3 GB, and Docker keeps the old build until the new one works
+
+
+def docker_free_gb():
+    """Free space on the disk that holds Docker's images."""
+    for path in ("/var/lib/docker", "/"):
+        try:
+            return shutil.disk_usage(path).free / 1e9
+        except OSError:
+            continue
+    return 0.0
+
+
 def set_gpu(req):
     kind = str(req.get("kind") or "")
     old = {"CAMWATCH_GPU": env_value("CAMWATCH_GPU"), "COMPOSE_FILE": env_value("COMPOSE_FILE", "docker-compose.yml")}
@@ -427,6 +440,10 @@ def set_gpu(req):
             raise RuntimeError(f"this server has no {kind} GPU that Docker can use")
         if kind == "nvidia" and not found["nvidia_toolkit"]:
             raise RuntimeError("the NVIDIA Container Toolkit is not installed on this server")
+        free = docker_free_gb()
+        if kind and free < BUILD_FREE_GB:
+            raise RuntimeError(f"the GPU build needs {BUILD_FREE_GB} GB free on Docker's disk, and it has "
+                               f"{free:.1f} GB - make the disk bigger first (Proxmox: pct resize <number> rootfs +10G)")
         set_env("CAMWATCH_GPU", kind)
         set_env("COMPOSE_FILE", compose_files(kind))
         switched = True
