@@ -217,7 +217,7 @@ async function loadStatus() {
 function attention(s) {
   const items = [];
   s.cameras.filter(c => !c.online).forEach(c => items.push({cls: 'bad', icon: 'video', title: `${c.name} is offline`, text: 'no picture from the camera', href: `/live?camera=${encodeURIComponent(c.name)}`}));
-  (s.unusual_today || []).slice(-3).reverse().forEach(u => items.push({icon: '⚠', title: `Unusual: ${u.camera} at ${hm(u.start)}`, text: u.reason, href: `/clip/${u.day}/${encodeURIComponent(u.stem)}`}));
+  (s.unusual_today || []).slice(-3).reverse().forEach(u => items.push({icon: 'alert', title: `Unusual: ${u.camera} at ${hm(u.start)}`, text: u.reason, href: `/clip/${u.day}/${encodeURIComponent(u.stem)}`}));
   (s.packages_waiting || []).forEach(p => items.push({cls: 'info', icon: 'package', title: `Package at ${p.zone}`, text: `delivered ${hm(p.at)}`, href: p.clip ? `/clip/${p.clip}` : '/'}));
   if (s.strangers) items.push({cls: 'info', icon: 'person', title: `${s.strangers} recurring stranger${s.strangers > 1 ? 's' : ''}`, text: 'name them once, recognised from then on', href: '/strangers'});
   if (s.offsite && s.offsite.enabled && s.offsite.error) items.push({cls: 'bad', icon: 'cloud', title: 'Off-site uploads failing', text: s.offsite.error, href: '/settings#offsite'});

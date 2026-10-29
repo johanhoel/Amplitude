@@ -15,19 +15,7 @@
 
 .cc { display: grid; gap: 12px; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-auto-rows: auto; }
 @media (max-width: 1100px) { .cc { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
-@media (max-width: 700px) { .cc { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; } .tl { min-height: 86px; } }
-.grp { grid-column: 1 / -1; margin-top: 6px; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); font-weight: 700; padding: 10px 2px 0; min-height: 0; }
-.tl { position: relative; overflow: hidden; border-radius: 22px; background: var(--card); border: 1px solid var(--line); padding: 12px; text-align: left;
-  display: flex; flex-direction: column; justify-content: space-between; gap: 6px; transition: background .2s, border-color .2s, transform .08s; grid-column: span 2; min-height: 96px; }
-.tl:active { transform: scale(.97); }
-.tl .ic { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 17px; background: rgba(255,255,255,.08); }
-.tl b { font-size: 14px; font-weight: 650; line-height: 1.2; } .tl small { display: block; font-size: 12px; color: var(--mute); margin-top: 2px; }
-.tl.on { background: rgba(255,255,255,.92); color: #141a20; border-color: transparent; } .tl.on small { color: rgba(12,11,22,.6); } .tl.on .ic { background: var(--c, #34d399); color: #fff; }
-.tl.warn { border-color: rgba(251,191,36,.35); } .tl.bad { border-color: rgba(251,113,133,.4); }
-.tl .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: rgba(56,189,248,.35); pointer-events: none; }
-.tl.busy { opacity: .55; } .tl.done { border-color: var(--ok); } .tl.fail { border-color: var(--bad); }
-.tl .hold { position: absolute; top: 10px; right: 12px; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); font-weight: 700; }
-.tl.on .hold { color: rgba(12,11,22,.4); }
+@media (max-width: 700px) { .cc { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; } .ui-ctl { min-height: 86px; } }
 .vol { grid-column: span 2; grid-row: span 3; padding: 0; display: flex; flex-direction: column; min-height: 0; }
 .vol .sl { position: relative; flex: 1; margin: 10px; border-radius: 20px; background: rgba(255,255,255,.07); overflow: hidden; touch-action: none; cursor: ns-resize; min-height: 200px; }
 .vol .sl i { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: linear-gradient(0deg, #f472b6, #7dd3fc); transition: height .2s; }
@@ -47,6 +35,7 @@
 </style>
 <link rel="stylesheet" href="/wall.css">
 <link rel="stylesheet" href="/icons.css">
+<link rel="stylesheet" href="/shell.css">
 </head>
 <body>
 <div class="wrap">
@@ -69,27 +58,27 @@ function tiles() {
   const door = H?.door?.state, g = S?.genelec, gon = g?.power === 'ACTIVE';
   const T = [
     ['g-home', 'grp', 'House'],
-    { id: 'lock', ic: door === 'locked' ? '<i class="icon icon-lock" aria-hidden="true"></i>' : '<i class="icon icon-unlock" aria-hidden="true"></i>', t: 'Front door', s: door === 'locked' ? 'Locked' : (door || '–') + ' · hold to lock', on: door === 'locked', c: '#34d399', cls: door === 'locked' ? '' : 'bad', hold: true, run: () => home({ do: 'lock' }), ok: 'Locking…' },
+    { id: 'lock', ic: door === 'locked' ? 'lock' : 'unlock', t: 'Front door', s: door === 'locked' ? 'Locked' : (door || '–') + ' · hold to lock', on: door === 'locked', c: '#34d399', cls: door === 'locked' ? '' : 'bad', hold: true, run: () => home({ do: 'lock' }), ok: 'Locking…' },
     { id: 'alloff', ic: 'bulb', t: 'All lights off', s: `${H ? H.rooms.reduce((a, r) => a + r.lights.filter(l => l.on).length, 0) : '–'} on now`, hold: true, run: () => home({ do: 'all_off' }), ok: 'All lights off' },
     { id: 'detect', ic: 'target', t: 'Camera alerts', s: H?.detect ? 'On' : 'Off', on: !!H?.detect, c: '#fb7185', hold: true, run: () => home({ do: 'detect' }), ok: 'Camera alerts switched' },
     { id: 'charger', ic: 'bolt', t: 'EV charger', s: H?.charger_on ? 'Enabled' : 'Paused', on: !!H?.charger_on, c: '#fbbf24', hold: true, run: () => home({ do: 'charger' }), ok: 'Charger switched' },
     { id: 'vac', ic: 'vacuum', t: H?.vacuum?.state === 'cleaning' ? 'Vacuum: dock' : 'Vacuum: start', s: (H?.vacuum?.state || '–').replace(/_/g, ' '), on: H?.vacuum?.state === 'cleaning', c: '#22d3ee',
       run: () => home({ do: 'vacuum', value: H?.vacuum?.state === 'cleaning' ? 'return_to_base' : 'start' }), ok: 'Vacuum told' },
-    { id: 'wake', ic: '⏻', t: 'Wake PC', s: S?.pc_online ? 'PC is on' : 'PC is off', on: !!S?.pc_online, c: '#60a5fa', run: () => home({ do: 'wake_pc' }), ok: 'Wake-on-LAN sent' },
+    { id: 'wake', ic: 'power', t: 'Wake PC', s: S?.pc_online ? 'PC is on' : 'PC is off', on: !!S?.pc_online, c: '#60a5fa', run: () => home({ do: 'wake_pc' }), ok: 'Wake-on-LAN sent' },
     ['g-audio', 'grp', 'Speakers & media'],
     'VOL',
     { id: 'spk', ic: 'volume', t: 'Speakers', s: gon ? 'Active' : g?.power ? 'Standby' : '–', on: gon, c: '#7dd3fc', run: () => post('/api/genelec', { action: 'power', value: !gon }), ok: gon ? 'Speakers to standby' : 'Waking speakers' },
-    { id: 'mute', ic: g?.mute ? '<i class="icon icon-mute" aria-hidden="true"></i>' : '<i class="icon icon-speaker" aria-hidden="true"></i>', t: g?.mute ? 'Unmute' : 'Mute', s: g?.mute ? 'Muted' : 'Sound on', on: !!g?.mute, c: '#fb7185', run: () => post('/api/genelec', { action: 'mute', value: !g?.mute }), ok: 'Mute switched' },
+    { id: 'mute', ic: g?.mute ? 'mute' : 'speaker', t: g?.mute ? 'Unmute' : 'Mute', s: g?.mute ? 'Muted' : 'Sound on', on: !!g?.mute, c: '#fb7185', run: () => post('/api/genelec', { action: 'mute', value: !g?.mute }), ok: 'Mute switched' },
     { id: 'srcpc', ic: 'desktop', t: 'Source: PC', s: S?.dante?.source === 'pc' ? 'Playing from PC' : 'Switch to PC', on: S?.dante?.source === 'pc', c: '#60a5fa', run: () => post('/api/dante/source', { source: 'pc' }), ok: 'Source: PC' },
-    { id: 'srcbt', ic: 'ᛒ', t: 'Source: Bluetooth', s: S?.dante?.source === 'bt' ? 'Playing from Bluetooth' : 'Switch to Bluetooth', on: S?.dante?.source === 'bt', c: '#22d3ee', run: () => post('/api/dante/source', { source: 'bt' }), ok: 'Source: Bluetooth' },
+    { id: 'srcbt', ic: 'bluetooth', t: 'Source: Bluetooth', s: S?.dante?.source === 'bt' ? 'Playing from Bluetooth' : 'Switch to Bluetooth', on: S?.dante?.source === 'bt', c: '#22d3ee', run: () => post('/api/dante/source', { source: 'bt' }), ok: 'Source: Bluetooth' },
     'MEDIA',
     ['g-pc', 'grp', 'Computer'],
-    { id: 'pclock', ic: '⌘', t: 'Lock PC', s: 'Windows lock screen', hold: true, run: () => post('/api/pc/do', { action: 'lock' }), ok: 'PC locked' },
+    { id: 'pclock', ic: 'lock', t: 'Lock PC', s: 'Windows lock screen', hold: true, run: () => post('/api/pc/do', { action: 'lock' }), ok: 'PC locked' },
     { id: 'mic', ic: 'mic', t: 'Mic mute', s: 'Toggle default mic', run: () => post('/api/pc/do', { action: 'mic' }), ok: 'Mic toggled' },
     { id: 'game', ic: 'gamepad', t: 'Game mode', s: 'Power plan', run: () => post('/api/pc/do', { action: 'gamemode' }), ok: 'Game mode toggled' },
     { id: 'sleep', ic: 'moon', t: 'Sleep PC', s: 'Hold to sleep', hold: true, run: () => post('/api/pc/do', { action: 'sleep' }), ok: 'PC going to sleep' },
     ['g-lab', 'grp', 'Network'],
-    ...(SNAP?.lab_commands || []).filter(c => !c.two).map(c => ({ id: 'lab-' + c.key, ic: c.key.startsWith('speed') ? '⇅' : c.key.startsWith('resume') ? '<i class="icon icon-play" aria-hidden="true"></i>' : '<i class="icon icon-pause" aria-hidden="true"></i>', t: c.label, s: 'Pi-hole ×2',
+    ...(SNAP?.lab_commands || []).filter(c => !c.two).map(c => ({ id: 'lab-' + c.key, ic: c.key.startsWith('speed') ? 'updown' : c.key.startsWith('resume') ? 'play' : 'pause', t: c.label, s: 'Pi-hole ×2',
       run: () => post('/api/ops/act', { key: c.key }), ok: c.label })),
   ];
   return T;
@@ -118,10 +107,11 @@ function render() {
   $('#cc').innerHTML = tiles().map(t => {
     if (t === 'VOL') return volTile();
     if (t === 'MEDIA') return mediaTile(sp, 'Spotify') + mediaTile(H.appletv, 'Apple TV') + mediaTile(sonos, 'TV room');
-    if (Array.isArray(t)) return `<div class="grp">${esc(t[2])}</div>`;
+    if (Array.isArray(t)) return `<div class="ui-cap ui-cap-row">${esc(t[2])}</div>`;
     const busy = hold[t.id];
-    return `<button class="tl ${t.on ? 'on' : ''} ${t.cls || ''} ${busy || ''}" data-id="${t.id}" style="--c:${t.c || '#34d399'}"><i class="fill"></i>
-      ${t.hold ? '<span class="hold">hold</span>' : ''}<span class="ic"><i class="icon icon-${t.ic}" aria-hidden="true"></i></span><span><b>${esc(t.t)}</b><small>${esc(t.s)}</small></span></button>`;
+    const state = [t.on && 'is-on', t.cls && 'is-' + t.cls, busy && 'is-' + busy].filter(Boolean).join(' ');
+    return `<button class="ui-ctl ${state}" data-id="${t.id}" style="--c:${t.c || 'var(--ok)'}"><i class="ui-ctl-fill"></i>
+      ${t.hold ? '<span class="ui-ctl-hold">hold</span>' : ''}<span class="ui-ctl-ic"><i class="icon icon-${t.ic}" aria-hidden="true"></i></span><span><b>${esc(t.t)}</b><small>${esc(t.s)}</small></span></button>`;
   }).join('');
 }
 const byId = id => tiles().find(t => t && t.id === id);
@@ -134,12 +124,12 @@ async function run(id) {
 // press-and-hold for risky tiles; tap for the rest
 let pressing = null; const HOLD_MS = 1000;
 $('#cc').addEventListener('pointerdown', e => {
-  const b = e.target.closest('button.tl[data-id]'); if (!b) return;
+  const b = e.target.closest('button.ui-ctl[data-id]'); if (!b) return;
   const t = byId(b.dataset.id); if (!t?.hold) return;
-  const f = b.querySelector('.fill'); f.style.transition = `width ${HOLD_MS}ms linear`; f.style.width = '100%';
+  const f = b.querySelector('.ui-ctl-fill'); f.style.transition = `width ${HOLD_MS}ms linear`; f.style.width = '100%';
   pressing = { b, timer: setTimeout(() => { pressing = null; navigator.vibrate?.(25); run(t.id); }, HOLD_MS) };
 });
-const cancelPress = () => { if (!pressing) return; clearTimeout(pressing.timer); const f = pressing.b.querySelector('.fill'); f.style.transition = 'width .2s'; f.style.width = 0; pressing = null; };
+const cancelPress = () => { if (!pressing) return; clearTimeout(pressing.timer); const f = pressing.b.querySelector('.ui-ctl-fill'); f.style.transition = 'width .2s'; f.style.width = 0; pressing = null; };
 ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => $('#cc').addEventListener(ev, cancelPress));
 $('#cc').addEventListener('contextmenu', e => e.preventDefault());
 $('#cc').addEventListener('click', e => {
@@ -150,7 +140,7 @@ $('#cc').addEventListener('click', e => {
   if (v) { const lv = S?.genelec?.level; if (lv == null) return toast('Speakers are in standby');
     const nv = Math.max(-60, Math.min(0, lv + +v.dataset.vol)); S.genelec.level = nv; render();
     return post('/api/genelec', { action: 'volume', value: nv }).catch(err => toast('✗ ' + err.message)); }
-  const b = e.target.closest('button.tl[data-id]'); if (!b) return;
+  const b = e.target.closest('button.ui-ctl[data-id]'); if (!b) return;
   const t = byId(b.dataset.id); if (!t) return;
   if (t.hold) return toast('Press and hold to run');
   run(t.id);

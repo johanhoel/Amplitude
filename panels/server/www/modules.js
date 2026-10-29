@@ -287,7 +287,7 @@ const MODULES = {
       },
     },
     spacer: {
-      name: 'Empty space', icon: '⬚', desc: 'An invisible box that only takes up room, to place other cards where you want them', size: 's', bare: true,
+      name: 'Empty space', icon: 'frame', desc: 'An invisible box that only takes up room, to place other cards where you want them', size: 's', bare: true,
       render(el) { el.innerHTML = document.body.classList.contains('editing') ? '<div class="me">empty space</div>' : ''; },
     },
     heading: {

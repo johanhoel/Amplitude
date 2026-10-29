@@ -74,16 +74,16 @@ function events() {
   const ev = [], midnight = new Date(); midnight.setHours(0, 0, 0, 0); const m0 = midnight.getTime();
   const F = D.family;
   if (F) F.people.forEach(p => p.segments.forEach((s, i) => { if (i === 0 || s.from * 1000 < m0) return;
-    ev.push({ k: 'people', t: s.from * 1000, ic: s.home ? '<i class="icon icon-home" aria-hidden="true"></i>' : '↗', c: COL[p.name], title: `${p.name} ${s.home ? 'came home' : 'left'}`, sub: s.home ? 'Phone back on the home Wi-Fi' : 'Phone left the home Wi-Fi', href: '/family' }); }));
+    ev.push({ k: 'people', t: s.from * 1000, ic: s.home ? 'home' : 'external', c: COL[p.name], title: `${p.name} ${s.home ? 'came home' : 'left'}`, sub: s.home ? 'Phone back on the home Wi-Fi' : 'Phone left the home Wi-Fi', href: '/family' }); }));
   (D.visits || []).forEach(v => { const t = new Date(v.start).getTime(); if (t < m0) return;
     const who = (v.people || []).map(p => p.name || p).join(', ');
     ev.push({ k: 'camera', t, ic: 'target', title: who ? `${who} at the front door` : `Front camera: ${(v.labels || []).join(', ') || 'motion'}`,
       sub: [v.vehicles?.length ? v.vehicles.length + ' vehicle(s)' : '', v.plates?.length ? 'plate ' + v.plates.join(', ') : '', v.unknown ? v.unknown + ' unknown' : ''].filter(Boolean).join(' · ') || 'Recorded clip',
       img: v.has_jpg ? `/api/sec/thumb/${v.day}/${v.stem}.jpg?w=480` : '', href: '/security' }); });
   (D.news?.items || []).forEach(n => { if (!n.at || n.at * 1000 < m0) return;
-    ev.push({ k: 'news', t: n.at * 1000, ic: '❝', title: n.title, sub: 'SVT Väst' + (n.desc ? ' · ' + n.desc.slice(0, 110) + (n.desc.length > 110 ? '…' : '') : ''), href: n.link, ext: true }); });
+    ev.push({ k: 'news', t: n.at * 1000, ic: 'quote', title: n.title, sub: 'SVT Väst' + (n.desc ? ' · ' + n.desc.slice(0, 110) + (n.desc.length > 110 ? '…' : '') : ''), href: n.link, ext: true }); });
   (D.snap?.feed || []).forEach(f => { if (!f.at || f.at * 1000 < m0) return;
-    ev.push({ k: 'lab', t: f.at * 1000, ic: f.ok ? '✓' : '!', title: `Lab: ${f.label}${f.target && f.target !== 'all' ? ' ' + f.target : ''}`, sub: f.msg || '', href: '/ops' }); });
+    ev.push({ k: 'lab', t: f.at * 1000, ic: f.ok ? 'check' : 'alert', title: `Lab: ${f.label}${f.target && f.target !== 'all' ? ' ' + f.target : ''}`, sub: f.msg || '', href: '/ops' }); });
   return ev.sort((a, b) => b.t - a.t);
 }
 function ahead() {
@@ -91,7 +91,7 @@ function ahead() {
   if (D.bus) (D.bus.departures || []).forEach(d => [d.next, d.then].forEach((x, i) => { if (!x?.time) return; const t = new Date(x.time).getTime();
     if (t > now - 30000 && t < now + 90 * 60000) out.push({ k: 'travel', t, ic: 'bus', title: `${d.line.shortName} to ${d.to}${d.via ? ' via ' + d.via : ''}`,
       sub: `Leaves ${D.bus.stop}${d.platform ? ', stop ' + d.platform : ''} · in ${Math.max(0, Math.round((t - now) / 60000))} min${x.isCancelled ? ' · CANCELLED' : ''}` }); }));
-  (D.bus?.situations || []).forEach(s => out.push({ k: 'travel', t: now, ic: '⚠', title: s.title || 'Traffic disruption', sub: s.text || '' }));
+  (D.bus?.situations || []).forEach(s => out.push({ k: 'travel', t: now, ic: 'alert', title: s.title || 'Traffic disruption', sub: s.text || '' }));
   const sun = D.home?.sun;
   if (sun) [['next_setting', '<i class="icon icon-sunset" aria-hidden="true"></i>', 'Sunset'], ['next_rising', '<i class="icon icon-sunrise" aria-hidden="true"></i>', 'Sunrise']].forEach(([k, ic, n]) => { const t = new Date(sun[k]).getTime();
     if (t > now && t < now + 18 * 3600000) out.push({ k: 'sky', t, ic, title: n, sub: `${n} at ${hm(t)}`, href: '/pulse' }); });
