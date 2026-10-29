@@ -134,15 +134,20 @@ def plan():
                                      ('entities.weather', 'Weather', 'weather', 'Weather on Start, Ambient and Family info.')):
         o = [AUTO] + [{'value': e, 'label': n, 'why': e, 'seen': True} for e, n in _ents(states, domain)]
         F.append(_field('home', key, label, 'one', _get(tree, key) or '', o, help))
-    # media players and people: tick what to SHOW; saved as the hide lists
-    for step, key, domain, label, help in (
-            ('media', 'players.hide', 'media_player', 'Players on the Media page', 'Untick players you do not want on the panels.'),
-            ('people', 'people.hide', 'person', 'People on Start and Family', 'Untick people the panels should not show.')):
-        hidden = _get(tree, key) or []
-        o = [{'value': e, 'label': n, 'why': e, 'seen': True} for e, n in _ents(states, domain, 'spotify')]
-        f = _field(step, key, label, 'show', hidden, o, help, suggest=[x['value'] for x in o if x['value'] not in hidden])
-        f['now'] = f['suggest']                                    # the page compares what is shown, not the hide list
-        F.append(f)
+    # media players: tick the ones to show; saved as the [[players]] list itself, in that order
+    shown = [x['entity'] for x in (_get(tree, 'players') or [])]
+    o = [{'value': e, 'label': n, 'why': e, 'seen': True} for e, n in _ents(states, 'media_player', 'spotify')]
+    F.append(_field('media', 'players', 'Players on the Media page', 'pick', shown, o,
+                    'Untick players you do not want on the panels.',
+                    suggest=shown or [x['value'] for x in o]))
+    # people: tick who to show; saved as the hide list, so a person added in HA later shows up by itself
+    hidden = _get(tree, 'people.hide') or []
+    o = [{'value': e, 'label': n, 'why': e, 'seen': True} for e, n in _ents(states, 'person')]
+    f = _field('people', 'people.hide', 'People on Start and Family', 'show', hidden, o,
+               'Untick people the panels should not show.',
+               suggest=[x['value'] for x in o if x['value'] not in hidden])
+    f['now'] = f['suggest']                                        # the page compares who is shown, not the hide list
+    F.append(f)
     F[-2]['info'] = [f"{x['label']} ({x['ip']})" for r in ('sonos', 'cast', 'appletv', 'airplay', 'dante') for x in found.get(r, [])]
     F[-1]['info'] = ['Who is home comes from each person in Home Assistant (the Home Assistant app on their phone).']
     cur_links = _get(tree, 'links.extra') or {}
@@ -169,7 +174,12 @@ def render(choices):
         if f['kind'] == 'show':                                    # ticked = shown; everything else known is hidden
             known = [o['value'] for o in f['options']]
             v = sorted(set(_get(tree, key) or []) - set(known) | {e for e in known if e not in v})
-        if f['kind'] == 'links':
+        if f['kind'] == 'pick':                                    # ticked = the list itself, with the names HA gives
+            label = {o['value']: o['label'] for o in f['options']}
+            now = [x['entity'] for x in (_get(tree, key) or [])]
+            if v != now:
+                text = tomledit.set_players(text, [{'entity': e, 'label': label.get(e, e)} for e in v])
+        elif f['kind'] == 'links':
             new = {x.split('|', 1)[0]: x.split('|', 1)[1] for x in v}
             if new and new != (_get(tree, key) or {}):
                 text = tomledit.set_table(text, key, new)

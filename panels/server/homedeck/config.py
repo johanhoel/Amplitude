@@ -68,6 +68,15 @@ def _int(lo=0, hi=10 ** 9):
     return f
 
 
+def _opt(check):
+    """A setting the house may not have: empty means 'not here', and the panels for it stay away (addons.py).
+    Leaving the line out means the same, so a settings file written before the setting existed still runs."""
+    def f(v):
+        return None if v in ('', [], {}) else check(v)
+    f.optional = True
+    return f
+
+
 def _list(inner, min_len=0):
     def f(v):
         if not isinstance(v, list):
@@ -111,6 +120,16 @@ def _pair(v):
     return None if isinstance(v, list) and len(v) == 2 and all(isinstance(x, str) for x in v) else 'must be ["short name", "room"]'
 
 
+def _links(v):
+    """[links] holds Home Deck's own pages; the setup wizard writes what it found under [links.extra]."""
+    if not isinstance(v, dict):
+        return 'must be a table of  name = address  lines'
+    for k, x in v.items():
+        e = _map(_url)(x) if k == 'extra' else _url(x)
+        if e:
+            return f'{k!r} {e}'
+
+
 def _hours(v):
     return None if isinstance(v, list) and len(v) == 2 and all(isinstance(x, int) and 0 <= x <= 24 for x in v) else 'must be [start hour, end hour], e.g. [0, 7]'
 
@@ -119,12 +138,16 @@ def _hours(v):
 SPEC = {
     'server.port': _int(1, 65535), 'server.static_dir': _str, 'server.netaudio': _str, 'server.timezone': _tz,
     'homeassistant.url': _url,
-    'services.pc': _hostport, 'services.pc_proxy_clients': _list(_ip, 1), 'services.labpanel': _url, 'services.lab_panel_id': _str,
-    'services.prometheus': _url, 'services.camfeed': _url, 'services.ollama': _url, 'services.ntfy': _url, 'services.piholes': _list(_ip, 1),
-    'entities.spotify': _entity, 'entities.lock': _entity, 'entities.charger': _entity, 'entities.charger_power_prefix': _str,
-    'entities.cam_detect': _entity, 'entities.wake_pc': _entity, 'entities.tv': _entity, 'entities.vacuum': _entity,
-    'entities.weather': _entity, 'entities.apple_tv': _entity, 'entities.apple_tv_remote': _entity,
-    'players': _list(_record({'entity': _entity, 'label': _str}), 1),
+    'services.pc': _opt(_hostport), 'services.pc_proxy_clients': _list(_ip), 'services.labpanel': _opt(_url),
+    'services.lab_panel_id': _str, 'services.prometheus': _opt(_url), 'services.camfeed': _opt(_url),
+    'services.ollama': _opt(_url), 'services.ntfy': _url, 'services.piholes': _list(_ip),
+    'entities.spotify': _opt(_entity), 'entities.lock': _opt(_entity), 'entities.charger': _opt(_entity),
+    'entities.charger_power_prefix': _opt(_str),
+    'entities.cam_detect': _opt(_entity), 'entities.wake_pc': _opt(_entity), 'entities.tv': _opt(_entity),
+    'entities.vacuum': _opt(_entity), 'entities.weather': _opt(_entity), 'entities.apple_tv': _opt(_entity),
+    'entities.apple_tv_remote': _opt(_entity),
+    'players': _list(_record({'entity': _entity, 'label': _str})),
+    'people.hide': _opt(_list(_entity)),
     'apple_tv.commands': _list(_str, 1),
     'pc_actions': _map(lambda v: None if isinstance(v, str) and v.startswith('/') else 'must be a path starting with /'),
     'rooms.order': _list(_str), 'rooms.skip_lights': _regex, 'rooms.names': _map(_pair, key=_entity),
@@ -132,20 +155,20 @@ SPEC = {
     'presence.night_hours': _hours, 'presence.night_limit_s': _int(60, 86400), 'presence.probe_after_s': _int(30, 86400),
     'presence.probe_trust_s': _int(60, 7 * 86400), 'presence.cam_burst_s': _int(30, 3600), 'presence.cam_leave_silent_s': _int(10, 3600),
     'presence.cam_leave_people': _list(_str), 'presence.cam_leave_after_s': _int(120, 7200),
-    'audio.genelecs': _list(_ip, 1), 'audio.front_pair': _list(_str, 1),
+    'audio.genelecs': _list(_ip), 'audio.front_pair': _list(_str),
     'audio.sources': _map(_record({'device': _str, 'channels': _list(_str, 1)})),
-    'transit.bus_stop': lambda v: None if isinstance(v, str) and re.fullmatch(r'\d{16}', v) else 'must be a 16-digit Västtrafik stop id in quotes',
+    'transit.bus_stop': _opt(lambda v: None if isinstance(v, str) and re.fullmatch(r'\d{16}', v) else 'must be a 16-digit Västtrafik stop id in quotes'),
     'transit.feed': lambda v: _url(v) or (None if '{g}' in v else 'must contain {g} where the stop id goes'),
     'transit.stop_search': _url,
     'leave.grace_s': _int(30, 86400), 'leave.lock_check_s': _int(5, 600),
     'admin.pages': _list(lambda v: None if isinstance(v, str) and re.fullmatch(r'[a-z0-9_-]+', v) else 'must be a page name like admin'),
     'admin.pin_min_digits': _int(4, 8), 'admin.session_hours': _int(1, 720), 'admin.remember_days': _int(1, 365),
     'admin.max_tries': _int(3, 20), 'admin.lock_minutes': _int(1, 1440),
-    'remote.edge': _list(_ip, 1), 'remote.public_url': _url, 'remote.pair_minutes': _int(2, 60),
+    'remote.edge': _list(_ip), 'remote.public_url': _opt(_url), 'remote.pair_minutes': _int(2, 60),
     'layouts.pages': _list(lambda v: None if isinstance(v, str) and re.fullmatch(r'\w+', v) else 'must be a page name (letters only)', 1),
     'layouts.keep': _int(1, 500),
     'news.feeds': _map(_url, key=lambda k: None if re.fullmatch(r'[a-z]+', k) else 'must be lower-case letters'), 'news.max_items': _int(1, 200),
-    'links': _map(_url),
+    'links': _links,
     'network.names': _map(_pair, key=lambda k: None if re.fullmatch(r'\d{1,3}', k) else 'must be the last number of an IP address, e.g. "30"'),
     'network.mac_names': _map(_str, key=_mac),
 }
@@ -166,7 +189,8 @@ def validate(tree):
     for key, check in SPEC.items():
         v = _get(tree, key)
         if v is KeyError:
-            errs.append(f'{key}: missing')
+            if not getattr(check, 'optional', False):
+                errs.append(f'{key}: missing')
             continue
         e = check(v)
         if e:
@@ -188,13 +212,13 @@ def read(path):
 
 def _derive(t):
     """The validated file -> the constants the modules use (one place, so the modules never parse the file)."""
-    host, port = t['services']['pc'].rsplit(':', 1)
+    host, _, port = t['services']['pc'].rpartition(':')      # no PC: ('', 0), which addons.py reads as "not here"
     p, e, pr = t['presence'], t['entities'], t['players']
     return SimpleNamespace(
         PORT=t['server']['port'], STATIC=t['server']['static_dir'], NETAUDIO=t['server']['netaudio'],
         LOCAL_TZ=zoneinfo.ZoneInfo(t['server']['timezone']),
         HA=t['homeassistant']['url'].rstrip('/'),
-        PC=(host, int(port)), PC_PROXY_CLIENTS=set(t['services']['pc_proxy_clients']),
+        PC=(host, int(port or 0)), PC_PROXY_CLIENTS=set(t['services']['pc_proxy_clients']),
         LABPANEL=t['services']['labpanel'].rstrip('/'), LAB_PANEL_ID=t['services']['lab_panel_id'],
         PROM=t['services']['prometheus'].rstrip('/'), CAMFEED=t['services']['camfeed'].rstrip('/'), OLLAMA=t['services']['ollama'].rstrip('/'),
         NTFY=t['services']['ntfy'].rstrip('/'), PIHOLES=list(t['services']['piholes']),
@@ -202,6 +226,7 @@ def _derive(t):
         CAM_DETECT=e['cam_detect'], WAKE_PC=e['wake_pc'], TV=e['tv'], VACUUM=e['vacuum'], WEATHER=e['weather'],
         APPLE_TV=e['apple_tv'], APPLE_TV_REMOTE=e['apple_tv_remote'], ATV_COMMANDS=set(t['apple_tv']['commands']),
         PLAYERS=[(x['entity'], x['label']) for x in pr], PLAYER_IDS={x['entity'] for x in pr},
+        PEOPLE_HIDE=set(t.get('people', {}).get('hide') or []),
         PC_ACTIONS=dict(t['pc_actions']),
         ROOM_ORDER=list(t['rooms']['order']), SKIP_LIGHTS=re.compile(t['rooms']['skip_lights']),
         ROOM_OF={k: tuple(v) for k, v in t['rooms']['names'].items()},
@@ -218,7 +243,7 @@ def _derive(t):
         ADMIN_REMEMBER_DAYS=t['admin']['remember_days'], ADMIN_MAX_TRIES=t['admin']['max_tries'], ADMIN_LOCK_MINUTES=t['admin']['lock_minutes'],
         LAYOUT_PAGES=set(t['layouts']['pages']), LAYOUT_KEEP=t['layouts']['keep'],
         NEWS_FEEDS=dict(t['news']['feeds']), NEWS_MAX=t['news']['max_items'],
-        LINK_CHECKS=dict(t['links']),
+        LINK_CHECKS={k: v for k, v in t['links'].items() if k != 'extra'} | dict(t['links'].get('extra') or {}),
         NET_NAMES={k: tuple(v) for k, v in t['network']['names'].items()},
         MAC_NAMES={k.lower(): v for k, v in t['network']['mac_names'].items()},
     )

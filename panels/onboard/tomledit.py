@@ -91,15 +91,20 @@ def set_table(text, section, values):
 
 
 def set_players(text, players):
-    """Replace every [[players]] block (they sit together) with the given list."""
+    """Replace every [[players]] block (they sit together), or the empty  players = []  line, with the list."""
     lines = text.split('\n')
-    idx = [i for i, l in enumerate(lines) if l.strip() == '[[players]]']
-    if not idx:
-        raise KeyError('[[players]] not found')
-    end = idx[-1] + 1
-    while end < len(lines) and not re.match(r'\s*\[', lines[end]) and (lines[end].strip() and not lines[end].lstrip().startswith('#')):
-        end += 1
     block = []
     for p in players:
         block += ['[[players]]', f'entity = {fmt(p["entity"])}', f'label = {fmt(p["label"])}']
-    return '\n'.join(lines[:idx[0]] + block + lines[end:])
+    idx = [i for i, l in enumerate(lines) if l.strip() == '[[players]]']
+    if not idx:
+        # A house with no players yet has nothing to replace: the template keeps the setting
+        # visible as an empty list, and that line is the place the blocks go.
+        i = next((j for j, l in enumerate(lines) if re.match(r'players\s*=\s*\[\s*\]\s*(#.*)?$', l)), None)
+        if i is None:
+            raise KeyError('[[players]] not found')
+        return '\n'.join(lines[:i] + (block or ['players = []']) + lines[i + 1:])
+    end = idx[-1] + 1
+    while end < len(lines) and not re.match(r'\s*\[', lines[end]) and (lines[end].strip() and not lines[end].lstrip().startswith('#')):
+        end += 1
+    return '\n'.join(lines[:idx[0]] + (block or ['players = []']) + lines[end:])

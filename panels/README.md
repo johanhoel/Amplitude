@@ -52,7 +52,13 @@ The wizard:
 4. shows the exact lines of `homedeck.toml` that change, saves (old copy kept), restarts with automatic rollback,
    and switches itself off.
 
-Run it again any time with `sudo homedeck-onboard`. Running `install.sh` again updates the code and keeps
+What the wizard does not set stays empty, and an empty setting keeps its part of the panels away: the volume
+dial appears because there are speakers in `homedeck.toml`, the bus card because there is a stop, the wake button
+because there is a PC. A fresh install ships no addresses of its own - it shows the rooms and lights, and the rest
+as you fill it in.
+
+Run it again any time with `sudo homedeck-onboard`, or `sudo homedeck-onboard --show` to see the setup code that is
+already set (running the plain command makes a new one). Running `install.sh` again updates the code and keeps
 settings, token and layouts.
 
 | | |

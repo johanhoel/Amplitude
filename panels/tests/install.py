@@ -10,6 +10,7 @@ address you type at setup, and the template had stopped containing __HA_URL__.
 The sed was a no-op, nothing complained, and every fresh install came up
 pointing at the author's own Home Assistant instead of the user's.
 """
+import os
 import re
 import sys
 from pathlib import Path
@@ -57,6 +58,121 @@ check("the smoke test does not need docker",
       "it was skipped on every machine without docker, which is most of them")
 check("the stub is never mistaken for a credential store",
       "stub-no-real-credential" in STAGING)
+
+# ---- the template carries nobody's house ------------------------------
+# The same file used to ship the author's network: 30 addresses, the family's
+# phone MACs, their rooms, their bus stop. A stranger's install probed all of
+# them, and the status dots on Start were somebody else's machines.
+PRIVATE_IP = re.compile(r"\b(?:10|192\.168|172\.(?:1[6-9]|2\d|3[01]))\.\d+\.\d+\b")
+MAC = re.compile(r"\b(?:[0-9a-f]{2}:){5}[0-9a-f]{2}\b", re.I)
+settings_lines = [l.split("#", 1)[0] for l in TOML.splitlines()]
+settings = "\n".join(settings_lines)
+check("no private address is shipped in the settings",
+      not PRIVATE_IP.search(settings),
+      f"found {PRIVATE_IP.findall(settings)[:4]} - a fresh install would probe them")
+check("no MAC address is shipped in the settings",
+      not MAC.search(settings),
+      f"found {MAC.findall(settings)[:3]} - those are somebody's phones")
+check("the only host it names is the one the installer fills in",
+      [h for h in re.findall(r'"https?://([^/"\s:]+)', settings)
+       if h not in ("127.0.0.1",) and not h.endswith((".se", ".sh"))] == [],
+      "a hostname in the template is a house, not a default")
+for section, why in (("presence.phones", "the people living there"),
+                     ("network.names", "what each address in that house is"),
+                     ("network.mac_names", "the devices in that house"),
+                     ("rooms.names", "the rooms of that house")):
+    body = re.search(rf"^\[{re.escape(section)}\](.*?)(?=^\[|\Z)", TOML, re.M | re.S)
+    lines = [l for l in (body.group(1).splitlines() if body else []) if l.strip() and not l.strip().startswith("#")]
+    check(f"[{section}] ships empty", body is not None and not lines, f"it still lists {why}")
+
+# ---- and still works once the installer has filled in the address -----
+sys.path.insert(0, str(ROOT / "server"))
+import tempfile                                                   # noqa: E402
+import tomllib                                                    # noqa: E402
+
+STATE = tempfile.mkdtemp()
+FILLED = Path(STATE) / "homedeck.toml"
+FILLED.write_text(TOML.replace("__HA_URL__", "http://10.1.1.5:8123"), encoding="utf-8")
+os.environ.update(HOMEDECK_ROOT=str(ROOT / "server"), HOMEDECK_CONFIG=str(FILLED),
+                  HOMEDECK_READONLY="1", STATE_DIRECTORY=STATE, HOMEDECK_CHECKONLY="1")
+from homedeck import config as hdconfig                           # noqa: E402   (CHECKONLY: reads nothing yet)
+
+filled = tomllib.loads(FILLED.read_text(encoding="utf-8"))
+problems = hdconfig.validate(filled)
+check("the shipped settings validate with nothing but the address filled in",
+      not problems, "; ".join(problems[:3]))
+try:
+    derived = hdconfig._derive(filled)
+except Exception as exc:                                          # a value that validates but cannot be used
+    check("the shipped settings can be used", False, f"{type(exc).__name__}: {exc}")
+    print(f"{sum(results)}/{len(results)} passed")
+    raise SystemExit(1)
+check("a house with no PC reads as having no PC",
+      derived.PC == ("", 0), f"{derived.PC!r}")
+check("the status dots are Home Deck's own pages and nothing else",
+      all(u.startswith("http://127.0.0.1") for u in derived.LINK_CHECKS.values()),
+      "a dot that is always red teaches people to ignore the dots")
+
+hdconfig.C = derived          # the modules read this at import; give them the shipped settings
+from homedeck import addons                                       # noqa: E402
+on = [k for k, v in addons.state().items() if v]
+check("a fresh install offers no panel for hardware it has not been told about",
+      on == [], f"{on} would be shown")
+
+# ---- a house that already has settings keeps running ------------------
+# An update keeps the settings file the house edited, so the new code meets a
+# file written before these settings existed. A missing optional line has to
+# mean the same as an empty one, or the panels come up on the last good copy -
+# or, the first time, not at all.
+older = tomllib.loads(re.sub(r"^\[people\]\n(.*\n)*?\n", "", TOML.replace("__HA_URL__", "http://10.1.1.5:8123"), flags=re.M))
+check("a settings file written before [people] existed has no new problems",
+      "people" not in older and not hdconfig.validate(older),
+      "; ".join(hdconfig.validate(older)[:3]) or "the section was not actually removed")
+check("and nobody is hidden in it", hdconfig._derive(older).PEOPLE_HIDE == set())
+
+# ---- the setup wizard can put every one of them back ------------------
+# Emptying the template makes the wizard the only way most of this gets set,
+# so it has to be able to write each kind: a value, a table, and the list of
+# players. Two of those were broken: [links.extra] did not exist to write
+# into, and players.hide was a setting nothing in the server ever read.
+os.environ["ONBOARD_ROOT"] = str(ROOT / "server")
+sys.path.insert(0, str(ROOT / "onboard"))
+import onboard                                                    # noqa: E402
+
+STATES = [{"entity_id": "lock.front", "state": "locked", "attributes": {"friendly_name": "Front door"}},
+          {"entity_id": "weather.home", "state": "sunny", "attributes": {"friendly_name": "Home"}},
+          {"entity_id": "media_player.kitchen", "state": "idle", "attributes": {"friendly_name": "Kitchen"}},
+          {"entity_id": "media_player.attic", "state": "idle", "attributes": {"friendly_name": "Attic"}},
+          {"entity_id": "person.robin", "state": "home", "attributes": {"friendly_name": "Robin"}},
+          {"entity_id": "person.guest", "state": "home", "attributes": {"friendly_name": "Guest"}}]
+onboard.S["ha"] = {"url": "http://10.1.1.5:8123", "token": None, "states": STATES, "error": None}
+onboard.S["scan"]["result"] = {"found": {"router": [{"ip": "10.1.1.1", "label": "Router"}]}, "devices": [], "subnet": "10.1.1.0/24", "took_s": 1}
+
+try:
+    text, problems = onboard.render({"homeassistant.url": "http://10.1.1.5:8123",
+                                     "entities.lock": "lock.front", "entities.weather": "weather.home",
+                                     "players": ["media_player.kitchen"],
+                                     "people.hide": ["person.robin"],
+                                     "links.extra": ["router|http://10.1.1.1/"]})
+except Exception as exc:                                          # a wizard that cannot write is a dead install
+    text, problems = "", [f"{type(exc).__name__}: {exc}"]
+check("what the wizard writes is a valid settings file", text and not problems, "; ".join(problems[:3]))
+saved = tomllib.loads(text) if text else {"homeassistant": {}, "entities": {}, "players": [],
+                                          "people": {"hide": []}, "links": {}}
+check("the address you confirm is written", saved["homeassistant"]["url"] == "http://10.1.1.5:8123")
+check("the front door is written", saved["entities"]["lock"] == "lock.front")
+check("a ticked player becomes the players list, with its name",
+      saved["players"] == [{"entity": "media_player.kitchen", "label": "Kitchen"}], f"{saved['players']}")
+check("an unticked person is hidden, and only that one",
+      saved["people"]["hide"] == ["person.guest"], f"{saved['people']['hide']}")
+check("a device found on the network becomes a status dot",
+      saved["links"]["extra"] == {"router": "http://10.1.1.1/"}, f"{saved['links'].get('extra')}")
+check("the dots the wizard writes are probed with the rest",
+      hdconfig._derive(saved).LINK_CHECKS.get("router") == "http://10.1.1.1/",
+      "they would sit in the file doing nothing")
+check("the hide list is wired into the people the panels show",
+      "C.PEOPLE_HIDE" in (ROOT / "server" / "homedeck" / "home.py").read_text(encoding="utf-8"),
+      "the wizard would be writing a setting nothing reads")
 
 print(f"{sum(results)}/{len(results)} passed")
 raise SystemExit(0 if all(results) else 1)

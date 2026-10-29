@@ -86,7 +86,8 @@ def home_state():
         return bool(p.get('home')) if p and p.get('home') is not None else s['state'] == 'home'
     people = [{'name': s['attributes'].get('friendly_name', s['entity_id'][7:]).capitalize(), 'home': at_home(s),
                'pic': bool(s['attributes'].get('entity_picture'))}
-              for s in states if s['entity_id'].startswith('person.') and s['state'] not in ('unknown', 'unavailable')]
+              for s in states if s['entity_id'].startswith('person.') and s['entity_id'] not in C.PEOPLE_HIDE
+              and s['state'] not in ('unknown', 'unavailable')]
     lock_ = by.get(lock_entity(by), {})
     vac = by.get(C.VACUUM, {})
     det = by.get(C.CAM_DETECT, {})
