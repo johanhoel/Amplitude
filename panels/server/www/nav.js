@@ -82,7 +82,7 @@
   // ---------- orb ----------
   const orb = document.createElement('nav'); orb.id = 'nvorb'; orb.setAttribute('aria-label', 'Panels');
   orb.innerHTML = (prev ? `<a class="side" href="${prev.p}" aria-label="Previous panel: ${esc(prev.t)}" title="${esc(prev.t)} (←)">‹</a>` : '')
-    + `<button class="mid" id="nvopen" aria-label="All panels"><i>${cur ? esc(cur.i) : '☰'}</i>${cur ? esc(cur.t) : 'Panels'}<kbd>⌘K</kbd></button>`
+    + `<button class="mid" id="nvopen" aria-label="All panels">${cur ? cur.i : '<i class="icon icon-list" aria-hidden="true"></i>'}${cur ? esc(cur.t) : 'Panels'}<kbd>⌘K</kbd></button>`
     + (ri >= 0 ? `<span class="dots" aria-hidden="true">${ring.map(x => `<span class="${x === cur ? 'on' : ''}"></span>`).join('')}</span>` : '')
     + (next ? `<a class="side" href="${next.p}" aria-label="Next panel: ${esc(next.t)}" title="${esc(next.t)} (→)">›</a>` : '')
     + `<button class="side" id="nvcambtn" aria-label="Front camera live" title="Camera live (C)"><i class="icon icon-camera" aria-hidden="true"></i></button>`;

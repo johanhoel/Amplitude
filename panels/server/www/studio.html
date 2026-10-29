@@ -146,7 +146,7 @@ const SECTIONS = {
         : `<div class="card">✓ All watched devices are online.</div>`}
       ${S.sum.draft ? `<div class="card" style="margin-top:10px"><i class="icon icon-note" aria-hidden="true"></i> ${S.sum.draft} change${S.sum.draft > 1 ? 's are' : ' is'} waiting. <a href="#changes">Review and apply</a></div>` : ''}
       <h2>Start here</h2>
-      <div class="wz">${WIZ.map(w => `<button data-w="${w.id}"><span class="i">${w.icon}</span><b>${esc(w.title)}</b><span>${esc(w.desc)}</span></button>`).join('')}</div>
+      <div class="wz">${WIZ.map(w => `<button data-w="${w.id}"><span class="i"><i class="icon icon-${w.icon}" aria-hidden="true"></i></span><b>${esc(w.title)}</b><span>${esc(w.desc)}</span></button>`).join('')}</div>
       <p class="noprint" style="margin-top:22px"><button class="btn" id="retour">Show the tour again</button></p>`;
     main.querySelectorAll('[data-w]').forEach(b => b.onclick = () => go('wizards/' + b.dataset.w));
     $('#retour').onclick = () => tour(true);
@@ -212,7 +212,7 @@ const SECTIONS = {
   async wizards(sub) {
     if (sub && WIZ.find(w => w.id === sub)) return runWizard(WIZ.find(w => w.id === sub));
     main.innerHTML = `<h1>Wizards</h1><p class="lead">Step by step through the common jobs. Each wizard checks things for you and puts the changes in Changes, ready to apply.</p>
-      <div class="wz">${WIZ.map(w => `<button data-w="${w.id}"><span class="i">${w.icon}</span><b>${esc(w.title)}</b><span>${esc(w.desc)}</span></button>`).join('')}</div>`;
+      <div class="wz">${WIZ.map(w => `<button data-w="${w.id}"><span class="i"><i class="icon icon-${w.icon}" aria-hidden="true"></i></span><b>${esc(w.title)}</b><span>${esc(w.desc)}</span></button>`).join('')}</div>`;
     main.querySelectorAll('[data-w]').forEach(b => b.onclick = () => go('wizards/' + b.dataset.w));
   },
 
@@ -304,7 +304,7 @@ async function putOnBoard(i, v) {
   const r = await Edit.sheet({ title: `Put ${v?.name || nameOf(i)} on a board`, fields: [
     { key: 'board', label: 'Board', type: 'select', options: S.boards.map(b => [b.name, b.title]), value: S.boards[0]?.name },
     { key: 'size', label: 'Size', type: 'select', value: mod.size, options: Object.entries(Deck.SIZES).filter(([k]) => k !== 'x').map(([k, s]) => [k, s[0]]) }],
-    buttons: [{ id: 'ok', label: `Add ${def.icon} ${def.name}` }] });
+    buttons: [{ id: 'ok', label: `Add ${def.name}` }] });
   if (!r || !r.values.board) return;
   if (mod.type === 'devices' && !i.reg?.watch) Edit.toast('Tip: turn on Watch for this device and apply, so the card can show it');
   const L = await api('/api/layout/board_' + r.values.board);
@@ -325,16 +325,16 @@ function preview(name) {
 
 // ---------- wizards ----------
 const WIZ = [
-  { id: 'phone', icon: '<i class="icon icon-phone" aria-hidden="true"></i>', title: 'New phone or family member', desc: 'Who-is-home, the app, and their own board' },
-  { id: 'smart', icon: '<i class="icon icon-bulb" aria-hidden="true"></i>', title: 'New smart-home device', desc: 'A light, lock, sensor or speaker from Home Assistant onto your boards' },
-  { id: 'screen', icon: '<i class="icon icon-desktop" aria-hidden="true"></i>', title: 'New screen', desc: 'A tablet, wall panel, phone or PC wallpaper showing a board' },
-  { id: 'camserver', icon: '<i class="icon icon-camera" aria-hidden="true"></i>', title: 'New camera or server', desc: 'Watch it, get offline alerts, show it on a board' },
+  { id: 'phone', icon: 'phone', title: 'New phone or family member', desc: 'Who-is-home, the app, and their own board' },
+  { id: 'smart', icon: 'bulb', title: 'New smart-home device', desc: 'A light, lock, sensor or speaker from Home Assistant onto your boards' },
+  { id: 'screen', icon: 'desktop', title: 'New screen', desc: 'A tablet, wall panel, phone or PC wallpaper showing a board' },
+  { id: 'camserver', icon: 'camera', title: 'New camera or server', desc: 'Watch it, get offline alerts, show it on a board' },
 ];
 function stepUI(w, steps) {
   let n = 0; const st = {};
   const show = async () => {
     const s = steps[n];
-    main.innerHTML = `<p class="noprint"><a href="#wizards">‹ Wizards</a></p><div class="step"><div class="no">${w.icon} ${esc(w.title)} · step ${n + 1} of ${steps.length}</div>
+    main.innerHTML = `<p class="noprint"><a href="#wizards">‹ Wizards</a></p><div class="step"><div class="no"><i class="icon icon-${w.icon}" aria-hidden="true"></i> ${esc(w.title)} · step ${n + 1} of ${steps.length}</div>
       <h3>${esc(s.title)}</h3><div id="sb"></div><div class="nav">${n ? '<button class="btn" id="back">Back</button>' : ''}<span class="sp"></span>
       <button class="btn go" id="next">${n === steps.length - 1 ? 'Finish' : 'Next'}</button></div></div>`;
     await s.show($('#sb'), st);
@@ -405,7 +405,7 @@ async function runWizard(w) {
       next: async (el, st) => { st.v = { name: val(el, '#nm'), room: val(el, '#rm'), kind: st.dev.kind, watch: el.querySelector('#wt').checked };
         await addChange({ op: 'add', key: st.dev.key, ...st.v, label: st.v.name }); } },
     { title: 'Show it on a board (optional)', show: (el, st) => { const mod = moduleFor(st.dev, st.v), d = Deck.MODULES[mod.type];
-        el.innerHTML = `<p>Suggested card: <b>${d.icon} ${esc(d.name)}</b>.</p><button class="btn go" id="pob">Put it on a board…</button>`; el.querySelector('#pob').onclick = () => putOnBoard(st.dev, st.v); } },
+        el.innerHTML = `<p>Suggested card: <b><i class="icon icon-${d.icon}" aria-hidden="true"></i> ${esc(d.name)}</b>.</p><button class="btn go" id="pob">Put it on a board…</button>`; el.querySelector('#pob').onclick = () => putOnBoard(st.dev, st.v); } },
     { title: 'Apply', show: el => { el.innerHTML = '<p>Open <b>Changes</b> and press <b>Apply</b>.</p>'; } },
   ]);
   if (w.id === 'screen') return stepUI(w, [

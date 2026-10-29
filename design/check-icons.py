@@ -108,7 +108,8 @@ check("every icon class used is defined", not (used - defined),
 # A page that draws icons, directly or through one of those scripts, must load
 # the stylesheet - otherwise .icon paints a solid block where the icon was.
 for p in files:
-    if p.suffix not in (".html", ".py"):
+    # The test suite documents these classes; it does not render them.
+    if p.suffix not in (".html", ".py") or "tests" in p.parts:
         continue
     text = p.read_text(encoding="utf-8")
     draws = 'class="icon icon-' in text or "'icon icon-' +" in text
@@ -129,6 +130,28 @@ for p in files:
            if "icon" in a.split() and not any(t.startswith("icon-") for t in a.split())]
     check(f"{p.relative_to(ROOT)} does not reuse .icon for something else",
           not bad, f"{bad[:3]}")
+
+# Icon markup must never sit in a data value. Four separate bugs came from
+# this in one sitting - a Jinja label, a user-editable admin field, a module
+# definition, a select option - each one printing raw HTML on screen, because
+# somewhere downstream the value went through an escape. Keep the name in the
+# data and build the markup at the point it is written into the page.
+MARKUP = re.compile(r"""['"`]<i class="icon icon-""")
+for p in files:
+    text = p.read_text(encoding="utf-8")
+    rel = p.relative_to(ROOT)
+
+    bad = [m for m in re.finditer(r"(icon|ic)\s*:\s*['\"]<i class=\"icon", text)]
+    check(f"{rel} keeps icon names, not markup, in data", not bad,
+          f"{len(bad)} field(s) hold markup; store the name and build the <i> at render")
+
+    # esc(...) round an icon literal renders the tag as visible text.
+    bad = [m.group(0)[:70] for m in re.finditer(r"esc\([^()]*<i class=\"icon[^()]*\)", text)]
+    check(f"{rel} does not escape icon markup", not bad, "; ".join(bad[:2]))
+
+    # Jinja escapes {{ }}, so markup carried inside a {% %} value prints raw.
+    bad = [m.group(0)[:70] for m in re.finditer(r"\{%[^%]*<i class=\"icon[^%]*%\}", text, re.S)]
+    check(f"{rel} keeps icon markup out of Jinja values", not bad, "; ".join(bad[:2]))
 
 print(f"\n{sum(results)}/{len(results)} passed")
 sys.exit(0 if all(results) else 1)

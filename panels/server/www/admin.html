@@ -141,7 +141,7 @@ const NODE_IP = { turbo: '192.168.1.249', edvin: '192.168.1.246', prippen: '192.
 const HA = 'https://192.168.1.70:8123', GF = 'http://192.168.1.234:3000/d/';
 // [group, icon, [[label, url, note, status id?], ...]]
 const LINKS = [
-  ['Home Assistant', '<i class="icon icon-home" aria-hidden="true"></i>', [
+  ['Home Assistant', 'home', [
     ['Home Assistant', HA + '/', 'Dashboards · .70', 'ha'], ['Home Assistant (remote)', 'https://home.example.net:8123/', 'Through edge, works anywhere', 'ha_public'],
     ['Automations', HA + '/config/automation/dashboard', 'Edit and trace automations'], ['Devices & entities', HA + '/config/devices/dashboard', 'All devices'],
     ['Integrations', HA + '/config/integrations/dashboard', 'Plejd, HomeKit, Spotify, Zigbee…'], ['Updates', HA + '/config/updates', 'Core, OS and add-on updates'],
@@ -152,7 +152,7 @@ const LINKS = [
     ['Check / reload YAML', HA + '/developer-tools/yaml', 'Config check, reload, restart'], ['HACS', HA + '/hacs/dashboard', 'Custom integrations (hass-plejd)'], ['Energy', HA + '/energy', 'Energy dashboard'],
     ['Zigbee2MQTT', HA + '/hassio/ingress/45df7312_zigbee2mqtt', 'Add-on · Zigbee devices and map'], ['Music Assistant', HA + '/hassio/ingress/d5369777_music_assistant', 'Add-on · speakers and queues'],
     ['Studio Code Server', HA + '/hassio/ingress/a0d7b954_vscode', 'Add-on · edit configuration.yaml'], ['Terminal', HA + '/hassio/ingress/a0d7b954_ssh', 'Add-on · HA shell (ha core …)']]],
-  ['Home Deck panels', '<i class="icon icon-phone" aria-hidden="true"></i>', [
+  ['Home Deck panels', 'phone', [
     ['Start', 'http://192.168.1.52/start', 'All panels and consoles', 'start'], ['Deck', 'http://192.168.1.52/', 'Wall panel', 'deck'],
     ['Home', 'http://192.168.1.52/living', 'Lights by room, music, door', 'living'], ['Remote', 'http://192.168.1.52/remote', 'Phone remote', 'remote'],
     ['Family', 'http://192.168.1.52/family', "Who's home", 'family'], ['Family info', 'http://192.168.1.52/familyinfo', 'Buses, weather, last one home', 'familyinfo'],
@@ -160,12 +160,12 @@ const LINKS = [
     ['Network', 'http://192.168.1.52/net', 'Internet, DNS, devices', 'net'], ['Lab', 'http://192.168.1.52/ops', 'Nodes, guests, hold-to-run commands', 'ops'],
     ['Ambient', 'http://192.168.1.52/ambient', 'Night clock', 'ambient'], ['Network map', 'http://192.168.1.52/network.html', 'Document: map, guests, flows', 'networkmap'],
     ['Buttons editor', 'http://192.168.1.52:4440/', 'Stream Deck + panel layouts', 'buttons'], ['Lab panel 6×6', 'http://192.168.1.52/lab', 'Buttons lab grid', 'lab']]],
-  ['Proxmox & backups', '<i class="icon icon-desktop" aria-hidden="true"></i>', [
+  ['Proxmox & backups', 'desktop', [
     ['Proxmox · turbo', 'https://192.168.1.249:8006/', 'Main node · .249', 'pve_turbo'], ['Proxmox · edvin', 'https://192.168.1.246:8006/', 'edge, PBS, monitor, scrypted · .246', 'proxmox'],
     ['Proxmox · prippen', 'https://192.168.1.253:8006/', 'Home Assistant, pihole2 · .253', 'pve_prippen'], ['Backup Server', 'https://192.168.1.32:8007/', 'PBS · nightly backups · .32', 'pbs'],
     ...Object.entries(NODE_IP).map(([n, ip]) => [`Shell · ${n}`, `https://${ip}:8006/?console=shell&xtermjs=1&vmid=0&vmname=&node=${n}&cmd=`, `Root shell on ${n} in the browser`]),
     ['Cluster tasks', 'https://192.168.1.249:8006/#v1:0:=datacenter:4:=tasks', 'Recent tasks and errors (Datacenter)'], ['Backup jobs', 'https://192.168.1.249:8006/#v1:0:=datacenter:4:=backup', 'Datacenter → Backup']]],
-  ['Network & DNS', '<i class="icon icon-globe" aria-hidden="true"></i>', [
+  ['Network & DNS', 'globe', [
     ['Router PR460X', 'https://192.168.1.254/', 'Port forwards, DHCP, WireGuard · .254', 'router'], ['Orbi RBE970', 'https://192.168.1.20/', 'Wi-Fi mesh · .20', 'orbi1'],
     ['Orbi RBE971', 'https://192.168.1.21/', 'Wi-Fi mesh · .21', 'orbi2'], ['Netgear switch', 'http://192.168.1.10/', 'Managed switch · .10', 'switch'],
     ['lab-dev', 'https://192.168.1.11/', 'Netgear device · .11', 'ngdev'], ['Pi-hole primary', 'http://192.168.1.30/admin/', 'DNS + ad blocking · .30', 'pihole1'],
@@ -173,7 +173,7 @@ const LINKS = [
     ['Query log', 'http://192.168.1.30/admin/queries', 'Pi-hole .30 · what was looked up, blocked'], ['Network clients', 'http://192.168.1.30/admin/network', 'Pi-hole .30 · every device by MAC'],
     ['Groups & clients', 'http://192.168.1.30/admin/groups', 'Pi-hole .30 · per-device rules'], ['Domains (allow/deny)', 'http://192.168.1.30/admin/groups/domains', 'Pi-hole .30'],
     ['Blocklists', 'http://192.168.1.30/admin/groups/lists', 'Pi-hole .30 · adlists'], ['Query log · .31', 'http://192.168.1.31/admin/queries', 'Pi-hole secondary']]],
-  ['Monitoring & alerts', '<i class="icon icon-chart" aria-hidden="true"></i>', [
+  ['Monitoring & alerts', 'chart', [
     ['Grafana', 'http://192.168.1.234:3000/', 'All dashboards', 'grafana'], ['Home overview', GF + 'home', 'Grafana'], ['People', GF + 'people', 'Grafana'],
     ['Unusual activity', GF + 'unusual', 'New destinations, spikes, night use'], ['Usage', GF + 'usage', 'Who uses what, when'], ['DNS overview', GF + 'dns-overview', 'Pi-hole'],
     ['DNS: device', GF + 'dns-device', 'One device in detail'], ['DNS query log', GF + 'dns-querylog', 'Loki, 90 days'], ['Proxmox', GF + 'proxmox', 'Nodes and guests'],
@@ -183,13 +183,13 @@ const LINKS = [
     ['Prometheus', 'http://192.168.1.234:9090/', 'Metrics and alerts', 'prometheus'], ['Prometheus targets', 'http://192.168.1.234:9090/targets', 'Which exporters are up'],
     ['Prometheus alerts', 'http://192.168.1.234:9090/alerts', 'Firing / pending'], ['Lab panel service', 'http://192.168.1.234:8790/', 'Tile preview', 'lab'],
     ['Gotify', 'http://192.168.1.53/', 'Push messages · .53', 'gotify'], ['Home notices (ntfy)', 'https://ntfy.sh/app', 'Door / last-one-home topic (the topic is in secrets.json)']]],
-  ['Cameras', '<i class="icon icon-camera" aria-hidden="true"></i>', [
+  ['Cameras', 'camera', [
     ['camwatch', 'http://192.168.1.81:8080/', 'Recordings, faces, plates · .81', 'camwatch'], ['Scrypted', 'https://192.168.1.80:10443/', 'Camera bridge (NVR) · .80', 'scrypted'],
     ['Dahua camera', 'http://192.168.1.85/', 'Front camera web UI · .85', 'camera']]],
-  ['Files, sites & repo', '<i class="icon icon-folder" aria-hidden="true"></i>', [
+  ['Files, sites & repo', 'folder', [
     ['File Browser', 'http://192.168.1.51:8080/', 'Shared files on fileshare · .51', 'files'], ['File Browser (public)', 'https://home.example.net/files/', 'Through edge', 'site'],
     ['Public site', 'https://home.example.net/', 'Through edge · .40', 'site'], ['Windows image repo', 'http://192.168.1.41/', 'ISOs + deploy.sh · .41', 'winrepo']]],
-  ['Everyday', '<i class="icon icon-bus" aria-hidden="true"></i>', [
+  ['Everyday', 'bus', [
     ['Västtrafik board', 'https://avgangstavla.vasttrafik.se/?board1Gids=9021014001000000&board1Modules=departures&board1Modules=trafficSituations', 'Storgatan'],
     ['Spotify (web)', 'https://open.spotify.com/', 'Music']]],
 ];
@@ -221,11 +221,16 @@ document.addEventListener('click', e => { const c = e.target.closest('.cap.fold'
   shut = sec.classList.contains('shut') ? [...new Set([...shut, g])] : shut.filter(x => x !== g);
   try { localStorage.setItem('adminShut', JSON.stringify(shut)); } catch {} });
 
+// An icon field holds a name from the shared set (design/icons.py). A board
+// saved before that held a character someone typed, so anything that is not a
+// name is still shown as the text it is, escaped - this value is user input.
+const iconHTML = v => /^[a-z][a-z0-9-]{1,19}$/.test(v || '')
+  ? `<i class="icon icon-${v}" aria-hidden="true"></i>` : esc(v || '');
 function renderLinks() {
   const ed = editing();
-  $('#links').innerHTML = model.groups.map(({ name: g, icon: ic, items }, gi) => `<div data-sec="g${gi}" class="${shut.includes(g) && !ed ? 'shut' : ''}"><div class="cap fold" data-g="${esc(g)}" data-edit="group" data-gi="${gi}">${esc(ic)} ${esc(g)}</div><section class="list">${items.map(({ label: l, url: u, note: n, id }, ii) =>
+  $('#links').innerHTML = model.groups.map(({ name: g, icon: ic, items }, gi) => `<div data-sec="g${gi}" class="${shut.includes(g) && !ed ? 'shut' : ''}"><div class="cap fold" data-g="${esc(g)}" data-edit="group" data-gi="${gi}">${iconHTML(ic)} ${esc(g)}</div><section class="list">${items.map(({ label: l, url: u, note: n, id }, ii) =>
     `<a class="row" href="${esc(u)}" target="_blank" rel="noopener" data-edit="item" data-gi="${gi}" data-ii="${ii}" data-q="${esc((l + ' ' + n + ' ' + u + ' ' + g).toLowerCase())}">
-      <span class="ic">${esc(ic)}</span><span class="t"><b>${esc(l)}</b><small>${esc(n)}</small></span>
+      <span class="ic">${iconHTML(ic)}</span><span class="t"><b>${esc(l)}</b><small>${esc(n)}</small></span>
       <span class="r">${id ? `<i class="dot ${links[id] ? (links[id].up ? 'up' : 'down') : ''}" data-id="${id}"></i>` : ''}<span class="chev">›</span></span></a>`).join('')}</section>
       ${ed ? `<button class="eadd" data-add="item" data-gi="${gi}">+ Add link to ${esc(g)}</button>` : ''}</div>`).join('')
     + (ed ? '<button class="eadd" data-add="group" style="margin-top:22px">+ Add group</button>' : '');
@@ -339,14 +344,14 @@ async function editItem(gi, ii, isNew) {
   renderLinks();
 }
 async function editGroup(gi, isNew) {
-  const g = isNew ? { name: '', icon: '<i class="icon icon-star" aria-hidden="true"></i>', items: [] } : model.groups[gi];
+  const g = isNew ? { name: '', icon: 'star', items: [] } : model.groups[gi];
   const r = await Edit.sheet({ title: isNew ? 'New group' : 'Edit group', fields: [{ key: 'name', label: 'Group name', value: g.name },
       { key: 'icon', label: 'Icon (an emoji)', value: g.icon }],
     buttons: isNew ? [{ id: 'save', label: 'Add' }] : [{ id: 'del', label: 'Delete group', tone: 'bad' }, { id: 'up', label: '↑', side: true }, { id: 'down', label: '↓', side: true }, { id: 'save', label: 'Save' }] });
   if (!r) return;
   if (r.action === 'del') { if (confirm(`Delete the group "${g.name}" and its ${g.items.length} links?`)) model.groups.splice(gi, 1); return renderLinks(); }
   if (!r.values.name) return Edit.toast('The group needs a name');
-  Object.assign(g, { name: r.values.name, icon: r.values.icon || '•' });
+  Object.assign(g, { name: r.values.name, icon: r.values.icon || 'star' });
   if (isNew) model.groups.push(g); else if (r.action !== 'save') Edit.move(model.groups, gi, r.action === 'up' ? -1 : 1);
   renderLinks();
 }

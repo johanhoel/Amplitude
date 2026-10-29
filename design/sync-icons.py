@@ -38,6 +38,10 @@ HEAD = """/* Generated from design/icons.py by design/sync-icons.py - edit there
  */
 
 .icon {
+  /* A name with no matching rule would otherwise leave --icon unset, and the
+     element would paint as a solid block of currentColor. This fallback makes
+     an unknown icon look like a missing icon instead of a bug. */
+  --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M9.5 9.5a2.5 2.5 0 1 1 3.3 2.4c-.5.2-.8.6-.8 1.1v.5M12 17h.01'/></svg>");
   display: inline-block;
   width: var(--icon-size, 1em);
   height: var(--icon-size, 1em);

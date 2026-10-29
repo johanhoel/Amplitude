@@ -70,24 +70,24 @@ function tiles() {
   const T = [
     ['g-home', 'grp', 'House'],
     { id: 'lock', ic: door === 'locked' ? '<i class="icon icon-lock" aria-hidden="true"></i>' : '<i class="icon icon-unlock" aria-hidden="true"></i>', t: 'Front door', s: door === 'locked' ? 'Locked' : (door || '–') + ' · hold to lock', on: door === 'locked', c: '#34d399', cls: door === 'locked' ? '' : 'bad', hold: true, run: () => home({ do: 'lock' }), ok: 'Locking…' },
-    { id: 'alloff', ic: '<i class="icon icon-bulb" aria-hidden="true"></i>', t: 'All lights off', s: `${H ? H.rooms.reduce((a, r) => a + r.lights.filter(l => l.on).length, 0) : '–'} on now`, hold: true, run: () => home({ do: 'all_off' }), ok: 'All lights off' },
-    { id: 'detect', ic: '<i class="icon icon-target" aria-hidden="true"></i>', t: 'Camera alerts', s: H?.detect ? 'On' : 'Off', on: !!H?.detect, c: '#fb7185', hold: true, run: () => home({ do: 'detect' }), ok: 'Camera alerts switched' },
-    { id: 'charger', ic: '<i class="icon icon-bolt" aria-hidden="true"></i>', t: 'EV charger', s: H?.charger_on ? 'Enabled' : 'Paused', on: !!H?.charger_on, c: '#fbbf24', hold: true, run: () => home({ do: 'charger' }), ok: 'Charger switched' },
-    { id: 'vac', ic: '<i class="icon icon-vacuum" aria-hidden="true"></i>', t: H?.vacuum?.state === 'cleaning' ? 'Vacuum: dock' : 'Vacuum: start', s: (H?.vacuum?.state || '–').replace(/_/g, ' '), on: H?.vacuum?.state === 'cleaning', c: '#22d3ee',
+    { id: 'alloff', ic: 'bulb', t: 'All lights off', s: `${H ? H.rooms.reduce((a, r) => a + r.lights.filter(l => l.on).length, 0) : '–'} on now`, hold: true, run: () => home({ do: 'all_off' }), ok: 'All lights off' },
+    { id: 'detect', ic: 'target', t: 'Camera alerts', s: H?.detect ? 'On' : 'Off', on: !!H?.detect, c: '#fb7185', hold: true, run: () => home({ do: 'detect' }), ok: 'Camera alerts switched' },
+    { id: 'charger', ic: 'bolt', t: 'EV charger', s: H?.charger_on ? 'Enabled' : 'Paused', on: !!H?.charger_on, c: '#fbbf24', hold: true, run: () => home({ do: 'charger' }), ok: 'Charger switched' },
+    { id: 'vac', ic: 'vacuum', t: H?.vacuum?.state === 'cleaning' ? 'Vacuum: dock' : 'Vacuum: start', s: (H?.vacuum?.state || '–').replace(/_/g, ' '), on: H?.vacuum?.state === 'cleaning', c: '#22d3ee',
       run: () => home({ do: 'vacuum', value: H?.vacuum?.state === 'cleaning' ? 'return_to_base' : 'start' }), ok: 'Vacuum told' },
     { id: 'wake', ic: '⏻', t: 'Wake PC', s: S?.pc_online ? 'PC is on' : 'PC is off', on: !!S?.pc_online, c: '#60a5fa', run: () => home({ do: 'wake_pc' }), ok: 'Wake-on-LAN sent' },
     ['g-audio', 'grp', 'Speakers & media'],
     'VOL',
-    { id: 'spk', ic: '<i class="icon icon-volume" aria-hidden="true"></i>', t: 'Speakers', s: gon ? 'Active' : g?.power ? 'Standby' : '–', on: gon, c: '#7dd3fc', run: () => post('/api/genelec', { action: 'power', value: !gon }), ok: gon ? 'Speakers to standby' : 'Waking speakers' },
+    { id: 'spk', ic: 'volume', t: 'Speakers', s: gon ? 'Active' : g?.power ? 'Standby' : '–', on: gon, c: '#7dd3fc', run: () => post('/api/genelec', { action: 'power', value: !gon }), ok: gon ? 'Speakers to standby' : 'Waking speakers' },
     { id: 'mute', ic: g?.mute ? '<i class="icon icon-mute" aria-hidden="true"></i>' : '<i class="icon icon-speaker" aria-hidden="true"></i>', t: g?.mute ? 'Unmute' : 'Mute', s: g?.mute ? 'Muted' : 'Sound on', on: !!g?.mute, c: '#fb7185', run: () => post('/api/genelec', { action: 'mute', value: !g?.mute }), ok: 'Mute switched' },
-    { id: 'srcpc', ic: '<i class="icon icon-desktop" aria-hidden="true"></i>', t: 'Source: PC', s: S?.dante?.source === 'pc' ? 'Playing from PC' : 'Switch to PC', on: S?.dante?.source === 'pc', c: '#60a5fa', run: () => post('/api/dante/source', { source: 'pc' }), ok: 'Source: PC' },
+    { id: 'srcpc', ic: 'desktop', t: 'Source: PC', s: S?.dante?.source === 'pc' ? 'Playing from PC' : 'Switch to PC', on: S?.dante?.source === 'pc', c: '#60a5fa', run: () => post('/api/dante/source', { source: 'pc' }), ok: 'Source: PC' },
     { id: 'srcbt', ic: 'ᛒ', t: 'Source: Bluetooth', s: S?.dante?.source === 'bt' ? 'Playing from Bluetooth' : 'Switch to Bluetooth', on: S?.dante?.source === 'bt', c: '#22d3ee', run: () => post('/api/dante/source', { source: 'bt' }), ok: 'Source: Bluetooth' },
     'MEDIA',
     ['g-pc', 'grp', 'Computer'],
     { id: 'pclock', ic: '⌘', t: 'Lock PC', s: 'Windows lock screen', hold: true, run: () => post('/api/pc/do', { action: 'lock' }), ok: 'PC locked' },
-    { id: 'mic', ic: '<i class="icon icon-mic" aria-hidden="true"></i>', t: 'Mic mute', s: 'Toggle default mic', run: () => post('/api/pc/do', { action: 'mic' }), ok: 'Mic toggled' },
-    { id: 'game', ic: '<i class="icon icon-gamepad" aria-hidden="true"></i>', t: 'Game mode', s: 'Power plan', run: () => post('/api/pc/do', { action: 'gamemode' }), ok: 'Game mode toggled' },
-    { id: 'sleep', ic: '<i class="icon icon-moon" aria-hidden="true"></i>', t: 'Sleep PC', s: 'Hold to sleep', hold: true, run: () => post('/api/pc/do', { action: 'sleep' }), ok: 'PC going to sleep' },
+    { id: 'mic', ic: 'mic', t: 'Mic mute', s: 'Toggle default mic', run: () => post('/api/pc/do', { action: 'mic' }), ok: 'Mic toggled' },
+    { id: 'game', ic: 'gamepad', t: 'Game mode', s: 'Power plan', run: () => post('/api/pc/do', { action: 'gamemode' }), ok: 'Game mode toggled' },
+    { id: 'sleep', ic: 'moon', t: 'Sleep PC', s: 'Hold to sleep', hold: true, run: () => post('/api/pc/do', { action: 'sleep' }), ok: 'PC going to sleep' },
     ['g-lab', 'grp', 'Network'],
     ...(SNAP?.lab_commands || []).filter(c => !c.two).map(c => ({ id: 'lab-' + c.key, ic: c.key.startsWith('speed') ? '⇅' : c.key.startsWith('resume') ? '<i class="icon icon-play" aria-hidden="true"></i>' : '<i class="icon icon-pause" aria-hidden="true"></i>', t: c.label, s: 'Pi-hole ×2',
       run: () => post('/api/ops/act', { key: c.key }), ok: c.label })),
@@ -121,7 +121,7 @@ function render() {
     if (Array.isArray(t)) return `<div class="grp">${esc(t[2])}</div>`;
     const busy = hold[t.id];
     return `<button class="tl ${t.on ? 'on' : ''} ${t.cls || ''} ${busy || ''}" data-id="${t.id}" style="--c:${t.c || '#34d399'}"><i class="fill"></i>
-      ${t.hold ? '<span class="hold">hold</span>' : ''}<span class="ic">${esc(t.ic)}</span><span><b>${esc(t.t)}</b><small>${esc(t.s)}</small></span></button>`;
+      ${t.hold ? '<span class="hold">hold</span>' : ''}<span class="ic"><i class="icon icon-${t.ic}" aria-hidden="true"></i></span><span><b>${esc(t.t)}</b><small>${esc(t.s)}</small></span></button>`;
   }).join('');
 }
 const byId = id => tiles().find(t => t && t.id === id);

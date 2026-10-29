@@ -216,16 +216,16 @@ async function loadStatus() {
 
 function attention(s) {
   const items = [];
-  s.cameras.filter(c => !c.online).forEach(c => items.push({cls: 'bad', icon: '<i class="icon icon-video" aria-hidden="true"></i>', title: `${c.name} is offline`, text: 'no picture from the camera', href: `/live?camera=${encodeURIComponent(c.name)}`}));
+  s.cameras.filter(c => !c.online).forEach(c => items.push({cls: 'bad', icon: 'video', title: `${c.name} is offline`, text: 'no picture from the camera', href: `/live?camera=${encodeURIComponent(c.name)}`}));
   (s.unusual_today || []).slice(-3).reverse().forEach(u => items.push({icon: '⚠', title: `Unusual: ${u.camera} at ${hm(u.start)}`, text: u.reason, href: `/clip/${u.day}/${encodeURIComponent(u.stem)}`}));
-  (s.packages_waiting || []).forEach(p => items.push({cls: 'info', icon: '<i class="icon icon-package" aria-hidden="true"></i>', title: `Package at ${p.zone}`, text: `delivered ${hm(p.at)}`, href: p.clip ? `/clip/${p.clip}` : '/'}));
-  if (s.strangers) items.push({cls: 'info', icon: '<i class="icon icon-person" aria-hidden="true"></i>', title: `${s.strangers} recurring stranger${s.strangers > 1 ? 's' : ''}`, text: 'name them once, recognised from then on', href: '/strangers'});
-  if (s.offsite && s.offsite.enabled && s.offsite.error) items.push({cls: 'bad', icon: '<i class="icon icon-cloud" aria-hidden="true"></i>', title: 'Off-site uploads failing', text: s.offsite.error, href: '/settings#offsite'});
-  Object.entries(s.snoozed || {}).forEach(([cam, until]) => items.push({icon: '<i class="icon icon-sleep" aria-hidden="true"></i>', title: `${cam} snoozed until ${until}`, text: 'no pushes from this camera',
+  (s.packages_waiting || []).forEach(p => items.push({cls: 'info', icon: 'package', title: `Package at ${p.zone}`, text: `delivered ${hm(p.at)}`, href: p.clip ? `/clip/${p.clip}` : '/'}));
+  if (s.strangers) items.push({cls: 'info', icon: 'person', title: `${s.strangers} recurring stranger${s.strangers > 1 ? 's' : ''}`, text: 'name them once, recognised from then on', href: '/strangers'});
+  if (s.offsite && s.offsite.enabled && s.offsite.error) items.push({cls: 'bad', icon: 'cloud', title: 'Off-site uploads failing', text: s.offsite.error, href: '/settings#offsite'});
+  Object.entries(s.snoozed || {}).forEach(([cam, until]) => items.push({icon: 'sleep', title: `${cam} snoozed until ${until}`, text: 'no pushes from this camera',
     act: {label: 'Resume', run: () => snooze(cam, 0)}}));
   const box = $('attention');
   if (!items.length) { box.innerHTML = `<div class="allok">✓ All quiet - ${s.cameras.length} camera${s.cameras.length > 1 ? 's' : ''} online</div>`; return; }
-  box.innerHTML = `<div class="alerts">${items.map((a, i) => `<${a.href ? `a href="${a.href}"` : 'div'} class="alert ${a.cls || ''}"><i>${a.icon}</i>
+  box.innerHTML = `<div class="alerts">${items.map((a, i) => `<${a.href ? `a href="${a.href}"` : 'div'} class="alert ${a.cls || ''}"><i class="icon icon-${a.icon}" aria-hidden="true"></i>
     <div><b>${esc(a.title)}</b><span>${esc(a.text)}</span></div>${a.act ? `<button class="act" data-i="${i}">${a.act.label}</button>` : ''}</${a.href ? 'a' : 'div'}>`).join('')}</div>`;
   box.querySelectorAll('.act').forEach(b => b.onclick = e => { e.preventDefault(); items[+b.dataset.i].act.run(); });
 }

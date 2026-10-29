@@ -62,16 +62,22 @@ window.Deck = (() => {
     vac_home: ['<i class="icon icon-home" aria-hidden="true"></i>', 'Vacuum home', { do: 'vacuum', value: 'return_to_base' }, false, 'Vacuum going home'],
   };
 
-  const MODULES = {
+  // An icon field holds a name from the shared set (design/icons.py). A board
+// saved before that held a character someone typed, so anything that is not a
+// name is still shown as the text it is, escaped - this value is user input.
+const iconHTML = v => /^[a-z][a-z0-9-]{1,19}$/.test(v || '')
+  ? `<i class="icon icon-${v}" aria-hidden="true"></i>` : esc(v || '');
+
+const MODULES = {
     clock: {
-      name: 'Clock', icon: '<i class="icon icon-clock" aria-hidden="true"></i>', desc: 'Time and date', size: 'm',
+      name: 'Clock', icon: 'clock', desc: 'Time and date', size: 'm',
       cfg: () => [{ key: 'sec', label: 'Show seconds', type: 'toggle' }],
       render(el, D, c) {
         el.innerHTML = `<div class="mclock" data-clock="${c.sec ? 'sec' : 'min'}"></div><div class="msub" data-clock="date"></div>`;
       },
     },
     weather: {
-      name: 'Weather', icon: '<i class="icon icon-partly" aria-hidden="true"></i>', desc: 'Now, and the next hours on wider cards', size: 'm',
+      name: 'Weather', icon: 'partly', desc: 'Now, and the next hours on wider cards', size: 'm',
       render(el, D, c, sz) {
         const w = D.wx?.now; if (!w) return el.innerHTML = head('<i class="icon icon-partly" aria-hidden="true"></i>', 'Weather') + empty('No weather yet');
         const hours = (D.wx.hourly || []).slice(1, sz === 's' || sz === 't' ? 1 : sz === 'm' ? 5 : 9);
@@ -81,7 +87,7 @@ window.Deck = (() => {
       },
     },
     people: {
-      name: "Who's home", icon: '<i class="icon icon-people" aria-hidden="true"></i>', desc: 'Everyone in the family, home or away', size: 'm',
+      name: "Who's home", icon: 'people', desc: 'Everyone in the family, home or away', size: 'm',
       render(el, D) {
         const p = D.home?.people || [];
         el.innerHTML = head('<i class="icon icon-people" aria-hidden="true"></i>', "Who's home", `${p.filter(x => x.home).length}/${p.length}`)
@@ -89,7 +95,7 @@ window.Deck = (() => {
       },
     },
     room: {
-      name: 'Room lights', icon: '<i class="icon icon-bulb" aria-hidden="true"></i>', desc: 'Tap a light to switch it; one room per card', size: 'l',
+      name: 'Room lights', icon: 'bulb', desc: 'Tap a light to switch it; one room per card', size: 'l',
       cfg: D => [{ key: 'room', label: 'Room', type: 'select', options: roomsOf(D) }],
       render(el, D, c) {
         const r = (D.home?.rooms || []).find(x => x.room === c.room) || (D.home?.rooms || [])[0];
@@ -102,7 +108,7 @@ window.Deck = (() => {
       },
     },
     lights: {
-      name: 'Lights summary', icon: '<i class="icon icon-brightness" aria-hidden="true"></i>', desc: 'How many lights are on, with All off', size: 's',
+      name: 'Lights summary', icon: 'brightness', desc: 'How many lights are on, with All off', size: 's',
       render(el, D) {
         const rooms = D.home?.rooms || [], on = rooms.reduce((a, r) => a + r.lights.filter(l => l.name !== 'All' && Wall.light(l)).length, 0);
         el.innerHTML = head('<i class="icon icon-brightness" aria-hidden="true"></i>', 'Lights') + big(on, ' on') + btn('data-t="alloff"', 'All off');
@@ -110,7 +116,7 @@ window.Deck = (() => {
       },
     },
     door: {
-      name: 'Front door', icon: '<i class="icon icon-door" aria-hidden="true"></i>', desc: 'Lock state; Lock needs a second tap (unlocking stays in the lock app)', size: 's',
+      name: 'Front door', icon: 'door', desc: 'Lock state; Lock needs a second tap (unlocking stays in the lock app)', size: 's',
       render(el, D) {
         const st = D.home?.door?.state || 'unknown';
         el.innerHTML = head('<i class="icon icon-door" aria-hidden="true"></i>', 'Front door') + `<div class="mstate ${st === 'locked' ? 'ok' : st === 'unlocked' ? 'warn' : ''}">${esc(st)}</div>`
@@ -119,7 +125,7 @@ window.Deck = (() => {
       },
     },
     bus: {
-      name: 'Buses', icon: '<i class="icon icon-bus" aria-hidden="true"></i>', desc: 'Next departures from the stop chosen on Family info', size: 'm',
+      name: 'Buses', icon: 'bus', desc: 'Next departures from the stop chosen on Family info', size: 'm',
       cfg: () => [{ key: 'n', label: 'Departures', type: 'select', options: [['2', '2'], ['3', '3'], ['4', '4'], ['6', '6']], value: '3' },
                   { key: 'then', label: 'Also show the bus after', type: 'toggle', value: true }],
       render(el, D, c) {
@@ -134,7 +140,7 @@ window.Deck = (() => {
       },
     },
     media: {
-      name: 'Media player', icon: '<i class="icon icon-music" aria-hidden="true"></i>', desc: 'Now playing with play/pause and skip', size: 'm',
+      name: 'Media player', icon: 'music', desc: 'Now playing with play/pause and skip', size: 'm',
       cfg: D => [{ key: 'player', label: 'Player', type: 'select', options: [['', 'Whatever is playing'], ...playersOf(D)] },
                   { key: 'hide_idle', label: 'Hide the card when nothing plays', type: 'toggle' }],
       render(el, D, c, sz) {
@@ -149,8 +155,8 @@ window.Deck = (() => {
       },
     },
     button: {
-      name: 'Action button', icon: '<i class="icon icon-toggle" aria-hidden="true"></i>', desc: 'One tap for a house action (all off, lock, wake PC, vacuum)', size: 's',
-      cfg: () => [{ key: 'action', label: 'Action', type: 'select', options: Object.entries(ACTIONS).map(([k, a]) => [k, a[0] + ' ' + a[1]]) },
+      name: 'Action button', icon: 'toggle', desc: 'One tap for a house action (all off, lock, wake PC, vacuum)', size: 's',
+      cfg: () => [{ key: 'action', label: 'Action', type: 'select', options: Object.entries(ACTIONS).map(([k, a]) => [k, a[1]]) },
                   { key: 'label', label: 'Label (optional)', type: 'text' }],
       render(el, D, c) {
         const a = ACTIONS[c.action] || ACTIONS.all_off;
@@ -159,7 +165,7 @@ window.Deck = (() => {
       },
     },
     vacuum: {
-      name: 'Vacuum', icon: '<i class="icon icon-vacuum" aria-hidden="true"></i>', desc: 'State and battery; start (second tap) or send home', size: 's',
+      name: 'Vacuum', icon: 'vacuum', desc: 'State and battery; start (second tap) or send home', size: 's',
       render(el, D) {
         const v = D.home?.vacuum || {};
         el.innerHTML = head('<i class="icon icon-vacuum" aria-hidden="true"></i>', 'Vacuum', v.battery != null ? v.battery + ' %' : '') + `<div class="mstate">${esc(v.state || 'unknown')}</div>`
@@ -170,7 +176,7 @@ window.Deck = (() => {
       },
     },
     camera: {
-      name: 'Front camera', icon: '<i class="icon icon-camera" aria-hidden="true"></i>', desc: 'The latest visit at the front door: a big photo, or a small one with the details', size: 'l', need: ['visits'],
+      name: 'Front camera', icon: 'camera', desc: 'The latest visit at the front door: a big photo, or a small one with the details', size: 'l', need: ['visits'],
       cfg: () => [{ key: 'layout', label: 'Look', type: 'select', options: [['photo', 'Big photo'], ['row', 'Small photo + details (desktop)']], value: 'photo' }],
       render(el, D, c) {
         const v = (D.visits || []).find(x => !x.test && x.has_jpg);
@@ -188,7 +194,7 @@ window.Deck = (() => {
       },
     },
     temps: {
-      name: 'Temperatures', icon: '<i class="icon icon-thermo" aria-hidden="true"></i>', desc: 'Temperature sensors from Home Assistant', size: 'm',
+      name: 'Temperatures', icon: 'thermo', desc: 'Temperature sensors from Home Assistant', size: 'm',
       cfg: () => [{ key: 'filter', label: 'Only sensors whose name contains (optional)', type: 'text' }],
       render(el, D, c) {
         const f = (c.filter || '').toLowerCase();
@@ -198,7 +204,7 @@ window.Deck = (() => {
       },
     },
     lab: {
-      name: 'Lab status', icon: '<i class="icon icon-network" aria-hidden="true"></i>', desc: 'Internet, PC and Home Assistant at a glance', size: 's',
+      name: 'Lab status', icon: 'network', desc: 'Internet, PC and Home Assistant at a glance', size: 's',
       render(el, D) {
         const s = D.status || {};
         const row = (ok, t, v) => `<div><i class="mdot ${ok ? 'ok' : 'bad'}"></i><span class="mgrow">${t}</span><b>${v}</b></div>`;
@@ -207,7 +213,7 @@ window.Deck = (() => {
       },
     },
     news: {
-      name: 'News', icon: '<i class="icon icon-news" aria-hidden="true"></i>', desc: 'Latest headlines (SVT Väst)', size: 'w', need: ['news'],
+      name: 'News', icon: 'news', desc: 'Latest headlines (SVT Väst)', size: 'w', need: ['news'],
       cfg: () => [{ key: 'n', label: 'Headlines', type: 'select', options: [['3', '3'], ['5', '5'], ['8', '8']], value: '3' }],
       render(el, D, c) {
         const it = (D.news?.items || []).slice(0, +(c.n || 3));
@@ -215,7 +221,7 @@ window.Deck = (() => {
       },
     },
     family: {
-      name: 'Arrivals today', icon: '<i class="icon icon-home" aria-hidden="true"></i>', desc: 'When each person came home or left today', size: 'm', need: ['family'],
+      name: 'Arrivals today', icon: 'home', desc: 'When each person came home or left today', size: 'm', need: ['family'],
       render(el, D) {
         const p = D.family?.people || [];
         el.innerHTML = head('<i class="icon icon-home" aria-hidden="true"></i>', 'Today') + (p.length ? `<div class="mlist">${p.map(x => `<div><i class="mdot ${x.home ? 'ok' : ''}"></i><span class="mgrow">${esc(x.name)}</span>
@@ -223,14 +229,14 @@ window.Deck = (() => {
       },
     },
     charger: {
-      name: 'Car charger', icon: '<i class="icon icon-plug" aria-hidden="true"></i>', desc: 'Charging power right now', size: 's',
+      name: 'Car charger', icon: 'plug', desc: 'Charging power right now', size: 's',
       render(el, D) {
         const w = D.home?.charger_w;
         el.innerHTML = head('<i class="icon icon-plug" aria-hidden="true"></i>', 'Charger') + (w != null ? big(Number(w).toFixed(1), ' ' + esc(D.home.charger_unit || 'kW')) + `<div class="msub">${w > 0 ? 'charging' : 'idle'}</div>` : empty('No charger'));
       },
     },
     deskclock: {
-      name: 'Desktop clock', icon: '<i class="icon icon-clock" aria-hidden="true"></i>', desc: 'Big clock, date and weather with the next hours (the desktop wallpaper clock)', size: 'c',
+      name: 'Desktop clock', icon: 'clock', desc: 'Big clock, date and weather with the next hours (the desktop wallpaper clock)', size: 'c',
       render(el, D) {
         const w = D.wx?.now || D.home?.wx, now = Date.now();
         const hours = (D.wx?.hourly || []).filter(h => new Date(h.datetime) > now).filter((_, i) => i % 3 === 0).slice(0, 5);
@@ -242,7 +248,7 @@ window.Deck = (() => {
       },
     },
     home: {
-      name: 'Home overview', icon: '<i class="icon icon-home" aria-hidden="true"></i>', desc: 'Everyone with how long they have been away, plus door, lights and PC', size: 'm', need: ['presence'],
+      name: 'Home overview', icon: 'home', desc: 'Everyone with how long they have been away, plus door, lights and PC', size: 'm', need: ['presence'],
       render(el, D) {
         const h = D.home || {}, pr = D.presence || {}, people = h.people || [], n = people.filter(p => p.home).length;
         const on = (h.rooms || []).reduce((a, r) => a + r.lights.filter(l => l.name !== 'All' && Wall.light(l)).length, 0), door = h.door?.state;
@@ -254,7 +260,7 @@ window.Deck = (() => {
       },
     },
     labfull: {
-      name: 'Lab overview', icon: '<i class="icon icon-flask" aria-hidden="true"></i>', desc: 'Problems, ping, speed, ads blocked, last backup and every Proxmox node', size: 'm', need: ['ops'],
+      name: 'Lab overview', icon: 'flask', desc: 'Problems, ping, speed, ads blocked, last backup and every Proxmox node', size: 'm', need: ['ops'],
       render(el, D) {
         const s = D.ops; if (!s) return el.innerHTML = head('<i class="icon icon-flask" aria-hidden="true"></i>', 'Lab') + empty('Waiting for the lab…');
         const probs = s.problems || [], n = s.net || {}, d = s.dns || {}, b = s.backups || {}, g = s.guests || [];
@@ -268,7 +274,7 @@ window.Deck = (() => {
       },
     },
     devices: {
-      name: 'Device status', icon: '<i class="icon icon-dot" aria-hidden="true"></i>', desc: 'Online / offline for devices you watch in Studio (servers, NAS, TV, printer…)', size: 'm', need: ['watched'],
+      name: 'Device status', icon: 'dot', desc: 'Online / offline for devices you watch in Studio (servers, NAS, TV, printer…)', size: 'm', need: ['watched'],
       cfg: D => [{ key: 'only', label: 'Show', type: 'select', value: '', options: [['', 'All watched devices'], ['down', 'Only the ones that are offline'],
         ...(D.watched || []).map(w => [w.key, w.name])] }],
       render(el, D, c) {
@@ -285,13 +291,13 @@ window.Deck = (() => {
       render(el) { el.innerHTML = document.body.classList.contains('editing') ? '<div class="me">empty space</div>' : ''; },
     },
     heading: {
-      name: 'Heading', icon: '<i class="icon icon-type" aria-hidden="true"></i>', desc: 'A title across the board, like "Downstairs" or "Lab"', size: 'w', bare: true,
+      name: 'Heading', icon: 'type', desc: 'A title across the board, like "Downstairs" or "Lab"', size: 'w', bare: true,
       cfg: () => [{ key: 'text', label: 'Heading', type: 'text', value: 'Heading' }, { key: 'sub', label: 'Smaller line under it (optional)', type: 'text' },
                   { key: 'align', label: 'Align', type: 'select', options: [['left', 'Left'], ['center', 'Centre'], ['right', 'Right']], value: 'left' }],
       render(el, D, c) { el.innerHTML = `<div class="mhead" style="text-align:${esc(c.align || 'left')}"><b>${esc(c.text || 'Heading')}</b>${c.sub ? `<span>${esc(c.sub)}</span>` : ''}</div>`; },
     },
     panel: {
-      name: 'Coloured box', icon: '<i class="icon icon-square" aria-hidden="true"></i>', desc: 'A box in your own colour with a title and text, for grouping or decoration', size: 'm',
+      name: 'Coloured box', icon: 'square', desc: 'A box in your own colour with a title and text, for grouping or decoration', size: 'm',
       cfg: () => [{ key: 'title', label: 'Title (optional)', type: 'text' }, { key: 'text', label: 'Text (optional)', type: 'textarea' },
                   { key: 'color', label: 'Colour', type: 'select', value: '#1e3a5f', options: [['#1e3a5f', 'Blue'], ['#14532d', 'Green'], ['#7c2d12', 'Rust'], ['#581c87', 'Purple'],
                     ['#713f12', 'Amber'], ['#831843', 'Pink'], ['#334155', 'Slate'], ['#0b0e12', 'Black'], ['transparent', 'No colour (frame only)']] },
@@ -300,7 +306,7 @@ window.Deck = (() => {
       render(el, D, c) { el.innerHTML = (c.title ? `<div class="mpt">${esc(c.title)}</div>` : '') + (c.text ? `<div class="mnote">${esc(c.text)}</div>` : ''); },
     },
     image: {
-      name: 'Image', icon: '<i class="icon icon-image" aria-hidden="true"></i>', desc: 'A picture: a logo, a photo or a floor plan (upload under More… → Upload an image)', size: 'l', bare: true,
+      name: 'Image', icon: 'image', desc: 'A picture: a logo, a photo or a floor plan (upload under More… → Upload an image)', size: 'l', bare: true,
       cfg: D => [{ key: 'src', label: 'Image', type: 'select', options: [['', '— pick an uploaded image —'], ...(D.walls || []).map(w => ['/wall/' + w, w])] },
                  { key: 'url', label: 'Or an image address (https://… or /…)', type: 'url' },
                  { key: 'fit', label: 'Fit', type: 'select', options: [['cover', 'Fill the box (may crop)'], ['contain', 'Whole picture']], value: 'cover' },
@@ -312,16 +318,16 @@ window.Deck = (() => {
       },
     },
     note: {
-      name: 'Note', icon: '<i class="icon icon-note" aria-hidden="true"></i>', desc: 'Your own text: a reminder, the Wi-Fi name, a shopping list…', size: 'm',
+      name: 'Note', icon: 'note', desc: 'Your own text: a reminder, the Wi-Fi name, a shopping list…', size: 'm',
       cfg: () => [{ key: 'title', label: 'Title', type: 'text' }, { key: 'text', label: 'Text', type: 'textarea' }],
       render(el, D, c) { el.innerHTML = head('<i class="icon icon-note" aria-hidden="true"></i>', c.title || 'Note') + `<div class="mnote">${esc(c.text || 'Edit the board to write here.')}</div>`; },
     },
     link: {
-      name: 'Link', icon: '<i class="icon icon-link" aria-hidden="true"></i>', desc: 'A big button that opens another panel or page', size: 's',
+      name: 'Link', icon: 'link', desc: 'A big button that opens another panel or page', size: 's',
       cfg: () => [{ key: 'label', label: 'Label', type: 'text' }, { key: 'url', label: 'Address (e.g. /living or https://…)', type: 'url' },
-                  { key: 'icon', label: 'Icon (an emoji)', type: 'text' }],
+                  { key: 'icon', label: 'Icon', type: 'text', hint: 'a name, e.g. bulb or camera' }],
       render(el, D, c) {
-        el.innerHTML = `<a class="mbig-btn" href="${esc(c.url || '/start')}"><span class="mbi">${esc(c.icon || '<i class="icon icon-link" aria-hidden="true"></i>')}</span><span>${esc(c.label || c.url || 'Link')}</span></a>`;
+        el.innerHTML = `<a class="mbig-btn" href="${esc(c.url || '/start')}"><span class="mbi">${iconHTML(c.icon || 'link')}</span><span>${esc(c.label || c.url || 'Link')}</span></a>`;
       },
     },
   };

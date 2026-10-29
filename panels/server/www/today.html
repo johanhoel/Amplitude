@@ -77,7 +77,7 @@ function events() {
     ev.push({ k: 'people', t: s.from * 1000, ic: s.home ? '<i class="icon icon-home" aria-hidden="true"></i>' : '↗', c: COL[p.name], title: `${p.name} ${s.home ? 'came home' : 'left'}`, sub: s.home ? 'Phone back on the home Wi-Fi' : 'Phone left the home Wi-Fi', href: '/family' }); }));
   (D.visits || []).forEach(v => { const t = new Date(v.start).getTime(); if (t < m0) return;
     const who = (v.people || []).map(p => p.name || p).join(', ');
-    ev.push({ k: 'camera', t, ic: '<i class="icon icon-target" aria-hidden="true"></i>', title: who ? `${who} at the front door` : `Front camera: ${(v.labels || []).join(', ') || 'motion'}`,
+    ev.push({ k: 'camera', t, ic: 'target', title: who ? `${who} at the front door` : `Front camera: ${(v.labels || []).join(', ') || 'motion'}`,
       sub: [v.vehicles?.length ? v.vehicles.length + ' vehicle(s)' : '', v.plates?.length ? 'plate ' + v.plates.join(', ') : '', v.unknown ? v.unknown + ' unknown' : ''].filter(Boolean).join(' · ') || 'Recorded clip',
       img: v.has_jpg ? `/api/sec/thumb/${v.day}/${v.stem}.jpg?w=480` : '', href: '/security' }); });
   (D.news?.items || []).forEach(n => { if (!n.at || n.at * 1000 < m0) return;
@@ -89,7 +89,7 @@ function events() {
 function ahead() {
   const out = [], now = Date.now();
   if (D.bus) (D.bus.departures || []).forEach(d => [d.next, d.then].forEach((x, i) => { if (!x?.time) return; const t = new Date(x.time).getTime();
-    if (t > now - 30000 && t < now + 90 * 60000) out.push({ k: 'travel', t, ic: '<i class="icon icon-bus" aria-hidden="true"></i>', title: `${d.line.shortName} to ${d.to}${d.via ? ' via ' + d.via : ''}`,
+    if (t > now - 30000 && t < now + 90 * 60000) out.push({ k: 'travel', t, ic: 'bus', title: `${d.line.shortName} to ${d.to}${d.via ? ' via ' + d.via : ''}`,
       sub: `Leaves ${D.bus.stop}${d.platform ? ', stop ' + d.platform : ''} · in ${Math.max(0, Math.round((t - now) / 60000))} min${x.isCancelled ? ' · CANCELLED' : ''}` }); }));
   (D.bus?.situations || []).forEach(s => out.push({ k: 'travel', t: now, ic: '⚠', title: s.title || 'Traffic disruption', sub: s.text || '' }));
   const sun = D.home?.sun;
@@ -97,14 +97,14 @@ function ahead() {
     if (t > now && t < now + 18 * 3600000) out.push({ k: 'sky', t, ic, title: n, sub: `${n} at ${hm(t)}`, href: '/pulse' }); });
   const hourly = D.weather?.hourly || [];
   const wet = hourly.slice(0, 8).find(h => (h.precipitation || 0) >= .3 && (h.precipitation_probability ?? 100) >= 40);
-  if (wet) out.push({ k: 'sky', t: Math.max(now, new Date(wet.datetime).getTime()), ic: '<i class="icon icon-rain" aria-hidden="true"></i>', title: 'Rain expected', sub: `${(wet.precipitation || 0).toFixed(1)} mm around ${hm(wet.datetime)} (${Math.round(wet.precipitation_probability || 0)}%)` });
+  if (wet) out.push({ k: 'sky', t: Math.max(now, new Date(wet.datetime).getTime()), ic: 'rain', title: 'Rain expected', sub: `${(wet.precipitation || 0).toFixed(1)} mm around ${hm(wet.datetime)} (${Math.round(wet.precipitation_probability || 0)}%)` });
   return out.sort((a, b) => a.t - b.t).slice(0, 12);
 }
 function evRow(e, future) {
   const [, c] = KIND[e.k], tag = e.href && e.href.startsWith('http') ? 'a href="' + esc(e.href) + '" target="_blank" rel="noopener"' : e.href ? `a href="${esc(e.href)}"` : 'div';
   const close = tag.startsWith('a') ? 'a' : 'div';
   const mn = Math.round((e.t - Date.now()) / 60000), rel = future ? (mn <= 0 ? 'now' : mn < 90 ? `in ${mn} min` : `in ${Math.round(mn / 60)} h`) : '';
-  return `<div class="ev ${filter !== 'all' && filter !== e.k ? 'hidden' : ''}" style="--c:${e.c || c}"><time>${hm(e.t)}<small>${esc(rel)}</small></time><span class="ic">${esc(e.ic)}</span>
+  return `<div class="ev ${filter !== 'all' && filter !== e.k ? 'hidden' : ''}" style="--c:${e.c || c}"><time>${hm(e.t)}<small>${esc(rel)}</small></time><span class="ic"><i class="icon icon-${e.ic}" aria-hidden="true"></i></span>
     <${tag} class="tx"><b>${esc(e.title)}</b>${e.sub ? `<span>${esc(e.sub)}</span>` : ''}${e.img ? `<img src="${esc(e.img)}" alt="" loading="lazy">` : ''}</${close}></div>`;
 }
 function ribbon() {
