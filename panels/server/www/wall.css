@@ -42,9 +42,13 @@
   --accent-ink:  #07080f;  /*  9.33:1 the type that sits ON --accent only */
 
   /* ---- shape ---------------------------------------------------------- */
-  --r:    14px;  /* a card */
-  --r-sm:  9px;  /* a pill, a chip, an input */
-  --r-lg: 22px;  /* a sheet, a full-bleed panel */
+  /* Three radii, and nothing in between. A card was 14px in the panels and
+     18px in CamWatch, with 10, 12, 16, 20, 22 and 28 scattered about; that
+     is the shape equivalent of the fourteen --faint values. */
+  --r:    18px;  /* a card, a tile, a stat */
+  --r-sm: 12px;  /* an input, a chip, a small control */
+  --r-lg: 24px;  /* a sheet, a full-bleed panel */
+  --r-pill: 999px;
 
   /* ---- motion ---------------------------------------------------------
      Entrances and exits use --ease-out; things moving on screen use
@@ -83,14 +87,26 @@ body:has(> #wall), body:has(> #bg) { background: transparent !important; }
 .card, .tile, .glass {
   background-color: var(--card); border-color: var(--line); box-shadow: none;
 }
-.card, .tile { border-radius: 24px; }
+/* One card radius across both projects, from the token. This was 24px here
+   and 14px in CamWatch, which is most of why the two did not look like one
+   product even after the colours matched. */
+.card, .tile { border-radius: var(--r); }
 
 /* the accent everywhere the classic violet was hard-coded */
 ::selection { background: rgba(56, 189, 248, .35); }
 a:focus-visible, button:focus-visible, [role=button]:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 
-/* section captions as on Wall: muted, spaced capitals */
-.cap, .lbl, .label { color: var(--mute); }
+/* Section captions, matching .ui-cap in shell.css exactly - same size, same
+   tracking, same weight - so a heading reads the same on a panel as it does
+   on a CamWatch page. The pages keep their own margins. */
+.cap, .lbl, .label {
+  color: var(--mute); font-size: 13px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+}
+/* A detail set beside a caption is not part of the shouting. */
+.cap small, .cap em, .lbl small, .label small {
+  letter-spacing: 0; text-transform: none; font-weight: 500; color: var(--dim);
+}
 
 /* floating helpers (camera, reload, Start, Log out): solid like the Wall tiles */
 #dkcam, #dkreload, .start-link, #dklogout:not(.innav), #sw, #orb, .orb { background: var(--card) !important; border-color: var(--line) !important; box-shadow: 0 6px 20px rgba(0, 0, 0, .45) !important; }

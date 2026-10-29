@@ -37,6 +37,8 @@
   text-transform: uppercase; color: var(--mute);
 }
 .ui-cap .icon { color: var(--dim); }
+/* A heading placed inside a grid rather than above it spans every column. */
+.ui-cap-row { grid-column: 1 / -1; }
 .ui-cap em { font-style: normal; letter-spacing: 0; text-transform: none;
   font-weight: 500; color: var(--dim); font-size: 13px; }
 
@@ -46,7 +48,7 @@
 .ui-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .ui-stat {
   background: var(--card); border: 1px solid var(--line);
-  border-radius: 18px; padding: 12px 14px; min-height: 88px;
+  border-radius: var(--r, 18px); padding: 12px 14px; min-height: 88px;
 }
 .ui-stat b { display: block; font-size: 26px; font-weight: 750; line-height: 1.15;
   font-variant-numeric: tabular-nums; }
@@ -61,7 +63,7 @@
 .ui-tile {
   display: flex; flex-direction: column; gap: 4px;
   background: var(--card); border: 1px solid var(--line);
-  border-radius: 18px; padding: 14px; min-height: 104px;
+  border-radius: var(--r, 18px); padding: 14px; min-height: 104px;
   color: inherit; text-decoration: none;
   transition: border-color .15s var(--ease-out, ease), transform .15s var(--ease-out, ease);
 }
@@ -95,11 +97,69 @@
 .ui-dot.is-ok { background: var(--ok); } .ui-dot.is-warn { background: var(--warn); }
 .ui-dot.is-bad { background: var(--bad); }
 
+/* ---- control tile -----------------------------------------------------
+   A button that does something to the house, as opposed to .ui-tile, which
+   goes somewhere. Promoted out of control.html, which had the only good one.
+   It carries four things a link never needs: an on state, a hold-to-confirm
+   fill, a busy/done/failed outcome, and a warning border.
+
+   The on state inverts - a light surface with dark type - because at a glance
+   across a room "lit up" reads faster than a changed border. Both colours are
+   tokens so the inversion follows the palette instead of being two hardcoded
+   greys, which is what it was. */
+.ui-ctl {
+  position: relative; overflow: hidden; text-align: left;
+  display: flex; align-items: center; gap: 11px;
+  border-radius: var(--r, 18px); padding: 12px;
+  background: var(--card); border: 1px solid var(--line);
+  color: inherit; font: inherit; cursor: pointer;
+  transition: transform .15s var(--ease-out, ease), background .15s var(--ease-out, ease),
+              border-color .15s var(--ease-out, ease);
+}
+.ui-ctl:active { transform: scale(0.97); }
+.ui-ctl:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.ui-ctl .ui-ctl-ic {
+  width: 36px; height: 36px; border-radius: 50%; flex: none;
+  display: grid; place-items: center; font-size: 17px;
+  background: var(--card-hi);
+}
+.ui-ctl b { font-size: 14px; font-weight: 650; line-height: 1.2; }
+.ui-ctl small { display: block; font-size: 12px; color: var(--mute); margin-top: 2px; }
+
+/* On. 16.23:1 for the title, 7.15:1 for the line under it. */
+.ui-ctl.is-on { background: var(--ink); color: var(--bg); border-color: transparent; }
+.ui-ctl.is-on small { color: #4a5159; }
+.ui-ctl.is-on .ui-ctl-ic { background: var(--c, var(--ok)); color: var(--status-ink); }
+
+/* Hold to confirm: the fill grows across the tile for as long as the finger
+   is down, so the wait is visible rather than a button that seems stuck. */
+.ui-ctl .ui-ctl-fill { position: absolute; inset: 0 auto 0 0; width: 0;
+  background: color-mix(in srgb, var(--accent) 35%, transparent); pointer-events: none; }
+.ui-ctl .ui-ctl-hold { position: absolute; top: 10px; right: 12px;
+  font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--dim); font-weight: 700; }
+.ui-ctl.is-on .ui-ctl-hold { color: #5e656e; }
+/* The badge sits over the top-right corner, so the title needs that corner
+   kept clear or it wraps underneath it. */
+.ui-ctl:has(.ui-ctl-hold) b { padding-right: 36px; }
+
+/* Outcome, held briefly after the tap so the result is seen. */
+.ui-ctl.is-busy { opacity: .55; }
+.ui-ctl.is-done { border-color: var(--ok); }
+.ui-ctl.is-failed { border-color: var(--bad); }
+.ui-ctl.is-warn { border-color: color-mix(in srgb, var(--warn) 35%, transparent); }
+.ui-ctl.is-bad { border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-ctl { transition-duration: .01ms; }
+  .ui-ctl:active { transform: none; }
+}
+
 /* ---- search ---------------------------------------------------------- */
 .ui-search { margin-top: 12px; }
 .ui-search input {
   width: 100%; min-height: 48px; padding: 0 16px;
-  border-radius: 16px; border: 1px solid var(--line);
+  border-radius: var(--r-sm, 12px); border: 1px solid var(--line);
   background: var(--card); color: var(--ink); font: inherit; font-size: 16px;
 }
 .ui-search input::placeholder { color: var(--dim); }

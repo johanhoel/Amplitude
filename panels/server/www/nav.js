@@ -11,26 +11,26 @@
  */
 (() => {
   const PANELS = [
-    { p: '/pulse', t: 'Pulse', d: 'The whole house at a glance', g: 'Ring', i: '◉', ring: true, k: 'home overview glance dashboard' },
-    { p: '/today', t: 'Today', d: 'The day as a live timeline', g: 'Ring', i: '◷', ring: true, k: 'timeline events story day presence camera' },
-    { p: '/rooms', t: 'Rooms', d: 'Lights and media, room by room', g: 'Ring', i: '<i class="icon icon-grid" aria-hidden="true"></i>', ring: true, k: 'lights floor plan rooms dim' },
-    { p: '/control', t: 'Control', d: 'Every toggle and slider', g: 'Ring', i: '⊞', ring: true, k: 'control center toggles speakers volume lock pc' },
-    { p: '/atlas', t: 'Atlas', d: 'Every endpoint and service, live', g: 'Ring', i: '<i class="icon icon-sparkle" aria-hidden="true"></i>', ring: true, k: 'api endpoints services map health status' },
-    { p: '/start', t: 'Start', d: 'All panels and consoles', g: 'Everyday', i: '<i class="icon icon-home" aria-hidden="true"></i>', k: 'landing news links' },
-    { p: '/', t: 'Deck', d: 'Wall panel', g: 'Everyday', i: '▣', k: 'stream deck genelec spotify wall' },
-    { p: '/living', t: 'Home', d: 'Lights by room, music, door', g: 'Everyday', i: '☼', k: 'living lights music' },
-    { p: '/media', t: 'Media', d: 'Music, speakers, Apple TV', g: 'Everyday', i: '<i class="icon icon-music" aria-hidden="true"></i>', k: 'spotify apple tv sonos genelec' },
-    { p: '/remote', t: 'Remote', d: 'Phone remote', g: 'Everyday', i: '⌁', k: 'phone remote pc' },
-    { p: '/family', t: 'Family', d: "Who's home today", g: 'Everyday', i: '☺', k: 'people presence timeline' },
-    { p: '/familyinfo', t: 'Family info', d: 'Buses, weather, last one home', g: 'Everyday', i: '⇄', k: 'bus weather vasttrafik' },
-    { p: '/security', t: 'Security', d: 'Camera and visits', g: 'Everyday', i: '<i class="icon icon-target" aria-hidden="true"></i>', k: 'camera visits door' },
-    { p: '/desktop', t: 'Desktop', d: 'Wide-screen overview', g: 'Everyday', i: '▭', k: 'desktop wide' },
-    { p: '/ambient', t: 'Ambient', d: 'Night clock', g: 'Everyday', i: '<i class="icon icon-moon" aria-hidden="true"></i>', k: 'clock night bedside' },
-    { p: '/admin', t: 'Admin', d: 'Health, tasks, every console', g: 'Lab & network', i: '<i class="icon icon-gear" aria-hidden="true"></i>', k: 'admin consoles tasks' },
+    { p: '/pulse', t: 'Pulse', d: 'The whole house at a glance', g: 'Ring', i: 'target', ring: true, k: 'home overview glance dashboard' },
+    { p: '/today', t: 'Today', d: 'The day as a live timeline', g: 'Ring', i: 'clock', ring: true, k: 'timeline events story day presence camera' },
+    { p: '/rooms', t: 'Rooms', d: 'Lights and media, room by room', g: 'Ring', i: 'grid', ring: true, k: 'lights floor plan rooms dim' },
+    { p: '/control', t: 'Control', d: 'Every toggle and slider', g: 'Ring', i: 'toggle', ring: true, k: 'control center toggles speakers volume lock pc' },
+    { p: '/atlas', t: 'Atlas', d: 'Every endpoint and service, live', g: 'Ring', i: 'sparkle', ring: true, k: 'api endpoints services map health status' },
+    { p: '/start', t: 'Start', d: 'All panels and consoles', g: 'Everyday', i: 'home', k: 'landing news links' },
+    { p: '/', t: 'Deck', d: 'Wall panel', g: 'Everyday', i: 'deck', k: 'stream deck genelec spotify wall' },
+    { p: '/living', t: 'Home', d: 'Lights by room, music, door', g: 'Everyday', i: 'bulb', k: 'living lights music' },
+    { p: '/media', t: 'Media', d: 'Music, speakers, Apple TV', g: 'Everyday', i: 'music', k: 'spotify apple tv sonos genelec' },
+    { p: '/remote', t: 'Remote', d: 'Phone remote', g: 'Everyday', i: 'phone', k: 'phone remote pc' },
+    { p: '/family', t: 'Family', d: "Who's home today", g: 'Everyday', i: 'person', k: 'people presence timeline' },
+    { p: '/familyinfo', t: 'Family info', d: 'Buses, weather, last one home', g: 'Everyday', i: 'bus', k: 'bus weather vasttrafik' },
+    { p: '/security', t: 'Security', d: 'Camera and visits', g: 'Everyday', i: 'target', k: 'camera visits door' },
+    { p: '/desktop', t: 'Desktop', d: 'Wide-screen overview', g: 'Everyday', i: 'desktop', k: 'desktop wide' },
+    { p: '/ambient', t: 'Ambient', d: 'Night clock', g: 'Everyday', i: 'moon', k: 'clock night bedside' },
+    { p: '/admin', t: 'Admin', d: 'Health, tasks, every console', g: 'Lab & network', i: 'gear', k: 'admin consoles tasks' },
     { p: '/localai', t: 'Local AI', d: 'Models on the PC: load, open, chat', g: 'Lab & network', i: 'sparkle', k: 'llm ollama ai models chat gpu opencode video' },
-    { p: '/ops', t: 'Lab', d: 'Nodes, guests, commands', g: 'Lab & network', i: '<i class="icon icon-database" aria-hidden="true"></i>', k: 'proxmox guests lab' },
-    { p: '/net', t: 'Network', d: 'Internet, DNS, devices', g: 'Lab & network', i: '<i class="icon icon-hexagon" aria-hidden="true"></i>', k: 'network dns devices internet' },
-    { p: '/network.html', t: 'Network map', d: 'Document: map and flows', g: 'Lab & network', i: '<i class="icon icon-frame" aria-hidden="true"></i>', k: 'map document' },
+    { p: '/ops', t: 'Lab', d: 'Nodes, guests, commands', g: 'Lab & network', i: 'database', k: 'proxmox guests lab' },
+    { p: '/net', t: 'Network', d: 'Internet, DNS, devices', g: 'Lab & network', i: 'hexagon', k: 'network dns devices internet' },
+    { p: '/network.html', t: 'Network map', d: 'Document: map and flows', g: 'Lab & network', i: 'frame', k: 'map document' },
   ];
   const here = location.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
   const norm = p => p.replace(/\.html$/, '') || '/';
@@ -82,7 +82,7 @@
   // ---------- orb ----------
   const orb = document.createElement('nav'); orb.id = 'nvorb'; orb.setAttribute('aria-label', 'Panels');
   orb.innerHTML = (prev ? `<a class="side" href="${prev.p}" aria-label="Previous panel: ${esc(prev.t)}" title="${esc(prev.t)} (←)">‹</a>` : '')
-    + `<button class="mid" id="nvopen" aria-label="All panels">${cur ? cur.i : '<i class="icon icon-list" aria-hidden="true"></i>'}${cur ? esc(cur.t) : 'Panels'}<kbd>⌘K</kbd></button>`
+    + `<button class="mid" id="nvopen" aria-label="All panels"><i class="icon icon-${cur ? cur.i : 'list'}" aria-hidden="true"></i>${cur ? esc(cur.t) : 'Panels'}<kbd>⌘K</kbd></button>`
     + (ri >= 0 ? `<span class="dots" aria-hidden="true">${ring.map(x => `<span class="${x === cur ? 'on' : ''}"></span>`).join('')}</span>` : '')
     + (next ? `<a class="side" href="${next.p}" aria-label="Next panel: ${esc(next.t)}" title="${esc(next.t)} (→)">›</a>` : '')
     + `<button class="side" id="nvcambtn" aria-label="Front camera live" title="Camera live (C)"><i class="icon icon-camera" aria-hidden="true"></i></button>`;
@@ -95,9 +95,9 @@
     <div class="list" id="nvlist"></div><div class="hint"><span>↑↓ choose</span><span>Enter open</span><span>← → ring panels</span><span>Esc close</span></div></div>`;
   document.body.appendChild(L);
   let sel = 0, shown = [];
-  const CAMITEM = { p: '#camera', t: 'Camera live', d: 'Front camera over this panel', i: '<i class="icon icon-camera" aria-hidden="true"></i>', k: 'camera live stream video door' };
-  const RELOADITEM = { p: '#reload', t: 'Reload this panel', d: 'Fresh data and the newest version', i: '↻', k: 'reload refresh update' };
-  const item = x => `<a href="${x.p}" data-p="${x.p}"><span class="ic">${esc(x.i)}</span><span><b>${esc(x.t)}</b><small>${esc(x.d)}</small></span>${x === cur ? '<span class="here">HERE</span>' : ''}</a>`;
+  const CAMITEM = { p: '#camera', t: 'Camera live', d: 'Front camera over this panel', i: 'camera', k: 'camera live stream video door' };
+  const RELOADITEM = { p: '#reload', t: 'Reload this panel', d: 'Fresh data and the newest version', i: 'refresh', k: 'reload refresh update' };
+  const item = x => `<a href="${x.p}" data-p="${x.p}"><span class="ic"><i class="icon icon-${x.i}" aria-hidden="true"></i></span><span><b>${esc(x.t)}</b><small>${esc(x.d)}</small></span>${x === cur ? '<span class="here">HERE</span>' : ''}</a>`;
   function render() {
     const q = document.getElementById('nvq').value.trim().toLowerCase();
     let html = '';

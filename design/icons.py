@@ -24,6 +24,12 @@ Run design/sync-icons.py after changing anything here.
 # read at a glance on a wall panel, not studied.
 ICONS = {
     # --- light and power ---
+    "bluetooth": "M8 7.5 16 16.5 12 20V4l4 3.5L8 16.5",
+    "updown":    "M7 9l3-3 3 3M10 6v12M14 15l3 3 3-3M17 18V6",
+    "external":  "M14 4h6v6M20 4l-8.5 8.5M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
+    "quote":     "M10 11H5.5A1.5 1.5 0 0 1 4 9.5v-2A1.5 1.5 0 0 1 5.5 6H8a2 2 0 0 1 2 2zm0 0c0 4-2 6-5 7M20 11h-4.5A1.5 1.5 0 0 1 14 9.5v-2A1.5 1.5 0 0 1 15.5 6H18a2 2 0 0 1 2 2zm0 0c0 4-2 6-5 7",
+    "check":     "M4 12.5l5 5L20 6.5",
+    "alert":     "M12 3.5 1.8 21h20.4zM12 10v5M12 18h.01",
     "bulb":      "M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.3.2.5.6.5 1V16h6v-1.1c0-.4.2-.8.5-1A6 6 0 0 0 12 3z",
     "plug":      "M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4",
     "bolt":      "M13 2 4 14h7l-1 8 9-12h-7z",

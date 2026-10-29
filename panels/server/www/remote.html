@@ -97,7 +97,7 @@ nav button { flex: 1; display: grid; justify-items: center; gap: 3px; padding: 7
 nav button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 nav button.on { color: var(--ink); background: rgba(255,255,255,.09); }
 #ov { position: fixed; inset: 0; z-index: 20; display: none; place-items: center; background: rgba(4,3,8,.9); padding: 14px; }
-#ov.open { display: grid; } #ov img { width: 100%; border-radius: 18px; background: #000; }
+#ov.open { display: grid; } #ov img { width: 100%; border-radius: var(--r); background: #000; }
 #ov .x { position: absolute; top: calc(env(safe-area-inset-top) + 14px); right: 16px; width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,.12); font-size: 20px; }
 .hint { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 92px); transform: translate(-50%, 16px); opacity: 0; z-index: 30;
   padding: 10px 16px; border-radius: 999px; background: #1e1b29; border: 1px solid var(--line); font-size: 14px; transition: opacity .15s, transform .15s; pointer-events: none; white-space: nowrap; }

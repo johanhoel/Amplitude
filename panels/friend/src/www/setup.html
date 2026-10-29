@@ -13,18 +13,18 @@ body { margin: 0; min-height: 100vh; color: var(--text); font: 15px/1.55 var(--f
 main { max-width: 680px; margin: 0 auto; }
 h1 { font-weight: 250; font-size: clamp(34px, 8vw, 48px); letter-spacing: -.02em; margin: 0 0 4px; }
 .lead { color: var(--mute); margin: 0 0 22px; }
-.card { background: var(--glass); border: 1px solid var(--line); border-radius: 22px; padding: 18px 20px; margin-bottom: 14px;
+.card { background: var(--glass); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px 20px; margin-bottom: 14px;
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
 .card h2 { margin: 0 0 8px; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); font-weight: 600;
   display: flex; gap: 10px; align-items: center; }
-.n { width: 24px; height: 24px; border-radius: 12px; background: var(--accent); color: #fff; display: inline-grid; place-items: center; font-size: 12px; letter-spacing: 0; }
+.n { width: 24px; height: 24px; border-radius: var(--r-sm); background: var(--accent); color: #fff; display: inline-grid; place-items: center; font-size: 12px; letter-spacing: 0; }
 .n.done { background: var(--ok); color: var(--status-ink); }
 ol { margin: 6px 0 4px; padding-left: 20px; } li { margin: 4px 0; }
 a { color: #b9a9ff; }
 code { background: rgba(255,255,255,.08); padding: 1px 6px; border-radius: 6px; font-size: 13px; }
-input { width: 100%; padding: 13px 14px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.06);
+input { width: 100%; padding: 13px 14px; border-radius: var(--r); border: 1px solid var(--line); background: rgba(255,255,255,.06);
   color: var(--text); font: inherit; margin: 10px 0; }
-button, .btn { display: inline-block; padding: 12px 18px; border-radius: 14px; border: 0; background: var(--accent); color: #fff; font: inherit;
+button, .btn { display: inline-block; padding: 12px 18px; border-radius: var(--r); border: 0; background: var(--accent); color: #fff; font: inherit;
   font-weight: 650; cursor: pointer; text-decoration: none; }
 .btn.ghost { background: rgba(255,255,255,.08); }
 .msg { min-height: 1.4em; margin-top: 8px; } .msg.ok { color: var(--ok); } .msg.bad { color: var(--bad); }

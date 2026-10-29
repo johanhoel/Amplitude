@@ -25,17 +25,17 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 /* hero: live picture linking to the wall view */
 .hero { display: grid; grid-template-columns: 1.6fr 1fr; gap: 10px; }
 @media (max-width: 700px) { .hero { grid-template-columns: 1fr; } }
-.live { position: relative; display: block; border-radius: 20px; overflow: hidden; background: #000; border: 1px solid var(--line); aspect-ratio: 16/9; }
+.live { position: relative; display: block; border-radius: var(--r); overflow: hidden; background: #000; border: 1px solid var(--line); aspect-ratio: 16/9; }
 .live img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .live .lbl { position: absolute; left: 12px; bottom: 12px; padding: 6px 12px; border-radius: 999px; background: rgba(0,0,0,.6); font-weight: 700; font-size: 14px; }
-.last { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; }
+.last { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
 .last img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; background: #0b0e12; }
 .last .m { padding: 10px 14px 12px; } .last .m span { color: var(--mute); font-size: 13px; display: block; }
 .camgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
-.camgrid a { position: relative; display: block; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: #000; aspect-ratio: 16/9; }
+.camgrid a { position: relative; display: block; border-radius: var(--r); overflow: hidden; border: 1px solid var(--line); background: #000; aspect-ratio: 16/9; }
 .camgrid img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .camgrid span { position: absolute; left: 8px; bottom: 8px; padding: 3px 10px; border-radius: 999px; background: rgba(0,0,0,.6); font-weight: 700; font-size: 13px; }
-.heat { display: block; border-radius: 20px; overflow: hidden; border: 1px solid var(--line); background: #000; }
+.heat { display: block; border-radius: var(--r); overflow: hidden; border: 1px solid var(--line); background: #000; }
 .heat img { width: 100%; display: block; }
 /* JS fills these in; without this they paint a broken-image icon on first load. */
 img:not([src]), img[src=""] { visibility: hidden; }

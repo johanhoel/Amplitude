@@ -159,5 +159,27 @@ for p in files:
     bad = [m.group(0)[:70] for m in re.finditer(r"\{%[^%]*<i class=\"icon[^%]*%\}", text, re.S)]
     check(f"{rel} keeps icon markup out of Jinja values", not bad, "; ".join(bad[:2]))
 
+# An icon field must hold a NAME that exists. Checking only for markup missed
+# the other half: fields still holding a bare glyph. '\u23fb' is not markup, so
+# the markup check passed it, and icon-\u23fb matches no rule - so Wake PC, Lock
+# PC and Source: Bluetooth all rendered as the unknown-icon question mark.
+# Only a value that resolves counts.
+# nav.js calls the field i:, which an ic|icon pattern walks straight past -
+# that is how ten glyphs survived in the panel launcher.
+FIELD = re.compile(r"\b(?:i|ic|icon):\s*((?:[^,\n]|\([^)]*\))+)")
+for p in files:
+    text = p.read_text(encoding="utf-8")
+    rel = p.relative_to(ROOT)
+    unknown = []
+    for m in FIELD.finditer(text):
+        for lit in re.findall(r"'([^']*)'", m.group(1)):
+            # A ternary also quotes the value it compares against, which is not
+            # an icon. Only flag something that looks like it was meant as one.
+            if not lit or lit in ICONS or re.fullmatch(r"[a-z_][a-z0-9_]*", lit):
+                continue
+            unknown.append(lit[:40])
+    check(f"{rel} icon fields name an icon that exists", not unknown,
+          f"{unknown[:3]} - add it to design/icons.py or use an existing name")
+
 print(f"\n{sum(results)}/{len(results)} passed")
 sys.exit(0 if all(results) else 1)

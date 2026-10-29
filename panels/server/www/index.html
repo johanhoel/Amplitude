@@ -77,7 +77,7 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 .deck { grid-area: deck; padding: 12px; }
 .deck-head { display: flex; justify-content: space-between; align-items: center; padding: 2px 6px 10px; }
 .label { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); font-weight: 600; }
-#clip { position: relative; overflow: hidden; border-radius: 18px; background: #000; margin: 0 auto; }
+#clip { position: relative; overflow: hidden; border-radius: var(--r); background: #000; margin: 0 auto; }
 #frame { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; background: #000; will-change: transform;
   opacity: 0; transition: opacity .3s var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)); }
 /* Shown in the frame's place when the panel does not answer. Centred in the clip, in the page's
@@ -133,7 +133,7 @@ input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border: 0; bord
 .np-bg { position: absolute; inset: -30px; background-size: cover; background-position: center; filter: blur(20px);
   opacity: .45; z-index: 0; transition: background-image .5s; }
 .np { position: relative; z-index: 1; display: grid; grid-template-columns: 74px 1fr; gap: 14px; align-items: center; }
-.art { width: 74px; height: 74px; border-radius: 14px; background: rgba(255,255,255,.08) center/cover; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+.art { width: 74px; height: 74px; border-radius: var(--r); background: rgba(255,255,255,.08) center/cover; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
 .np .t { font-weight: 650; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .np .a { color: var(--mute); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 .ctl { display: flex; gap: 6px; margin-top: 10px; }
@@ -149,13 +149,13 @@ input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border: 0; bord
 #sheet.open { display: block; }
 #sheet .back { position: absolute; inset: 0; background: rgba(0,0,0,.5); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 #sheet .panel { position: absolute; left: 0; right: 0; bottom: 0; max-height: 88vh; overflow: auto; padding: 22px 18px
-  calc(env(safe-area-inset-bottom) + 24px); border-radius: 28px 28px 0 0; background: rgba(16,17,26,.92);
+  calc(env(safe-area-inset-bottom) + 24px); border-radius: var(--r-lg) 28px 0 0; background: rgba(16,17,26,.92);
   border: 1px solid var(--line); -webkit-user-select: text; user-select: text; }
 @media (min-width: 900px) { #sheet .panel { left: auto; top: 0; width: 440px; max-height: none; border-radius: 0; } }
 .panel h2 { margin: 0 0 18px; font-size: 22px; font-weight: 650; display: flex; justify-content: space-between; }
 .panel h4 { margin: 22px 0 10px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
 .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-.sw { aspect-ratio: 3/4; border-radius: 16px; border: 2px solid transparent; position: relative; overflow: hidden;
+.sw { aspect-ratio: 3/4; border-radius: var(--r); border: 2px solid transparent; position: relative; overflow: hidden;
   background-size: cover; background-position: center; }
 .sw.on { border-color: #fff; }
 .sw small { position: absolute; left: 6px; bottom: 5px; font-size: 10.5px; font-weight: 600; text-shadow: 0 1px 4px #000; }
@@ -165,12 +165,12 @@ input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border: 0; bord
 .accents button { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; }
 .accents button.on { border-color: #fff; }
 .field { display: grid; gap: 6px; margin-bottom: 12px; font-size: 13px; color: var(--mute); }
-.field input[type=password], .field input[type=text] { padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line);
+.field input[type=password], .field input[type=text] { padding: 12px 14px; border-radius: var(--r); border: 1px solid var(--line);
   background: rgba(255,255,255,.06); color: var(--text); font: inherit; font-size: 15px; }
 .ok-badge { color: var(--ok); font-weight: 600; }
 .checks { display: grid; gap: 8px; font-size: 14px; }
 .checks label { display: flex; gap: 10px; align-items: center; }
-.save { width: 100%; margin-top: 18px; padding: 14px; border-radius: 16px; background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.save { width: 100%; margin-top: 18px; padding: 14px; border-radius: var(--r); background: var(--accent); color: var(--accent-ink); font-weight: 700; }
 .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 24px); transform: translateX(-50%) translateY(20px);
   opacity: 0; transition: opacity .3s var(--ease-out), transform .3s var(--ease-out); padding: 10px 16px; border-radius: 999px; background: rgba(20,20,28,.92); border: 1px solid var(--line);
   font-size: 14px; z-index: 20; pointer-events: none; }
@@ -197,9 +197,9 @@ body.lab .deck { justify-self: center; }
 #cam .back { position: absolute; inset: 0; background: rgba(5,6,10,.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 #cam .win { position: relative; width: min(94vw, calc((94vh - 70px) * 16 / 9)); padding: 12px; }
 #cam .win header { display: flex; justify-content: space-between; align-items: center; padding: 2px 6px 10px; }
-#cam .win img { width: 100%; display: block; border-radius: 16px; background: #000; aspect-ratio: 16/9; object-fit: contain; }
+#cam .win img { width: 100%; display: block; border-radius: var(--r); background: #000; aspect-ratio: 16/9; object-fit: contain; }
 #campreview { cursor: pointer; }
-#cp-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 14px; background: #000; display: block; }
+#cp-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: var(--r); background: #000; display: block; }
 #campreview .cp-nav { display: inline-flex; gap: 6px; }
 #campreview .cp-nav button { width: 28px; height: 28px; border-radius: 50%; background: var(--glass-hi); border: 1px solid var(--line); font-size: 15px; line-height: 1; }
 #campreview .cp-err { position: absolute; left: 16px; right: 16px; bottom: 26px; text-align: center; font-size: 13px; color: var(--mute); }
