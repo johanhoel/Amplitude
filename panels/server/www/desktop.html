@@ -111,14 +111,14 @@ body.left .stale { right: auto; left: calc(var(--left) + 1.6 * var(--u)); }
 <div class="col">
   <section class="card"><h3><span>Home</span><span id="since"></span></h3>
     <div class="people" id="people"></div>
-    <div class="homeline"><span>Door <b id="door">–</b></span><span>Lights <b id="lights">–</b></span><span>PC <b id="pc">–</b></span></div>
+    <div class="homeline"><span>Door <b id="door">–</b></span><span>Lights <b id="lights">–</b></span><span>PC <b id="pc" data-addon="pc">–</b></span></div>
   </section>
 
-  <section class="card"><h3><span>Front camera</span><span id="camago"></span></h3>
+  <section class="card" data-addon="cameras"><h3><span>Front camera</span><span id="camago"></span></h3>
     <div class="cam"><img id="camimg" alt=""><div><div class="what" id="camwhat">–</div><div class="sub" id="camsub"></div></div></div>
   </section>
 
-  <section class="card"><h3><span>Lab</span><span id="labat"></span></h3>
+  <section class="card" data-addon="lab"><h3><span>Lab</span><span id="labat"></span></h3>
     <div class="row"><i class="dot" id="labdot"></i><div class="big" id="labhead">–</div></div>
     <div class="stats">
       <div><b id="ms">–</b>ping</div><div><b id="down">–</b>Mbit/s down</div><div><b id="blocked">–</b>ads blocked</div><div><b id="backup">–</b>last backup</div>

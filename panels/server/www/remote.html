@@ -114,12 +114,12 @@ nav button.on { color: var(--ink); background: rgba(255,255,255,.09); }
 <main>
   <section class="tab lights on" data-tab="lights"><h2>Lights <a href="/living">All rooms ›</a></h2><div class="grid" id="lights"></div></section>
 
-  <section class="tab audio" data-tab="audio"><h2>Speakers <small id="spk"></small></h2>
-    <div class="vol"><div class="dial" id="dial"><svg viewBox="0 0 200 200"><defs><linearGradient id="vg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#38bdf8"/></linearGradient></defs>
+  <section class="tab audio" data-tab="audio"><h2>Speakers <small id="spk" data-addon="speakers"></small></h2>
+    <div class="vol"><div class="dial" id="dial" data-addon="speakers"><svg viewBox="0 0 200 200"><defs><linearGradient id="vg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#38bdf8"/></linearGradient></defs>
       <path class="trk" id="trk"/><path class="val" id="arc"/><circle id="thumb" r="10" fill="#fff" style="display:none"/></svg>
       <div class="face"><div><b class="num" id="db">--</b><span>dB</span></div></div></div></div>
     <div class="grid" id="audiobtns"></div>
-    <div class="seg" id="src"><button data-s="pc">PC</button><button data-s="bt">Bluetooth</button></div></section>
+    <div class="seg" id="src" data-addon="speakers"><button data-s="pc">PC</button><button data-s="bt">Bluetooth</button></div></section>
 
   <section class="tab pc" data-tab="pc"><h2>PC <small id="pcstate"></small></h2><div class="grid" id="pcbtns"></div></section>
 

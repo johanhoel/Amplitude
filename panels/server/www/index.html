@@ -246,17 +246,17 @@ body.lab .deck { justify-self: center; }
 
   <section class="widgets">
     <article class="card glass wide" id="audio">
-      <h3><span>Speakers · Genelec</span><span class="seg" id="src"><button data-s="pc">PC</button><button data-s="bt">Bluetooth</button></span></h3>
+      <h3><span>Speakers · Genelec</span><span class="seg" id="src" data-addon="speakers"><button data-s="pc">PC</button><button data-s="bt">Bluetooth</button></span></h3>
       <div class="vol">
         <div class="dial"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="8" stroke-linecap="round" stroke-dasharray="197.9 263.9"/>
           <circle id="arc" cx="50" cy="50" r="42" fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round" stroke-dasharray="0 263.9"/></svg>
           <div class="val"><div><b id="db">--</b><span>dB</span></div></div></div>
         <div>
           <input type="range" id="vol" min="-60" max="0" step="1" value="-30">
-          <div class="row" style="margin-top:6px"><button class="pill red" id="mute">Mute</button><button class="pill" id="power">Power</button></div>
+          <div class="row" style="margin-top:6px"><button class="pill red" id="mute">Mute</button><button class="pill" id="power" data-addon="pc">Power</button></div>
         </div>
       </div>
-      <div class="spk" id="spk"></div>
+      <div class="spk" id="spk" data-addon="speakers"></div>
       <div class="connect" id="gen-connect" hidden>Enter the Genelec password to show volume. <button data-open>Connect</button></div>
     </article>
 
@@ -280,7 +280,7 @@ body.lab .deck { justify-self: center; }
       <div class="big" id="lights">--<small>on</small></div><div class="sub">Lights</div>
       <div class="list">
         <div><span>Front door</span><b id="door">--</b></div>
-        <div><span>Charger</span><b id="charger">--</b></div>
+        <div><span>Charger</span><b id="charger" data-addon="charger">--</b></div>
         <div><span>Dante</span><b id="dante">--</b></div>
       </div>
     </article>
