@@ -71,7 +71,7 @@ const $ = s => document.querySelector(s);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const PANELS = [['/', 'Deck', 'wall panel'], ['/living', 'Home', 'lights, music, door'], ['/family', 'Family', "who's home"], ['/security', 'Security', 'camera, visits'],
   ['/media', 'Media', 'music, speakers, TV'], ['/net', 'Network', 'internet, devices'], ['/ops', 'Lab', 'Proxmox'], ['/ambient', 'Ambient', 'night clock'],
-  ['/remote', 'Remote', 'phone'], ['/network.html', 'Network map', 'document']];
+  ['/remote', 'Remote', 'phone']];
 $('#swnav').innerHTML = PANELS.map(([u, t, s]) => `<a href="${u}" class="${location.pathname.replace(/\/$/, '') === u ? 'on' : ''}">${t}<small>${s}</small></a>`).join('');
 $('#sw').addEventListener('click', e => { e.stopPropagation(); $('#swp').classList.toggle('open'); });
 $('#swp').addEventListener('click', e => { if (e.target.id === 'swp') $('#swp').classList.remove('open'); });

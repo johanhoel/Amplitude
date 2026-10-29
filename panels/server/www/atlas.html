@@ -94,7 +94,7 @@ const EP = [
   ['/api/cams', 'GET', 'Cameras the lab service knows', ['Lab service', 'Home Assistant'], ['deck', 'living']],
   ['CAMSNAP', 'IMG', 'Camera snapshot (JPEG)', ['Lab service', 'Home Assistant'], ['deck', 'living', 'security', 'remote']],
   ['VISITTHUMB', 'IMG', 'Camera visit thumbnail (JPEG)', ['camwatch'], ['security', 'family', 'desktop', 'pulse', 'today']],
-  ['/api/art?e=media_player.spotify_alex', 'IMG', 'Album / show art of what is playing', ['Home Assistant'], ['media', 'deck', 'living', 'remote', 'pulse', 'control']],
+  ['/api/art?e=<player>', 'IMG', 'Album / show art of what is playing', ['Home Assistant'], ['media', 'deck', 'living', 'remote', 'pulse', 'control']],
   ['/api/layout/admin', 'GET', 'Saved Admin layout (edit mode)', ['Home Deck'], ['admin']],
   ['/api/layout/start/history', 'GET', 'Older saves of the Start layout', ['Home Deck'], ['start']],
   ['/metrics', 'TEXT', 'Presence metrics for Prometheus', ['Home Deck'], ['Prometheus']],

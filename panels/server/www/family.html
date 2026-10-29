@@ -103,10 +103,13 @@ h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 <script>
 const $ = s => document.querySelector(s);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const COL = { Alex: '#38bdf8', Robin: '#ff6fb5', Sam: '#34d399', Kim: '#fbbf24' };
+// Each person keeps one colour, picked from their name so it is the same on
+// every panel and on every install - the page used to name four people.
+const PALETTE = ['#38bdf8', '#34d399', '#f59e0b', '#f472b6', '#a78bfa', '#4fb3a8', '#fb7185', '#7dd3fc'];
+const colourOf = n => PALETTE[[...String(n || '')].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 9973, 7) % PALETTE.length];
 const PANELS = [['/', 'Deck', 'wall panel'], ['/living', 'Home', 'lights, music, door'], ['/family', 'Family', "who's home"], ['/security', 'Security', 'camera, visits'],
   ['/media', 'Media', 'music, speakers, TV'], ['/net', 'Network', 'internet, devices'], ['/ops', 'Lab', 'Proxmox'], ['/ambient', 'Ambient', 'night clock'],
-  ['/remote', 'Remote', 'phone'], ['/network.html', 'Network map', 'document']];
+  ['/remote', 'Remote', 'phone']];
 $('#swnav').innerHTML = PANELS.map(([u, t, s]) => `<a href="${u}" class="${location.pathname.replace(/\/$/, '') === u ? 'on' : ''}">${t}<small>${s}</small></a>`).join('');
 $('#sw').addEventListener('click', () => $('#swp').classList.toggle('open'));
 $('#swp').addEventListener('click', e => { if (e.target.id === 'swp') $('#swp').classList.remove('open'); });
@@ -118,13 +121,13 @@ const CAMI = '<svg viewBox="0 0 24 24"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circ
 function ringSvg(p, d) {    // 24 h ring from local midnight: home arcs + a "now" dot
   const R = 86, C = 2 * Math.PI * R, day = 86400, a0 = d.midnight;
   const arc = (t1, t2) => { const f1 = Math.max(0, (t1 - a0) / day), f2 = Math.min(1, (t2 - a0) / day); if (f2 <= f1) return '';
-    return `<circle cx="95" cy="95" r="${R}" fill="none" stroke="${COL[p.name] || '#38bdf8'}" stroke-width="9" stroke-linecap="round"
+    return `<circle cx="95" cy="95" r="${R}" fill="none" stroke="${colourOf(p.name)}" stroke-width="9" stroke-linecap="round"
       stroke-dasharray="${(C * (f2 - f1)).toFixed(1)} ${C}" stroke-dashoffset="${(-C * f1).toFixed(1)}" transform="rotate(-90 95 95)"/>`; };
   const fn = (d.now - a0) / day, ang = fn * 2 * Math.PI - Math.PI / 2;
   const ticks = [0, 6, 12, 18].map(h => { const a = h / 24 * 2 * Math.PI - Math.PI / 2; return `<text x="${95 + 76 * Math.cos(a)}" y="${95 + 76 * Math.sin(a) + 3.5}" font-size="9" fill="rgba(246,244,251,.45)" text-anchor="middle">${h}</text>`; }).join('');
   return `<svg viewBox="0 0 190 190"><circle cx="95" cy="95" r="${R}" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="9"/>
     ${p.segments.filter(s => s.home).map(s => arc(s.from, s.to)).join('')}${ticks}
-    <circle cx="${95 + R * Math.cos(ang)}" cy="${95 + R * Math.sin(ang)}" r="6" fill="#fff" stroke="${COL[p.name] || '#38bdf8'}" stroke-width="3"/></svg>`;
+    <circle cx="${95 + R * Math.cos(ang)}" cy="${95 + R * Math.sin(ang)}" r="6" fill="#fff" stroke="${colourOf(p.name)}" stroke-width="3"/></svg>`;
 }
 
 function render(d) {
@@ -134,7 +137,7 @@ function render(d) {
   $('#people').innerHTML = d.people.map(p => {
     const since = p.since ? `${p.home ? 'home' : 'away'} since <b class="num">${hm(p.since)}</b>` : `<b>${p.home ? 'home' : 'away'}</b> all day`;
     const homeToday = p.segments.filter(s => s.home).reduce((a, s) => a + Math.max(0, s.to - Math.max(s.from, d.midnight)), 0);
-    return `<div class="p ${p.home ? '' : 'away'}" style="--c:${COL[p.name] || '#38bdf8'}"><div class="ring">${ringSvg(p, d)}<div class="face">${esc(p.name[0])}</div></div>
+    return `<div class="p ${p.home ? '' : 'away'}" style="--c:${colourOf(p.name)}"><div class="ring">${ringSvg(p, d)}<div class="face">${esc(p.name[0])}</div></div>
       <h2>${esc(p.name)}</h2><div class="state">${since}</div>
       <div class="chips"><span class="chip">${dur(homeToday)} home today</span>${p.home && p.silent_s > 600 ? '<span class="chip">phone resting</span>' : ''}</div></div>`;
   }).join('');
@@ -143,17 +146,17 @@ function render(d) {
   const every = Math.max(1, Math.ceil((span / 3600) / Math.max(2, ($('#tl').clientWidth - 110) / 64)));   // ~64 px per label
   const hrs = []; for (let h = Math.ceil(t0 / 3600) * 3600; h <= t1 - 1800; h += 3600 * every) hrs.push(`<span style="left:${pct(h)}%">${hm(h)}</span>`);
   const cam = {}; d.camera.forEach(c => (cam[c.name] = cam[c.name] || []).push(c));
-  $('#tl').innerHTML = `<div class="hours">${hrs.join('')}</div>` + d.people.map(p => `<div class="lane" style="--c:${COL[p.name] || '#38bdf8'}">
+  $('#tl').innerHTML = `<div class="hours">${hrs.join('')}</div>` + d.people.map(p => `<div class="lane" style="--c:${colourOf(p.name)}">
     <div class="who"><i></i>${esc(p.name)}</div><div class="track">${p.segments.filter(s => s.home).map(s => `<div class="seg" style="left:${pct(s.from)}%;width:${pct(s.to) - pct(s.from)}%"></div>`).join('')}</div>
     ${(cam[p.name] || []).map(c => { const t = new Date(c.at).getTime() / 1000; return t >= t0 ? `<div class="cam" style="left:${pct(t)}%" title="camera ${hm(t)}">${CAMI}</div>` : ''; }).join('')}
     </div>`).join('') + `<div class="nowline" style="left:calc(100% - 1px)"></div>`;
   // door recognitions
-  $('#door').innerHTML = d.camera.length ? d.camera.slice(0, 12).map(c => `<div class="dv" style="--c:${COL[c.name]}"><img src="/api/sec/thumb/${c.day}/${c.stem}.jpg?w=160" alt="">
+  $('#door').innerHTML = d.camera.length ? d.camera.slice(0, 12).map(c => `<div class="dv" style="--c:${colourOf(c.name)}"><img src="/api/sec/thumb/${c.day}/${c.stem}.jpg?w=160" alt="">
     <div><b>${esc(c.name)}</b><small>${new Date(c.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })} · front door</small></div></div>`).join('')
     : '<span class="empty">Nobody recognised by the camera yet today.</span>';
   // activity per hour
   const maxH = Math.max(1, ...d.people.flatMap(p => p.hourly));
-  $('#acts').innerHTML = d.people.map(p => `<div class="act" style="--c:${COL[p.name] || '#38bdf8'}"><header><b>${esc(p.name)}</b>
+  $('#acts').innerHTML = d.people.map(p => `<div class="act" style="--c:${colourOf(p.name)}"><header><b>${esc(p.name)}</b>
     <span class="big num">${p.lookups_today.toLocaleString()}<small>lookups</small></span></header>
     <div class="bars">${p.hourly.map((v, i, a) => `<i class="${i === a.length - 1 ? 'now' : ''}" style="height:${Math.max(3, v / maxH * 100)}%" title="${v}"></i>`).join('') || '<span class="empty">quiet</span>'}</div>
     <div class="fun"><span>Social · video · games</span><span class="meter"><i style="width:${p.lookups_today ? Math.min(100, p.fun_today / p.lookups_today * 100) : 0}%"></i></span><span class="num">${p.lookups_today ? Math.round(p.fun_today / p.lookups_today * 100) : 0}%</span></div></div>`).join('');

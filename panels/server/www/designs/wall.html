@@ -73,7 +73,7 @@ const show = v => { document.querySelectorAll('.rail button').forEach(x => x.cla
 document.querySelectorAll('.rail button[data-go]').forEach(b => Kit.press(b, () => show(b.dataset.go)));
 // admin: the keypad (server-checked PIN) first, then the admin hub; while unlocked the button shows an open lock
 const ADMIN = [['<i class="icon icon-gear" aria-hidden="true"></i>', 'Admin', 'Health, tasks, every console', '/admin'], ['<i class="icon icon-database" aria-hidden="true"></i>', 'Lab', 'Nodes, guests, commands', '/ops'], ['<i class="icon icon-grid" aria-hidden="true"></i>', 'Lab 6×6', 'The Buttons lab grid', '/lab'],
-               ['<i class="icon icon-hexagon" aria-hidden="true"></i>', 'Network', 'Internet, DNS, devices', '/net'], ['<i class="icon icon-sparkle" aria-hidden="true"></i>', 'Atlas', 'Every endpoint, live', '/atlas'], ['<i class="icon icon-frame" aria-hidden="true"></i>', 'Network map', 'Document', '/network.html']];
+               ['<i class="icon icon-hexagon" aria-hidden="true"></i>', 'Network', 'Internet, DNS, devices', '/net'], ['<i class="icon icon-sparkle" aria-hidden="true"></i>', 'Atlas', 'Every endpoint, live', '/atlas']];
 $('#adgrid').innerHTML = ADMIN.map(([i, t, d, h]) => `<a class="adt" href="${h}"><i>${i}</i><b>${t}</b><span>${d}</span></a>`).join('');
 const admState = async () => { try { const s = await deckPin.status(); $('#adminbtn').classList.toggle('unlocked', !!s.admin); $('#admic').className = (s.admin ? 'icon icon-unlock' : 'icon icon-lock'); return s.admin; } catch { return false; } };
 Kit.press($('#adminbtn'), () => deckPin.open({ onOk: () => { admState(); show('admin'); } }));

@@ -29,6 +29,7 @@ h1 { margin: 0; font-size: 30px; font-weight: 750; letter-spacing: -.01em; } h1 
 .tools { display: flex; align-items: center; gap: 10px; flex: none; }
 .pill { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border-radius: 999px; background: var(--tile); border: 1px solid var(--line); font-size: 14px; font-weight: 650; color: var(--mute); max-width: 46vw; }
 .pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.none { grid-column: 1 / -1; margin: 0; padding: 18px 2px; color: var(--dim); font-size: 14px; max-width: 54ch; }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: #4b5563; flex: none; display: inline-block; } .dot.ok { background: var(--ok); } .dot.bad { background: var(--red); }
 /* home board */
 .board { flex: 1; min-height: 0; display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, minmax(0, 1fr)); }
@@ -200,7 +201,7 @@ addEventListener('hashchange', () => show(location.hash.slice(1), false));
 // ---------- admin: the keypad (server-checked PIN) first, then the admin hub ----------
 let admin = false;
 const ADMIN = [['<i class="icon icon-gear" aria-hidden="true"></i>', 'Admin', 'Health, tasks, every console', '/admin'], ['<i class="icon icon-database" aria-hidden="true"></i>', 'Lab', 'Nodes, guests, commands', '/ops'], ['<i class="icon icon-grid" aria-hidden="true"></i>', 'Lab 6×6', 'The Buttons lab grid', '/lab'],
-               ['<i class="icon icon-hexagon" aria-hidden="true"></i>', 'Network', 'Internet, DNS, devices', '/net'], ['<i class="icon icon-sparkle" aria-hidden="true"></i>', 'Atlas', 'Every endpoint, live', '/atlas'], ['<i class="icon icon-frame" aria-hidden="true"></i>', 'Network map', 'Document', '/network.html']];
+               ['<i class="icon icon-hexagon" aria-hidden="true"></i>', 'Network', 'Internet, DNS, devices', '/net'], ['<i class="icon icon-sparkle" aria-hidden="true"></i>', 'Atlas', 'Every endpoint, live', '/atlas']];
 $('#adgrid').innerHTML = ADMIN.map(([i, t, d, h]) => `<a class="adt" href="${h}" data-t="${t}"><i>${i}</i><b>${t}</b><span>${d}</span></a>`).join('');
 document.querySelectorAll('.adt').forEach(a => Wall.press(a, () => location.href = a.getAttribute('href')));
 async function admState() {
@@ -240,7 +241,7 @@ function board() {
       <span class="sub">${rain ? `Rain around ${Wall.hm(rain.datetime)}` : temps.length ? `Today ${Math.round(Math.min(...temps))}° to ${Math.round(Math.max(...temps))}°` : ''}</span></a>
     <a class="t" href="/familyinfo" data-t="bus" data-addon="bus"><span class="k">Next bus<i>${b && !b.none ? esc(b.line) : ''}</i></span>
       <div class="mid"><span class="ic"><i class="icon icon-bus" aria-hidden="true"></i></span><span class="val ${b?.none ? 's' : 'num'}">${b?.none ? 'None this hour' : b ? (b.min < 1 ? 'Now' : b.min + '<small>min</small>') : '–'}</span></div>
-      <span class="sub">${b && !b.none ? `to ${esc(b.to)} · ${b.at}` : 'Storgatan'}</span></a>
+      <span class="sub">${b && !b.none ? `to ${esc(b.to)} · ${b.at}` : 'Next bus'}</span></a>
     <a class="t" href="/media" data-t="media"><span class="k">Now playing<i>${p ? esc(p.label || '') : ''}</i></span>
       <div class="mid"><span class="ic"><i class="icon icon-music" aria-hidden="true"></i></span><span class="val s">${esc(p?.title || 'Nothing playing')}</span></div>
       <span class="sub">${esc(p?.artist || (p ? '' : 'Tap for music and TV'))}</span></a>`;
@@ -322,6 +323,7 @@ render();
 // ---------- link checks (status pill) ----------
 async function check() {
   let r; try { r = await (await fetch('/api/links')).json(); } catch { return; }
+  housed(r);
   let all = 0; const down = [];
   document.querySelectorAll('.dot[data-id]').forEach(d => {
     const s = r[d.dataset.id]; if (!s) return; all++;
@@ -341,12 +343,12 @@ const GROUPS = [
     ['atlas', '/atlas', 'Atlas', 'Every endpoint and service, checked live', 'map', '#60a5fa'],
   ]],
   ['Everyday', 'the panels on the wall, the tablet and the phone', [
-    ['deck', '/', 'Deck', 'Wall panel: Stream Deck folders, Genelec, Spotify, climate', 'deck', '#38bdf8', 'feat'],
+    ['deck', '/', 'Deck', 'Wall panel: folders, speakers, music, climate', 'deck', '#38bdf8', 'feat'],
     ['living', '/living', 'Home', 'Lights by room, music, front door', 'home', '#fbbf24'],
     ['remote', '/remote', 'Remote', 'Phone remote: lights, audio, PC, games', 'phone', '#22d3ee'],
     ['media', '/media', 'Media', 'Music, speakers, TV room', 'music', '#fb7185'],
     ['family', '/family', 'Family', "Who's home, today's timeline", 'people', '#34d399'],
-    ['familyinfo', '/familyinfo', 'Family info', 'Next buses from Storgatan, arrivals, disruptions', 'bus', '#22d3ee'],
+    ['familyinfo', '/familyinfo', 'Family info', 'Next buses from your stop, arrivals, disruptions', 'bus', '#22d3ee'],
     ['security', '/security', 'Security', 'Front camera, visits, recognitions', 'shield', '#f97316'],
     ['ambient', '/ambient', 'Ambient', 'Night clock for the bedside', 'moon', '#7dd3fc'],
     ['desktop', '/desktop', 'Desktop', 'Windows wallpaper (Lively Wallpaper)', 'deck', '#6f8fe0'],
@@ -355,31 +357,29 @@ const GROUPS = [
     ['admin', '/admin', 'Admin', 'Phone admin: health, quick tasks, guests, every console', 'grid', '#38bdf8'],
     ['ops', '/ops', 'Lab', 'Touch panel: nodes, guests, hold-to-run commands', 'server', '#38bdf8', 'feat'],
     ['lab', '/lab', 'Lab panel 6×6', 'The Buttons lab grid with camera popup', 'grid', '#6f8fe0'],
-    ['net', '/net', 'Network', 'Internet, DNS, devices online', 'wifi', '#22d3ee'],
-    ['networkmap', '/network.html', 'Network map', 'Document: map, guests, data flows', 'map', '#4fb3a8'],
-  ]],
-  ['Admin consoles', 'the real UIs, for changing settings', [
-    ['ha', 'https://home.example.net:8123/', 'Home Assistant', 'Automations, devices, add-ons', 'ha', '#18bcf2', 'feat'],
-    ['grafana', 'http://192.168.1.234:3000/', 'Grafana', 'Dashboards: home, DNS, router, cameras, HA', 'chart', '#f97316'],
-    ['proxmox', 'https://192.168.1.246:8006/', 'Proxmox', 'Cluster: turbo, edvin, prippen', 'box', '#e57000'],
-    ['pbs', 'https://192.168.1.32:8007/', 'Backup Server', 'Backups, prune, verify', 'disk', '#6f8fe0'],
-    ['pihole1', 'http://192.168.1.30/admin/', 'Pi-hole primary', 'DNS + ad blocking (.30)', 'block', '#f87171'],
-    ['pihole2', 'http://192.168.1.31/admin/', 'Pi-hole secondary', 'DNS + ad blocking (.31)', 'block', '#f87171'],
-    ['buttons', 'http://192.168.1.52:4440/', 'Buttons editor', 'Stream Deck + panel layouts', 'keys', '#7dd3fc'],
-    ['editor', 'http://192.168.1.52:8088/', 'Panel editor', 'Edit the panels: code, live preview, history (from the PC)', 'keys', '#38bdf8'],
-    ['camwatch', 'http://192.168.1.81:8080/', 'camwatch', 'Recordings, people, plates (login)', 'cam', '#34d399'],
-    ['scrypted', 'https://192.168.1.80:10443/', 'Scrypted', 'Camera bridge (NVR)', 'cam', '#22d3ee'],
-    ['files', 'http://192.168.1.51:8080/', 'File Browser', 'Shared files on fileshare', 'folder', '#fbbf24'],
-    ['gotify', 'http://192.168.1.53/', 'Gotify', 'Notifications', 'bell', '#34d399'],
-  ]],
+    ['net', '/net', 'Network', 'Internet, DNS, devices online', 'wifi', '#22d3ee'],  ]],
 ];
-const GATED = new Set(['/admin', '/ops', '/lab', '/net', '/atlas', '/network.html']);
+// The machines in this house come from the settings ([links.extra]: what the
+// setup wizard found, and what you add here in edit mode), not from a list in
+// this page - that list used to be one house's, and every install got it.
+let house = [];
+const groups = () => [...GROUPS, ['Admin consoles', 'the routers, servers and recorders on your network',
+  house.map(([id, url]) => [id, url, id, '', 'grid', '#8b9bb4'])]];   // the address is already the tile's own line
+const GATED = new Set(['/admin', '/ops', '/lab', '/net', '/atlas']);
 // layout: GROUPS above are the defaults; a saved layout (edit mode, opened as /start?edit from Admin) replaces them
 const DEFAULT_FOOT = $('#foot').innerHTML;
-const defaults = () => ({ foot: DEFAULT_FOOT, groups: GROUPS.map(([title, sub, items]) => ({ title, sub,
+const defaults = () => ({ foot: DEFAULT_FOOT, groups: groups().map(([title, sub, items]) => ({ title, sub,
   items: items.map(([id, url, name, desc, icon, color, cls]) => ({ id, url, name, desc, icon, color, feat: cls === 'feat' })) })) });
-let model = defaults();
-const setModel = l => { model = l && l.groups ? l : defaults(); renderPanels(); };
+let model = defaults(), saved = null;
+const setModel = l => { if (l && l.groups) saved = l; model = saved || defaults(); renderPanels(); };
+// The machines in this house: the ones the settings know ([links.extra]), with
+// the dot each one already has. Until the first check they are simply not there.
+function housed(r) {
+  const extra = Object.entries(r).filter(([, v]) => v.extra);
+  if (extra.length === house.length && extra.every(([k], i) => house[i][0] === k)) return;
+  house = extra.map(([id, v]) => [id, v.url]);
+  setModel(null);
+}
 const editing = () => document.body.classList.contains('editing');
 // This page named its icons before design/icons.py existed. Map the old names
 // onto the shared set rather than keep a second drawing of each.
@@ -397,7 +397,9 @@ function renderPanels() {
           <b>${esc(name)}<i class="dot" data-id="${esc(id)}" title="checking"></i>${GATED.has(url) && !admin ? '<span class="lk" title="Needs the admin PIN"><i class="icon icon-lock" aria-hidden="true"></i></span>' : ''}</b>
           <span>${esc(desc)}</span>
           <small>${esc(url.replace(/^https?:\/\//, '').replace(/\/$/, '') || location.host)}</small></a>`;
-      }).join('') + '</div>' + (editing() ? `<button class="eadd" data-add="item" data-gi="${gi}">+ Add card to ${esc(title)}</button>` : '') + '</section>').join('')
+      }).join('')
+    + (items.length ? '' : `<p class="none">Nothing here yet. The setup wizard adds what it finds on your network, and you can add your own: open this page from Admin &rarr; Edit Start page.</p>`)
+    + '</div>' + (editing() ? `<button class="eadd" data-add="item" data-gi="${gi}">+ Add card to ${esc(title)}</button>` : '') + '</section>').join('')
     + (editing() ? '<button class="eadd" data-add="group" style="margin-top:24px">+ Add group</button>' : '');
   check();
   renderPanels.done = true;

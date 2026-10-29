@@ -8,7 +8,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Home Deck">
 <meta name="theme-color" content="#12151d">
-<link rel="apple-touch-icon" href="http://192.168.1.52:4440/apple-touch-icon.png">
 <title>Home Deck</title>
 <style>
 
@@ -238,7 +237,7 @@ body.lab .deck { justify-self: center; }
     <div class="deck-head"><span class="label" id="deck-title">Deck</span><span class="label" id="deck-state"></span></div>
     <div id="clip"><iframe id="frame" title="Deck" scrolling="no"></iframe>
       <div id="deck-err" hidden>
-        <b>Buttons is not answering</b>
+        <b id="deck-err-head">Buttons is not answering</b>
         <span id="deck-err-why"></span>
         <button id="deck-retry" class="pill" type="button">Try again</button>
       </div>
@@ -338,7 +337,9 @@ body.lab .deck { justify-self: center; }
 
 <script>
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
-const PANEL = 'http://192.168.1.52:4440/device/n8j3yawqc308p4cpworcag1r';
+// The Stream Deck page shown inside the wall panel: [services] buttons_panel
+// in the settings. It used to be one house's panel, written into this page.
+let PANEL = '';
 const Q = new URLSearchParams(location.search), PW = +Q.get('w') || 1000, PH = +Q.get('h') || 1000;   // 6x6 lab panel
 const THEMES = ['aurora', 'midnight', 'sunset', 'forest', 'ocean', 'graphite'];
 const ACCENTS = ['#38bdf8', '#22d3ee', '#34d399', '#fbbf24', '#fb7185', '#f97316', '#e5e7eb'];
@@ -366,12 +367,18 @@ frame.style.width = (PW + 24) + 'px'; frame.style.height = (PH + 24) + 'px';
    no way to style inside the frame. So ask first, and only attach the frame once the panel
    answers; otherwise say so in the page's own colours. The frame fades in to avoid a flash of
    black while it paints. */
-function deckFailed(why) { frame.removeAttribute('src');
+function deckFailed(why, head) { frame.removeAttribute('src');
   frame.hidden = true;
   $('#deck-err').hidden = false;
+  $('#deck-err-head').textContent = head || 'Buttons is not answering';
   $('#deck-err-why').textContent = why;
 }
-function loadDeck() { $('#deck-err').hidden = true;
+async function loadDeck() { $('#deck-err').hidden = true;
+  if (!PANEL) {
+    try { PANEL = (await (await fetch('/api/addons')).json()).buttons_panel || ''; } catch {}
+    if (!PANEL) return deckFailed('Set [services] buttons_panel in the settings to the Buttons page this panel should show.',
+                                 'No Stream Deck page yet');
+  }
   frame.hidden = false;
   frame.style.opacity = '0';
   fetch(PANEL, { method: 'HEAD', cache: 'no-store' })

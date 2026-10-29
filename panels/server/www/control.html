@@ -104,10 +104,14 @@ function render() {
   $('#clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
   if (!H) return;
   if (volDrag || touching) return;
-  const players = H.players || [], sp = players.find(p => p.id.includes('spotify')), sonos = players.find(p => p.id === 'media_player.tv_rum');
+  // The music player comes from the settings; the rest are the other players
+  // in [[players]]. This used to look for one house's entity ids.
+  const players = H.players || [], sp = players.find(p => p.id === H.music) || players[0],
+        others = players.filter(p => p !== sp).slice(0, 1);
   $('#cc').innerHTML = tiles().map(t => {
     if (t === 'VOL') return volTile();
-    if (t === 'MEDIA') return mediaTile(sp, 'Spotify') + mediaTile(H.appletv, 'Apple TV') + mediaTile(sonos, 'TV room');
+    if (t === 'MEDIA') return (sp ? mediaTile(sp, sp.label) : '') + (H.appletv ? mediaTile(H.appletv, 'Apple TV') : '')
+      + others.map(p => mediaTile(p, p.label)).join('');
     if (Array.isArray(t)) return `<div class="ui-cap ui-cap-row">${esc(t[2])}</div>`;
     const busy = hold[t.id];
     const state = [t.on && 'is-on', t.cls && 'is-' + t.cls, busy && 'is-' + busy].filter(Boolean).join(' ');

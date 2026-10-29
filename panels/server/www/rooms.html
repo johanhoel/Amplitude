@@ -52,7 +52,10 @@
 <script>
 const $ = s => document.querySelector(s);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const ROOM_MEDIA = { 'Vardagsrum': 'media_player.vardagsrum', 'Uterum': null };
+// A room shows what is playing in it when a player is named after the room
+// ([[players]] label, or the Apple TV). It used to be a map of one house.
+const roomPlayer = room => (H.players || []).concat(H.appletv ? [H.appletv] : [])
+  .find(p => p.state === 'playing' && (p.label || '').toLowerCase().includes(room.toLowerCase()));
 let H = null, hold = {};                                // hold[entity] = until: keep the optimistic state while HA catches up
 const toast = t => { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2200); };
 const post = b => fetch('/api/home/do', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })
@@ -73,7 +76,7 @@ function render() {
     let el = document.getElementById(id);
     if (!el) { el = document.createElement('section'); el.className = 'card room'; el.id = id; plan.appendChild(el); }
     const n = r.lights.filter(l => l.on).length;
-    const mp = ROOM_MEDIA[r.room] && (H.players || []).concat(H.appletv ? [H.appletv] : []).find(p => p.id === ROOM_MEDIA[r.room] && p.state === 'playing');
+    const mp = roomPlayer(r.room);
     if (el.querySelector('.lt.drag')) return;            // never redraw under a finger
     el.classList.toggle('lit', n > 0);
     el.innerHTML = `<header><h2>${esc(r.room)}<small>${n ? `${n} of ${r.lights.length} on` : `${r.lights.length} light${r.lights.length === 1 ? '' : 's'} · all off`}</small></h2>

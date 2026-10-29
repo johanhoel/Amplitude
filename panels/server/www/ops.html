@@ -12,7 +12,7 @@
 /* Lab panel: one live view of the cluster. No backdrop-filter, no animated wallpaper: every tap paints
    in one frame. Data arrives pushed (server-sent events) and is patched into existing elements. */
 /* page-local only; the palette comes from wall.css */
-:root { --turbo: #6f8fe0; --edvin: #7dd3fc; --prippen: #4fb3a8; }
+:root { --node-1: #6f8fe0; --node-2: #7dd3fc; --node-3: #4fb3a8; --node-4: #f59e0b; }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--font);
   -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
@@ -182,7 +182,9 @@ body.open #scrim { opacity: 1; pointer-events: auto; } body.open #drawer { trans
 <script>
 const $ = s => document.querySelector(s);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const NODE_C = { turbo: 'var(--turbo)', edvin: 'var(--edvin)', prippen: 'var(--prippen)' };
+// A node keeps one colour, picked from its name, so the lanes and gauges agree
+// whatever the cluster is called. This used to name three machines.
+const NODE_C = new Proxy({}, { get: (_, n) => `var(--node-${1 + [...String(n)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 9973, 7) % 4})` });
 const ICON = { start: '<path d="M8 5l11 7-11 7z"/>', resume: '<path d="M8 5l11 7-11 7z"/>',
   reboot: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>', restartdns: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>',
   svc: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>', ha_restart: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>',
@@ -380,7 +382,7 @@ addEventListener('keydown', e => e.key === 'Escape' && closeDrawer());
 function gaugesFor(r) { const cpu = 100 * (r.cpu || 0), mem = pct(r.mem, r.maxmem), disk = pct(r.disk, r.maxdisk);
   const g = (p, label, sub, c) => `<div class="gauge">${ring(86, [{ r: 42, w: 7, p, c }], `<div><b class="num">${Math.round(p)}%</b></div>`)}${label}<small>${sub}</small></div>`;
   return `<div class="gauges">${g(cpu, 'CPU', (r.maxcpu || '?') + ' cores', lvl(cpu, 60, 85) || 'var(--accent)')}${g(mem, 'Memory', gb(r.mem || 0) + ' / ' + gb(r.maxmem || 0), lvl(mem, 80, 92) || 'var(--ok)')}` +
-    (r.disk ? g(disk, 'Disk', gb(r.disk) + ' / ' + gb(r.maxdisk), lvl(disk, 80, 92) || 'var(--prippen)') : '') + '</div>';
+    (r.disk ? g(disk, 'Disk', gb(r.disk) + ' / ' + gb(r.maxdisk), lvl(disk, 80, 92) || 'var(--node-3)') : '') + '</div>';
 }
 let drawerSig = '';
 function refreshDrawer(first) { if (!S || !openId) return;

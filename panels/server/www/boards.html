@@ -59,7 +59,7 @@ async function load() {
 }
 async function create() {
   const r = await Edit.sheet({ title: 'New board', fields: [
-    { key: 'title', label: 'Name', type: 'text', value: '', hint: 'e.g. Kitchen, Sam, Garage' },
+    { key: 'title', label: 'Name', type: 'text', value: '', hint: 'e.g. Kitchen, Garage, Workshop' },
     { key: 'tpl', label: 'Start from', type: 'select', options: Object.entries(TEMPLATES).map(([k, t]) => [k, t[0]]), value: 'phone' }],
     buttons: [{ id: 'ok', label: 'Create' }] });
   if (!r || !r.values.title) return;

@@ -85,6 +85,17 @@ for section, why in (("presence.phones", "the people living there"),
     lines = [l for l in (body.group(1).splitlines() if body else []) if l.strip() and not l.strip().startswith("#")]
     check(f"[{section}] ships empty", body is not None and not lines, f"it still lists {why}")
 
+# ---- nor does any page that ships with it -----------------------------
+# The settings were not the only place: the pages hard-coded the same house in
+# their link grids, and www/network.html was a 2.8 MB document of one network.
+# A page may name 127.0.0.1 (itself) and the documentation ranges.
+PAGES = sorted((ROOT / "server" / "www").glob("*.html")) + sorted((ROOT / "server" / "www" / "designs").glob("*.html"))
+check("there are pages to check", len(PAGES) > 15, f"found {len(PAGES)}")
+for page in PAGES:
+    body = page.read_text(encoding="utf-8", errors="replace")
+    found = sorted(set(PRIVATE_IP.findall(body)))
+    check(f"www/{page.name} names no address in anyone's house", not found, f"{found[:4]}")
+
 # ---- and still works once the installer has filled in the address -----
 sys.path.insert(0, str(ROOT / "server"))
 import tempfile                                                   # noqa: E402
@@ -167,6 +178,9 @@ check("an unticked person is hidden, and only that one",
       saved["people"]["hide"] == ["person.guest"], f"{saved['people']['hide']}")
 check("a device found on the network becomes a status dot",
       saved["links"]["extra"] == {"router": "http://10.1.1.1/"}, f"{saved['links'].get('extra')}")
+check("the house's own machines are kept apart from Home Deck's pages",
+      hdconfig._derive(saved).LINK_EXTRA == {"router"},
+      "the pages list [links.extra]; mixing them in would list Home Deck's own pages as devices")
 check("the dots the wizard writes are probed with the rest",
       hdconfig._derive(saved).LINK_CHECKS.get("router") == "http://10.1.1.1/",
       "they would sit in the file doing nothing")

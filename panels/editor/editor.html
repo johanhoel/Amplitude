@@ -167,7 +167,7 @@ $('#pw1').onkeydown = $('#pw2').onkeydown = e => { if (e.key === 'Enter') doLogi
 /* ---------------- files ---------------- */
 const LABEL = { 'www/start.html': 'Start', 'www/index.html': 'Deck', 'www/living.html': 'Home', 'www/remote.html': 'Remote', 'www/media.html': 'Media',
   'www/family.html': 'Family', 'www/familyinfo.html': 'Family info', 'www/security.html': 'Security', 'www/ambient.html': 'Ambient',
-  'www/desktop.html': 'Desktop', 'www/admin.html': 'Admin', 'www/ops.html': 'Lab', 'www/net.html': 'Network', 'www/network.html': 'Network map',
+  'www/desktop.html': 'Desktop', 'www/admin.html': 'Admin', 'www/ops.html': 'Lab', 'www/net.html': 'Network',
   'server.py': 'Home Deck server' };
 async function loadFiles() {
   files = await api('/api/files');

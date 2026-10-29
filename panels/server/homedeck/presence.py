@@ -101,14 +101,14 @@ def presence_loop():
                     home = silent < (C.NIGHT_LIMIT if night and p['home'] is not False else C.AWAY_AFTER.get(person, C.DEFAULT_AWAY_AFTER))
                     burst = time.time() < cam_burst['until']
                     # quiet and twice unreachable: left the Wi-Fi. Only for a phone that has answered a wake-up probe in the
-                    # last probe_trust_s: some (Kim's 2nd iPhone) never answer while asleep, so a failed probe says nothing
-                    # and they fall back to away_after_s (2026-10-20: Kim flapped away/home all afternoon while home).
+                    # last probe_trust_s: some phones never answer while asleep, so a failed probe says nothing about them
+                    # and they fall back to away_after_s (one flapped away/home all afternoon while its owner was home).
                     trusted = time.time() - p.get('probe_ok', 0) < C.PROBE_TRUST_S
                     if not night and trusted and silent > (C.CAM_LEAVE_SILENT if burst else C.PROBE_AFTER) and p.get('fails', 0) >= 2:
                         home = False
                     # camera leave rule ([presence] cam_leave_people): the phone was active around a front-camera event
                     # (from 3 min before to 2 min after), has been silent cam_leave_after_s since, and wake-ups get no answer:
-                    # they walked out the door. Added 2026-10-21: Kim left 08:52 but showed home until his 30 min ran out.
+                    # they walked out the door. Without it someone can leave in the morning and show home for half an hour.
                     ev = cam_burst['at']
                     if (person in C.CAM_LEAVE_PEOPLE and p['home'] and not night and ev and time.time() - ev < 3600
                             and ev - 180 <= last <= ev + 120 and silent >= C.CAM_LEAVE_AFTER and p.get('fails', 0) >= 2

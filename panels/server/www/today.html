@@ -61,7 +61,10 @@
 const $ = s => document.querySelector(s);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const D = {}, AT = {};
-const COL = { Alex: '#38bdf8', Robin: '#f472b6', Sam: '#34d399', Kim: '#f59e0b' };
+// Each person keeps one colour, picked from their name so it is the same on
+// every panel and on every install - the page used to name four people.
+const PALETTE = ['#38bdf8', '#34d399', '#f59e0b', '#f472b6', '#a78bfa', '#4fb3a8', '#fb7185', '#7dd3fc'];
+const colourOf = n => PALETTE[[...String(n || '')].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 9973, 7) % PALETTE.length];
 const KIND = { people: ['People', '#7dd3fc'], camera: ['Camera', '#fb7185'], travel: ['Travel', '#22d3ee'], news: ['News', '#fbbf24'], lab: ['Lab', '#60a5fa'], sky: ['Sky', '#f59e0b'] };
 const WX = { 'sunny': '<i class="icon icon-sun" aria-hidden="true"></i>', 'clear-night': '<i class="icon icon-moon" aria-hidden="true"></i>', 'partlycloudy': '<i class="icon icon-partly" aria-hidden="true"></i>', 'cloudy': '<i class="icon icon-cloud" aria-hidden="true"></i>', 'rainy': '<i class="icon icon-rain" aria-hidden="true"></i>', 'pouring': '<i class="icon icon-rain" aria-hidden="true"></i>', 'lightning': '<i class="icon icon-storm" aria-hidden="true"></i>', 'lightning-rainy': '<i class="icon icon-storm" aria-hidden="true"></i>',
   'snowy': '<i class="icon icon-snow" aria-hidden="true"></i>', 'snowy-rainy': '<i class="icon icon-snow" aria-hidden="true"></i>', 'hail': '<i class="icon icon-snow" aria-hidden="true"></i>', 'fog': '<i class="icon icon-fog" aria-hidden="true"></i>', 'windy': '<i class="icon icon-wind" aria-hidden="true"></i>', 'windy-variant': '<i class="icon icon-wind" aria-hidden="true"></i>', 'exceptional': '<i class="icon icon-alert" aria-hidden="true"></i>' };
@@ -75,7 +78,7 @@ function events() {
   const ev = [], midnight = new Date(); midnight.setHours(0, 0, 0, 0); const m0 = midnight.getTime();
   const F = D.family;
   if (F) F.people.forEach(p => p.segments.forEach((s, i) => { if (i === 0 || s.from * 1000 < m0) return;
-    ev.push({ k: 'people', t: s.from * 1000, ic: s.home ? 'home' : 'external', c: COL[p.name], title: `${p.name} ${s.home ? 'came home' : 'left'}`, sub: s.home ? 'Phone back on the home Wi-Fi' : 'Phone left the home Wi-Fi', href: '/family' }); }));
+    ev.push({ k: 'people', t: s.from * 1000, ic: s.home ? 'home' : 'external', c: colourOf(p.name), title: `${p.name} ${s.home ? 'came home' : 'left'}`, sub: s.home ? 'Phone back on the home Wi-Fi' : 'Phone left the home Wi-Fi', href: '/family' }); }));
   (D.visits || []).forEach(v => { const t = new Date(v.start).getTime(); if (t < m0) return;
     const who = (v.people || []).map(p => p.name || p).join(', ');
     ev.push({ k: 'camera', t, ic: 'target', title: who ? `${who} at the front door` : `Front camera: ${(v.labels || []).join(', ') || 'motion'}`,
@@ -113,7 +116,7 @@ function ribbon() {
   const m0 = F.midnight * 1000, span = 86400000, pct = t => Math.max(0, Math.min(100, (t - m0) / span * 100));
   const hours = [0, 3, 6, 9, 12, 15, 18, 21, 24].map(h => `<span style="left:${h / 24 * 100}%">${String(h).padStart(2, '0')}</span>`).join('');
   const cams = {}; (F.camera || []).forEach(c => (cams[c.name] = cams[c.name] || []).push(new Date(c.at).getTime()));
-  $('#ribbon').innerHTML = `<div class="rb-hours">${hours}</div>` + F.people.map(p => `<div class="lane" style="--c:${COL[p.name] || '#38bdf8'}"><b><i></i>${esc(p.name)}</b>
+  $('#ribbon').innerHTML = `<div class="rb-hours">${hours}</div>` + F.people.map(p => `<div class="lane" style="--c:${colourOf(p.name)}"><b><i></i>${esc(p.name)}</b>
     <div class="track">${p.segments.filter(s => s.home).map(s => `<div class="seg" style="left:${pct(s.from * 1000)}%;width:${pct(s.to * 1000) - pct(s.from * 1000)}%"></div>`).join('')}
     ${(cams[p.name] || []).map(t => `<span class="camdot" style="left:${pct(t)}%" title="camera ${hm(t)}"></span>`).join('')}<span class="nowln" style="left:${pct(Date.now())}%"></span></div></div>`).join('');
 }

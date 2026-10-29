@@ -66,7 +66,10 @@
 const $ = s => document.querySelector(s);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const D = {}, AT = {};
-const COL = { Alex: '#38bdf8', Robin: '#f472b6', Sam: '#34d399', Kim: '#f59e0b' };
+// Each person keeps one colour, picked from their name so it is the same on
+// every panel and on every install - the page used to name four people.
+const PALETTE = ['#38bdf8', '#34d399', '#f59e0b', '#f472b6', '#a78bfa', '#4fb3a8', '#fb7185', '#7dd3fc'];
+const colourOf = n => PALETTE[[...String(n || '')].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 9973, 7) % PALETTE.length];
 const WX = { 'sunny': '<i class="icon icon-sun" aria-hidden="true"></i>', 'clear-night': '<i class="icon icon-moon" aria-hidden="true"></i>', 'partlycloudy': '<i class="icon icon-partly" aria-hidden="true"></i>', 'cloudy': '<i class="icon icon-cloud" aria-hidden="true"></i>', 'rainy': '<i class="icon icon-rain" aria-hidden="true"></i>', 'pouring': '<i class="icon icon-rain" aria-hidden="true"></i>', 'lightning': '<i class="icon icon-storm" aria-hidden="true"></i>', 'lightning-rainy': '<i class="icon icon-storm" aria-hidden="true"></i>',
   'snowy': '<i class="icon icon-snow" aria-hidden="true"></i>', 'snowy-rainy': '<i class="icon icon-snow" aria-hidden="true"></i>', 'hail': '<i class="icon icon-snow" aria-hidden="true"></i>', 'fog': '<i class="icon icon-fog" aria-hidden="true"></i>', 'windy': '<i class="icon icon-wind" aria-hidden="true"></i>', 'windy-variant': '<i class="icon icon-wind" aria-hidden="true"></i>', 'exceptional': '<i class="icon icon-alert" aria-hidden="true"></i>' };
 const hm = d => new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -97,7 +100,7 @@ function render() {
     if (!home.length && lightsOn.length) attn.push(['', '/rooms', `<i class="icon icon-bulb" aria-hidden="true"></i> Nobody home, ${lightsOn.length} light${lightsOn.length > 1 ? 's' : ''} on`]);
     tiles.push(tile('/today', 'w2', `<div class="k">People <i>${home.length} of ${H.people.length} home</i></div><div class="people">${H.people.map(p => {
       const pr = D.presence?.[p.name.toLowerCase()];
-      return `<div class="pp ${p.home ? '' : 'away'}" style="--c:${COL[p.name] || '#38bdf8'}"><div class="av">${esc(p.name[0])}</div>${esc(p.name)}<small>${p.home ? (pr?.silent_s > 1800 ? 'home · phone resting' : 'home') : 'away'}</small></div>`; }).join('')}</div>`));
+      return `<div class="pp ${p.home ? '' : 'away'}" style="--c:${colourOf(p.name)}"><div class="av">${esc(p.name[0])}</div>${esc(p.name)}<small>${p.home ? (pr?.silent_s > 1800 ? 'home · phone resting' : 'home') : 'away'}</small></div>`; }).join('')}</div>`));
     const door = H.door?.state;
     tiles.push(tile('/control', door === 'locked' ? 'good' : 'alert', `<div class="k">Front door</div><div class="v">${door === 'locked' ? '<i class="icon icon-lock" aria-hidden="true"></i> Locked' : '<i class="icon icon-unlock" aria-hidden="true"></i> ' + esc(door || '–')}</div><div class="s">${door === 'locked' ? 'All good' : 'Tap to lock (lock only)'}</div>`));
     tiles.push(tile('/rooms', '', `<div class="k">Lights <i>${roomsOn.length} rooms</i></div><div class="v num">${lightsOn.length}<small>on</small></div><div class="lights">${roomsOn.slice(0, 5).map(r => `<span>${esc(r)}</span>`).join('')}${roomsOn.length > 5 ? `<span>+${roomsOn.length - 5}</span>` : ''}</div>`));

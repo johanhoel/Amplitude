@@ -17,7 +17,6 @@ WWW = ROOT / "panels" / "server" / "www"
 # with a page-level :root is a fork.
 EXEMPT = {
     "ambient.html": "the bedside night clock is deliberately dim amber, not slate",
-    "network.html": "a printable document, with an embedded font",
 }
 EXEMPT_DIRS = ("designs", ".drafts")   # theme explorations and drafts
 

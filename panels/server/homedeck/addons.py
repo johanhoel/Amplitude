@@ -95,6 +95,8 @@ def configured():
         'deck': bool((getattr(C, 'LINK_CHECKS', None) or {}).get('buttons')),
         # The Proxmox cluster and the lab panel.
         'lab': bool(getattr(C, 'LABPANEL', None)),
+        # The Stream Deck page the wall panel shows inside itself.
+        'buttons': _set('BUTTONS_PANEL'),
     }
 
 

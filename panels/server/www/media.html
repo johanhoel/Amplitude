@@ -153,7 +153,7 @@ const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAl
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const PANELS = [['/', 'Deck', 'wall panel'], ['/living', 'Home', 'lights, music, door'], ['/family', 'Family', "who's home"], ['/security', 'Security', 'camera, visits'],
   ['/media', 'Media', 'music, speakers, TV'], ['/net', 'Network', 'internet, devices'], ['/ops', 'Lab', 'Proxmox'], ['/ambient', 'Ambient', 'night clock'],
-  ['/remote', 'Remote', 'phone'], ['/network.html', 'Network map', 'document']];
+  ['/remote', 'Remote', 'phone']];
 $('#swnav').innerHTML = PANELS.map(([u, t, s]) => `<a href="${u}" class="${location.pathname.replace(/\/$/, '') === u ? 'on' : ''}">${t}<small>${s}</small></a>`).join('');
 $('#sw').addEventListener('click', () => $('#swp').classList.toggle('open'));
 $('#swp').addEventListener('click', e => { if (e.target.id === 'swp') $('#swp').classList.remove('open'); });
@@ -162,7 +162,9 @@ const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'ap
 function tap(el, fn) { let d = null; el.addEventListener('pointerdown', e => d = { x: e.clientX, y: e.clientY });
   el.addEventListener('pointerup', e => { if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 10) fn(e); d = null; }); el.addEventListener('pointercancel', () => d = null); }
 const PLAY = '<path d="M8 5v14l11-7z"/>', PAUSE = '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>';
-const SPOTIFY = 'media_player.spotify_alex', ATV = 'media_player.vardagsrum';
+// Which player is the music one and which is the Apple TV comes from the
+// settings ([entities] spotify, apple_tv), not from one house's entity ids.
+let SPOTIFY = '', ATV = '';
 let H = null, G = null, hold = {}, cur = null;
 const mmss = s => s == null ? '' : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 const artUrl = p => p.art ? `/api/art?e=${encodeURIComponent(p.id)}&k=${encodeURIComponent(p.art_key)}` : '';
@@ -193,7 +195,9 @@ function renderNow() {
 const FAV_APPS = ['SVT Play', 'TV4 Play', 'Telia Play', 'Netflix', 'YouTube', 'Disney+', 'HBO Max', 'Prime Video'];
 let tv = null;
 function renderTV() {
-  const t = tv = H.appletv; if (!t) return;
+  const t = tv = H.appletv;
+  $('#tv').hidden = !t;                    // no Apple TV in the settings, no card
+  if (!t) return;
   const off = ['off', 'standby', 'unavailable'].includes(t.state), playing = t.state === 'playing';
   $('#tv').classList.toggle('off', off);
   $('#tvsrc').textContent = ('Apple TV' + (t.app ? ' · ' + t.app : '') + (off ? ' · ' + t.state : '')).toUpperCase();
@@ -261,7 +265,9 @@ function renderRooms() {
     const a = artUrl(p); el.querySelector('.ra').style.backgroundImage = a ? `url(${a})` : '';
   });
 }
-async function loadHome() { try { H = await (await fetch('/api/home/state')).json(); } catch { return; } if (!H.configured || H.error) return; renderNow(); renderTV(); renderRooms(); }
+async function loadHome() { try { H = await (await fetch('/api/home/state')).json(); } catch { return; } if (!H.configured || H.error) return;
+  SPOTIFY = H.music || ''; ATV = H.appletv?.id || '';
+  renderNow(); renderTV(); renderRooms(); }
 
 /* Genelec arc: drag along a 180° arc, -60..0 dB */
 let vol = null, volBusy = 0, muted = false;

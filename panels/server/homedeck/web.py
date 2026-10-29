@@ -184,7 +184,8 @@ class Handler(SimpleHTTPRequestHandler):
         if p == '/api/addons':
             # What this house has, derived from its settings. The pages hide
             # what is off, so one set of pages serves any house.
-            return self.send_json({'enabled': addons.enabled(), 'state': addons.state(), 'plugins': addons.catalog()})
+            return self.send_json({'enabled': addons.enabled(), 'state': addons.state(),
+                                   'plugins': addons.catalog(), 'ha': C.HA, 'buttons_panel': C.BUTTONS_PANEL})
         if p.split('?')[0] == '/ha':                                      # Studio's Home Assistant link
             self.send_response(302); self.send_header('Location', C.HA + '/'); self.send_header('Content-Length', '0'); self.end_headers(); return
         if p == '/api/watched':                                           # Device status card (names + online only, no PIN)

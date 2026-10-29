@@ -40,6 +40,7 @@ pc = ""                                             # deck-listener on a Windows
 pc_proxy_clients = []                               # who may use /api/pc/mic (e.g. the Home Assistant server)
 labpanel = ""                                       # lab panel service, http://ADDRESS:8790
 lab_panel_id = "lab"                                # the panel id the Buttons keys use (tile/lab/N.png)
+buttons_panel = ""                                  # the Buttons page the Deck shows, e.g. http://ADDRESS:4440/device/<id>
 prometheus = ""                                     # http://ADDRESS:9090, for the graphs on Ops
 camfeed = ""                                        # camwatch-feed (visits, thumbnails, latest event)
 ollama = ""                                         # http://ADDRESS:11434, for Local AI chat
@@ -132,8 +133,8 @@ pages = ["admin", "start", "familyinfo"]            # pages with an edit mode
 keep = 30                                           # older saves kept per page (undo)
 
 [admin]
-# Pages that ask for the admin PIN (names as in the address, e.g. "admin" for /admin; "network" = /network.html)
-pages = ["admin", "ops", "lab", "net", "atlas", "network", "devices", "studio", "localai"]
+# Pages that ask for the admin PIN (names as in the address, e.g. "admin" for /admin)
+pages = ["admin", "ops", "lab", "net", "atlas", "devices", "studio", "localai"]
 pin_min_digits = 4
 session_hours = 12                                  # how long a PIN unlocks a browser
 remember_days = 30                                  # with "remember this device"
@@ -164,7 +165,6 @@ desktop = "http://127.0.0.1/desktop"
 editor = "http://127.0.0.1:8088/"
 ops = "http://127.0.0.1/ops"
 net = "http://127.0.0.1/net"
-networkmap = "http://127.0.0.1/network.html"
 start = "http://127.0.0.1/start"
 admin = "http://127.0.0.1/admin"
 pulse = "http://127.0.0.1/pulse"

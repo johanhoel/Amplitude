@@ -1,4 +1,8 @@
-"""Status dots on Start / Admin: probe the fixed [links] list in homedeck.toml (never an address from a request)."""
+"""Status dots on Start / Admin: probe the fixed [links] list in homedeck.toml (never an address from a request).
+
+Each answer carries the address it probed and whether it came from [links.extra] - the house's own machines,
+which the setup wizard writes and the user adds to. The pages list those; they ship with none of their own.
+"""
 import concurrent.futures, threading, time, urllib.error, urllib.request
 
 from .config import C
@@ -25,7 +29,7 @@ def link_status():
                 up = True
             except Exception:
                 up = False
-            return key, {'up': up, 'ms': round((time.time() - t) * 1000)}
+            return key, {'up': up, 'ms': round((time.time() - t) * 1000), 'url': url, 'extra': key in C.LINK_EXTRA}
         with concurrent.futures.ThreadPoolExecutor(max_workers=24) as ex:
             _links.update(at=time.time(), data=dict(ex.map(probe, C.LINK_CHECKS.items())))
         return _links['data']

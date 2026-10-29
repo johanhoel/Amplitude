@@ -103,9 +103,10 @@ def home_state():
                   | {'condition': wx.get('state')},
             'sun': {k: by.get('sun.sun', {}).get('attributes', {}).get(k) for k in ('next_rising', 'next_setting', 'elevation')}
                    | {'state': by.get('sun.sun', {}).get('state')},
+            'music': C.SPOTIFY,                       # which player the Media page features
             'players': [player(by.get(e, {}), e, label) for e, label in C.PLAYERS],
-            'appletv': {**player(by.get(C.APPLE_TV, {}), C.APPLE_TV, 'Living room · Apple TV'),
-                        'apps': by.get(C.APPLE_TV, {}).get('attributes', {}).get('source_list') or []},
+            'appletv': {**player(by.get(C.APPLE_TV, {}), C.APPLE_TV, 'Apple TV'),
+                        'apps': by.get(C.APPLE_TV, {}).get('attributes', {}).get('source_list') or []} if C.APPLE_TV else None,
             **{k: summ[k] for k in ('outside', 'weather', 'temps', 'media', 'charger_w', 'charger_unit', 'lights_on')}}
 
 
