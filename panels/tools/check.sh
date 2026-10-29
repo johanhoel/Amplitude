@@ -6,8 +6,9 @@ T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 python3 -m py_compile server/homedeck/*.py server/server.py services/camwatch-feed/feed.py && echo "OK   python compiles"
 (cd server && sed 's#__HA_URL__#http://127.0.0.1:8123#' homedeck.toml > "$T/homedeck.toml" && \
   HOMEDECK_ROOT=$PWD HOMEDECK_CONFIG="$T/homedeck.toml" HOMEDECK_READONLY=1 STATE_DIRECTORY="$T" python3 -m homedeck.check)
-for t in install updates tokens scripts pickers; do python3 "tests/$t.py" > "$T/$t.log" 2>&1 \
-  && echo "OK   tests/$t.py ($(tail -1 "$T/$t.log"))" || { cat "$T/$t.log"; exit 1; }; done
+for t in tests/*.py; do [ "$t" = tests/smoke.py ] && continue            # smoke needs staging; it runs below
+  python3 "$t" > "$T/$(basename "$t").log" 2>&1 \
+    && echo "OK   $t ($(tail -1 "$T/$(basename "$t").log"))" || { cat "$T/$(basename "$t").log"; exit 1; }; done
 if curl -s -o /dev/null -m 3 "${BASE:-http://localhost:8099}/api/health"; then
   if python3 -c 'import playwright' 2>/dev/null; then
     BASE="${BASE:-http://localhost:8099}" python3 tests/smoke.py

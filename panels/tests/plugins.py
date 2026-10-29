@@ -28,8 +28,11 @@ def check(name, ok, detail=""):
 
 state = tempfile.mkdtemp(prefix="homedeck-plugins-")
 conf = Path(state) / "homedeck.toml"
+# The shipped template is empty - no house - so a plugin to switch off has to be
+# set up here first. The Deck is the one the checks below use.
 conf.write_text((SERVER / "homedeck.toml").read_text(encoding="utf-8")
-                .replace("__HA_URL__", "http://127.0.0.1:8123"), encoding="utf-8")
+                .replace("__HA_URL__", "http://127.0.0.1:8123")
+                .replace('buttons_panel = ""', 'buttons_panel = "http://127.0.0.1:4440/device/abc"'), encoding="utf-8")
 os.environ.update(HOMEDECK_CONFIG=str(conf), STATE_DIRECTORY=state, HOMEDECK_READONLY="1")
 sys.path.insert(0, str(SERVER))
 
@@ -40,7 +43,7 @@ have = addons.configured()
 names = [p["name"] for p in addons.catalog()]
 check("every addon is in the Plugins list", set(names) == set(have) and len(names) == len(set(names)),
       f"{sorted(set(have) ^ set(names))}")
-check("the Deck counts as set up when Buttons has an address", have.get("deck") is True, str(have.get("deck")))
+check("the Deck counts as set up when a Buttons page is set", have.get("deck") is True, str(have.get("deck")))
 check("before any switch, a plugin is on exactly when it is set up", addons.state() == have)
 
 r = addons.switch("deck", False)

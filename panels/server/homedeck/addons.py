@@ -28,7 +28,7 @@ from .store import SETTINGS, load, save
 
 # What each addon is, for the Plugins list: name -> (label, what it shows, what it needs when it is not set up)
 PLUGINS = {
-    'deck': ('Deck', 'The Buttons panel on Home', 'a Buttons address under [links] in homedeck.toml'),
+    'deck': ('Deck', 'The Buttons panel on Home', 'a Buttons page under [services] buttons_panel in homedeck.toml'),
     'speakers': ('Speakers', 'Volume dial, speaker and source picker', 'Genelec speakers in homedeck.toml'),
     'pc': ('PC', 'Wake, sleep and whether the PC is on', 'a PC under [pc] in homedeck.toml'),
     'cameras': ('Motion alerts', 'Camera motion alerts and the strip that shows them', 'a camera detection setting'),
@@ -91,12 +91,11 @@ def configured():
         'lock': _set('LOCK'),
         # Next departures. On when a stop is set, here or in the editor.
         'bus': bool(_bus_stop()),
-        # The Buttons panel in the Deck card on Home.
-        'deck': bool((getattr(C, 'LINK_CHECKS', None) or {}).get('buttons')),
+        # The Buttons page the Deck card shows inside itself. A status dot for the
+        # Buttons service is not enough: the card embeds one panel's own address.
+        'deck': _set('BUTTONS_PANEL'),
         # The Proxmox cluster and the lab panel.
         'lab': bool(getattr(C, 'LABPANEL', None)),
-        # The Stream Deck page the wall panel shows inside itself.
-        'buttons': _set('BUTTONS_PANEL'),
     }
 
 
