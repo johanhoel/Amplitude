@@ -9,6 +9,33 @@ One top-level folder per project, each with its own `README.md` and
 `CHANGELOG.md`. The root `README.md` indexes them; add a row there for a
 new project.
 
+## Several sessions work here at once (always)
+
+Several Claude sessions commit to this repo on the same day, from different machines.
+
+- Run `git fetch` and merge `origin/main` before you start, and again before you push.
+- After a push, check it landed with `git ls-remote origin refs/heads/main`.
+- Read the newest commit messages for the area you touch. They say what the other session changed and why.
+- Say in your commit message what another session needs to know: a new rule, a file that moved, a known gap.
+
+## Private values stay off GitHub (always)
+
+The repository is public. Its history was rewritten on 2026-10-28 to remove the owner's private data.
+It now holds placeholders: `192.168.1.x` for the home network, `home.example.net` for the outside address,
+and sample names (Alex, Robin, Sam, Kim).
+
+- Never commit real addresses, names, MAC addresses, tokens or topics. Use the placeholders.
+- Panels: the live Home Deck (`192.168.100.52`) keeps its real values in two files that are never in git.
+  `/opt/panel-wrapper/homedeck.toml` holds the settings. `/opt/panel-wrapper/private.map` lists
+  `placeholder==>real value` pairs.
+- Deploy Panels only with `panels/tools/deploy.sh`. It applies `private.map`, never uploads `homedeck.toml`,
+  and runs a trial on port 8099 before anything goes live.
+- Never install code from GitHub on the live Home Deck any other way. The update card in Home Deck's Settings
+  does not apply `private.map` yet. On the live house, the placeholders would break presence.
+- Home Deck runs as the user `panel-wrapper`. A file you write in `/var/lib/panel-wrapper` as root must go
+  back to that user (`chown panel-wrapper:panel-wrapper`). Otherwise Home Deck cannot read it.
+  On 2026-10-29 a root-owned `secrets.json` cost the house its tokens.
+
 ## Screenshots of features (always)
 
 Every project shows what it can do, with screenshots.
