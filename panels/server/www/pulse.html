@@ -139,7 +139,10 @@ function render() {
     tiles.push(`<a class="card t cam w2" href="/security">${v.has_jpg ? `<img src="/api/sec/thumb/${esc(v.day)}/${esc(v.stem)}.jpg?w=480" alt="" loading="lazy">` : ''}<div class="over">
       <div class="k" style="color:#fff">Front camera <i style="color:rgba(255,255,255,.7)">${ago(t)}</i></div><div class="s" style="color:#fff"><b>${esc((v.people || []).map(p => p.name || p).join(', ') || (v.labels || []).join(', ') || 'Motion')}</b> · ${hm(t)}</div></div></a>`);
   }
-  if (D.health && !D.health.settings?.ok) attn.push(['bad', '/atlas', `⚠ homedeck.toml: ${D.health.settings.problems.length} problem(s)`]);
+  /* Guard the whole of settings, not just .ok: when the health check has not reported settings at all,
+     !undefined?.ok is true, so the old test sent exactly the missing-data case into .problems.length. */
+  const hs = D.health?.settings;
+  if (hs && !hs.ok) attn.push(['bad', '/atlas', `⚠ homedeck.toml: ${(hs.problems || []).length} problem(s)`]);
   if (!attn.length && H) attn.push(['ok', '/today', '✓ Nothing needs your attention']);
   $('#attn').innerHTML = attn.map(([c, h, t]) => `<a class="${c}" href="${h}">${esc(t)}</a>`).join('');
   $('#bento').innerHTML = tiles.join('');

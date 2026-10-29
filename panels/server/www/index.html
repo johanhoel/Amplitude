@@ -79,7 +79,15 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 .deck-head { display: flex; justify-content: space-between; align-items: center; padding: 2px 6px 10px; }
 .label { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); font-weight: 600; }
 #clip { position: relative; overflow: hidden; border-radius: 18px; background: #000; margin: 0 auto; }
-#frame { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; background: #000; will-change: transform; }
+#frame { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; background: #000; will-change: transform;
+  opacity: 0; transition: opacity .3s var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)); }
+/* Shown in the frame's place when the panel does not answer. Centred in the clip, in the page's
+   own colours, so a failure looks like part of this interface rather than the browser's. */
+#deck-err { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center;
+  gap: 10px; text-align: center; padding: 24px; background: #000; }
+#deck-err b { font-size: 15px; font-weight: 600; color: var(--ink); }
+#deck-err span { font-size: 13px; color: var(--mute); }
+#deck-err button { margin-top: 4px; }
 
 /* ---------- widgets ---------- */
 .widgets { grid-area: widgets; display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
@@ -220,7 +228,13 @@ body.lab .deck { justify-self: center; }
 
   <section class="deck glass">
     <div class="deck-head"><span class="label" id="deck-title">Deck</span><span class="label" id="deck-state"></span></div>
-    <div id="clip"><iframe id="frame" title="Deck" scrolling="no"></iframe></div>
+    <div id="clip"><iframe id="frame" title="Deck" scrolling="no"></iframe>
+      <div id="deck-err" hidden>
+        <b>Buttons is not answering</b>
+        <span id="deck-err-why"></span>
+        <button id="deck-retry" class="pill" type="button">Try again</button>
+      </div>
+    </div>
   </section>
 
   <aside class="labside">
@@ -336,7 +350,29 @@ tick(); setInterval(tick, 1000);
    Home view: the whole 6x6 scaled into the Deck card, or the top-left 3x2 "favourites" (setting).
    Lab view: the whole 6x6 as large as the window height allows. */
 const frame = $('#frame'), clip = $('#clip');
-frame.src = PANEL; frame.style.width = (PW + 24) + 'px'; frame.style.height = (PH + 24) + 'px';
+frame.style.width = (PW + 24) + 'px'; frame.style.height = (PH + 24) + 'px';
+/* A panel that does not answer paints the browser's own error page, which is white, over the
+   iframe's black background - a glaring rectangle on a wall screen in a dark room, and there is
+   no way to style inside the frame. So ask first, and only attach the frame once the panel
+   answers; otherwise say so in the page's own colours. The frame fades in to avoid a flash of
+   black while it paints. */
+function deckFailed(why) {
+  frame.removeAttribute('src');
+  frame.hidden = true;
+  $('#deck-err').hidden = false;
+  $('#deck-err-why').textContent = why;
+}
+function loadDeck() {
+  $('#deck-err').hidden = true;
+  frame.hidden = false;
+  frame.style.opacity = '0';
+  fetch(PANEL, { method: 'HEAD', cache: 'no-store' })
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); frame.src = PANEL; })
+    .catch(e => deckFailed(e.message === 'Failed to fetch' ? 'No answer from the panel' : e.message));
+}
+frame.addEventListener('load', () => { frame.style.opacity = '1'; });
+$('#deck-retry').onclick = loadDeck;
+loadDeck();
 let view = /^\/lab\/?$/.test(location.pathname) || Q.get('view') === 'lab' ? 'lab' : 'home';
 /* Each view's geometry is computed once (load, resize, settings change) and cached, so a view switch only
    applies stored numbers in the same frame instead of measuring + rescaling the page afterwards. */
