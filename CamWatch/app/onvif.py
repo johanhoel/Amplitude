@@ -25,6 +25,8 @@ from xml.sax.saxutils import escape
 RTSP_PORTS = (554, 8554)
 ONVIF_PORTS = (80, 8000, 8080, 2020, 8899, 888)
 MAX_HOSTS = 1024
+MAX_NETS = 8                 # networks in one scan
+MAX_TOTAL = 4096             # addresses across all of them: a scan nobody waits for is a scan nobody runs
 DEVICE_NS = "http://www.onvif.org/ver10/device/wsdl"
 MEDIA_NS = "http://www.onvif.org/ver10/media/wsdl"
 SCHEMA_NS = "http://www.onvif.org/ver10/schema"
@@ -42,6 +44,41 @@ def check_subnet(text):
     if net.num_addresses > MAX_HOSTS:
         raise ValueError(f"at most {MAX_HOSTS} addresses (/22) at a time")
     return net
+
+
+def check_subnets(text):
+    """"192.168.1.0/24, 10.0.20.0/24" -> [ip_network]. Cameras often sit on their own VLAN, and a
+    house with one can have several: a camera VLAN, an IoT VLAN, the normal LAN."""
+    parts = [p for p in re.split(r"[\s,;]+", (text or "").strip()) if p]
+    if not parts:
+        raise ValueError("enter at least one network, for example 192.168.1.0/24")
+    if len(parts) > MAX_NETS:
+        raise ValueError(f"at most {MAX_NETS} networks at a time")
+    nets, seen = [], set()
+    for part in parts:
+        net = check_subnet(part)
+        if net in seen:
+            continue
+        seen.add(net)
+        nets.append(net)
+    total = sum(n.num_addresses for n in nets)
+    if total > MAX_TOTAL:
+        raise ValueError(f"at most {MAX_TOTAL} addresses in one scan (these are {total})")
+    return nets
+
+
+def scan_many(subnets, timeout=0.5):
+    """scan() over several networks, newest result wins for an address that answers on two of them."""
+    rows, seen = [], {}
+    for net in subnets:
+        for row in scan(str(net), timeout):
+            row = {**row, "subnet": str(net)}
+            if row["ip"] in seen:
+                seen[row["ip"]].update(row)
+            else:
+                seen[row["ip"]] = row
+                rows.append(row)
+    return rows
 
 
 def _open(ip, port, timeout):

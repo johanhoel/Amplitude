@@ -84,6 +84,18 @@ body.searching [data-sec].shut .list { display: block; }
 /* phone: one column in reading order (health, search, tasks, services, nodes, guests); the sidebar's parts flow in */
 .wrap { display: flex; flex-direction: column; }
 #side, #main { display: contents; }
+/* Update card: the notes are a plain dated list, like CamWatch's. */
+/* .cap here is space-between, which throws the icon to one end and the word
+   to the other. The update caption is one label, so it closes up. */
+.upd .cap { justify-content: flex-start; gap: 8px; margin-top: 0; }
+.upd .relnotes { list-style: none; margin: 8px 0 2px; padding: 0; display: grid; gap: 6px;
+  max-height: 220px; overflow: auto; }
+.upd .relnotes li { display: grid; grid-template-columns: auto 1fr; gap: 9px; align-items: baseline;
+  font-size: 13px; line-height: 1.45; }
+.upd .relnotes time { color: var(--dim); font-variant-numeric: tabular-nums; font-size: 12px; }
+.upd .relnotes code { color: var(--dim); font-size: 11px; }
+.upd summary { cursor: pointer; color: var(--mute); font-size: 13px; font-weight: 600; }
+.upd b { font-weight: 650; }
 header { order: 0; } .health { order: 1; } .problems { order: 2; } #main > .search { order: 3; } #main > [data-sec="tasks"] { order: 4; }
 #links { order: 5; } #side .grid2 { order: 6; } .foot { order: 7; }
 /* Mac / PC: services in columns, health + nodes + guests in a sticky sidebar */
@@ -112,6 +124,15 @@ body.editing .editbtn { display: none; }
   <header><h1 data-edit="title" id="title">Admin</h1><span class="hdr"><span class="sub num" id="clock">–</span><button id="editbtn" class="editbtn">Edit</button></span></header>
   <aside id="side">
     <section class="health" id="health"></section>
+    <section class="card upd" id="upd" hidden>
+      <div class="cap"><i class="icon icon-upload" aria-hidden="true"></i> Update</div>
+      <div id="upd-head"></div>
+      <details id="upd-notes" hidden><summary>What changed</summary><ul class="relnotes" id="upd-list"></ul></details>
+      <div class="row" style="margin-top:10px">
+        <button class="ui-ctl" id="upd-go">Update now</button>
+        <span class="sub" id="upd-msg"></span>
+      </div>
+    </section>
     <div class="problems" id="problems"></div>
     <div class="grid2">
       <div data-sec="nodes"><div class="cap">Proxmox nodes</div><section class="ui-list" id="nodes"></section></div>
@@ -370,6 +391,60 @@ $('#editbtn').addEventListener('click', () => { $('#q').value = ''; filter();
 renderAll(); tick();
 Edit.load('admin').then(l => { if (l.groups) setModel(l); });
 loadSnap(); loadLinks();
+/* ---------- update ----------
+   The card stays hidden unless there is something to do. A commit message is
+   text from a repository, so every line goes in with textContent. */
+async function loadUpdate() {
+  let r;
+  try { r = await (await fetch('/api/update', { cache: 'no-store' })).json(); } catch (e) { return; }
+  const card = $('#upd');
+  if (r.error || !r.newer) { card.hidden = true; return; }
+  card.hidden = false;
+  const head = $('#upd-head');
+  head.textContent = '';
+  const b = document.createElement('b');
+  b.textContent = r.latest.short;
+  head.append(document.createTextNode('A newer Home Deck is on GitHub: '), b,
+              document.createTextNode(` from ${r.latest.date}`));
+  const notes = r.latest.notes || [], list = $('#upd-list');
+  list.textContent = '';
+  for (const n of notes) {
+    const li = document.createElement('li');
+    const t = document.createElement('time'); t.textContent = n.date;
+    const w = document.createElement('span'); w.textContent = n.text;
+    const c = document.createElement('code'); c.textContent = ' ' + n.short;
+    w.append(c); li.append(t, w); list.append(li);
+  }
+  $('#upd-notes').hidden = !notes.length;
+  $('#upd-notes').open = notes.length <= 6;
+}
+
+async function followUpdate() {
+  const msg = $('#upd-msg');
+  let s;
+  try { s = await (await fetch('/api/update/status', { cache: 'no-store' })).json(); } catch (e) { return false; }
+  if (s.state === 'running') { msg.textContent = s.message || 'working…'; return true; }
+  if (s.state === 'failed') { msg.className = 'sub bad'; msg.textContent = s.message || 'failed'; return false; }
+  if (s.state === 'done') { msg.className = 'sub ok'; msg.textContent = s.message || 'done'; return false; }
+  return false;
+}
+
+$('#upd-go').onclick = async () => {
+  const go = $('#upd-go'), msg = $('#upd-msg');
+  go.disabled = true; msg.className = 'sub'; msg.textContent = 'starting…';
+  try {
+    const r = await (await fetch('/api/update/run', { method: 'POST' })).json();
+    if (r.error) { msg.className = 'sub bad'; msg.textContent = r.error; go.disabled = false; return; }
+  } catch (e) { msg.className = 'sub bad'; msg.textContent = String(e); go.disabled = false; return; }
+  // The server restarts part way through, so the poll has to survive the
+  // connection dropping. followUpdate swallows that and tries again.
+  const poll = setInterval(async () => {
+    if (!await followUpdate()) { clearInterval(poll); setTimeout(() => location.reload(), 2500); }
+  }, 2000);
+};
+
+loadUpdate(); followUpdate();
+setInterval(loadUpdate, 30 * 60 * 1000);
 setInterval(loadSnap, 15000); setInterval(loadLinks, 30000); setInterval(tick, 10000);
 document.addEventListener('visibilitychange', () => { loadSnap(); loadLinks(); });
 addEventListener('pageshow', e => { if (e.persisted) { loadSnap(); loadLinks(); } });

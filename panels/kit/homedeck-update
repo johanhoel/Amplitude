@@ -1,21 +1,88 @@
 #!/usr/bin/env bash
-# homedeck-update - fetch the newest Home Deck and install it. Keeps settings, the Home Assistant token, layouts and
-# every file you edited (the new version of an edited file is saved next to it as .new-<version>).
-# A failed start rolls back to the previous version automatically (homedeck-apply).
-set -euo pipefail
-REPOS="${HOMEDECK_REPO:-https://home.example.net:8443 http://192.168.1.41}"
-HDR=(-H "X-Winrepo-Key: ${WIN_REPO_KEY:-VKcUYRQvHZAm2ZQD1c2eV7KoSqacgmsA}")
+# homedeck-update - fetch the newest Home Deck from GitHub and install it.
+#
+#   homedeck-update [sha|--force]
+#
+# Keeps settings, the Home Assistant token, layouts and every file you edited:
+# the new version of an edited file is saved next to it as .new-<version>.
+# A failed start rolls back to the previous version automatically.
+#
+# None of that care lives here. This script only decides WHAT to install;
+# install-homedeck.sh decides HOW, and it is the same code a fresh install
+# runs. Two copies of the merge logic would be one copy too many.
+#
+# Run detached when started from the web UI: the install ends in a restart of
+# panel-wrapper, so anything waiting on this script would be killed mid-way.
+# The UI follows .update-status.json instead.
+set -uo pipefail
+
+# install-homedeck.sh reinstalls this very file. Bash reads a script as it
+# runs it, so being overwritten mid-run would feed it the tail of whatever
+# landed on top. Run from a copy instead.
+if [ "${HOMEDECK_UPDATE_DETACHED:-}" != "1" ]; then
+  self=$(mktemp) && cp "$0" "$self" && chmod +x "$self" || { echo "no temp space"; exit 1; }
+  HOMEDECK_UPDATE_DETACHED=1 bash "$self" "$@"; rc=$?
+  rm -f "$self"; exit $rc
+fi
+
+REPO="${HOMEDECK_GITHUB_REPO:-johanhoel/Amplitude}"
+ROOT=/opt/panel-wrapper
+ST="$ROOT/.update-status.json"
+LOG="$ROOT/.update.log"
+REF="main"; FORCE=0
+case "${1:-}" in --force) FORCE=1 ;; "") ;; *) REF="$1" ;; esac
+
+say() {  # state message
+  printf '{"state":"%s","message":"%s","at":"%s","sha":"%s"}\n' \
+    "$1" "$2" "$(date -Is)" "$REF" > "$ST.tmp" && mv "$ST.tmp" "$ST"
+  echo "$2"
+}
+fail() { say failed "$1"; exit 1; }
+
 [ "$(id -u)" -eq 0 ] || { echo "run as root"; exit 1; }
-cur=$(cat /opt/panel-wrapper/VERSION 2>/dev/null || echo none)
-tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
-for r in $REPOS; do
-  if curl -fsS -m 10 "${HDR[@]}" -o "$tmp/kit.sha256" "$r/homedeck/homedeck-kit.tar.gz.sha256" 2>/dev/null; then REPO=$r; break; fi
-done
-[ -n "${REPO:-}" ] || { echo "Can't reach the Home Deck download ($REPOS)."; exit 1; }
-curl -fsS "${HDR[@]}" -o "$tmp/kit.tgz" "$REPO/homedeck/homedeck-kit.tar.gz"
-[ "$(sha256sum "$tmp/kit.tgz" | cut -c1-64)" = "$(cut -c1-64 "$tmp/kit.sha256")" ] || { echo "Download damaged (checksum), try again."; exit 1; }
-tar xzf "$tmp/kit.tgz" -C "$tmp"
-new=$(cat "$tmp/homedeck-kit/app/VERSION")
-if [ "$new" = "$cur" ] && [ "${1:-}" != "--force" ]; then echo "Home Deck is up to date ($cur)."; exit 0; fi
-echo "Updating Home Deck $cur -> $new"
-bash "$tmp/homedeck-kit/install-homedeck.sh" --update
+exec >>"$LOG" 2>&1
+echo "--- $(date -Is) homedeck-update $REF"
+
+say running "downloading"
+TMP=$(mktemp -d) || fail "no temp space"
+trap 'rm -rf "$TMP"' EXIT
+curl -fsSL --max-time 300 -o "$TMP/src.tgz" \
+  "https://codeload.github.com/$REPO/tar.gz/$REF" || fail "download failed"
+tar xzf "$TMP/src.tgz" -C "$TMP" || fail "the download was not a readable archive"
+
+SRC=$(echo "$TMP"/*/panels)
+# A truncated download still untars. Refuse one that is missing the parts a
+# working install is built from, rather than building half a release.
+[ -f "$SRC/build_kit.sh" ] && [ -f "$SRC/kit/install-homedeck.sh" ] \
+  && [ -f "$SRC/server/server.py" ] && [ -d "$SRC/server/homedeck" ] \
+  && [ -d "$SRC/server/www" ] && [ -f "$SRC/editor/editor.py" ] \
+  || fail "the archive is incomplete"
+
+cur=$(cat "$ROOT/VERSION" 2>/dev/null || echo none)
+sha=$(cat "$ROOT/.commit" 2>/dev/null || echo "")
+V="$(cat "$SRC/server/VERSION" 2>/dev/null || date +%Y.%m.%d)"
+[ "$REF" != "main" ] && V="$V+${REF:0:7}"
+if [ -n "$sha" ] && [ "$REF" != "main" ] && [ "${REF:0:7}" = "${sha:0:7}" ] && [ "$FORCE" -eq 0 ]; then
+  say done "Home Deck is up to date ($cur)."; exit 0
+fi
+
+# build_kit.sh assembles exactly what a download from the release server would
+# have contained, and refuses to build code that does not import. Failing here
+# costs nothing: the running panels have not been touched yet.
+say running "building $V"
+bash "$SRC/build_kit.sh" "$V" || fail "the downloaded code did not build"
+
+say running "installing $cur -> $V"
+bash "$SRC/dist/homedeck-kit/install-homedeck.sh" --update || fail "the install failed; see $LOG"
+
+# Record the commit, so the next check can tell new from old. Without it the
+# only comparison left is a date-shaped version string, and the check refuses
+# to offer an update on that alone.
+if [ "$REF" != "main" ]; then printf '%s' "$REF" > "$ROOT/.commit"; else
+  curl -fsS --max-time 20 -H 'Accept: application/vnd.github+json' \
+    "https://api.github.com/repos/$REPO/commits?sha=main&path=panels&per_page=1" \
+    | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["sha"])' \
+    > "$ROOT/.commit" 2>/dev/null || true
+fi
+
+say done "updated to $(cat "$ROOT/VERSION" 2>/dev/null || echo "$V")"

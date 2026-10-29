@@ -4,12 +4,18 @@ Newest changes first.
 
 ## 2026-10-29
 
+- New: Studio. Every camera and every device Home Deck knows about, in one list, with the ones a network
+  scan finds. Adding a camera is a slot, a name and a stream address collected as a draft and applied
+  together, instead of four separate forms on the Settings page. The apply before this one can be undone.
+- New: the camera scan searches several networks at once, for houses that keep cameras on their own VLAN. The
+  networks are suggested from the addresses already known - the one you reach CamWatch on, the ones the cameras
+  are on, and the ones Home Deck's devices are on - and the list is remembered for the next scan.
 - New: CamWatch links with the Studio in Home Deck. Settings → Home Deck makes the link key.
 - The Studio lists CamWatch's cameras. A watched camera sends a notice when it goes offline.
 - The Studio's People page shows when a camera last saw each person.
 - The camera finder names cameras with Home Deck's names. It also lists cameras that the scan missed.
 - The People page lists Home Deck's people who have no photos yet.
-- The version is now 2026.10.29.3.
+- The version is now 2026.10.29.4.
 - New in Settings: Image processing. The image models can now use a GPU.
 - Each model switches the next time it runs. Recording does not stop.
 - Settings shows what each part runs on: objects, number plates, faces and search.

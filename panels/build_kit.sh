@@ -29,7 +29,14 @@ chmod +x "$STAGE/install-homedeck.sh" "$STAGE/bin/"*
 # self-check of the packaged code: everything compiles and the settings template validates
 ( cd "$STAGE/app" && sed 's#__HA_URL__#http://127.0.0.1:8123#' homedeck.toml > /tmp/hd-check.toml && \
   HOMEDECK_ROOT="$STAGE/app" HOMEDECK_CONFIG=/tmp/hd-check.toml STATE_DIRECTORY="$(mktemp -d)" HOMEDECK_READONLY=1 python3 -m homedeck.check )
-if grep -rIl -i -E "claude|anthropic|\bllm\b|chatgpt" "$STAGE" "$H/kit/homedeck.sh"; then echo "AI mention found - not publishing"; exit 1; fi
+# No AI-authorship traces in a published kit. This used to ban the bare words
+# "claude" and "llm", which stopped working the day the Local AI panel shipped:
+# it loads Ollama models, routes live under /llm/, and "claude" is the setup id
+# for launching Claude Code on the PC. Those are the product's own vocabulary.
+# So the patterns below describe authorship instead - a byline, a session link,
+# a co-author trailer - which is what the check was always for. "anthropic" and
+# "chatgpt" stay banned as bare words; nothing here has a reason to say them.
+if grep -rIl -i -E "anthropic\\.com|@anthropic|chatgpt|claude\\.ai|co-authored-by|generated with|written by claude|as an ai (language )?model" "$STAGE" "$H/kit/homedeck.sh"; then echo "AI authorship mention found - not publishing"; exit 1; fi
 # personal words (names, street, entity ids) live in private-words.txt: one per line, kept out of git
 if [ -s "$H/private-words.txt" ]; then
   if grep -rIl -i -F -f "$H/private-words.txt" "$STAGE/app" "$STAGE/editor"; then echo "personal data found"; exit 1; fi

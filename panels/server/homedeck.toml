@@ -20,7 +20,7 @@ netaudio = "/opt/panel-wrapper/venv/bin/netaudio"
 timezone = "Europe/Stockholm"
 
 [homeassistant]
-url = "https://192.168.1.70:8123"
+url = "__HA_URL__"    # written by the installer from the address you type at setup
 
 [services]
 pc = "192.168.1.200:8765"                         # deck-listener on the Windows PC (answers while the PC is on)
