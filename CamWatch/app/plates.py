@@ -1,4 +1,4 @@
-"""License plate reading (fast-alpr: YOLOv9 plate detector + CCT OCR, ONNX on CPU).
+"""License plate reading (fast-alpr: YOLOv9 plate detector + CCT OCR, ONNX on the CPU or a GPU, see accel.py).
 
 Live use: the recorder calls PlateReader.read() on frames with a moving vehicle and collects
 reads per event in a PlateTally; a plate is confirmed after 2 identical reads (or 1 very
@@ -49,11 +49,34 @@ def match_known(plate, known):
 
 
 class PlateReader:
-    def __init__(self):
+    def __init__(self, part=None):
+        self.part = part
+        self._open()
+
+    def _open(self):
+        import accel
         from fast_alpr import ALPR
-        self.alpr = ALPR(detector_model=DETECTOR, ocr_model=OCR, ocr_device="cpu")
+        self.providers = accel.providers()
+        error = ""
+        for providers in (self.providers, [(accel.CPU, {})]):
+            try:
+                # fixed thread counts: see accel.session_options
+                self.alpr = ALPR(detector_model=DETECTOR, detector_providers=providers,
+                                 detector_sess_options=accel.session_options(),
+                                 ocr_model=OCR, ocr_device="cpu", ocr_providers=providers,
+                                 ocr_sess_options=accel.session_options())
+                break
+            except Exception as exc:      # a GPU that the driver refuses: try again on the CPU
+                if len(providers) == 1:
+                    raise
+                error = str(exc).splitlines()[0][:300]
+        if self.part:
+            accel.report(self.part, providers[0][0], error)
 
     def read(self, frame):
+        import accel
+        if accel.providers() != self.providers:      # Settings -> Image processing changed
+            self._open()
         out = []
         for r in self.alpr.predict(frame):
             if not r.ocr:

@@ -119,6 +119,27 @@ A network share goes into `/etc/fstab` under `/mnt/camwatch-net/`, and Docker wa
 An unprivileged Proxmox container cannot connect to a share. Connect it on the Proxmox host and pass it in with `pct set`.
 Settings shows the steps.
 
+### GPU
+
+CamWatch finds people, cars, number plates and faces with image models. By default these models run on the CPU.
+**Settings → Image processing → Use the GPU when the server has one** moves them to a GPU.
+Each model switches the next time it runs, and recording does not stop.
+The table below the switch shows what each part runs on. When the GPU fails, a part goes back to the CPU.
+
+**Settings → GPU on the server** shows what the update helper found.
+The helper scans the PCI bus, so it also finds a GPU in a virtual machine or a GPU without a driver.
+It then shows the next step:
+
+- An Intel GPU or an NVIDIA GPU that Docker can use: **Add GPU support** builds CamWatch again with it.
+  This takes 5 to 15 minutes. When the new build does not start, the old build comes back.
+- A Proxmox container: the `pct set` command for the Proxmox host, with the right `renderD` device.
+- A virtual machine with only a virtual graphics card: the steps to pass a real GPU through.
+- A GPU without a driver, or an NVIDIA GPU without the NVIDIA Container Toolkit: what to install.
+
+An Intel GPU uses OpenVINO, and an NVIDIA GPU uses CUDA. CamWatch cannot use AMD GPUs yet.
+By hand: set `CAMWATCH_GPU=intel` (or `nvidia`) in `.env`, and add `docker-compose.gpu-intel.yml`
+(or `docker-compose.gpu-nvidia.yml`) to `COMPOSE_FILE`.
+
 ### Feature requests
 
 Every page has a **💡 Request a feature** link at the bottom.

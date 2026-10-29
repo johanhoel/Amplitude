@@ -1,7 +1,8 @@
-"""YOLOv8 object detection (ONNX, CPU) used to confirm motion is a person/car/etc."""
+"""YOLOv8 object detection (ONNX, on the CPU or a GPU, see accel.py) used to confirm motion is a person/car/etc."""
 import cv2
 import numpy as np
-import onnxruntime as ort
+
+import accel
 
 COCO = [
     "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat", "traffic light",
@@ -18,16 +19,20 @@ SIZE = 640
 
 
 class ObjectDetector:
-    def __init__(self, model_path, wanted, confidence, threads=2):
-        opts = ort.SessionOptions()
-        opts.intra_op_num_threads = threads
-        self.session = ort.InferenceSession(str(model_path), opts, providers=["CPUExecutionProvider"])
+    def __init__(self, model_path, wanted, confidence, threads=2, part=None):
+        self.model_path, self.threads, self.part = model_path, threads, part
+        self._open()
         self.input = self.session.get_inputs()[0].name
         self.wanted = set(wanted)
         self.confidence = confidence
 
+    def _open(self):
+        self.session, self.providers = accel.session(self.model_path, self.threads, self.part)
+
     def detect(self, frame):
         """Returns [(label, confidence, (x, y, w, h))] in frame pixels, wanted labels only."""
+        if accel.providers() != self.providers:      # Settings -> Image processing changed
+            self._open()
         h, w = frame.shape[:2]
         scale = SIZE / max(h, w)
         nw, nh = int(w * scale), int(h * scale)

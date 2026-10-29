@@ -564,7 +564,7 @@ def load_object_detector():
     if unknown:
         log.warning("DETECT_OBJECTS contains unknown classes %s", unknown)
     log.info("detection mode: motion confirmed by YOLO for %s", ", ".join(DETECT_OBJECTS))
-    return ObjectDetector(OBJECT_MODEL, DETECT_OBJECTS, OBJECT_CONFIDENCE)
+    return ObjectDetector(OBJECT_MODEL, DETECT_OBJECTS, OBJECT_CONFIDENCE, part=f"objects {CAMERA}")
 
 
 def iou(a, b):
@@ -684,7 +684,7 @@ def main():
     if PLATE_READING and objects and VEHICLES & objects.wanted:
         try:
             from plates import PlateReader
-            plate_reader = PlateReader()
+            plate_reader = PlateReader(part=f"plates {CAMERA}")
             log.info("number plate reading enabled")
         except Exception:
             log.exception("number plate reading unavailable")

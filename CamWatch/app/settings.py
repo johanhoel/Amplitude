@@ -180,6 +180,12 @@ def storage(conf=None):
     return out
 
 
+def processing(conf=None):
+    """Settings -> Image processing: {"gpu": the image models may use a GPU}. Off until switched on there."""
+    saved = (conf or load()).get("processing") or {}
+    return {"gpu": bool(saved.get("gpu", False))}
+
+
 def trusted_networks(conf=None):
     """[{"net", "label"}] whose devices skip the password when lan_no_auth is on: as saved in Settings, else LAN_NETWORKS."""
     conf = conf or load()

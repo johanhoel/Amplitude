@@ -14,7 +14,7 @@ case $target in
   staging) dir=/opt/camwatch-staging ;;
   *) echo "unknown target: $target" >&2; exit 2 ;;
 esac
-CODE="app extras models tests Dockerfile docker-compose.yml docker-compose.staging.yml requirements.txt deploy.sh README.md HANDOVER.md AGENTS.md"
+CODE="app extras models tests Dockerfile docker-compose.yml docker-compose.staging.yml docker-compose.gpu-intel.yml docker-compose.gpu-nvidia.yml requirements.txt deploy.sh README.md HANDOVER.md AGENTS.md"
 
 new=$(mktemp -d)
 trap 'rm -rf "$new"' EXIT

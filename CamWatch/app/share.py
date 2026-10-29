@@ -38,15 +38,19 @@ _models = {}
 
 def _load():
     """Face engine, library embeddings and plate detector, loaded once on first use."""
+    import accel
+    if _models.get("providers") != accel.providers():      # first use, or Settings -> Image processing changed
+        _models.clear()
     if not _models:
+        _models["providers"] = accel.providers()
         from facematch import FaceEngine
         from household import KnownFaces
         import open_image_models as oim
         _models["faces"] = FaceEngine()
         _models["known"] = KnownFaces()
-        _models["plates"] = oim.create_detector(PLATE_MODEL)
+        _models["plates"] = oim.create_detector(PLATE_MODEL, sess_options=accel.session_options())
         from objects import ObjectDetector
-        _models["people"] = ObjectDetector(OBJECT_MODEL, ["person"], 0.3)
+        _models["people"] = ObjectDetector(OBJECT_MODEL, ["person"], 0.3, part="share people")
     _models["known"].refresh()
     return _models
 

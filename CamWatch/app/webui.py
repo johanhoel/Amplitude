@@ -19,6 +19,7 @@ from waitress import serve
 import cv2
 import numpy as np
 
+import accel
 import alerts
 import feature_requests
 import offsite
@@ -873,7 +874,8 @@ def settings_page():
                            off_types=offsite.TYPES, off_queue=len(list(offsite.QUEUE.glob("*.json"))) if offsite.QUEUE.is_dir() else 0,
                            upd=updates.options(conf), upd_status=updates.status(),
                            store=settings.storage(conf), disk=disk_info(), host=updates.host(), st=updates.storage_status(),
-                           rec_dir=str(REC_DIR))
+                           rec_dir=str(REC_DIR), proc=settings.processing(conf), accel_parts=accel.reports(),
+                           gpu_st=updates.gpu_status())
 
 
 def disk_info():
@@ -938,6 +940,41 @@ def refresh_disks():
         updates.ask_host({"action": "disks"})
         time.sleep(2)           # the helper answers within a second or two
     return redirect(url_for("settings_page") + "#storage-where")
+
+
+@app.post("/settings/processing")
+def save_processing():
+    settings.update(processing={"gpu": request.form.get("gpu") == "1"})
+    return redirect(url_for("settings_page", saved="processing") + "#processing")
+
+
+@app.post("/settings/processing/build")
+def build_gpu():
+    kind = request.form.get("kind", "")
+    if kind not in ("", "intel", "nvidia"):
+        abort(400)
+    if not updates.status()["helper"]:
+        return settings_error("GPU support: the update helper is not installed on the server yet")
+    if updates._waiting() or any(s["state"] in ("waiting", "running")
+                                 for s in (updates.status(), updates.storage_status(), updates.gpu_status())):
+        return settings_error("GPU support: the server is busy with an update or a move - try again when it is done")
+    updates.ask_host({"action": "gpu", "kind": kind})
+    log.info("GPU support requested: %s", kind or "none")
+    return redirect(url_for("settings_page") + "#gpu")
+
+
+@app.post("/settings/processing/check")
+def check_gpu():
+    if updates.status()["helper"] and not updates._waiting():
+        updates.ask_host({"action": "disks"})
+        time.sleep(2)           # the helper answers within a second or two
+    return redirect(url_for("settings_page") + "#gpu")
+
+
+@app.get("/api/processing/status")
+def api_gpu_status():
+    s = updates.gpu_status()
+    return as_json({key: s.get(key) for key in ("state", "message", "started", "finished")})
 
 
 @app.get("/api/storage/status")
@@ -2678,6 +2715,7 @@ yesterday becomes a timelapse and a highlights reel (4 s of every recording with
 {% elif saved == 'cameras' %}<p class="box ok">Cameras saved. Changed cameras restart within about 10 seconds (after a recording in progress is saved).</p>
 {% elif saved == 'ntfy' %}<p class="box {{ 'bad' if ntfy_result and ntfy_result != 'ok' else 'ok' }}">Notification settings saved.{% if ntfy_result == 'ok' %} Test push sent - check your phone.{% elif ntfy_result %} <span class="bad">Test push failed: {{ ntfy_result }}</span>{% endif %}</p>
 {% elif saved == 'offsite' %}<p class="box ok">Off-site storage settings saved.</p>
+{% elif saved == 'processing' %}<p class="box ok">Saved. Each model switches the next time it runs. Recording does not stop.</p>
 {% elif saved == 'offsite-run' %}<p class="box ok">Upload started - it runs in the background; the status below updates when it's done.</p>
 {% elif saved == 'offsite-off' %}<p class="box ok">Off-site storage disconnected. Files already uploaded stay where they are.</p>
 {% elif saved == 'integration' %}<p class="box ok">Saved.{% if mqtt == 'ok' %} MQTT login works - camwatch connects within 10 seconds.{% elif mqtt %} <span class="bad">MQTT test failed: {{ mqtt }}</span>{% endif %}</p>
@@ -3240,6 +3278,100 @@ async function followUpdate() {
   }
 }
 </script>
+</section></div>
+
+<div class="spair"><section>
+<h2 id="processing">Image processing</h2>
+<form method="post" action="{{ url_for('save_processing') }}" class="box" style="display:grid;gap:10px">
+<p class="muted" style="margin:0">CamWatch finds people, cars, number plates and faces with image models.
+A GPU runs these models faster and leaves the CPU free for recording.</p>
+<label><input type="checkbox" name="gpu" value="1" {{ 'checked' if proc.gpu }}> Use the GPU when the server has one</label>
+<div class="row"><button class="primary">Save</button> <span class="muted">Without a GPU, the models use the CPU.</span></div>
+{% if accel_parts %}<table class="accel"><tr><th>Part</th><th>Runs on</th><th>Since</th></tr>
+{% for a in accel_parts %}<tr><td>{{ a.part }}</td><td>{{ a.name }}{% if a.error %} <span class="bad" title="{{ a.error }}">⚠ the GPU failed</span>{% endif %}</td>
+<td class="muted">{{ (a.at or '')|replace('T', ' ') }}</td></tr>{% endfor %}</table>
+{% else %}<p class="muted" style="margin:0">No model has started yet.</p>{% endif %}
+</form>
+<style>.accel{border-collapse:collapse;font-size:14px}.accel th{text-align:left;font-weight:600}
+.accel td,.accel th{padding:4px 12px 4px 0;border-bottom:1px solid var(--card-hi)}</style>
+</section><section>
+<h2 id="gpu">GPU on the server</h2>
+<div class="box" style="display:grid;gap:10px">
+{% set g = host.gpu or {} %}
+{% if not upd_status.helper %}<div class="warn" style="font-size:14px">The update helper is not installed on the server yet. Run <code>sudo ./deploy.sh</code> once.</div>
+{% elif not host.gpu %}<p class="muted" style="margin:0">The helper has not looked for a GPU yet.</p>
+<form method="post" action="{{ url_for('check_gpu') }}"><button>↻ Check now</button></form>
+{% else %}
+{% if g.build %}<p style="margin:0"><span class="state on">● On</span> CamWatch has <b>{{ 'Intel' if g.build == 'intel' else 'NVIDIA' }}</b> GPU support.</p>
+<form method="post" action="{{ url_for('build_gpu') }}" onsubmit="return confirm('Build CamWatch without GPU support? This takes 5 to 15 minutes. The cameras stop for about a minute at the end.')">
+<input type="hidden" name="kind" value=""><button {{ 'disabled' if gpu_st.state in ('waiting', 'running') }}>Remove GPU support</button></form>
+{% elif g.intel or (g.nvidia and g.nvidia_toolkit) %}{% set kind = 'intel' if g.intel else 'nvidia' %}
+<p style="margin:0">The server has {{ 'an Intel' if kind == 'intel' else 'an NVIDIA' }} GPU. CamWatch needs a new build to use it.</p>
+<form method="post" action="{{ url_for('build_gpu') }}" onsubmit="return confirm('Build CamWatch with GPU support? This takes 5 to 15 minutes. The cameras stop for about a minute at the end. When the new build fails, the old build comes back.')">
+<input type="hidden" name="kind" value="{{ kind }}"><button class="primary" {{ 'disabled' if gpu_st.state in ('waiting', 'running') }}>Add {{ 'Intel' if kind == 'intel' else 'NVIDIA' }} GPU support</button></form>
+{% elif g.nvidia %}<p style="margin:0">The server has an NVIDIA GPU. Docker needs the NVIDIA Container Toolkit to use it.</p>
+<p class="muted" style="margin:0">Install the toolkit on the server with NVIDIA's
+<a href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html" target="_blank" rel="noopener">install guide</a>.
+Then run <code>sudo nvidia-ctk runtime configure --runtime=docker</code> and <code>sudo systemctl restart docker</code>.</p>
+{% else %}
+{% set cards = g.cards or [] %}
+{% set intel = cards|selectattr('vendor', 'equalto', 'intel')|list %}
+{% set nvidia = cards|selectattr('vendor', 'equalto', 'nvidia')|list %}
+{% set is_vm = g.virt and g.virt not in ('none', 'lxc', 'docker', 'podman') %}
+{% if g.lxc and intel %}<p style="margin:0">The Proxmox host has an Intel GPU, but this container cannot use it yet.</p>
+<details open><summary style="cursor:pointer">How to give the container the GPU</summary>
+<ol style="margin:8px 0 0;padding-left:20px;display:grid;gap:6px">
+<li>Open the shell of the Proxmox host. This is the server that runs the container.</li>
+<li>Pass the GPU into the container. Use the container's number from the Proxmox list:<br>
+<code>pct set &lt;number&gt; -dev0 /dev/dri/{{ intel[0].render or 'renderD128' }},mode=0666</code></li>
+<li>Restart the container: <code>pct reboot &lt;number&gt;</code></li>
+<li>Come back here and click Check again.</li></ol></details>
+{% elif g.lxc and nvidia %}<p style="margin:0">The Proxmox host has an NVIDIA GPU, but this container cannot use it yet.</p>
+<p class="muted" style="margin:0">Install the same NVIDIA driver version on the host and in the container.
+Pass <code>/dev/nvidia0</code>, <code>/dev/nvidiactl</code> and <code>/dev/nvidia-uvm</code> into the container with <code>pct set</code>.
+Then install the NVIDIA Container Toolkit in the container.</p>
+{% elif intel %}<p style="margin:0">The server has an Intel GPU, but no driver uses it yet.</p>
+<p class="muted" style="margin:0">Install the Intel graphics driver for your Linux version, then restart the server.
+On Debian and Ubuntu the driver is part of the kernel: install the package <code>firmware-misc-nonfree</code> (Debian) or <code>linux-firmware</code> (Ubuntu).</p>
+{% elif nvidia %}<p style="margin:0">The server has an NVIDIA GPU, but no driver uses it yet.</p>
+<p class="muted" style="margin:0">Install the NVIDIA driver and the
+<a href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html" target="_blank" rel="noopener">NVIDIA Container Toolkit</a>,
+then restart the server.</p>
+{% elif cards|selectattr('vendor', 'equalto', 'amd')|list %}<p style="margin:0">The server has an AMD GPU. CamWatch cannot use AMD GPUs yet.</p>
+{% elif is_vm %}<p style="margin:0">This server is a virtual machine ({{ g.virt }}). It has only a virtual graphics card, and CamWatch cannot use that one.</p>
+<details open><summary style="cursor:pointer">How to give the virtual machine a GPU</summary>
+<ol style="margin:8px 0 0;padding-left:20px;display:grid;gap:6px">
+<li>Shut down the virtual machine.</li>
+<li>In Proxmox, open the machine, then Hardware, Add, PCI Device. Pick the GPU. Other software calls this "PCI passthrough".</li>
+<li>Start the machine, and come back here to click Check again.</li></ol>
+<p class="muted" style="margin:8px 0 0">The host cannot use a GPU while a virtual machine has it. In a Proxmox container, the host and CamWatch can share it.</p></details>
+{% else %}<p style="margin:0">CamWatch found no GPU on this server.</p>
+<p class="muted" style="margin:0">An Intel GPU works with the normal Linux driver. An NVIDIA GPU needs the NVIDIA driver and the NVIDIA Container Toolkit.</p>
+{% endif %}
+{% endif %}
+<form method="post" action="{{ url_for('check_gpu') }}"><button>↻ Check again</button></form>
+{% endif %}
+<div id="gpu-status" class="muted" {{ 'hidden' if gpu_st.state == 'idle' }}>
+{% if gpu_st.state == 'waiting' %}Waiting for the server to start…
+{% elif gpu_st.state == 'running' %}{{ gpu_st.message }}
+{% elif gpu_st.state == 'done' %}<span class="ok">✓ {{ gpu_st.message }} ({{ (gpu_st.finished or '')|replace('T', ' ') }})</span>
+{% elif gpu_st.state == 'failed' %}<span class="bad">⚠ {{ gpu_st.message }} ({{ (gpu_st.finished or '')|replace('T', ' ') }})</span>
+{% if gpu_st.log %}<details><summary style="cursor:pointer">Log</summary><pre style="white-space:pre-wrap;font-size:12px;max-height:300px;overflow:auto">{{ gpu_st.log }}</pre></details>{% endif %}{% endif %}</div>
+</div>
+{% if gpu_st.state in ('waiting', 'running') %}<script>
+// CamWatch restarts at the end of the build: keep asking until the server answers again, then show the result
+(async () => {
+  const box = document.getElementById('gpu-status');
+  for (;;) {
+    await new Promise(ok => setTimeout(ok, 5000));
+    try {
+      const s = await (await fetch('{{ url_for("api_gpu_status") }}', {cache: 'no-store'})).json();
+      if (s.state === 'done' || s.state === 'failed') { location.hash = 'gpu'; location.reload(); return; }
+      box.textContent = s.state === 'waiting' ? 'Waiting for the server to start…' : s.message;
+    } catch (e) { box.textContent = 'CamWatch restarts with the new build…'; }
+  }
+})();
+</script>{% endif %}
 </section></div>
 <script>
 document.querySelectorAll('.camcard input[name^=name_]').forEach(inp => inp.addEventListener('input', () => {

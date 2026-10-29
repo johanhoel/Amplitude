@@ -28,7 +28,9 @@ services:
   # Always on: RTSP -> motion detection -> ntfy + recordings on the HDD (one container per camera slot)
   recorder:
     <<: *camera
-    build: .
+    build:
+      context: .
+      args: {GPU: "${CAMWATCH_GPU:-}"}     # GPU support: see Dockerfile and docker-compose.gpu-*.yml
     container_name: ${CAMWATCH_PREFIX:-camwatch}-recorder
     environment: {CAMERA_SLOT: "1"}
     volumes:

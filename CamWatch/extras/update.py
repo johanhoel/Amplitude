@@ -11,7 +11,11 @@ UI cannot run Docker or mount disks, so it writes a request and this script does
                                   kept in /etc/fstab, Docker waits for it at boot), copy the recordings (rsync), stop,
                                   copy the newest clips, point RECORDINGS_PATH in .env there, start. Switches back
                                   when the start fails. The old copy stays. Progress: update/storage.json.
-  {"action": "disks"}             only refresh update/host.json: disks, the recordings folder, whether mounting works.
+  {"action": "gpu", "kind"}       build CamWatch with GPU support (kind intel or nvidia) or without it (kind ""):
+                                  set CAMWATCH_GPU and COMPOSE_FILE in .env, build, start, health check. Switches back
+                                  when the start fails. Progress: update/gpu.json.
+  {"action": "disks"}             only refresh update/host.json: disks, the recordings folder, whether mounting works,
+                                  the GPUs.
 
     update.py /opt/camwatch            handle a waiting request (what systemd runs)
     update.py /opt/camwatch --hello    only write "helper installed" (deploy.sh and release.sh run this)
@@ -50,6 +54,8 @@ DATA = Path(env_value("DATA_PATH", "/mnt/hdd/camwatch/data"))
 UPDATE = DATA / "update"
 REQUEST, STATUS = UPDATE / "request.json", UPDATE / "status.json"
 STORAGE, HOST = UPDATE / "storage.json", UPDATE / "host.json"
+GPU = UPDATE / "gpu.json"
+GPU_FILES = {"intel": "docker-compose.gpu-intel.yml", "nvidia": "docker-compose.gpu-nvidia.yml"}
 SYSTEM_DIRS = {"bin", "boot", "dev", "etc", "lib", "lib32", "lib64", "proc", "run", "sbin", "sys", "usr", "var", "tmp"}
 NET_ROOT = Path("/mnt/camwatch-net")
 TARGET = "production" if DIR == Path("/opt/camwatch") else "staging"
@@ -155,10 +161,71 @@ def can_mount():
     return True, ""
 
 
+def in_lxc():
+    try:
+        return b"container=lxc" in Path("/proc/1/environ").read_bytes()
+    except OSError:
+        return False
+
+
+VENDORS = {"0x8086": "intel", "0x1002": "amd", "0x10de": "nvidia"}
+# Graphics cards that virtual machines show: QEMU, virtio, Red Hat QXL, VMware, Hyper-V, VirtualBox
+VIRTUAL = {"0x1234", "0x1af4", "0x1b36", "0x15ad", "0x1414", "0x80ee"}
+
+
+def virt():
+    """'none' on real hardware, 'lxc' in a Proxmox container, 'kvm', 'vmware', 'microsoft' ... in a virtual machine."""
+    try:
+        out = subprocess.run(["systemd-detect-virt"], capture_output=True, text=True, timeout=10).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        out = ""
+    return out or ("lxc" if in_lxc() else "none")
+
+
+def gpu_list(sysfs="/sys"):
+    """The graphics cards on the PCI bus: [{"pci", "vendor": intel|amd|nvidia|virtual|other, "driver", "render",
+    "usable"}]. A Proxmox container sees the host's cards here too, also the ones it cannot use (usable False)."""
+    renders = {}
+    for node in Path(sysfs, "class/drm").glob("renderD*"):
+        try:
+            renders[(node / "device").resolve().name] = node.name
+        except OSError:
+            pass
+    found = []
+    for dev in sorted(Path(sysfs, "bus/pci/devices").glob("*")):
+        try:
+            if not (dev / "class").read_text().startswith("0x03"):
+                continue
+            vendor_id = (dev / "vendor").read_text().strip()
+        except OSError:
+            continue
+        vendor = VENDORS.get(vendor_id, "virtual" if vendor_id in VIRTUAL else "other")
+        driver = (dev / "driver").resolve().name if (dev / "driver").exists() else ""
+        render = renders.get(dev.name, "")
+        if vendor == "nvidia":
+            usable = Path("/dev/nvidia0").exists() and driver == "nvidia"
+        else:
+            usable = bool(render) and Path("/dev/dri", render).exists()
+        found.append({"pci": dev.name, "vendor": vendor, "driver": driver, "render": render, "usable": usable})
+    return found
+
+
+def gpus():
+    """What the host has for Settings -> GPU on the server: {"cards": gpu_list(), "intel", "amd", "nvidia": a card of
+    that kind that Docker can use, "nvidia_toolkit", "virt", "lxc", "build": the GPU support CamWatch has now}."""
+    cards = gpu_list()
+    usable = {c["vendor"] for c in cards if c["usable"]}
+    where = virt()
+    return {"cards": cards, "intel": "intel" in usable, "amd": "amd" in usable, "nvidia": "nvidia" in usable,
+            "nvidia_toolkit": bool(shutil.which("nvidia-ctk") or shutil.which("nvidia-container-runtime")),
+            "virt": where, "lxc": where == "lxc", "build": env_value("CAMWATCH_GPU")}
+
+
 def write_host():
     ok, why = can_mount()
     write_json(HOST, {"at": now(), "recordings": env_value("RECORDINGS_PATH", "/mnt/hdd/camwatch/recordings"),
-                      "disks": disks(), "can_mount": ok, "mount_problem": why, "hostname": platform.node()})
+                      "disks": disks(), "can_mount": ok, "mount_problem": why, "hostname": platform.node(),
+                      "gpu": gpus()})
 
 
 def set_env(name, value):
@@ -341,6 +408,61 @@ def move_storage(req):
         write_host()
 
 
+def compose_files(kind):
+    """COMPOSE_FILE with the GPU file for `kind` (or none), keeping the other files (staging has its own)."""
+    files = [f for f in (env_value("COMPOSE_FILE") or "docker-compose.yml").split(":") if f and f not in GPU_FILES.values()]
+    return ":".join(files + ([GPU_FILES[kind]] if kind else []))
+
+
+def set_gpu(req):
+    kind = str(req.get("kind") or "")
+    old = {"CAMWATCH_GPU": env_value("CAMWATCH_GPU"), "COMPOSE_FILE": env_value("COMPOSE_FILE", "docker-compose.yml")}
+    status(GPU, state="running", kind=kind, started=now(), finished=None, message="checking the GPU", log="")
+    switched = started = False
+    try:
+        if kind not in ("", *GPU_FILES):
+            raise RuntimeError(f"unknown GPU kind {kind!r}")
+        found = gpus()
+        if kind and not found[kind]:
+            raise RuntimeError(f"this server has no {kind} GPU that Docker can use")
+        if kind == "nvidia" and not found["nvidia_toolkit"]:
+            raise RuntimeError("the NVIDIA Container Toolkit is not installed on this server")
+        set_env("CAMWATCH_GPU", kind)
+        set_env("COMPOSE_FILE", compose_files(kind))
+        switched = True
+        status(GPU, message="building CamWatch " + (f"with {kind} GPU support" if kind else "without GPU support")
+               + " (5-15 minutes, CamWatch keeps recording)")
+        p = compose("build", "-q", "recorder", timeout=3600)
+        if p.returncode != 0:
+            raise RuntimeError("the build failed\n" + (p.stderr or p.stdout)[-3000:])
+        status(GPU, message="starting CamWatch with the new build")
+        started = True
+        p = compose("up", "-d", "--remove-orphans")
+        if p.returncode != 0:
+            raise RuntimeError("CamWatch did not start\n" + (p.stderr or p.stdout)[-3000:])
+        good, states = healthy()
+        if not good:
+            raise RuntimeError("CamWatch did not start with the new build\n" + states)
+        status(GPU, state="done", finished=now(),
+               message=f"CamWatch now has {kind} GPU support" if kind else "CamWatch now runs without GPU support")
+        return 0
+    except (RuntimeError, OSError, subprocess.SubprocessError) as exc:
+        back = " Nothing changed."
+        if switched:
+            for name, value in old.items():
+                set_env(name, value)
+            back = " CamWatch keeps the build it had."
+            if started:
+                status(GPU, message="building the previous version again")
+                compose("build", "-q", "recorder", timeout=3600)
+                compose("up", "-d", "--remove-orphans")
+                back = " CamWatch runs the build it had before."
+        status(GPU, state="failed", finished=now(), message=f"{str(exc).splitlines()[0]}.{back}", log=str(exc)[-3000:])
+        return 1
+    finally:
+        write_host()
+
+
 def update(req):
     sha = str(req.get("sha", ""))
     if not (7 <= len(sha) <= 40 and all(c in "0123456789abcdef" for c in sha)):
@@ -385,6 +507,8 @@ def main():
         return 0
     if action == "storage":
         return move_storage(req)
+    if action == "gpu":
+        return set_gpu(req)
     return update(req)
 
 

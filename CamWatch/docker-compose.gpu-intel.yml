@@ -1,0 +1,13 @@
+# Intel GPU for the image models (Settings -> Image processing). The host helper adds this file to COMPOSE_FILE
+# in .env and sets CAMWATCH_GPU=intel. By hand: COMPOSE_FILE=docker-compose.yml:docker-compose.gpu-intel.yml
+# (staging: add it after docker-compose.staging.yml). The host needs /dev/dri; in a Proxmox container, pass it in.
+x-gpu: &gpu
+  devices: ["/dev/dri:/dev/dri"]
+
+services:
+  recorder: *gpu
+  recorder-2: *gpu
+  recorder-3: *gpu
+  recorder-4: *gpu
+  facematch: *gpu
+  webui: *gpu

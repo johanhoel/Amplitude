@@ -157,6 +157,10 @@ def storage_status():
     return status(DIR / "storage.json", "storage")
 
 
+def gpu_status():
+    return status(DIR / "gpu.json", "gpu")
+
+
 def host():
     """What the host helper saw on the host: {"recordings", "disks": [...], "can_mount", "mount_problem"} or {}."""
     try:

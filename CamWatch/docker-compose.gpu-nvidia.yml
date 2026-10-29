@@ -1,0 +1,15 @@
+# NVIDIA GPU for the image models (Settings -> Image processing). The host helper adds this file to COMPOSE_FILE
+# in .env and sets CAMWATCH_GPU=nvidia. The host needs the NVIDIA driver and the NVIDIA Container Toolkit.
+x-gpu: &gpu
+  deploy:
+    resources:
+      reservations:
+        devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
+
+services:
+  recorder: *gpu
+  recorder-2: *gpu
+  recorder-3: *gpu
+  recorder-4: *gpu
+  facematch: *gpu
+  webui: *gpu

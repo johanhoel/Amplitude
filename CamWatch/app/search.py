@@ -18,6 +18,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+import accel
 from common import env
 
 REC_DIR = Path(env("RECORDINGS_DIR", "/recordings"))
@@ -69,7 +70,7 @@ def object_crops(frame):
         return []
     if _detector is None:
         from objects import ObjectDetector
-        _detector = ObjectDetector(OBJECT_MODEL, OBJECT_CLASSES, 0.4)
+        _detector = ObjectDetector(OBJECT_MODEL, OBJECT_CLASSES, 0.4, part="search objects")
     h, w = frame.shape[:2]
     found = sorted(_detector.detect(frame), key=lambda d: -d[2][2] * d[2][3])
     crops = []
@@ -112,6 +113,23 @@ def clip_frames(folder, stem, meta):
     return out
 
 
+def image_model():
+    """The CLIP image model, on a GPU when Settings -> Image processing allows it (it indexes many frames)."""
+    from fastembed import ImageEmbedding
+    wanted, error = accel.providers(), ""
+    for providers in (wanted, [(accel.CPU, {})]):
+        try:
+            model = ImageEmbedding(IMAGE_MODEL, cache_dir=MODEL_DIR, threads=2, providers=providers)
+            break
+        except Exception as exc:      # a GPU that the driver refuses: try again on the CPU
+            if len(providers) == 1:
+                raise
+            error = str(exc).splitlines()[0][:300]
+    accel.report("search", providers[0][0], error)
+    model.providers = wanted
+    return model
+
+
 def index_new(log):
     """Index up to BATCH clips that aren't indexed yet; forget deleted ones. Returns (indexed now, total)."""
     global _image_model
@@ -129,9 +147,8 @@ def index_new(log):
     if not todo and not removed:
         return 0, len(index)
     if todo:
-        if _image_model is None:
-            from fastembed import ImageEmbedding
-            _image_model = ImageEmbedding(IMAGE_MODEL, cache_dir=MODEL_DIR, threads=2)
+        if _image_model is None or _image_model.providers != accel.providers():
+            _image_model = image_model()
         t0 = time.time()
         for key in todo:
             meta_path = clips[key]
