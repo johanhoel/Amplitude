@@ -23,12 +23,6 @@ CARD_MIN, CARD_MAX = 10, 28
 SKIP_NAMES = {"network.html"}          # embeds a base64 font
 SKIP_PARTS = {"designs", ".drafts"}    # theme explorations and drafts differ on purpose
 
-# Being converted by another session right now. Remove these as they land;
-# each entry is a file still holding hardcoded card radii.
-# Empty: every page is on the scale. A name here means a file is mid-conversion
-# in another session; the check below stops the list growing back.
-IN_FLIGHT = set()
-
 results = []
 
 
@@ -55,14 +49,21 @@ for p in sources():
     if bad:
         offenders[p.relative_to(ROOT)] = bad
 
-unexpected = {k: v for k, v in offenders.items() if k.name not in IN_FLIGHT}
-check("every card-scale radius comes from a token", not unexpected,
-      "; ".join(f"{k}: {v}" for k, v in list(unexpected.items())[:4])
+# An IN_FLIGHT allow-list lived here while three pages were mid-conversion in
+# another session. They have landed, so it is gone - and so is a second check
+# that claimed to stop the list growing and could not. It read
+#
+#     set(offenders) <= {p for p in offenders if p.name in IN_FLIGHT}
+#
+# which compares the offenders to a filtered copy of themselves. That is true
+# exactly when the check above already passes, so it was a duplicate, not an
+# independent check - and a name ADDED to the list could only ever make it
+# pass more easily. It could not fail in any state. Found by breaking all
+# twenty assertions in this file one at a time and watching which stayed
+# green; it was the only one that did.
+check("every card-scale radius comes from a token", not offenders,
+      "; ".join(f"{k}: {v}" for k, v in list(offenders.items())[:4])
       + "  - use var(--r-sm), var(--r) or var(--r-lg)")
-# And the list of exceptions should shrink, never grow.
-check("no new file joins the in-flight list",
-      set(offenders) <= {p for p in offenders if p.name in IN_FLIGHT},
-      f"{sorted(str(k) for k in unexpected)}")
 
 # --- the scale itself -------------------------------------------------
 tokens = (ROOT / "design" / "tokens.css").read_text()
