@@ -1,15 +1,15 @@
-name: Build DanteStreamer Desktop Apps
+name: Build DStreamer Desktop Apps
 
 on:
   push:
     paths:
-      - 'dantestreamer-desktop/**'
+      - 'dstreamer-desktop/**'
       - '.github/workflows/build-desktop.yml'
     branches:
       - main
   workflow_dispatch:
 
-# Virgil (DanteStreamer's Dante engine, GPLv3) ships inside both apps.
+# Virgil (DStreamer's Dante engine, GPLv3) ships inside both apps.
 # Update all three together.
 env:
   VIRGIL_VERSION: v0.8.1
@@ -32,28 +32,28 @@ jobs:
       - name: Bundle Virgil installer
         shell: pwsh
         run: |
-          $dir = "dantestreamer-desktop/windows/Virgil"
+          $dir = "dstreamer-desktop/windows/Virgil"
           New-Item -ItemType Directory -Force $dir | Out-Null
           Invoke-WebRequest "https://github.com/Audbol/Virgil-Virtual-Soundcard/releases/download/${{ env.VIRGIL_VERSION }}/Virgil-$("${{ env.VIRGIL_VERSION }}".TrimStart('v'))-win64-setup.exe" -OutFile "$dir/Virgil-setup.exe"
           $hash = (Get-FileHash "$dir/Virgil-setup.exe" -Algorithm SHA256).Hash.ToLower()
           if ($hash -ne "${{ env.VIRGIL_WIN_SHA256 }}") { throw "Virgil installer checksum mismatch: $hash" }
 
       - name: Build Windows EXE (self-contained)
-        working-directory: dantestreamer-desktop/windows
+        working-directory: dstreamer-desktop/windows
         run: |
-          dotnet publish DanteStreamerController.csproj -c Release -r win-x64 --self-contained=true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none --output publish
+          dotnet publish DStreamerController.csproj -c Release -r win-x64 --self-contained=true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none --output publish
 
       - name: Create archive
         shell: pwsh
-        working-directory: dantestreamer-desktop/windows/publish
+        working-directory: dstreamer-desktop/windows/publish
         run: |
-          Compress-Archive -Path DanteStreamerController.exe -DestinationPath ../DanteStreamerController-windows.zip -Force
+          Compress-Archive -Path DStreamerController.exe -DestinationPath ../DStreamerController-windows.zip -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows
-          path: dantestreamer-desktop/windows/DanteStreamerController-windows.zip
+          path: dstreamer-desktop/windows/DStreamerController-windows.zip
 
   build-macos:
     runs-on: macos-latest
@@ -65,7 +65,7 @@ jobs:
       # Universal binary (Apple silicon and Intel). Compiler errors are
       # repeated as annotations, so they show on the run page without logs.
       - name: Build Swift binary
-        working-directory: dantestreamer-desktop/macos
+        working-directory: dstreamer-desktop/macos
         run: |
           set +e
           swift build -c release --arch arm64 --arch x86_64 2>&1 | tee build.log
@@ -139,31 +139,31 @@ jobs:
           pkgutil --check-signature "$RUNNER_TEMP/Virgil.pkg" || true
 
       - name: Create app structure
-        working-directory: dantestreamer-desktop/macos
+        working-directory: dstreamer-desktop/macos
         run: |
-          mkdir -p DanteStreamer.app/Contents/MacOS
-          mkdir -p DanteStreamer.app/Contents/Resources
-          cp .build/apple/Products/Release/DanteStreamerController DanteStreamer.app/Contents/MacOS/
-          cp "$RUNNER_TEMP/Virgil.pkg" DanteStreamer.app/Contents/Resources/Virgil.pkg
-          chmod +x DanteStreamer.app/Contents/MacOS/DanteStreamerController
-          echo "APPL????" > DanteStreamer.app/Contents/PkgInfo
+          mkdir -p DStreamer.app/Contents/MacOS
+          mkdir -p DStreamer.app/Contents/Resources
+          cp .build/apple/Products/Release/DStreamerController DStreamer.app/Contents/MacOS/
+          cp "$RUNNER_TEMP/Virgil.pkg" DStreamer.app/Contents/Resources/Virgil.pkg
+          chmod +x DStreamer.app/Contents/MacOS/DStreamerController
+          echo "APPL????" > DStreamer.app/Contents/PkgInfo
 
       - name: Create Info.plist
-        working-directory: dantestreamer-desktop/macos
+        working-directory: dstreamer-desktop/macos
         run: |
-          cat > DanteStreamer.app/Contents/Info.plist << EOF
+          cat > DStreamer.app/Contents/Info.plist << EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
             <key>CFBundleExecutable</key>
-            <string>DanteStreamerController</string>
+            <string>DStreamerController</string>
             <key>CFBundleIdentifier</key>
-            <string>com.dantestreamer.controller</string>
+            <string>com.dstreamer.controller</string>
             <key>CFBundleName</key>
-            <string>DanteStreamer Controller</string>
+            <string>DStreamer Controller</string>
             <key>CFBundleDisplayName</key>
-            <string>DanteStreamer Controller</string>
+            <string>DStreamer Controller</string>
             <key>CFBundlePackageType</key>
             <string>APPL</string>
             <key>CFBundleShortVersionString</key>
@@ -184,7 +184,7 @@ jobs:
               <true/>
             </dict>
             <key>NSLocalNetworkUsageDescription</key>
-            <string>DanteStreamer Controller finds and connects to DanteStreamer on your network.</string>
+            <string>DStreamer Controller finds and connects to DStreamer on your network.</string>
             <key>NSBonjourServices</key>
             <array>
               <string>_raop._tcp</string>
@@ -192,15 +192,15 @@ jobs:
           </dict>
           </plist>
           EOF
-          plutil -lint DanteStreamer.app/Contents/Info.plist
+          plutil -lint DStreamer.app/Contents/Info.plist
 
       - name: Code sign app with Developer ID
-        working-directory: dantestreamer-desktop/macos
+        working-directory: dstreamer-desktop/macos
         env:
           TEAM_ID: ${{ secrets.DEVELOPER_ID_TEAM }}
         run: |
-          codesign -s "Developer ID Application: Johan Hoel ($TEAM_ID)" --force --options runtime --timestamp DanteStreamer.app
-          codesign -v --strict --verbose=2 DanteStreamer.app
+          codesign -s "Developer ID Application: Johan Hoel ($TEAM_ID)" --force --options runtime --timestamp DStreamer.app
+          codesign -v --strict --verbose=2 DStreamer.app
 
       # Notarize with an App Store Connect API key (APPLE_API_KEY_ID,
       # APPLE_API_ISSUER_ID, APPLE_API_KEY_BASE64 = the .p8 file in base64)
@@ -209,7 +209,7 @@ jobs:
       # Without either, the app stays signed but not notarized.
       - name: Notarize and staple
         id: notarize
-        working-directory: dantestreamer-desktop/macos
+        working-directory: dstreamer-desktop/macos
         env:
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID || secrets.MACOS_NOTARY_TEAM_ID || secrets.DEVELOPER_ID_TEAM }}
           API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
@@ -234,7 +234,7 @@ jobs:
             echo "::error::Notarization secrets required (APPLE_API_KEY_ID + APPLE_API_ISSUER_ID + APPLE_API_KEY_BASE64, or APPLE_ID + APPLE_APP_PASSWORD)"
             exit 1
           fi
-          ditto -c -k --keepParent DanteStreamer.app notarize.zip
+          ditto -c -k --keepParent DStreamer.app notarize.zip
           xcrun notarytool submit notarize.zip "${auth[@]}" --wait --timeout 30m --output-format json | tee notarize.json
           id=$(plutil -extract id raw notarize.json)
           if [ "$(plutil -extract status raw notarize.json)" != "Accepted" ]; then
@@ -242,19 +242,19 @@ jobs:
             echo "::error::Notarization was not accepted"
             exit 1
           fi
-          xcrun stapler staple DanteStreamer.app
-          spctl --assess --type execute --verbose DanteStreamer.app
+          xcrun stapler staple DStreamer.app
+          spctl --assess --type execute --verbose DStreamer.app
           echo "notarized=1" >> "$GITHUB_OUTPUT"
 
       - name: Create archive
-        working-directory: dantestreamer-desktop/macos
-        run: ditto -c -k --keepParent DanteStreamer.app DanteStreamer-macos.zip
+        working-directory: dstreamer-desktop/macos
+        run: ditto -c -k --keepParent DStreamer.app DStreamer-macos.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: macos
-          path: dantestreamer-desktop/macos/DanteStreamer-macos.zip
+          path: dstreamer-desktop/macos/DStreamer-macos.zip
 
   release:
     needs: [build-windows, build-macos]
@@ -288,14 +288,14 @@ jobs:
           draft: false
           prerelease: true
           body: |
-            ## DanteStreamer Desktop v1.0
+            ## DStreamer Desktop v1.0
 
             ### macOS
-            Extract the ZIP and open `DanteStreamer.app`. Requires macOS 12 or later,
+            Extract the ZIP and open `DStreamer.app`. Requires macOS 12 or later,
             on Apple silicon or Intel. ${{ needs.build-macos.outputs.notarized == '1' && 'Signed with a Developer ID and notarized by Apple.' || 'Signed but not notarized: the first time, right-click it and choose Open.' }}
 
             ### Windows
-            Extract the ZIP and run `DanteStreamerController.exe`. Requires Windows 10 or later.
+            Extract the ZIP and run `DStreamerController.exe`. Requires Windows 10 or later.
             The .NET runtime is included.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

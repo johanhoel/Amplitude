@@ -2,11 +2,11 @@
 # Install or update one project on a fresh Debian/Ubuntu machine, without questions.
 # The Windows (.exe) and Mac (.dmg) installers run this inside their Linux system:
 #   curl -fsSL https://raw.githubusercontent.com/johanhoel/amplitude/main/installers/linux/setup.sh | sudo bash -s camwatch
-#   setup.sh camwatch | homedeck | dantestreamer
+#   setup.sh camwatch | homedeck | dstreamer
 # It keeps a copy of the repository in /opt/amplitude (updated on every run), then runs the project's own installer.
 # At the end it writes /root/<project>-install.txt: the address and, for CamWatch, the login. The installers show it.
 set -euo pipefail
-PROJECT=${1:?usage: setup.sh camwatch|homedeck|dantestreamer}
+PROJECT=${1:?usage: setup.sh camwatch|homedeck|dstreamer}
 SRC=/opt/amplitude
 REPO_URL=${AMPLITUDE_REPO:-https://github.com/johanhoel/amplitude.git}
 say() { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
@@ -83,18 +83,18 @@ homedeck)
     echo "Setup wizard: http://$(host_ip):8089"
     echo "Panels: http://$(host_ip)/start"; } > /root/homedeck-install.txt
   ;;
-dantestreamer)
+dstreamer)
   docker_install
-  say "DanteStreamer"
-  cd "$SRC/dantestreamer"
+  say "DStreamer"
+  cd "$SRC/dstreamer"
   [ -f .env ] || cp .env.example .env
   docker compose up -d --build
-  { echo "DanteStreamer runs."
+  { echo "DStreamer runs."
     echo "Control panel: http://127.0.0.1:8480 on this machine"
-    echo "AirPlay name: see .env in $SRC/dantestreamer"
-    echo "Dante needs direct access to the network: in WSL or a virtual machine audio can drop out."; } > /root/dantestreamer-install.txt
+    echo "AirPlay name: see .env in $SRC/dstreamer"
+    echo "Dante needs direct access to the network: in WSL or a virtual machine audio can drop out."; } > /root/dstreamer-install.txt
   ;;
-*) die "unknown project: $PROJECT (camwatch, homedeck or dantestreamer)" ;;
+*) die "unknown project: $PROJECT (camwatch, homedeck or dstreamer)" ;;
 esac
 
 say "Done"

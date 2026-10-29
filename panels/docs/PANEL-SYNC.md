@@ -25,7 +25,7 @@ To see what would go up without pushing:
   device ids are swapped for demo values, screenshots for their clean versions (`~/homedeck-tools/neutralize.py`,
   `clean-shots/`). It refuses to push if anything personal is left.
 - Adds one commit on top of `main` (author: the account's private GitHub address) that replaces only `panels/`.
-  Everything else in Amplitude (`dantestreamer/`, `README.md`, other branches) is never touched.
+  Everything else in Amplitude (`dstreamer/`, `README.md`, other branches) is never touched.
 - Keeps the project list in Amplitude's top `README.md` up to date: adds the `panels` row (with a link to the
   change log) and the Layout line if they're missing. Rows you edit yourself are left alone.
 - Writes `panels/CHANGELOG.md`: the latest 50 changes, newest first, grouped by date.

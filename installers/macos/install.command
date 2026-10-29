@@ -12,7 +12,7 @@ export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
 case "$PROJECT" in
   camwatch) PORT=8080; DISK=200G; MEM=4G ;;
   homedeck) PORT=8089; DISK=20G; MEM=2G ;;
-  dantestreamer) PORT=8480; DISK=20G; MEM=2G ;;
+  dstreamer) PORT=8480; DISK=20G; MEM=2G ;;
 esac
 
 say() { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
@@ -20,9 +20,9 @@ stop() { printf '\n\033[1;31m%s\033[0m\n' "$*"; read -r -p "Press Enter to close
 clear
 printf '\033[1m%s for Mac\033[0m\n' "$NAME"
 
-if [ "$PROJECT" = dantestreamer ]; then
+if [ "$PROJECT" = dstreamer ]; then
   echo
-  echo "DanteStreamer needs direct access to the network for its clock (PTP) and audio."
+  echo "DStreamer needs direct access to the network for its clock (PTP) and audio."
   echo "On a Mac it runs in a virtual machine. Audio can drop out or stay silent."
   echo "A Linux computer or a Raspberry Pi works better."
   read -r -p "Install anyway? Type yes: " a; [ "$a" = yes ] || exit 0

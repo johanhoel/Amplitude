@@ -1,0 +1,15 @@
+<Application x:Class="DStreamerController.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:DStreamerController"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <local:BoolToVisibilityConverter x:Key="BoolToVis"/>
+            <local:NullToVisibilityConverter x:Key="NullToVis"/>
+            <local:NotNullToVisibilityConverter x:Key="NotNullToVis"/>
+            <local:BoolToColorConverter x:Key="BoolToColor"/>
+            <local:CountToVisibilityConverter x:Key="CountToVis"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

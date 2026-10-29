@@ -1,6 +1,6 @@
 # Installers for Windows and Mac
 
-CamWatch, Home Deck and DanteStreamer run on Linux.
+CamWatch, Home Deck and DStreamer run on Linux.
 These installers set up a small Linux system on a Windows PC or a Mac and install the project in it.
 You download one file and double-click it.
 
@@ -8,11 +8,11 @@ You download one file and double-click it.
 |---|---|---|
 | CamWatch | `CamWatch-Setup.exe` | `CamWatch.dmg` |
 | Home Deck | `HomeDeck-Setup.exe` | `HomeDeck.dmg` |
-| DanteStreamer | `DanteStreamer-Setup.exe` | `DanteStreamer.dmg` |
+| DStreamer | `DStreamer-Setup.exe` | `DStreamer.dmg` |
 
 The files are on the [Releases page](https://github.com/johanhoel/amplitude/releases).
 
-> ⚠️ DanteStreamer needs direct access to the network for its clock (PTP) and its audio.
+> ⚠️ DStreamer needs direct access to the network for its clock (PTP) and its audio.
 > In WSL and in a Mac virtual machine, audio can drop out or stay silent. A Linux computer or a Raspberry Pi works better.
 
 ## Windows 10 (version 2004 or newer) and Windows 11
@@ -49,7 +49,7 @@ The Linux machine gets its own address on your home network, so phones and camer
 After a restart of the Mac, open the app again and choose **1** to start and update it.
 Choose **2** to remove the project with all its data.
 
-On Apple Silicon, the projects run as arm64. CamWatch and DanteStreamer have had little testing there.
+On Apple Silicon, the projects run as arm64. CamWatch and DStreamer have had little testing there.
 
 ## For the developer: building and signing
 

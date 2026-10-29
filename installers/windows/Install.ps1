@@ -13,9 +13,9 @@ $ErrorActionPreference = 'Stop'
 $Info = @{
     camwatch      = @{ Name = 'CamWatch';      Url = 'http://localhost:8080';  Ports = @(8080) }
     homedeck      = @{ Name = 'Home Deck';     Url = 'http://localhost:8089';  Ports = @(80, 8088, 8089) }
-    dantestreamer = @{ Name = 'DanteStreamer'; Url = 'http://localhost:8480';  Ports = @(8480) }
+    dstreamer = @{ Name = 'DStreamer'; Url = 'http://localhost:8480';  Ports = @(8480) }
 }
-if (-not $Info.ContainsKey($Project)) { throw "Unknown project '$Project' (camwatch, homedeck or dantestreamer)" }
+if (-not $Info.ContainsKey($Project)) { throw "Unknown project '$Project' (camwatch, homedeck or dstreamer)" }
 $P = $Info[$Project]
 $Name = $P.Name
 $Distro = $Name -replace ' ', ''
@@ -62,9 +62,9 @@ if ($Uninstall) {
 if ([Environment]::OSVersion.Version.Build -lt 19041) {
     Write-Host 'This needs Windows 10 version 2004 or newer, or Windows 11.' -ForegroundColor Red; Done 1
 }
-if ($Project -eq 'dantestreamer') {
+if ($Project -eq 'dstreamer') {
     Write-Host ''
-    Write-Host 'DanteStreamer needs direct access to the network for its clock (PTP) and audio.' -ForegroundColor Yellow
+    Write-Host 'DStreamer needs direct access to the network for its clock (PTP) and audio.' -ForegroundColor Yellow
     Write-Host 'On Windows it runs in WSL, which sits behind a virtual network. Audio can drop out or stay silent.' -ForegroundColor Yellow
     Write-Host 'A Linux computer or a Raspberry Pi works better.' -ForegroundColor Yellow
     if ((Read-Host 'Install anyway? Type yes') -ne 'yes') { Done 0 }

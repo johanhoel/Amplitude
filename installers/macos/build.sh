@@ -26,7 +26,7 @@ else
   echo "no certificate: building unsigned"
 fi
 
-for entry in "camwatch:CamWatch" "homedeck:Home Deck" "dantestreamer:DanteStreamer"; do
+for entry in "camwatch:CamWatch" "homedeck:Home Deck" "dstreamer:DStreamer"; do
   project=${entry%%:*}; name=${entry#*:}; file=${name// /}
   app="$WORK/$name.app"
   osacompile -o "$app" "$HERE/applet.applescript"
