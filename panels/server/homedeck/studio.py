@@ -144,7 +144,7 @@ def _from_camwatch(net, ha):
         return []
     devices = [{'ip': (d.get('ips') or [''])[0], 'name': d['name'], 'vendor': d.get('vendor', ''), 'mac': d['id']}
                for d in net if d.get('ips')]
-    people = sorted(set(phones()) | {i['name'].lower() for i in ha if i['kind'] == 'person'})
+    people = sorted(phones())                         # the family Home Deck tracks; HA also lists service accounts as persons
     try:
         answer = _camwatch_call(link['url'], link['key'], devices, people)
     except ValueError as e:
