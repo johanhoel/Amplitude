@@ -14,7 +14,7 @@ from .store import SECRETS, load, save
 
 SESSIONS = os.path.join(STATE, 'admin_sessions.json')
 COOKIE = 'hd_admin'
-ADMIN_POSTS = ('/api/ops/act', '/api/settings', '/api/wallpaper', '/api/layout/', '/api/devices/', '/api/boards/', '/api/studio/', '/api/llm/')   # change things only an admin should
+ADMIN_POSTS = ('/api/ops/act', '/api/settings', '/api/wallpaper', '/api/layout/', '/api/devices/', '/api/boards/', '/api/studio/', '/api/llm/', '/api/update/run')   # change things only an admin should
 _lock = threading.Lock()
 _fails = {}                                           # ip -> [count, first_fail_at, locked_until]
 

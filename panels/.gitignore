@@ -12,11 +12,11 @@ app/android/app/build/
 app/android/.gradle/
 app/cache
 app/dist/
-friend/dist/
+dist/
 tests/out/
 # backups made on the servers, local runtime state
 **/*.bak-*
 .staging-state/
 .deployed.md5
-# personal words for the leak check in friend/build_kit.sh
-friend/private-words.txt
+# personal words for the leak check in build_kit.sh
+private-words.txt

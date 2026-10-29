@@ -26,7 +26,7 @@
 import json, os, re, subprocess, time, urllib.error, urllib.parse, urllib.request
 from http.server import SimpleHTTPRequestHandler
 
-from . import addons, audio, auth, devices, localai, studio, home, insights, layouts, leave, links, news, presence, status, transit, weather
+from . import addons, audio, auth, devices, localai, studio, updates, home, insights, layouts, leave, links, news, presence, status, transit, weather
 from .config import C, REPORT
 from .ha import entities as entity_list, ha_call, ha_get
 from .store import SECRETS, SETTINGS, STATIC, WALLS, load, save
@@ -116,6 +116,10 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json({'devices': devices.public_list(), 'public_url': C.REMOTE_URL})
         if self.admin_gate():
             return
+        if p == '/api/update':
+            return self.send_json(updates.check(self.path.endswith('force=1')))
+        if p == '/api/update/status':
+            return self.send_json(updates.status())
         if p == '/api/pin/status':
             return self.send_json(auth.status(self.headers, devices.client_ip(self)))
         if p == '/api/health':
@@ -325,6 +329,22 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json_cookie(body, code, cookie)
             if auth.needs_admin_post(self.path) and not auth.is_admin(self.headers):
                 return self.send_json({'error': 'admin PIN needed', 'admin': True}, 401)
+            if self.path == '/api/update/run':                            # install an update (admin)
+                r = updates.check()
+                if r.get('error'):
+                    return self.send_json({'error': r['error']}, 502)
+                if not r.get('newer'):
+                    return self.send_json({'error': 'already up to date'}, 409)
+                # Detached on purpose: the last thing the updater does is
+                # homedeck-apply, which restarts this very server. A child of
+                # this request would be killed half way through the copy.
+                try:
+                    subprocess.Popen(['/usr/local/sbin/homedeck-update', r['latest']['sha']],
+                                     start_new_session=True,
+                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                except OSError as e:
+                    return self.send_json({'error': f'could not start the updater: {e}'}, 500)
+                return self.send_json({'ok': True, 'sha': r['latest']['short']})
             if self.path.startswith('/api/llm/'):                         # Local AI (admin, auth.ADMIN_POSTS)
                 if self.path == '/api/llm/chats':                         # ask (new chat, or more in one): a job, not tied to the page
                     try:
