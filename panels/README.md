@@ -70,4 +70,16 @@ tools/check.sh         # compile + settings check (+ smoke test of every page wh
 tools/deploy.sh        # the only way to production: refuses if live was edited by hand, rolls back on failure
 ```
 
-Never in git (see `.gitignore`): `secrets.json`, the app signing key (`app/signing`, kept in `~/homedeck-app/signing`), build output.
+The repository is public, so it holds placeholders: `192.168.1.x`, `home.example.net` and sample names.
+The house's own values stay on the server, in two files that are never in git:
+
+- `/opt/panel-wrapper/homedeck.toml` holds the settings. `deploy.sh` never uploads it.
+  The copy in `server/` is the sample that `check.sh`, `staging.sh` and the tests use.
+- `/opt/panel-wrapper/private.map` lists `placeholder==>real value`, one pair per line.
+  `deploy.sh` puts the real values into the copy it uploads.
+  `pull-live.sh` puts the placeholders back before anything reaches git. See `tools/private.py`.
+
+`deploy.sh` also tries the new version on the server first. It runs a trial Home Deck on port 8099
+with the real settings, read-only, and every page must answer.
+
+Never in git (see `.gitignore`): `secrets.json`, `private.map`, the app signing key (`app/signing`, kept in `~/homedeck-app/signing`), build output.

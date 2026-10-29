@@ -20,3 +20,5 @@ tests/out/
 .deployed.md5
 # personal words for the leak check in friend/build_kit.sh
 friend/private-words.txt
+private.map
+.work-*/
