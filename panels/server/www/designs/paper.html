@@ -34,7 +34,8 @@ button.row.kdown { background: #f5f0e6; }
 .kslide::before { content: ""; position: absolute; inset: 0; background: var(--warn); opacity: calc(var(--p) * .25); }
 .kslide span { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 650; color: var(--mute); pointer-events: none; padding-left: 56px; opacity: calc(1 - var(--p)); }
 .kslide .knob { position: absolute; left: 4px; top: 3px; width: 56px; height: 56px; border-radius: 50%; background: var(--warn); color: #fff; display: grid; place-items: center; font-size: 24px; cursor: grab; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
-</style></head><body>
+</style><link rel="stylesheet" href="/icons.css">
+</head><body>
 <header><div class="seg" role="tablist"><button data-go="home" class="on">Home</button><button data-go="rooms">Lights</button><button data-go="media">Media</button><button data-go="actions">Actions</button></div></header>
 <main>
   <section class="v on" data-v="home"><h1 id="greet">Home</h1><div class="sub" id="date"></div><div class="cols" id="home"></div></section>
@@ -68,7 +69,7 @@ function render() {
   document.querySelectorAll('#rooms .row').forEach(b => Kit.press(b, () => Kit.flip(S.rooms.flatMap(r => r.lights).find(l => l.id === b.dataset.id), render)));
   $('#media').innerHTML = `<div class="grp"><div class="list">${(S.H.players || []).concat(S.H.appletv ? [S.H.appletv] : []).map(p => row(esc(p.label), `<b>${esc(p.title || p.state)}</b>`)).join('')}</div></div>`;
 }
-$('#acts').innerHTML = [['🧹', 'Start the vacuum', 'Roborock'], ['⏻', 'Wake the PC', 'Wake-on-LAN'], ['◎', 'Switch camera alerts', 'On or off']].map(([i, t, s]) =>
+$('#acts').innerHTML = [['<i class="icon icon-vacuum" aria-hidden="true"></i>', 'Start the vacuum', 'Roborock'], ['⏻', 'Wake the PC', 'Wake-on-LAN'], ['<i class="icon icon-target" aria-hidden="true"></i>', 'Switch camera alerts', 'On or off']].map(([i, t, s]) =>
   `<button class="row" data-t="${t}"><span style="font-size:20px">${i}</span><span class="lbl">${t}<small>${s}</small></span><span class="val">›</span></button>`).join('');
 document.querySelectorAll('#acts .row').forEach(b => Kit.press(b, () => Kit.toast('Demo: would ' + b.dataset.t.toLowerCase())));
 $('#slides').innerHTML = ['Lock the front door', 'Turn off every light', 'Put the PC to sleep'].map(t => `<div class="kslide" data-t="${t}" role="button" aria-label="Slide to ${t.toLowerCase()}"><span>Slide to ${t.toLowerCase()}</span><div class="knob">›</div></div>`).join('');

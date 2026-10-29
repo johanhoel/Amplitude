@@ -137,6 +137,7 @@ nav a.on { background: rgba(255,255,255,.12); color: var(--ink); }
 .hint.show { opacity: 1; transform: translate(-50%, 0); }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <div class="app">
@@ -171,7 +172,7 @@ nav a.on { background: rgba(255,255,255,.12); color: var(--ink); }
     </div>
     <div class="np"><div class="vinyl" id="art"></div>
       <div style="min-width:0"><div class="cap">Now playing</div><div class="t" id="np-t">—</div><div class="a" id="np-a"></div>
-        <div class="ctl"><button data-m="media_previous_track" aria-label="Previous">⏮</button><button class="main" data-m="media_play_pause" id="np-pp" aria-label="Play or pause">▶</button><button data-m="media_next_track" aria-label="Next">⏭</button></div></div></div>
+        <div class="ctl"><button data-m="media_previous_track" aria-label="Previous"><i class="icon icon-prev" aria-hidden="true"></i></button><button class="main" data-m="media_play_pause" id="np-pp" aria-label="Play or pause"><i class="icon icon-play" aria-hidden="true"></i></button><button data-m="media_next_track" aria-label="Next"><i class="icon icon-next" aria-hidden="true"></i></button></div></div></div>
     </div>
   </section>
 
@@ -226,7 +227,7 @@ async function loadHome() {
   $('#charger').classList.toggle('on', !!H.charger_w);
   const m = H.media || {};
   $('#np-t').textContent = m.title || (m.state === 'idle' ? 'Nothing playing' : '—'); $('#np-a').textContent = m.artist || '';
-  $('#np-pp').textContent = m.state === 'playing' ? '⏸' : '▶'; $('#art').classList.toggle('spin', m.state === 'playing');
+  $('#np-pp').firstElementChild.className = (m.state === 'playing' ? 'icon icon-pause' : 'icon icon-play'); $('#art').classList.toggle('spin', m.state === 'playing');
   const art = m.art ? `url(/api/art?k=${encodeURIComponent(m.art_key)})` : '';
   if ($('#art').style.backgroundImage !== art) $('#art').style.backgroundImage = art;
   renderRooms();
@@ -315,7 +316,8 @@ press($('#vac'), () => { const cleaning = $('#vac').classList.contains('on');
   $('#vac').classList.toggle('on', !cleaning); $('#vac span').textContent = cleaning ? 'Vacuum · going home' : 'Vacuum · starting';
   doHA({ do: 'vacuum', value: cleaning ? 'return_to_base' : 'start' }); });
 $$('[data-m]').forEach(b => press(b, () => {
-  if (b.dataset.m === 'media_play_pause') { const p = $('#np-pp').textContent === '⏸'; $('#np-pp').textContent = p ? '▶' : '⏸'; $('#art').classList.toggle('spin', !p); }
+  if (b.dataset.m === 'media_play_pause') { const p = $('#np-pp').firstElementChild.classList.contains('icon-pause');
+    $('#np-pp').firstElementChild.className = (p ? 'icon icon-play' : 'icon icon-pause'); $('#art').classList.toggle('spin', !p); }
   doHA({ do: 'media', value: b.dataset.m });
 }));
 

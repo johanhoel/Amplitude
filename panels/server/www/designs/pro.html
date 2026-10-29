@@ -46,11 +46,12 @@ dialog .bt { display: flex; gap: 10px; justify-content: flex-end; } dialog .ob {
 @media (max-width: 760px) { .app { grid-template-columns: 1fr; } aside { position: sticky; top: 0; z-index: 30; height: auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 8px; border-right: 0; border-bottom: 1px solid var(--line); }
   aside .brand, aside .foot, aside kbd, aside button .n { display: none; } aside button { min-height: 48px; justify-content: center; padding: 0 4px; font-size: 13px; flex-direction: column; gap: 0; }
   main { padding: 16px 12px 40px; } .top input { display: none; } .cards { grid-template-columns: 1fr; } }
-</style></head><body>
+</style><link rel="stylesheet" href="/icons.css">
+</head><body>
 <div class="app">
   <aside aria-label="Sections"><div class="brand">Home Deck <span id="clock"></span></div>
-    <button data-go="home" class="on">⌂ Overview <kbd>1</kbd></button><button data-go="rooms">💡 Lights <span class="n" id="nl"></span><kbd>2</kbd></button>
-    <button data-go="media">♫ Media <kbd>3</kbd></button><button data-go="actions">⚡ Actions <kbd>4</kbd></button>
+    <button data-go="home" class="on"><i class="icon icon-home" aria-hidden="true"></i> Overview <kbd>1</kbd></button><button data-go="rooms"><i class="icon icon-bulb" aria-hidden="true"></i> Lights <span class="n" id="nl"></span><kbd>2</kbd></button>
+    <button data-go="media"><i class="icon icon-music" aria-hidden="true"></i> Media <kbd>3</kbd></button><button data-go="actions"><i class="icon icon-bolt" aria-hidden="true"></i> Actions <kbd>4</kbd></button>
     <div class="foot">1–4 switch section<br>/ filter · Esc clear</div></aside>
   <main>
     <div class="top"><h1 id="title">Overview</h1><input id="q" placeholder="Filter (/)" autocomplete="off"></div>

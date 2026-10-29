@@ -208,6 +208,7 @@ body.lab .deck { justify-self: center; }
 #cam .x { width: 36px; height: 36px; border-radius: 50%; background: var(--glass-hi); border: 1px solid var(--line); }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <div id="wall" class="w-aurora"></div><div id="shade"></div>
@@ -219,7 +220,7 @@ body.lab .deck { justify-self: center; }
     <div class="chips">
       <span class="chip" id="c-net"><i class="dot"></i><span>Internet</span></span>
       <span class="chip" id="c-pc"><i class="dot"></i><span>PC</span></span>
-      <span class="chip opt" id="c-out"><span>☁︎</span><span>--°</span></span>
+      <span class="chip opt" id="c-out"><span><i class="icon icon-cloud" aria-hidden="true"></i>︎</span><span>--°</span></span>
       <button class="gear" id="gear" aria-label="Settings">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1A2 2 0 1 1 4.1 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1A2 2 0 1 1 7 4.1l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1A2 2 0 1 1 19.9 7l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
       </button>
@@ -265,7 +266,7 @@ body.lab .deck { justify-self: center; }
       <div class="np"><div class="art" id="art"></div>
         <div style="min-width:0"><div class="label" style="margin-bottom:4px">Now playing · Spotify</div>
           <div class="t" id="np-t">—</div><div class="a" id="np-a"></div>
-          <div class="ctl"><button data-m="previous" aria-label="Previous">⏮</button><button class="main" data-m="play_pause" id="np-pp" aria-label="Play/pause">▶</button><button data-m="next" aria-label="Next">⏭</button></div>
+          <div class="ctl"><button data-m="previous" aria-label="Previous"><i class="icon icon-prev" aria-hidden="true"></i></button><button class="main" data-m="play_pause" id="np-pp" aria-label="Play/pause"><i class="icon icon-play" aria-hidden="true"></i></button><button data-m="next" aria-label="Next"><i class="icon icon-next" aria-hidden="true"></i></button></div>
         </div></div>
     </article>
 
@@ -547,7 +548,10 @@ async function poll() {
   const h = s.ha || {};
   if (h.configured) {
     $('#lights').innerHTML = `${h.lights_on}<small>on</small>`;
-    $('#door').textContent = h.door === 'locked' ? '🔒 Locked' : h.door === 'unlocked' ? '🔓 Open' : (h.door || '—');
+    if (h.door === 'locked' || h.door === 'unlocked') {
+    const shut = h.door === 'locked';
+    $('#door').innerHTML = `<i class="icon icon-${shut ? 'lock' : 'unlock'}" aria-hidden="true"></i> ${shut ? 'Locked' : 'Open'}`;
+  } else { $('#door').textContent = h.door || '—'; }   // server text: never innerHTML
     $('#door').style.color = h.door === 'unlocked' ? 'var(--warn)' : '';
     $('#charger').textContent = h.charger_w != null ? `${h.charger_w.toFixed(h.charger_unit === 'kW' ? 1 : 0)} ${h.charger_unit || 'W'}` : '—';
     $('#out').innerHTML = h.outside != null ? `${Math.round(h.outside * 10) / 10}<small>°</small>` : '--<small>°</small>';
@@ -556,7 +560,8 @@ async function poll() {
     const chosen = settings.temps && settings.temps.length ? settings.temps : h.temps.slice(0, 3).map(t => t.id);
     $('#temps').innerHTML = h.temps.filter(t => chosen.includes(t.id)).map(t => `<div><span>${t.name}</span><b>${t.value.toFixed(1)}°</b></div>`).join('');
     const m = h.media || {}; $('#np-t').textContent = m.title || (m.state === 'idle' ? 'Nothing playing' : '—');
-    $('#np-a').textContent = m.artist || ''; $('#np-pp').textContent = m.state === 'playing' ? '⏸' : '▶';
+    $('#np-a').textContent = m.artist || '';
+  $('#np-pp').firstElementChild.className = (m.state === 'playing' ? 'icon icon-pause' : 'icon icon-play');
     const art = m.art ? `url(/api/art?k=${encodeURIComponent(m.art_key)})` : '';
     if ($('#art').style.backgroundImage !== art) { $('#art').style.backgroundImage = art; $('#np-bg').style.backgroundImage = art; }
   } else {

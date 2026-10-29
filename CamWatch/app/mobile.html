@@ -116,6 +116,7 @@ nav.tabs a.on { color: var(--accent); }
 }
 </style>
 <link rel="stylesheet" href="/static/splash.css">
+<link rel="stylesheet" href="/static/icons.css">
 </head>
 <body>
 <div class="cw-splash" id="cwSplash" hidden>
@@ -172,11 +173,11 @@ nav.tabs a.on { color: var(--accent); }
 </main>
 
 <nav class="tabs" aria-label="Pages">
-  <a href="/m" class="on"><i>🏠</i>Home</a>
-  <a href="/live"><i>📹</i>Live</a>
-  <a href="/"><i>🎞️</i>Clips</a>
-  <a href="/search"><i>🔍</i>Search</a>
-  <a href="/settings"><i>⚙️</i>Settings</a>
+  <a href="/m" class="on"><i><i class="icon icon-home" aria-hidden="true"></i></i>Home</a>
+  <a href="/live"><i><i class="icon icon-video" aria-hidden="true"></i></i>Live</a>
+  <a href="/"><i><i class="icon icon-film" aria-hidden="true"></i></i>Clips</a>
+  <a href="/search"><i><i class="icon icon-search" aria-hidden="true"></i></i>Search</a>
+  <a href="/settings"><i><i class="icon icon-gear" aria-hidden="true"></i></i>Settings</a>
 </nav>
 <div class="toast" id="toast"></div>
 
@@ -205,7 +206,7 @@ async function loadStatus() {
   if (status.version) $('ver').textContent = `camwatch ${status.version.text}`;
   const s = status;
   $('arm').className = 'arm ' + (s.armed ? 'on' : 'off');
-  $('arm').innerHTML = s.armed ? '🛡️ Armed' : '🔕 Disarmed';
+  $('arm').innerHTML = s.armed ? '<i class="icon icon-shield" aria-hidden="true"></i> Armed' : '<i class="icon icon-bell-off" aria-hidden="true"></i> Disarmed';
   $('sub').textContent = s.mode === 'schedule' ? `schedule ${s.schedule}` : (s.armed ? 'pushes on' : 'recording, no pushes');
   $('n-today').textContent = s.today; $('n-week').textContent = s.week; $('n-people').textContent = s.people_today.length;
   $('people').innerHTML = s.people_today.map(p => `<a class="person" href="/?person=${encodeURIComponent(p.name)}"><i>${esc(p.name[0])}</i><b>${esc(p.name)}</b><span>${hm(p.last)}</span></a>`).join('');
@@ -215,12 +216,12 @@ async function loadStatus() {
 
 function attention(s) {
   const items = [];
-  s.cameras.filter(c => !c.online).forEach(c => items.push({cls: 'bad', icon: '📵', title: `${c.name} is offline`, text: 'no picture from the camera', href: `/live?camera=${encodeURIComponent(c.name)}`}));
-  (s.unusual_today || []).slice(-3).reverse().forEach(u => items.push({icon: '⚠️', title: `Unusual: ${u.camera} at ${hm(u.start)}`, text: u.reason, href: `/clip/${u.day}/${encodeURIComponent(u.stem)}`}));
-  (s.packages_waiting || []).forEach(p => items.push({cls: 'info', icon: '📦', title: `Package at ${p.zone}`, text: `delivered ${hm(p.at)}`, href: p.clip ? `/clip/${p.clip}` : '/'}));
-  if (s.strangers) items.push({cls: 'info', icon: '👤', title: `${s.strangers} recurring stranger${s.strangers > 1 ? 's' : ''}`, text: 'name them once, recognised from then on', href: '/strangers'});
-  if (s.offsite && s.offsite.enabled && s.offsite.error) items.push({cls: 'bad', icon: '☁️', title: 'Off-site uploads failing', text: s.offsite.error, href: '/settings#offsite'});
-  Object.entries(s.snoozed || {}).forEach(([cam, until]) => items.push({icon: '😴', title: `${cam} snoozed until ${until}`, text: 'no pushes from this camera',
+  s.cameras.filter(c => !c.online).forEach(c => items.push({cls: 'bad', icon: '<i class="icon icon-video" aria-hidden="true"></i>', title: `${c.name} is offline`, text: 'no picture from the camera', href: `/live?camera=${encodeURIComponent(c.name)}`}));
+  (s.unusual_today || []).slice(-3).reverse().forEach(u => items.push({icon: '⚠', title: `Unusual: ${u.camera} at ${hm(u.start)}`, text: u.reason, href: `/clip/${u.day}/${encodeURIComponent(u.stem)}`}));
+  (s.packages_waiting || []).forEach(p => items.push({cls: 'info', icon: '<i class="icon icon-package" aria-hidden="true"></i>', title: `Package at ${p.zone}`, text: `delivered ${hm(p.at)}`, href: p.clip ? `/clip/${p.clip}` : '/'}));
+  if (s.strangers) items.push({cls: 'info', icon: '<i class="icon icon-person" aria-hidden="true"></i>', title: `${s.strangers} recurring stranger${s.strangers > 1 ? 's' : ''}`, text: 'name them once, recognised from then on', href: '/strangers'});
+  if (s.offsite && s.offsite.enabled && s.offsite.error) items.push({cls: 'bad', icon: '<i class="icon icon-cloud" aria-hidden="true"></i>', title: 'Off-site uploads failing', text: s.offsite.error, href: '/settings#offsite'});
+  Object.entries(s.snoozed || {}).forEach(([cam, until]) => items.push({icon: '<i class="icon icon-sleep" aria-hidden="true"></i>', title: `${cam} snoozed until ${until}`, text: 'no pushes from this camera',
     act: {label: 'Resume', run: () => snooze(cam, 0)}}));
   const box = $('attention');
   if (!items.length) { box.innerHTML = `<div class="allok">✓ All quiet - ${s.cameras.length} camera${s.cameras.length > 1 ? 's' : ''} online</div>`; return; }
@@ -236,7 +237,7 @@ function cameras(list, snoozed) {
     $('cams').className = 'cams' + (cams.length === 1 ? ' single' : '');
     $('cams').innerHTML = cams.map(c => `<a class="cam" href="/live?camera=${encodeURIComponent(c.name)}" data-cam="${esc(c.name)}"><img alt="${esc(c.name)} live">
       <span class="name"><span class="dot ${c.online ? '' : 'offline'}"></span>${esc(c.name)}</span>
-      ${c.zz ? `<span class="zz">😴 until ${esc(c.zz)}</span>` : `<button class="snooze" data-cam="${esc(c.name)}" aria-label="Snooze ${esc(c.name)} for one hour">😴 1h</button>`}</a>`).join('');
+      ${c.zz ? `<span class="zz"><i class="icon icon-sleep" aria-hidden="true"></i> until ${esc(c.zz)}</span>` : `<button class="snooze" data-cam="${esc(c.name)}" aria-label="Snooze ${esc(c.name)} for one hour"><i class="icon icon-sleep" aria-hidden="true"></i> 1h</button>`}</a>`).join('');
     $('dots').innerHTML = cams.length > 1 ? cams.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('') : '';
     $('cams').querySelectorAll('.snooze').forEach(b => b.onclick = e => { e.preventDefault(); snooze(b.dataset.cam, 60); });
     refreshPictures(true);
@@ -270,7 +271,7 @@ async function loadRecent() {
     if (!items.length) return '';
     return `<div class="day">${label}</div>` + items.map(v => {
       const tags = [v.star ? '<span class="tag s">★</span>' : '', v.unusual ? '<span class="tag u">⚠ unusual</span>' : '',
-        v.visit && v.visit.length ? `<span class="tag l">🔗 ${esc([...new Set(v.visit)].join(', '))}</span>` : ''].join('');
+        v.visit && v.visit.length ? `<span class="tag l"><i class="icon icon-link" aria-hidden="true"></i> ${esc([...new Set(v.visit)].join(', '))}</span>` : ''].join('');
       return `<a class="visit" href="/clip/${v.day}/${encodeURIComponent(v.stem)}"><img loading="lazy" alt="" src="/api/thumb/${v.day}/${encodeURIComponent(v.stem)}.jpg?w=240">
         <div class="m"><div class="who ${v.people.length ? 'known' : ''}">${esc(who(v))}</div><div class="sub"><span>${esc(v.camera)}</span>${tags}</div></div>
         <span class="t">${hm(v.start)}</span></a>`;

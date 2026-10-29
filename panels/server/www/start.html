@@ -132,16 +132,17 @@ footer { color: var(--dim); font-size: 13px; line-height: 1.5; margin-top: 26px;
 @media (min-width: 761px) and (max-height: 620px) { .board { grid-template-rows: repeat(2, minmax(150px, 1fr)); } #v-home { overflow-y: auto; } }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head><body>
 <div class="app">
   <nav class="rail" aria-label="Sections">
-    <button data-go="home" class="on"><span>⌂</span>Home</button>
-    <button data-go="lights"><span>💡</span>Lights<em id="lcount" hidden></em></button>
-    <button data-go="actions"><span>⚡</span>Actions</button>
-    <button data-go="news"><span>📰</span>News</button>
-    <button data-go="panels"><span>▦</span>Panels</button>
+    <button data-go="home" class="on"><span><i class="icon icon-home" aria-hidden="true"></i></span>Home</button>
+    <button data-go="lights"><span><i class="icon icon-bulb" aria-hidden="true"></i></span>Lights<em id="lcount" hidden></em></button>
+    <button data-go="actions"><span><i class="icon icon-bolt" aria-hidden="true"></i></span>Actions</button>
+    <button data-go="news"><span><i class="icon icon-news" aria-hidden="true"></i></span>News</button>
+    <button data-go="panels"><span><i class="icon icon-grid" aria-hidden="true"></i></span>Panels</button>
     <div class="rgap"></div>
-    <button id="adminbtn" class="adm" aria-label="Admin (PIN)"><span id="admic">🔐</span>Admin</button>
+    <button id="adminbtn" class="adm" aria-label="Admin (PIN)"><span id="admic"><i class="icon icon-lock" aria-hidden="true"></i></span>Admin</button>
     <div class="clock num" id="clock"></div>
   </nav>
   <main>
@@ -169,7 +170,7 @@ footer { color: var(--dim); font-size: 13px; line-height: 1.5; margin-top: 26px;
         The Deck, Lab panel and Buttons web view share one Buttons surface: opening it on a second screen shows "Overtaken" on the first.</footer></div>
     </section>
     <section class="v" id="v-admin" data-v="admin">
-      <div class="vh"><h1>Admin</h1><button class="lockadm" id="lockadm">🔒 Log out</button></div>
+      <div class="vh"><h1>Admin</h1><button class="lockadm" id="lockadm"><i class="icon icon-lock" aria-hidden="true"></i> Log out</button></div>
       <div class="alab">Unlocked on this device · admin pages open without the PIN until you log out</div>
       <div class="adgrid" id="adgrid"></div>
     </section>
@@ -178,7 +179,7 @@ footer { color: var(--dim); font-size: 13px; line-height: 1.5; margin-top: 26px;
 
 <div class="sheet" id="vsheet" role="dialog" aria-modal="true" aria-labelledby="vtitle"><div class="sbox">
   <h2 id="vtitle">Start the vacuum</h2><div class="smute" id="vsub">Choose where to clean</div>
-  <button class="sall" id="vall"><span>🧹</span>All rooms</button>
+  <button class="sall" id="vall"><span><i class="icon icon-vacuum" aria-hidden="true"></i></span>All rooms</button>
   <div class="lbl">Or only these rooms</div><div class="vrooms" id="vrooms"></div><div class="snote" id="vnote" hidden></div>
   <div class="srow"><button class="scancel" id="vcancel">Cancel</button><button class="sgo" id="vgo" disabled>Pick rooms</button></div>
 </div></div>
@@ -203,13 +204,13 @@ addEventListener('hashchange', () => show(location.hash.slice(1), false));
 
 // ---------- admin: the keypad (server-checked PIN) first, then the admin hub ----------
 let admin = false;
-const ADMIN = [['⚙', 'Admin', 'Health, tasks, every console', '/admin'], ['⛁', 'Lab', 'Nodes, guests, commands', '/ops'], ['▦', 'Lab 6×6', 'The Buttons lab grid', '/lab'],
-               ['⌬', 'Network', 'Internet, DNS, devices', '/net'], ['✦', 'Atlas', 'Every endpoint, live', '/atlas'], ['⛶', 'Network map', 'Document', '/network.html']];
+const ADMIN = [['<i class="icon icon-gear" aria-hidden="true"></i>', 'Admin', 'Health, tasks, every console', '/admin'], ['<i class="icon icon-database" aria-hidden="true"></i>', 'Lab', 'Nodes, guests, commands', '/ops'], ['<i class="icon icon-grid" aria-hidden="true"></i>', 'Lab 6×6', 'The Buttons lab grid', '/lab'],
+               ['<i class="icon icon-hexagon" aria-hidden="true"></i>', 'Network', 'Internet, DNS, devices', '/net'], ['<i class="icon icon-sparkle" aria-hidden="true"></i>', 'Atlas', 'Every endpoint, live', '/atlas'], ['<i class="icon icon-frame" aria-hidden="true"></i>', 'Network map', 'Document', '/network.html']];
 $('#adgrid').innerHTML = ADMIN.map(([i, t, d, h]) => `<a class="adt" href="${h}" data-t="${t}"><i>${i}</i><b>${t}</b><span>${d}</span></a>`).join('');
 document.querySelectorAll('.adt').forEach(a => Wall.press(a, () => location.href = a.getAttribute('href')));
 async function admState() {
   try { const s = await deckPin.status(); admin = !!s.admin; } catch { admin = false; }
-  $('#adminbtn').classList.toggle('unlocked', admin); $('#admic').textContent = admin ? '🔓' : '🔐';
+  $('#adminbtn').classList.toggle('unlocked', admin); $('#admic').className = (admin ? 'icon icon-unlock' : 'icon icon-lock');
   if (!admin && view === 'admin') show('home');
   renderPanels.done && renderPanels();
   return admin;
@@ -235,18 +236,18 @@ function board() {
     <a class="t" href="/family" data-t="people"><span class="k">Who is home<i>${home.length} of ${S.people.length}</i></span>
       <div class="people">${S.people.map((x, i) => `<span class="pp ${x.home ? '' : 'away'}"><i style="background:${COL[i % COL.length]}">${esc(x.name[0])}</i>${esc(x.name)}</span>`).join('')}</div></a>
     <button class="t ${locked ? 'ok' : 'warn'}" id="doortile" data-t="door"><span class="k">Front door<i>${locked ? '' : 'tap twice to lock'}</i></span>
-      <div class="mid"><span class="ic">${locked ? '🔒' : '🔓'}</span><span class="val klabel">${locked ? 'Locked' : esc((door || '–').replace(/^./, c => c.toUpperCase()))}</span></div>
+      <div class="mid"><span class="ic">${locked ? '<i class="icon icon-lock" aria-hidden="true"></i>' : '<i class="icon icon-unlock" aria-hidden="true"></i>'}</span><span class="val klabel">${locked ? 'Locked' : esc((door || '–').replace(/^./, c => c.toUpperCase()))}</span></div>
       <span class="sub">${locked ? 'Unlock in the lock app' : 'Not locked'}</span></button>
     <button class="t" data-go2="lights" data-t="lights"><span class="k">Lights on<i>${S.rooms.filter(r => r.lights.some(Wall.light)).length} rooms</i></span>
-      <div class="mid"><span class="ic">💡</span><span class="val num">${S.lightsOn}</span></div><span class="sub">Tap for the rooms</span></button>
+      <div class="mid"><span class="ic"><i class="icon icon-bulb" aria-hidden="true"></i></span><span class="val num">${S.lightsOn}</span></div><span class="sub">Tap for the rooms</span></button>
     <a class="t" href="/familyinfo" data-t="wx"><span class="k">Outside<i>${esc(Wall.WXT[wx.condition] || '')}</i></span>
       <div class="mid"><span class="ic">${Wall.WX[wx.condition] || '·'}</span><span class="val num">${wx.temperature != null ? Math.round(wx.temperature) + '°' : '–'}</span></div>
       <span class="sub">${rain ? `Rain around ${Wall.hm(rain.datetime)}` : temps.length ? `Today ${Math.round(Math.min(...temps))}° to ${Math.round(Math.max(...temps))}°` : ''}</span></a>
     <a class="t" href="/familyinfo" data-t="bus"><span class="k">Next bus<i>${b && !b.none ? esc(b.line) : ''}</i></span>
-      <div class="mid"><span class="ic">🚌</span><span class="val ${b?.none ? 's' : 'num'}">${b?.none ? 'None this hour' : b ? (b.min < 1 ? 'Now' : b.min + '<small>min</small>') : '–'}</span></div>
+      <div class="mid"><span class="ic"><i class="icon icon-bus" aria-hidden="true"></i></span><span class="val ${b?.none ? 's' : 'num'}">${b?.none ? 'None this hour' : b ? (b.min < 1 ? 'Now' : b.min + '<small>min</small>') : '–'}</span></div>
       <span class="sub">${b && !b.none ? `to ${esc(b.to)} · ${b.at}` : 'Storgatan'}</span></a>
     <a class="t" href="/media" data-t="media"><span class="k">Now playing<i>${p ? esc(p.label || '') : ''}</i></span>
-      <div class="mid"><span class="ic">♫</span><span class="val s">${esc(p?.title || 'Nothing playing')}</span></div>
+      <div class="mid"><span class="ic"><i class="icon icon-music" aria-hidden="true"></i></span><span class="val s">${esc(p?.title || 'Nothing playing')}</span></div>
       <span class="sub">${esc(p?.artist || (p ? '' : 'Tap for music and TV'))}</span></a>`;
   document.querySelectorAll('#board a.t').forEach(a => Wall.press(a, () => location.href = a.getAttribute('href')));
   Wall.press($('[data-go2="lights"]'), () => show('lights'));
@@ -266,7 +267,7 @@ function lights() {
   document.querySelectorAll('.rm').forEach(b => Wall.press(b, () => { room = b.dataset.r; lights(); }));
   const R = S.rooms.find(r => r.room === room);
   $('#sq').innerHTML = (R?.lights || []).map(l => { const o = Wall.light(l);
-    return `<button class="lb ${o ? 'on' : ''}" data-id="${esc(l.id)}"><span class="ic">💡</span>${esc(l.name === 'All' ? 'Whole room' : l.name)}<small>${o ? 'On' : 'Off'}${l.bri != null && o ? ' · ' + l.bri + '%' : ''}</small></button>`; }).join('')
+    return `<button class="lb ${o ? 'on' : ''}" data-id="${esc(l.id)}"><span class="ic"><i class="icon icon-bulb" aria-hidden="true"></i></span>${esc(l.name === 'All' ? 'Whole room' : l.name)}<small>${o ? 'On' : 'Off'}${l.bri != null && o ? ' · ' + l.bri + '%' : ''}</small></button>`; }).join('')
     || '<span class="nempty">No lights in this room.</span>';
   document.querySelectorAll('.lb').forEach(b => Wall.press(b, () => Wall.toggle(R.lights.find(l => l.id === b.dataset.id), render)));
 }
@@ -275,12 +276,12 @@ function lights() {
 function actions() {
   const H = S?.H || {}, vac = H.vacuum?.state, cleaning = vac === 'cleaning', pc = !!S?.status?.pc_online;
   const docked = vac === 'docked', homing = vac === 'returning';
-  const one = [['vac', '🧹', 'Start the vacuum', cleaning ? 'Cleaning now · tap to change rooms' : (vac || '–').replace(/_/g, ' '), cleaning],
-               ['dock', '⌂', 'Return to dock', docked ? 'Docked' : homing ? 'On its way home' : (vac || '–').replace(/_/g, ' '), homing],
+  const one = [['vac', '<i class="icon icon-vacuum" aria-hidden="true"></i>', 'Start the vacuum', cleaning ? 'Cleaning now · tap to change rooms' : (vac || '–').replace(/_/g, ' '), cleaning],
+               ['dock', '<i class="icon icon-home" aria-hidden="true"></i>', 'Return to dock', docked ? 'Docked' : homing ? 'On its way home' : (vac || '–').replace(/_/g, ' '), homing],
                ['wake', '⏻', 'Wake the PC', pc ? 'PC is on' : 'PC is off', pc],
-               ['detect', '◎', H.detect ? 'Camera alerts off' : 'Camera alerts on', H.detect ? 'Alerts are on' : 'Alerts are off', !!H.detect]];
-  const two = [['lock', '🔒', 'Lock the front door', S?.door === 'locked' ? 'Locked now' : 'Not locked'], ['alloff', '💡', 'All lights off', `${S?.lightsOn ?? '–'} on now`],
-               ['sleep', '☾', 'Sleep the PC', pc ? 'PC is on' : 'PC is off']];
+               ['detect', '<i class="icon icon-target" aria-hidden="true"></i>', H.detect ? 'Camera alerts off' : 'Camera alerts on', H.detect ? 'Alerts are on' : 'Alerts are off', !!H.detect]];
+  const two = [['lock', '<i class="icon icon-lock" aria-hidden="true"></i>', 'Lock the front door', S?.door === 'locked' ? 'Locked now' : 'Not locked'], ['alloff', '<i class="icon icon-bulb" aria-hidden="true"></i>', 'All lights off', `${S?.lightsOn ?? '–'} on now`],
+               ['sleep', '<i class="icon icon-moon" aria-hidden="true"></i>', 'Sleep the PC', pc ? 'PC is on' : 'PC is off']];
   if (document.querySelector('#v-actions .karmed')) return;
   $('#a1').innerHTML = one.map(([id, i, t, s, on]) => `<button class="act ${on ? 'on' : ''}" data-id="${id}"><span class="ic">${i}</span><span>${t}</span><small>${esc(s)}</small></button>`).join('');
   $('#a2').innerHTML = two.map(([id, i, t, s]) => `<button class="act risky" data-id="${id}"><span class="ic">${i}</span><span class="klabel">${t}</span><small>${esc(s)}</small></button>`).join('');
@@ -414,7 +415,7 @@ function renderPanels() {
     + items.map(({ id, url, name, desc, icon, color }, ii) => { const ext = /^https?:/.test(url);
         return `<a class="card" href="${esc(url)}" ${ext ? 'target="_blank" rel="noopener"' : ''} style="--c:${esc(color)}" data-edit="item" data-gi="${gi}" data-ii="${ii}">
           <span class="ic"><svg viewBox="0 0 24 24">${I[icon] || I.grid}</svg></span>
-          <span><span class="t2">${esc(name)}<i class="dot" data-id="${esc(id)}" title="checking"></i>${GATED.has(url) && !admin ? '<span class="lk" title="Needs the admin PIN">🔒</span>' : ''}</span><span class="d">${esc(desc)}</span>
+          <span><span class="t2">${esc(name)}<i class="dot" data-id="${esc(id)}" title="checking"></i>${GATED.has(url) && !admin ? '<span class="lk" title="Needs the admin PIN"><i class="icon icon-lock" aria-hidden="true"></i></span>' : ''}</span><span class="d">${esc(desc)}</span>
           <span class="u">${esc(url.replace(/^https?:\/\//, '').replace(/\/$/, '') || location.host)}</span></span></a>`;
       }).join('') + '</div>' + (editing() ? `<button class="eadd" data-add="item" data-gi="${gi}">+ Add card to ${esc(title)}</button>` : '') + '</section>').join('')
     + (editing() ? '<button class="eadd" data-add="group" style="margin-top:24px">+ Add group</button>' : '');

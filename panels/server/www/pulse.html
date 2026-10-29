@@ -51,6 +51,7 @@
 .upd { margin-top: 18px; color: var(--dim); font-size: 12px; text-align: center; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <div class="wrap">
@@ -65,8 +66,8 @@ const $ = s => document.querySelector(s);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const D = {}, AT = {};
 const COL = { Alex: '#38bdf8', Robin: '#f472b6', Sam: '#34d399', Kim: '#f59e0b' };
-const WX = { 'sunny': '☀️', 'clear-night': '🌙', 'partlycloudy': '⛅', 'cloudy': '☁️', 'rainy': '🌧️', 'pouring': '🌧️', 'lightning': '🌩️', 'lightning-rainy': '⛈️',
-  'snowy': '❄️', 'snowy-rainy': '🌨️', 'hail': '🌨️', 'fog': '🌫️', 'windy': '💨', 'windy-variant': '💨', 'exceptional': '⚠️' };
+const WX = { 'sunny': '<i class="icon icon-sun" aria-hidden="true"></i>', 'clear-night': '<i class="icon icon-moon" aria-hidden="true"></i>', 'partlycloudy': '<i class="icon icon-partly" aria-hidden="true"></i>', 'cloudy': '<i class="icon icon-cloud" aria-hidden="true"></i>', 'rainy': '<i class="icon icon-rain" aria-hidden="true"></i>', 'pouring': '<i class="icon icon-rain" aria-hidden="true"></i>', 'lightning': '<i class="icon icon-storm" aria-hidden="true"></i>', 'lightning-rainy': '<i class="icon icon-storm" aria-hidden="true"></i>',
+  'snowy': '<i class="icon icon-snow" aria-hidden="true"></i>', 'snowy-rainy': '<i class="icon icon-snow" aria-hidden="true"></i>', 'hail': '<i class="icon icon-snow" aria-hidden="true"></i>', 'fog': '<i class="icon icon-fog" aria-hidden="true"></i>', 'windy': '<i class="icon icon-wind" aria-hidden="true"></i>', 'windy-variant': '<i class="icon icon-wind" aria-hidden="true"></i>', 'exceptional': '⚠' };
 const hm = d => new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 const minsTo = iso => Math.max(0, Math.floor((new Date(iso) - Date.now()) / 60000));
 const ago = t => { const m = (Date.now() - t) / 60000; return m < 1 ? 'just now' : m < 60 ? Math.round(m) + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
@@ -91,17 +92,17 @@ function render() {
   if (H && H.configured) {
     const home = H.people.filter(p => p.home), lightsOn = H.rooms.flatMap(r => r.lights.filter(l => l.on).map(l => l.name === 'All' ? r.room : `${l.name}`));
     const roomsOn = H.rooms.filter(r => r.lights.some(l => l.on)).map(r => r.room);
-    if (H.door?.state && H.door.state !== 'locked') attn.push(['bad', '/control', `🔓 Front door is ${H.door.state}`]);
-    if (!home.length && lightsOn.length) attn.push(['', '/rooms', `💡 Nobody home, ${lightsOn.length} light${lightsOn.length > 1 ? 's' : ''} on`]);
+    if (H.door?.state && H.door.state !== 'locked') attn.push(['bad', '/control', `<i class="icon icon-unlock" aria-hidden="true"></i> Front door is ${H.door.state}`]);
+    if (!home.length && lightsOn.length) attn.push(['', '/rooms', `<i class="icon icon-bulb" aria-hidden="true"></i> Nobody home, ${lightsOn.length} light${lightsOn.length > 1 ? 's' : ''} on`]);
     tiles.push(tile('/today', 'w2', `<div class="k">People <i>${home.length} of ${H.people.length} home</i></div><div class="people">${H.people.map(p => {
       const pr = D.presence?.[p.name.toLowerCase()];
       return `<div class="pp ${p.home ? '' : 'away'}" style="--c:${COL[p.name] || '#38bdf8'}"><div class="av">${esc(p.name[0])}</div>${esc(p.name)}<small>${p.home ? (pr?.silent_s > 1800 ? 'home · phone resting' : 'home') : 'away'}</small></div>`; }).join('')}</div>`));
     const door = H.door?.state;
-    tiles.push(tile('/control', door === 'locked' ? 'good' : 'alert', `<div class="k">Front door</div><div class="v">${door === 'locked' ? '🔒 Locked' : '🔓 ' + esc(door || '–')}</div><div class="s">${door === 'locked' ? 'All good' : 'Tap to lock (lock only)'}</div>`));
+    tiles.push(tile('/control', door === 'locked' ? 'good' : 'alert', `<div class="k">Front door</div><div class="v">${door === 'locked' ? '<i class="icon icon-lock" aria-hidden="true"></i> Locked' : '<i class="icon icon-unlock" aria-hidden="true"></i> ' + esc(door || '–')}</div><div class="s">${door === 'locked' ? 'All good' : 'Tap to lock (lock only)'}</div>`));
     tiles.push(tile('/rooms', '', `<div class="k">Lights <i>${roomsOn.length} rooms</i></div><div class="v num">${lightsOn.length}<small>on</small></div><div class="lights">${roomsOn.slice(0, 5).map(r => `<span>${esc(r)}</span>`).join('')}${roomsOn.length > 5 ? `<span>+${roomsOn.length - 5}</span>` : ''}</div>`));
     const p = (H.players || []).find(x => x.state === 'playing') || (H.appletv?.state === 'playing' ? H.appletv : null);
     const art = p?.art ? `/api/art?e=${encodeURIComponent(p.id)}&k=${encodeURIComponent(p.art_key)}` : '';
-    tiles.push(tile('/media', 'w2', `<div class="k">Now playing <i>${p ? esc(p.label) : 'nothing'}</i></div><div class="np"><div class="art" style="${art ? `background-image:url('${art}')` : ''}">${art ? '' : '♫'}</div>
+    tiles.push(tile('/media', 'w2', `<div class="k">Now playing <i>${p ? esc(p.label) : 'nothing'}</i></div><div class="np"><div class="art" style="${art ? `background-image:url('${art}')` : ''}">${art ? '' : '<i class="icon icon-music" aria-hidden="true"></i>'}</div>
       <div style="min-width:0"><b>${esc(p?.title || 'Quiet house')}</b><span>${esc(p ? [p.artist, p.app].filter(Boolean).join(' · ') : 'Nothing is playing')}</span>
       ${p?.duration ? `<div class="bar" style="--c:#f472b6"><i style="width:${Math.min(100, ((p.position || 0) + (p.state === 'playing' && p.position_at ? (Date.now() - new Date(p.position_at)) / 1000 : 0)) / p.duration * 100)}%"></i></div>` : ''}</div></div>`));
     const wx = D.weather?.now || H.wx;
@@ -113,13 +114,13 @@ function render() {
   }
   if (D.bus) {
     const dep = (D.bus.departures || []).map(d => ({ ...d, t: [d.next, d.then].find(x => x?.time && new Date(x.time) > Date.now() - 30000) })).filter(d => d.t).sort((a, b) => new Date(a.t.time) - new Date(b.t.time))[0];
-    if (D.bus.situations?.length) attn.push(['', '/today', `🚌 ${D.bus.situations.length} traffic disruption${D.bus.situations.length > 1 ? 's' : ''}`]);
+    if (D.bus.situations?.length) attn.push(['', '/today', `<i class="icon icon-bus" aria-hidden="true"></i> ${D.bus.situations.length} traffic disruption${D.bus.situations.length > 1 ? 's' : ''}`]);
     tiles.push(tile('/today', '', `<div class="k">Next bus <i>${esc(D.bus.stop || '')}</i></div>${dep ? `<div class="v num">${minsTo(dep.t.time) < 1 ? 'Now' : minsTo(dep.t.time) + '<small>min</small>'}</div>
       <div class="s"><b>${esc(dep.line.shortName)}</b> to ${esc(dep.to)} · ${hm(dep.t.time)}</div>` : '<div class="v">–</div><div class="s">No departures soon</div>'}`));
   }
   if (S?.genelec) {
     const g = S.genelec, on = g.power === 'ACTIVE';
-    if (g.auth_failed) attn.push(['bad', '/control', '🔈 Speakers refuse the saved password']);
+    if (g.auth_failed) attn.push(['bad', '/control', '<i class="icon icon-volume" aria-hidden="true"></i> Speakers refuse the saved password']);
     tiles.push(tile('/control', '', `<div class="k">Speakers <i>${esc(S.dante?.source || '')}</i></div><div class="v">${on ? (g.mute ? 'Muted' : g.level != null ? Math.round(g.level) + '<small>dB</small>' : 'On') : 'Standby'}</div><div class="s">Genelec ×${(g.speakers || []).length} · Dante ${S.dante?.front_live ?? '–'}/${S.dante?.front_total ?? '–'} live</div>`));
   }
   if (D.net) {
@@ -130,7 +131,7 @@ function render() {
   if (snap) {
     const down = (snap.guests || []).filter(g => g.status !== 'running' && g.name !== 'gotify').length, probs = snap.problems || [];
     const PROB = { backups: 'Backups are older than expected', dns: 'A DNS server is not answering', certs: 'A certificate expires soon', ha: 'Home Assistant needs attention', pve: 'Proxmox API not answering' };
-    probs.filter(p => p !== 'gotify').forEach(p => attn.push(['', '/ops', `⚙ Lab: ${PROB[p] || p}`]));
+    probs.filter(p => p !== 'gotify').forEach(p => attn.push(['', '/ops', `<i class="icon icon-gear" aria-hidden="true"></i> Lab: ${PROB[p] || p}`]));
     tiles.push(tile('/atlas', probs.filter(p => p !== 'gotify').length ? '' : 'good', `<div class="k">Lab <i>${(snap.nodes || []).length} nodes</i></div><div class="v num">${(snap.guests || []).filter(g => g.status === 'running').length}<small>/ ${(snap.guests || []).length} running</small></div>
       <div class="s">${(snap.nodes || []).map(n => `${esc(n.node)} <b>${Math.round(n.cpu * 100)}%</b>`).join(' · ')}</div>`));
   }

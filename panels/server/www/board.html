@@ -137,7 +137,7 @@ body.editing .mod.bare { border-color: var(--line) !important; }
 .mhead b { font-size: clamp(22px, calc(var(--row) * .2), 44px); font-weight: 700; letter-spacing: -.01em; } .mhead span { color: var(--mute); font-size: 15px; }
 .mpt { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
 .mimg { width: 100%; height: 100%; display: block; border-radius: 20px; }
-/* designer: drag a card to move it, drag the corner to resize (mouse; touch keeps ◀ ▶ ⤢) */
+/* designer: drag a card to move it, drag the corner to resize (mouse; touch keeps the arrows and the resize grip) */
 .rz { display: none; position: absolute; right: 6px; bottom: 6px; z-index: 5; width: 22px; height: 22px; cursor: nwse-resize; border-radius: 6px;
   background: linear-gradient(135deg, transparent 50%, var(--accent) 50%); }
 body.editing .rz { display: block; } body.editing .medit { cursor: grab; } body.dragging, body.dragging * { cursor: grabbing !important; user-select: none; }
@@ -156,6 +156,7 @@ body.editing .cv { background-image: linear-gradient(rgba(56,189,248,.08) 1px, t
 body.preview #fab, body.preview header a, body.preview header button { display: none !important; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <header><a href="/boards" class="start-link">‹ Boards</a><h1 id="title">Board</h1><button id="edit" aria-label="Edit this board">✎ Edit</button></header>
@@ -248,8 +249,8 @@ function build() {
     return st.filter(Boolean).join(';'); };
   const card = (m, i) => `<section class="mod${MODULES[m.type]?.bare ? ' bare' : ''}" data-i="${i}" data-sz="${esc(m.size)}" style="${esc(style(m))}"><div class="mbody"></div><i class="rz" title="Drag to resize"></i>
       <div class="medit"><b>${esc(MODULES[m.type]?.icon || '')} ${esc(MODULES[m.type]?.name || m.type)}</b><small>${esc(SIZES[m.size]?.[0] || '')}</small>
-        <div class="eb"><button data-e="left" aria-label="Move earlier">◀</button><button data-e="right" aria-label="Move later">▶</button>
-        <button data-e="size" aria-label="Change size">⤢</button><button data-e="set" aria-label="Settings">⚙</button></div></div></section>`;
+        <div class="eb"><button data-e="left" aria-label="Move earlier"><i class="icon icon-left" aria-hidden="true"></i></button><button data-e="right" aria-label="Move later"><i class="icon icon-right" aria-hidden="true"></i></button>
+        <button data-e="size" aria-label="Change size">⤢</button><button data-e="set" aria-label="Settings"><i class="icon icon-gear" aria-hidden="true"></i></button></div></div></section>`;
   document.body.classList.toggle('canvas', canvas); document.body.classList.toggle('preview', /[?&]preview\b/.test(location.search));
   const inCorner = m => col && m.size === 'c';
   const order = L.modules.map((m, i) => i);

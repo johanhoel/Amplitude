@@ -105,6 +105,7 @@ nav button.on { color: var(--ink); background: rgba(255,255,255,.09); }
 .hint.show { opacity: 1; transform: translate(-50%, 0); }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <header><div><div class="clock num" id="clock">--:--</div><div class="hello" id="hello"></div></div><div class="who" id="who"></div></header>
@@ -125,7 +126,7 @@ nav button.on { color: var(--ink); background: rgba(255,255,255,.09); }
   <section class="tab games" data-tab="games"><h2>Gaming <small id="gamestate"></small></h2><div class="grid" id="gamebtns"></div></section>
 
   <section class="tab house" data-tab="house"><h2>Home</h2>
-    <div class="np"><div class="art" id="art"></div><div style="min-width:0"><div class="t" id="np-t">—</div><div class="a" id="np-a"></div></div><button class="pp" id="np-pp" aria-label="Play or pause">▶</button></div>
+    <div class="np"><div class="art" id="art"></div><div style="min-width:0"><div class="t" id="np-t">—</div><div class="a" id="np-a"></div></div><button class="pp" id="np-pp" aria-label="Play or pause"><i class="icon icon-play" aria-hidden="true"></i></button></div>
     <div class="door" id="door"><div class="lbl" id="door-lbl">–</div><div class="knob"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0"/></svg></div></div>
     <div class="sub">House</div><div class="grid" id="housebtns"></div></section>
 </main>
@@ -231,7 +232,8 @@ rb($('#housebtns'), 'h-vac', 'Vacuum', 'vac', b => { const c = b.classList.conta
 rb($('#housebtns'), 'h-charger', 'Charger', 'ev', b => { b.classList.toggle('on'); ha({ do: 'charger' }); });
 rb($('#housebtns'), 'h-tv', 'TV room ⏯', 'tv', () => ha({ do: 'tv' }, 'TV room play/pause'));
 rb($('#housebtns'), 'h-next', 'Next song', 'music', () => ha({ do: 'media', value: 'media_next_track' }));
-$('#np-pp').addEventListener('pointerdown', e => { e.preventDefault(); const p = $('#np-pp').textContent === '⏸'; $('#np-pp').textContent = p ? '▶' : '⏸';
+$('#np-pp').addEventListener('pointerdown', e => { e.preventDefault(); const p = $('#np-pp').firstElementChild.classList.contains('icon-pause');
+    $('#np-pp').firstElementChild.className = (p ? 'icon icon-play' : 'icon icon-pause');
   $('#art').classList.toggle('spin', !p); ha({ do: 'media', value: 'media_play_pause' }); });
 const closeOv = () => { $('#ov').classList.remove('open'); $('#ov-img').src = ''; };
 $('#ov-x').addEventListener('pointerdown', e => { e.preventDefault(); closeOv(); });
@@ -282,7 +284,7 @@ async function loadHome() {
   $('#h-detect').classList.toggle('on', !!H.detect); $('#h-charger').classList.toggle('on', !!H.charger_on);
   $('#h-vac').classList.toggle('on', (H.vacuum || {}).state === 'cleaning');
   const m = H.media || {}; $('#np-t').textContent = m.title || 'Nothing playing'; $('#np-a').textContent = m.artist || 'Spotify';
-  $('#np-pp').textContent = m.state === 'playing' ? '⏸' : '▶'; $('#art').classList.toggle('spin', m.state === 'playing');
+  $('#np-pp').firstElementChild.className = (m.state === 'playing' ? 'icon icon-pause' : 'icon icon-play'); $('#art').classList.toggle('spin', m.state === 'playing');
   const art = m.art ? `url(/api/art?k=${encodeURIComponent(m.art_key)})` : ''; if ($('#art').style.backgroundImage !== art) $('#art').style.backgroundImage = art;
   renderStatus();
 }

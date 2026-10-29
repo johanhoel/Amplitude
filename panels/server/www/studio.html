@@ -80,17 +80,18 @@ td .s { color: var(--mute); font-size: 13px; } .dot { display: inline-block; wid
   .guide details { color: #444; } .guide details[open] summary, .guide summary { color: #0369a1; } a { color: #0369a1; } }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <nav id="nav">
   <div class="brand">Home Deck Studio<small>set up your home</small></div>
-  <a href="#overview" data-s="overview">🏠 Overview</a>
-  <a href="#devices" data-s="devices">🔌 Devices</a>
-  <a href="#people" data-s="people">👪 People</a>
-  <a href="#boards" data-s="boards">🧩 Boards</a>
-  <a href="#wizards" data-s="wizards">🪄 Wizards</a>
-  <a href="#guide" data-s="guide">📖 Guide</a>
-  <a href="#changes" data-s="changes">📝 Changes<span class="n" id="ndraft" hidden></span></a>
+  <a href="#overview" data-s="overview"><i class="icon icon-home" aria-hidden="true"></i> Overview</a>
+  <a href="#devices" data-s="devices"><i class="icon icon-plug" aria-hidden="true"></i> Devices</a>
+  <a href="#people" data-s="people"><i class="icon icon-people" aria-hidden="true"></i> People</a>
+  <a href="#boards" data-s="boards"><i class="icon icon-puzzle" aria-hidden="true"></i> Boards</a>
+  <a href="#wizards" data-s="wizards"><i class="icon icon-wand" aria-hidden="true"></i> Wizards</a>
+  <a href="#guide" data-s="guide"><i class="icon icon-book" aria-hidden="true"></i> Guide</a>
+  <a href="#changes" data-s="changes"><i class="icon icon-note" aria-hidden="true"></i> Changes<span class="n" id="ndraft" hidden></span></a>
   <div class="sp"></div>
   <div class="ext" id="ext"></div>
 </nav>
@@ -106,8 +107,8 @@ td .s { color: var(--mute); font-size: 13px; } .dot { display: inline-block; wid
 const $ = s => document.querySelector(s), esc = Wall.esc, main = $('#main');
 const S = { inv: [], rooms: [], sum: {}, boards: [], draft: [], filt: { src: 'all', q: '', tab: 'discover' } };
 const SRC = { ha: 'Home Assistant', net: 'Network', pve: 'Proxmox', man: 'By hand' };
-const KIND_ICON = { light: '💡', switch: '🔘', lock: '🔒', player: '🎵', vacuum: '🧹', camera: '📷', climate: '🌡️', cover: '🪟', fan: '🌀', person: '🧑', sensor: '📟',
-  network: '📶', phone: '📱', tablet: '📱', computer: '💻', tv: '📺', speaker: '🔊', printer: '🖨️', iot: '🔌', server: '🖥️', vm: '🖥️', container: '📦', other: '•' };
+const KIND_ICON = { light: '<i class="icon icon-bulb" aria-hidden="true"></i>', switch: '<i class="icon icon-toggle" aria-hidden="true"></i>', lock: '<i class="icon icon-lock" aria-hidden="true"></i>', player: '<i class="icon icon-music" aria-hidden="true"></i>', vacuum: '<i class="icon icon-vacuum" aria-hidden="true"></i>', camera: '<i class="icon icon-camera" aria-hidden="true"></i>', climate: '<i class="icon icon-thermo" aria-hidden="true"></i>', cover: '<i class="icon icon-window" aria-hidden="true"></i>', fan: '<i class="icon icon-wind" aria-hidden="true"></i>', person: '<i class="icon icon-person" aria-hidden="true"></i>', sensor: '<i class="icon icon-phone" aria-hidden="true"></i>',
+  network: '<i class="icon icon-wifi" aria-hidden="true"></i>', phone: '<i class="icon icon-phone" aria-hidden="true"></i>', tablet: '<i class="icon icon-phone" aria-hidden="true"></i>', computer: '<i class="icon icon-laptop" aria-hidden="true"></i>', tv: '<i class="icon icon-tv" aria-hidden="true"></i>', speaker: '<i class="icon icon-speaker" aria-hidden="true"></i>', printer: '<i class="icon icon-printer" aria-hidden="true"></i>', iot: '<i class="icon icon-plug" aria-hidden="true"></i>', server: '<i class="icon icon-desktop" aria-hidden="true"></i>', vm: '<i class="icon icon-desktop" aria-hidden="true"></i>', container: '<i class="icon icon-package" aria-hidden="true"></i>', other: '•' };
 const KINDS = Object.keys(KIND_ICON);
 const host = location.hostname, LAN = location.origin;
 const ago = t => { if (!t) return '–'; const s = Date.now() / 1000 - t; return s < 90 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' d ago'; };
@@ -143,7 +144,7 @@ const SECTIONS = {
       <h2>Needs attention</h2>
       ${S.sum.down.length ? `<div class="card">${S.sum.down.map(d => `<div><span class="dot bad"></span> <b>${esc(d.name)}</b> is offline${d.since ? ' since ' + ago(d.since).replace(' ago', '') : ''}</div>`).join('')}</div>`
         : `<div class="card">✓ All watched devices are online.</div>`}
-      ${S.sum.draft ? `<div class="card" style="margin-top:10px">📝 ${S.sum.draft} change${S.sum.draft > 1 ? 's are' : ' is'} waiting. <a href="#changes">Review and apply</a></div>` : ''}
+      ${S.sum.draft ? `<div class="card" style="margin-top:10px"><i class="icon icon-note" aria-hidden="true"></i> ${S.sum.draft} change${S.sum.draft > 1 ? 's are' : ' is'} waiting. <a href="#changes">Review and apply</a></div>` : ''}
       <h2>Start here</h2>
       <div class="wz">${WIZ.map(w => `<button data-w="${w.id}"><span class="i">${w.icon}</span><b>${esc(w.title)}</b><span>${esc(w.desc)}</span></button>`).join('')}</div>
       <p class="noprint" style="margin-top:22px"><button class="btn" id="retour">Show the tour again</button></p>`;
@@ -189,7 +190,7 @@ const SECTIONS = {
       <div class="cards">${(S.sum.people || []).map(p => { const ph = S.inv.filter(i => i.presence === p), pd = paired.filter(d => (d.person || '').toLowerCase() === p);
         return `<div class="card"><b style="font-size:19px;text-transform:capitalize">${esc(p)}</b>
           <div class="m" style="margin-top:6px">Presence phone${ph.length > 1 ? 's' : ''}:</div>${ph.map(i => `<div><span class="dot ${i.online ? 'ok' : 'bad'}"></span> ${esc(nameOf(i))} <span class="s">${esc(i.id)}</span></div>`).join('') || '<div class="m">none</div>'}
-          <div class="m" style="margin-top:6px">Paired for the app:</div>${pd.map(d => `<div>📱 ${esc(d.name)} <span class="s">seen ${ago(d.last_seen)}</span></div>`).join('') || '<div class="m">none</div>'}</div>`; }).join('')}</div>
+          <div class="m" style="margin-top:6px">Paired for the app:</div>${pd.map(d => `<div><i class="icon icon-phone" aria-hidden="true"></i> ${esc(d.name)} <span class="s">seen ${ago(d.last_seen)}</span></div>`).join('') || '<div class="m">none</div>'}</div>`; }).join('')}</div>
       ${(() => { const other = S.inv.filter(i => i.kind === 'person' && !(S.sum.people || []).includes(i.name.toLowerCase())).map(i => i.name);
         return other.length ? `<p class="m" style="margin-top:14px">Also in Home Assistant, without a presence phone: ${esc(other.join(', '))}.</p>` : ''; })()}
       <p style="margin-top:18px"><button class="btn go" id="addp">+ New phone or family member</button> <a class="btn" href="/devices">Paired devices (app)</a></p>`;
@@ -218,7 +219,7 @@ const SECTIONS = {
   async guide(sub) {
     const G = window.STUDIO_GUIDE;
     main.innerHTML = `<div class="guide"><h1>Guide</h1><p class="lead">Plain steps for every part of Home Deck Studio. "Technical details" has the background for the curious.</p>
-      <div class="toc noprint">${G.map(g => `<a class="chip" href="#guide/${g.id}">${esc(g.title)}</a>`).join('')} <button class="chip" id="pdf">🖨️ Handbook (PDF / print)</button></div>
+      <div class="toc noprint">${G.map(g => `<a class="chip" href="#guide/${g.id}">${esc(g.title)}</a>`).join('')} <button class="chip" id="pdf"><i class="icon icon-printer" aria-hidden="true"></i> Handbook (PDF / print)</button></div>
       ${G.map(g => `<article id="g-${g.id}"><h3>${esc(g.title)}</h3><p>${esc(g.intro)}</p><ol>${g.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
         <details><summary>Technical details</summary><p>${esc(g.tech)}</p></details></article>`).join('')}</div>`;
     $('#pdf').onclick = () => { main.querySelectorAll('details').forEach(d => d.open = true); print(); };
@@ -324,10 +325,10 @@ function preview(name) {
 
 // ---------- wizards ----------
 const WIZ = [
-  { id: 'phone', icon: '📱', title: 'New phone or family member', desc: 'Who-is-home, the app, and their own board' },
-  { id: 'smart', icon: '💡', title: 'New smart-home device', desc: 'A light, lock, sensor or speaker from Home Assistant onto your boards' },
-  { id: 'screen', icon: '🖥️', title: 'New screen', desc: 'A tablet, wall panel, phone or PC wallpaper showing a board' },
-  { id: 'camserver', icon: '📷', title: 'New camera or server', desc: 'Watch it, get offline alerts, show it on a board' },
+  { id: 'phone', icon: '<i class="icon icon-phone" aria-hidden="true"></i>', title: 'New phone or family member', desc: 'Who-is-home, the app, and their own board' },
+  { id: 'smart', icon: '<i class="icon icon-bulb" aria-hidden="true"></i>', title: 'New smart-home device', desc: 'A light, lock, sensor or speaker from Home Assistant onto your boards' },
+  { id: 'screen', icon: '<i class="icon icon-desktop" aria-hidden="true"></i>', title: 'New screen', desc: 'A tablet, wall panel, phone or PC wallpaper showing a board' },
+  { id: 'camserver', icon: '<i class="icon icon-camera" aria-hidden="true"></i>', title: 'New camera or server', desc: 'Watch it, get offline alerts, show it on a board' },
 ];
 function stepUI(w, steps) {
   let n = 0; const st = {};
@@ -408,7 +409,7 @@ async function runWizard(w) {
     { title: 'Apply', show: el => { el.innerHTML = '<p>Open <b>Changes</b> and press <b>Apply</b>.</p>'; } },
   ]);
   if (w.id === 'screen') return stepUI(w, [
-    { title: 'What kind of screen?', show: (el, st) => { el.innerHTML = `<div class="pick">${[['android', '🤖 Android phone or tablet (the Home Deck app)'], ['ios', ' iPhone or iPad'], ['kiosk', '🖼️ Wall tablet / panel (kiosk browser)'], ['pc', '🖥️ Windows wallpaper (Lively)']]
+    { title: 'What kind of screen?', show: (el, st) => { el.innerHTML = `<div class="pick">${[['android', '<i class="icon icon-robot" aria-hidden="true"></i> Android phone or tablet (the Home Deck app)'], ['ios', ' iPhone or iPad'], ['kiosk', '<i class="icon icon-image" aria-hidden="true"></i> Wall tablet / panel (kiosk browser)'], ['pc', '<i class="icon icon-desktop" aria-hidden="true"></i> Windows wallpaper (Lively)']]
         .map(([k, t]) => `<label><input type="radio" name="ty" value="${k}" ${st.type === k ? 'checked' : ''}>${t}</label>`).join('')}</div>`; },
       next: (el, st) => { st.type = el.querySelector('input[name=ty]:checked')?.value; if (!st.type) { Edit.toast('Pick one'); return false; } } },
     { title: 'Which board?', show: async (el, st) => { await loadBoards(); el.innerHTML = `<div class="form"><label>Board<select id="bd">${S.boards.map(b => `<option value="${esc(b.name)}">${esc(b.title)}</option>`).join('')}</select></label></div>
@@ -425,8 +426,8 @@ async function runWizard(w) {
         el.querySelector('#pair')?.addEventListener('click', () => pairBox(el.querySelector('#pb'), st.type === 'ios' ? 'iPhone / iPad' : 'Android', '').catch(e => Edit.toast('✗ ' + e.message))); } },
   ]);
   if (w.id === 'camserver') return stepUI(w, [
-    { title: 'Camera or server?', show: (el, st) => { el.innerHTML = `<div class="pick"><label><input type="radio" name="ty" value="cam" ${st.type === 'cam' ? 'checked' : ''}>📷 A camera</label>
-        <label><input type="radio" name="ty" value="srv" ${st.type === 'srv' ? 'checked' : ''}>🖥️ A server, NAS, VM or container</label></div>`; },
+    { title: 'Camera or server?', show: (el, st) => { el.innerHTML = `<div class="pick"><label><input type="radio" name="ty" value="cam" ${st.type === 'cam' ? 'checked' : ''}><i class="icon icon-camera" aria-hidden="true"></i> A camera</label>
+        <label><input type="radio" name="ty" value="srv" ${st.type === 'srv' ? 'checked' : ''}><i class="icon icon-desktop" aria-hidden="true"></i> A server, NAS, VM or container</label></div>`; },
       next: (el, st) => { st.type = el.querySelector('input[name=ty]:checked')?.value; if (!st.type) { Edit.toast('Pick one'); return false; } } },
     { title: 'Before you start', show: (el, st) => { el.innerHTML = st.type === 'cam'
         ? `<ol><li>Give the camera a fixed address in the router (DHCP reservation).</li><li>Add it to the video bridge (Scrypted) and to Home Assistant, so it shows up as a camera there.</li>

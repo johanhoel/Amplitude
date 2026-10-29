@@ -55,6 +55,7 @@ button { font: inherit; cursor: pointer; border: 0; }
 .tip { color: var(--mute); font-size: 13.5px; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <main>
@@ -94,7 +95,7 @@ const $ = s => document.querySelector(s);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const ago = t => { if (!t) return 'never'; const s = Date.now() / 1000 - t;
   return s < 120 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' days ago'; };
-const icon = d => d.platform === 'android' ? '🤖' : '📱';
+const icon = d => d.platform === 'android' ? '<i class="icon icon-robot" aria-hidden="true"></i>' : '<i class="icon icon-phone" aria-hidden="true"></i>';
 let known = new Set(), pairing = null, timerT = null;
 
 async function api(path, body) {

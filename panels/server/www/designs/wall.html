@@ -52,14 +52,15 @@ h1 { margin: 0 0 14px; font-size: 30px; font-weight: 750; }
   .rail button { flex: 1; min-height: 64px; } .rail .clock, .rail .rgap { display: none; } .adgrid { grid-template-columns: 1fr 1fr; gap: 10px; grid-auto-rows: minmax(124px, auto); } .adt { padding: 16px; gap: 4px; } .adt b { font-size: 18px; } .adt span { font-size: 13px; } .board { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .split { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } .rooms { flex-direction: row; overflow-x: auto; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 30px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 30px), transparent); } .rm { min-width: 140px; }
   .sq { grid-template-columns: 1fr 1fr; grid-auto-rows: 140px; gap: 10px; } .arow { grid-template-columns: 1fr; gap: 10px; } .act { min-height: 72px; flex-direction: row; } .t { padding: 16px; } }
-</style></head><body>
+</style><link rel="stylesheet" href="/icons.css">
+</head><body>
 <div class="app">
-  <nav class="rail" aria-label="Sections"><button data-go="home" class="on"><span>⌂</span>Home</button><button data-go="rooms"><span>💡</span>Lights</button>
-    <button data-go="actions"><span>⚡</span>Actions</button><div class="rgap"></div><button id="adminbtn" class="adm"><span id="admic">🔐</span>Admin</button><div class="clock" id="clock"></div></nav>
+  <nav class="rail" aria-label="Sections"><button data-go="home" class="on"><span><i class="icon icon-home" aria-hidden="true"></i></span>Home</button><button data-go="rooms"><span><i class="icon icon-bulb" aria-hidden="true"></i></span>Lights</button>
+    <button data-go="actions"><span><i class="icon icon-bolt" aria-hidden="true"></i></span>Actions</button><div class="rgap"></div><button id="adminbtn" class="adm"><span id="admic"><i class="icon icon-lock" aria-hidden="true"></i></span>Admin</button><div class="clock" id="clock"></div></nav>
   <main>
     <section class="v on" data-v="home"><div class="board" id="home"></div></section>
     <section class="v" data-v="rooms"><div class="split"><div class="rooms" id="rooms"></div><div class="sq" id="sq"></div></div></section>
-    <section class="v" data-v="admin"><div class="adhead"><h1>Admin</h1><button class="lockadm" id="lockadm">🔒 Lock admin</button></div>
+    <section class="v" data-v="admin"><div class="adhead"><h1>Admin</h1><button class="lockadm" id="lockadm"><i class="icon icon-lock" aria-hidden="true"></i> Lock admin</button></div>
       <div class="lbl">Unlocked on this device · admin pages open without asking again until you lock</div><div class="adgrid" id="adgrid"></div></section>
     <section class="v" data-v="actions"><div class="lbl">One tap</div><div class="arow" id="a1"></div><div class="lbl">Tap twice · first tap arms, second confirms</div><div class="arow" id="a2"></div></section>
   </main>
@@ -71,10 +72,10 @@ const show = v => { document.querySelectorAll('.rail button').forEach(x => x.cla
   document.querySelectorAll('.v').forEach(x => x.classList.toggle('on', x.dataset.v === v)); };
 document.querySelectorAll('.rail button[data-go]').forEach(b => Kit.press(b, () => show(b.dataset.go)));
 // admin: the keypad (server-checked PIN) first, then the admin hub; while unlocked the button shows an open lock
-const ADMIN = [['⚙', 'Admin', 'Health, tasks, every console', '/admin'], ['⛁', 'Lab', 'Nodes, guests, commands', '/ops'], ['▦', 'Lab 6×6', 'The Buttons lab grid', '/lab'],
-               ['⌬', 'Network', 'Internet, DNS, devices', '/net'], ['✦', 'Atlas', 'Every endpoint, live', '/atlas'], ['⛶', 'Network map', 'Document', '/network.html']];
+const ADMIN = [['<i class="icon icon-gear" aria-hidden="true"></i>', 'Admin', 'Health, tasks, every console', '/admin'], ['<i class="icon icon-database" aria-hidden="true"></i>', 'Lab', 'Nodes, guests, commands', '/ops'], ['<i class="icon icon-grid" aria-hidden="true"></i>', 'Lab 6×6', 'The Buttons lab grid', '/lab'],
+               ['<i class="icon icon-hexagon" aria-hidden="true"></i>', 'Network', 'Internet, DNS, devices', '/net'], ['<i class="icon icon-sparkle" aria-hidden="true"></i>', 'Atlas', 'Every endpoint, live', '/atlas'], ['<i class="icon icon-frame" aria-hidden="true"></i>', 'Network map', 'Document', '/network.html']];
 $('#adgrid').innerHTML = ADMIN.map(([i, t, d, h]) => `<a class="adt" href="${h}"><i>${i}</i><b>${t}</b><span>${d}</span></a>`).join('');
-const admState = async () => { try { const s = await deckPin.status(); $('#adminbtn').classList.toggle('unlocked', !!s.admin); $('#admic').textContent = s.admin ? '🔓' : '🔐'; return s.admin; } catch { return false; } };
+const admState = async () => { try { const s = await deckPin.status(); $('#adminbtn').classList.toggle('unlocked', !!s.admin); $('#admic').className = (s.admin ? 'icon icon-unlock' : 'icon icon-lock'); return s.admin; } catch { return false; } };
 Kit.press($('#adminbtn'), () => deckPin.open({ onOk: () => { admState(); show('admin'); } }));
 Kit.press($('#lockadm'), async () => { await deckPin.logout(); await admState(); show('home'); Kit.toast('Admin locked on this device'); });
 admState();
@@ -83,21 +84,21 @@ function render() {
   if (!S) return;
   const on = S.rooms.reduce((a, r) => a + r.lights.filter(Kit.isOn).length, 0);
   $('#home').innerHTML = `<div class="t"><span class="k">Who is home</span><div class="people">${S.people.map(p => `<span class="pp ${p.home ? '' : 'away'}"><i>${esc(p.name[0])}</i>${esc(p.name)}</span>`).join('')}</div></div>
-    <div class="t ${S.door === 'locked' ? 'ok' : ''}"><span class="k">Front door</span><div class="mid"><span class="ic">${S.door === 'locked' ? '🔒' : '🔓'}</span><span class="val">${S.door === 'locked' ? 'Locked' : esc(S.door || '–')}</span></div></div>
-    <div class="t"><span class="k">Lights on</span><div class="mid"><span class="ic">💡</span><span class="val">${on}</span></div></div>
+    <div class="t ${S.door === 'locked' ? 'ok' : ''}"><span class="k">Front door</span><div class="mid"><span class="ic">${S.door === 'locked' ? '<i class="icon icon-lock" aria-hidden="true"></i>' : '<i class="icon icon-unlock" aria-hidden="true"></i>'}</span><span class="val">${S.door === 'locked' ? 'Locked' : esc(S.door || '–')}</span></div></div>
+    <div class="t"><span class="k">Lights on</span><div class="mid"><span class="ic"><i class="icon icon-bulb" aria-hidden="true"></i></span><span class="val">${on}</span></div></div>
     <div class="t"><span class="k">Outside</span><div class="mid"><span class="ic">${Kit.WX[S.wx?.condition] || '·'}</span><span class="val">${S.wx?.temperature != null ? Math.round(S.wx.temperature) + '°' : '–'}</span></div></div>
-    <div class="t"><span class="k">Next bus${S.bus && !S.bus.none ? ' · ' + esc(S.bus.line) + ' to ' + esc(S.bus.to) : ''}</span><div class="mid"><span class="ic">🚌</span><span class="val ${S.bus?.none ? 's' : ''}">${S.bus?.none ? 'None this hour' : S.bus ? (S.bus.min < 1 ? 'Now' : S.bus.min + '<small>min</small>') : '–'}</span></div></div>
-    <div class="t"><span class="k">Now playing</span><div class="mid"><span class="ic">♫</span><span class="val s">${esc(S.playing?.title || 'Nothing playing')}</span></div></div>`;
+    <div class="t"><span class="k">Next bus${S.bus && !S.bus.none ? ' · ' + esc(S.bus.line) + ' to ' + esc(S.bus.to) : ''}</span><div class="mid"><span class="ic"><i class="icon icon-bus" aria-hidden="true"></i></span><span class="val ${S.bus?.none ? 's' : ''}">${S.bus?.none ? 'None this hour' : S.bus ? (S.bus.min < 1 ? 'Now' : S.bus.min + '<small>min</small>') : '–'}</span></div></div>
+    <div class="t"><span class="k">Now playing</span><div class="mid"><span class="ic"><i class="icon icon-music" aria-hidden="true"></i></span><span class="val s">${esc(S.playing?.title || 'Nothing playing')}</span></div></div>`;
   if (!room || !S.rooms.find(r => r.room === room)) room = (S.rooms.find(r => r.lights.some(Kit.isOn)) || S.rooms[0])?.room;
   $('#rooms').innerHTML = S.rooms.map(r => { const n = r.lights.filter(Kit.isOn).length;
     return `<button class="rm ${r.room === room ? 'on' : ''}" data-r="${esc(r.room)}">${esc(r.room)}${n ? `<i>${n} on</i>` : ''}</button>`; }).join('');
   document.querySelectorAll('.rm').forEach(b => Kit.press(b, () => { room = b.dataset.r; render(); }));
   const R = S.rooms.find(r => r.room === room);
-  $('#sq').innerHTML = (R?.lights || []).map(l => `<button class="lb ${Kit.isOn(l) ? 'on' : ''}" data-id="${esc(l.id)}"><span class="ic">💡</span>${esc(l.name === 'All' ? 'Whole room' : l.name)}<small>${Kit.isOn(l) ? 'On' : 'Off'}</small></button>`).join('');
+  $('#sq').innerHTML = (R?.lights || []).map(l => `<button class="lb ${Kit.isOn(l) ? 'on' : ''}" data-id="${esc(l.id)}"><span class="ic"><i class="icon icon-bulb" aria-hidden="true"></i></span>${esc(l.name === 'All' ? 'Whole room' : l.name)}<small>${Kit.isOn(l) ? 'On' : 'Off'}</small></button>`).join('');
   document.querySelectorAll('.lb').forEach(b => Kit.press(b, () => Kit.flip(S.rooms.flatMap(r => r.lights).find(l => l.id === b.dataset.id), render)));
 }
-$('#a1').innerHTML = [['🧹', 'Start the vacuum'], ['⏻', 'Wake the PC'], ['◎', 'Camera alerts']].map(([i, t]) => `<button class="act" data-t="${t}"><span class="ic">${i}</span><span>${t}</span></button>`).join('');
-$('#a2').innerHTML = [['🔒', 'Lock the front door'], ['💡', 'All lights off'], ['☾', 'Sleep the PC']].map(([i, t]) => `<button class="act risky" data-t="${t}"><span class="ic">${i}</span><span class="klabel">${t}</span></button>`).join('');
+$('#a1').innerHTML = [['<i class="icon icon-vacuum" aria-hidden="true"></i>', 'Start the vacuum'], ['⏻', 'Wake the PC'], ['<i class="icon icon-target" aria-hidden="true"></i>', 'Camera alerts']].map(([i, t]) => `<button class="act" data-t="${t}"><span class="ic">${i}</span><span>${t}</span></button>`).join('');
+$('#a2').innerHTML = [['<i class="icon icon-lock" aria-hidden="true"></i>', 'Lock the front door'], ['<i class="icon icon-bulb" aria-hidden="true"></i>', 'All lights off'], ['<i class="icon icon-moon" aria-hidden="true"></i>', 'Sleep the PC']].map(([i, t]) => `<button class="act risky" data-t="${t}"><span class="ic">${i}</span><span class="klabel">${t}</span></button>`).join('');
 document.querySelectorAll('#a1 .act').forEach(b => Kit.press(b, () => Kit.toast('Demo: would ' + b.dataset.t.toLowerCase())));
 document.querySelectorAll('#a2 .act').forEach(b => Kit.arm(b, () => { b.querySelector('.klabel').textContent = b.dataset.t; Kit.toast('Demo: would ' + b.dataset.t.toLowerCase()); }));
 Kit.data(D => { S = Kit.summary(D); render(); }); setInterval(render, 30000);

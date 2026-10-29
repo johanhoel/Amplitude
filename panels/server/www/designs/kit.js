@@ -85,8 +85,8 @@ window.Kit = (() => {
   // ---- helpers used by every design ----
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const hm = d => new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-  const WX = { 'sunny': '☀️', 'clear-night': '🌙', 'partlycloudy': '⛅', 'cloudy': '☁️', 'rainy': '🌧️', 'pouring': '🌧️', 'lightning': '🌩️', 'lightning-rainy': '⛈️',
-    'snowy': '❄️', 'snowy-rainy': '🌨️', 'hail': '🌨️', 'fog': '🌫️', 'windy': '💨', 'windy-variant': '💨' };
+  const WX = { 'sunny': '<i class="icon icon-sun" aria-hidden="true"></i>', 'clear-night': '<i class="icon icon-moon" aria-hidden="true"></i>', 'partlycloudy': '<i class="icon icon-partly" aria-hidden="true"></i>', 'cloudy': '<i class="icon icon-cloud" aria-hidden="true"></i>', 'rainy': '<i class="icon icon-rain" aria-hidden="true"></i>', 'pouring': '<i class="icon icon-rain" aria-hidden="true"></i>', 'lightning': '<i class="icon icon-storm" aria-hidden="true"></i>', 'lightning-rainy': '<i class="icon icon-storm" aria-hidden="true"></i>',
+    'snowy': '<i class="icon icon-snow" aria-hidden="true"></i>', 'snowy-rainy': '<i class="icon icon-snow" aria-hidden="true"></i>', 'hail': '<i class="icon icon-snow" aria-hidden="true"></i>', 'fog': '<i class="icon icon-fog" aria-hidden="true"></i>', 'windy': '<i class="icon icon-wind" aria-hidden="true"></i>', 'windy-variant': '<i class="icon icon-wind" aria-hidden="true"></i>' };
   function nextBus(bus) {
     const d = (bus?.departures || []).map(x => ({ ...x, t: [x.next, x.then].find(y => y?.time && new Date(y.time) > Date.now() - 30000) })).filter(x => x.t)
       .sort((a, b) => new Date(a.t.time) - new Date(b.t.time))[0];

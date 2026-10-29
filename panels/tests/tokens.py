@@ -101,11 +101,13 @@ for p in pages + [WWW / "wall.css", WWW / "deck.css"]:
             check(f"{p.name}: '{sel[:40]}' declares its type colour", False,
                   "a filled control must set color: var(--accent-ink) or var(--status-ink)")
 
-# The contrast gate, so a bad value fails here too.
-checker = ROOT / "design" / "check-contrast.py"
-proc = subprocess.run([sys.executable, str(checker)], capture_output=True, text=True)
-check("design/check-contrast.py passes", proc.returncode == 0,
-      (proc.stdout.strip().splitlines() or [proc.stderr[:200]])[-1])
+# The contrast and icon gates, so a bad value or a stray emoji fails here too
+# and not only in a design/ script someone may forget to run.
+for name in ("check-contrast.py", "check-icons.py"):
+    proc = subprocess.run([sys.executable, str(ROOT / "design" / name)],
+                          capture_output=True, text=True)
+    check(f"design/{name} passes", proc.returncode == 0,
+          (proc.stdout.strip().splitlines() or [proc.stderr[:200]])[-1])
 
 print(f"{sum(results)}/{len(results)} passed")
 raise SystemExit(0 if all(results) else 1)

@@ -102,13 +102,14 @@ for page in PAGES:
 
 # The contrast gate itself, so a bad token value fails here too and not only
 # in the design/ checker someone may forget to run.
-checker = REPO / "design" / "check-contrast.py"
-if checker.exists():
+for name in ("check-contrast.py", "check-icons.py"):
+    checker = REPO / "design" / name
+    if not checker.exists():
+        check(f"design/{name} is present", False, f"missing at {checker}")
+        continue
     proc = subprocess.run([sys.executable, str(checker)], capture_output=True, text=True)
-    check("design/check-contrast.py passes", proc.returncode == 0,
+    check(f"design/{name} passes", proc.returncode == 0,
           proc.stdout.strip().splitlines()[-1] if proc.stdout.strip() else proc.stderr[:200])
-else:
-    check("design/check-contrast.py is present", False, f"missing at {checker}")
 
 # A var() fallback is what renders when the token sheet has not loaded, so it
 # has to be a literal, and the right one. Both of these broke during the

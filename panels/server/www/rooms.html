@@ -38,6 +38,7 @@
 .hint { color: var(--dim); font-size: 12px; margin-top: 16px; text-align: center; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <div class="wrap">
@@ -79,7 +80,7 @@ function render() {
       <div class="lights">${r.lights.map(l => { const st = hold[l.id] && hold[l.id].until > Date.now() ? { ...l, ...hold[l.id] } : l;
         return `<button class="lt ${st.on ? 'on' : ''}" data-id="${esc(l.id)}" data-dim="${l.dim ? 1 : 0}" style="--b:${st.on ? (st.bri ?? 100) : 0}%">
           <i class="fill"></i><span>${esc(l.name === 'All' ? 'Whole room' : l.name)}</span><small>${st.on ? (l.dim && st.bri != null ? st.bri + '%' : 'On') : 'Off'}</small></button>`; }).join('')}</div>
-      ${mp ? `<div class="media">♫ <span><b>${esc(mp.title || 'Playing')}</b> ${esc(mp.app || mp.artist || '')}</span></div>` : ''}`;
+      ${mp ? `<div class="media"><i class="icon icon-music" aria-hidden="true"></i> <span><b>${esc(mp.title || 'Playing')}</b> ${esc(mp.app || mp.artist || '')}</span></div>` : ''}`;
   });
 }
 // tap = toggle; horizontal slide on a dimmable light = brightness
