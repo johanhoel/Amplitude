@@ -172,10 +172,20 @@ for p in files:
     rel = p.relative_to(ROOT)
     unknown = []
     for m in FIELD.finditer(text):
-        for lit in re.findall(r"'([^']*)'", m.group(1)):
-            # A ternary also quotes the value it compares against, which is not
-            # an icon. Only flag something that looks like it was meant as one.
-            if not lit or lit in ICONS or re.fullmatch(r"[a-z_][a-z0-9_]*", lit):
+        expr = m.group(1)
+        # A ternary quotes the value it COMPARES against as well as the icon:
+        #     ic: door === 'locked' ? 'lock' : 'unlock'
+        #     ic: c.key.startsWith('speed') ? 'updown' : 'play'
+        # 'locked' and 'speed' are conditions, not icons. Tell them apart by
+        # position rather than by shape: drop a literal that follows a
+        # comparison operator or an opening bracket, keep the rest.
+        # A shape test cannot do this - it was "skip anything matching
+        # [a-z_][a-z0-9_]*", which is the shape of every icon name there is,
+        # so a plausible wrong name like 'bluetoth' was skipped silently.
+        expr = re.sub(r"(?:[=!]==?|\(|\bstartsWith|\bincludes|\bendsWith)\s*'[^']*'",
+                      "", expr)
+        for lit in re.findall(r"'([^']*)'", expr):
+            if not lit or lit in ICONS:
                 continue
             unknown.append(lit[:40])
     check(f"{rel} icon fields name an icon that exists", not unknown,
