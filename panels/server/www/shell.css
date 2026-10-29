@@ -110,7 +110,7 @@
 .ui-ctl {
   position: relative; overflow: hidden; text-align: left;
   display: flex; align-items: center; gap: 11px;
-  border-radius: 22px; padding: 12px;
+  border-radius: var(--r, 18px); padding: 12px;
   background: var(--card); border: 1px solid var(--line);
   color: inherit; font: inherit; cursor: pointer;
   transition: transform .15s var(--ease-out, ease), background .15s var(--ease-out, ease),
