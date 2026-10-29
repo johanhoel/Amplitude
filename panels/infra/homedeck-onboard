@@ -1,10 +1,24 @@
 #!/bin/bash
 # homedeck-onboard - start the Home Deck setup wizard (again) with a new one-time setup code.
-#   homedeck-onboard          new code, start the wizard on :8089, print where to open it
+#   homedeck-onboard          NEW code, start the wizard on :8089, print where to open it
+#   homedeck-onboard --show   print the code that is already set, and change nothing
 #   homedeck-onboard --stop   stop the wizard now (it also stops by itself after "Save and start")
 set -eu
 [ "$(id -u)" -eq 0 ] || { echo "run as root"; exit 1; }
 if [ "${1:-}" = "--stop" ]; then systemctl disable --now homedeck-onboard >/dev/null 2>&1; echo "Setup wizard stopped."; exit 0; fi
+# Show the code that is already set, without replacing it. Without this the
+# only way to "see the code again" was to run this command, which mints a new
+# one - so anyone who missed the code first time typed a dead one, ran this to
+# check, and got another dead one. The wizard's own help text said to do that.
+if [ "${1:-}" = "--show" ]; then
+  [ -f /etc/homedeck-onboard.code ] || { echo "No setup code yet. Run homedeck-onboard to make one."; exit 1; }
+  IP=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src") print $(i+1)}')
+  echo
+  echo "  Setup wizard:  http://${IP:-THIS-ADDRESS}:8089"
+  echo "  Setup code:    $(cat /etc/homedeck-onboard.code)"
+  echo
+  exit 0
+fi
 code=$(printf '%03d-%03d' $((RANDOM % 1000)) $((RANDOM % 1000)))
 umask 077; echo "$code" > /etc/homedeck-onboard.code
 systemctl enable homedeck-onboard >/dev/null 2>&1; systemctl restart homedeck-onboard
