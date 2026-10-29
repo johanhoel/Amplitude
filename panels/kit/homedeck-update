@@ -69,6 +69,13 @@ fi
 # build_kit.sh assembles exactly what a download from the release server would
 # have contained, and refuses to build code that does not import. Failing here
 # costs nothing: the running panels have not been touched yet.
+# The repository is public and holds placeholders (192.168.1.x, home.example.net, sample names). A house that keeps
+# its own values in private.map gets them put back before anything is built; see panels/tools/private.py.
+if [ -f "$ROOT/private.map" ]; then
+  say running "putting this house's own values in"
+  python3 "$SRC/tools/private.py" apply "$ROOT/private.map" "$SRC/server" || fail "private.map could not be applied"
+fi
+
 say running "building $V"
 bash "$SRC/build_kit.sh" "$V" || fail "the downloaded code did not build"
 

@@ -30,8 +30,9 @@ and sample names (Alex, Robin, Sam, Kim).
   `placeholder==>real value` pairs.
 - Deploy Panels only with `panels/tools/deploy.sh`. It applies `private.map`, never uploads `homedeck.toml`,
   and runs a trial on port 8099 before anything goes live.
-- Never install code from GitHub on the live Home Deck any other way. The update card in Home Deck's Settings
-  does not apply `private.map` yet. On the live house, the placeholders would break presence.
+- The update card in Home Deck's Settings (`kit/homedeck-update`) applies `private.map` too, before it builds.
+  Keep it that way: without it, the placeholders would break presence on the live house.
+  The live house does not have the updater installed. Use `deploy.sh` there.
 - Home Deck runs as the user `panel-wrapper`. A file you write in `/var/lib/panel-wrapper` as root must go
   back to that user (`chown panel-wrapper:panel-wrapper`). Otherwise Home Deck cannot read it.
   On 2026-10-29 a root-owned `secrets.json` cost the house its tokens.

@@ -145,6 +145,16 @@ check("the installer needs no private file server",
       "winrepo" not in (ROOT / "kit" / "homedeck.sh").read_text(encoding="utf-8").lower(),
       "anyone should be able to install this; a key in a public file helps nobody")
 
+# ---- this house's own values -----------------------------------------
+# The repository holds placeholders. A house with private.map must get its
+# own values back before the build, or presence stops working: it only
+# trusts phones whose address starts with the house's own subnet.
+UPD = (ROOT / "kit" / "homedeck-update").read_text(encoding="utf-8")
+check("the updater applies private.map before it builds",
+      'private.py" apply "$ROOT/private.map"' in UPD
+      and UPD.index("private.py\" apply") < UPD.index("build_kit.sh\" \"$V\""),
+      "a house would get 192.168.1.x and sample names")
+
 # ---- the card --------------------------------------------------------
 check("the admin page has the update card", 'id="upd"' in ADMIN)
 check("the card is hidden until there is something to say",
