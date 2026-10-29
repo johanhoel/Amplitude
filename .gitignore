@@ -1,0 +1,12 @@
+# Claude Code's working directory: session state, worktrees and scratch files.
+# Nothing in here belongs to the project, and .claude/worktrees/ holds whole
+# git repositories, which get committed as broken submodule stubs if they are
+# swept up by "git add -A".
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Screenshots written by panels/tests/smoke.py
+panels/tests/out/
