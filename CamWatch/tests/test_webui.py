@@ -111,7 +111,7 @@ import io  # noqa: E402
 import zipfile  # noqa: E402
 old = (today - dt.timedelta(days=2)).isoformat()
 page = c.get(f"/?day={old}").get_data(as_text=True)
-good = "☑ Select" in page and f'data-clip="{old}/camera1_100000"' in page and "pickbar" in page
+good = '<i class="icon icon-check-box" aria-hidden="true"></i> Select' in page and f'data-clip="{old}/camera1_100000"' in page and "pickbar" in page
 ok &= good
 print(f"{'PASS' if good else 'FAIL'} the Clips page has Select, and every clip card carries its clip")
 r = c.post("/clips/download", data={"clip": [f"{old}/camera1_100000", f"{old}/camera1_110000"]})

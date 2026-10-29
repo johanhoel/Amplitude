@@ -100,7 +100,11 @@ def main():
             png = Path(profile) / f"{name}.png"
             import urllib.parse
             url = f"http://127.0.0.1:{port}/__frame?w={w}&h={h}&src={urllib.parse.quote(path.format(today=today))}"
+            # Chrome refuses to start as root unless the sandbox is off, which is
+            # the case in a container. Added only then, never on a normal desktop.
+            root = getattr(os, "geteuid", lambda: 1)() == 0
             cmd = [args.chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--no-first-run", "--mute-audio",
+                   *(["--no-sandbox"] if root else []),
                    f"--user-data-dir={profile}", f"--window-size={max(w, 600)},{h}", "--virtual-time-budget=8000",
                    f"--force-device-scale-factor={2 if phone else 1}", f"--screenshot={png}", url]
             try:

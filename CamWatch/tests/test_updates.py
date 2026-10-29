@@ -59,7 +59,7 @@ report(any("path=CamWatch" in p for p, _ in seen), "the check looks at the CamWa
 n = len(seen)
 top = c.get("/").get_data(as_text=True)
 report('class="upd-pill"' in top and "Version 2026.10.29 is ready" in top and len(seen) == n,
-       "the top bar shows ⬆ Update, without asking GitHub again")
+       "the top bar shows the Update pill, without asking GitHub again")
 n = len(seen)
 c.get("/api/update")
 report(len(seen) == n, "a second check within 3 minutes uses the cached answer")

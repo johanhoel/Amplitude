@@ -92,7 +92,8 @@ page = c.get(f"/clip/{day}/garden_200050").get_data(as_text=True)
 check("clip page: same visit, play all with both videos", "Same visit" in page and "Play all" in page and page.count(".mp4") >= 2 and "camera1_200000.mp4" in page)
 check("clip page: unusual banner", "Unusual:</b> no person on garden" in page)
 idx = c.get(f"/?day={day}").get_data(as_text=True)
-check("clip list: 🔗 tag and ⚠ unusual tag", "🔗 garden" in idx and "⚠ unusual" in idx)
+check("clip list: same-visit tag and unusual tag",
+      '<i class="icon icon-link" aria-hidden="true"></i> garden' in idx and "⚠ unusual" in idx)
 vis = {v["stem"]: v for v in c.get(f"/api/visits?day={day}").get_json()}
 check(f"/api/visits: visit + unusual {vis['garden_200050']['visit']}", vis["garden_200050"]["visit"] == ["camera1"] and vis["garden_200050"]["unusual"] and vis["drive_200300"]["visit"] == [])
 
@@ -205,7 +206,7 @@ check("public camera address refused", r.status_code == 400)
 page = c.get("/settings").get_data(as_text=True)
 check("empty slot card starts a scan", "openSlot(this, true)" in page and "finds the cameras on your network" in page)
 check("settings has the Find button and the finder outside the camera form",
-      "🔍 Find" in page and page.index('id="finder"') > page.index("A renamed camera saves new clips"))
+      '<i class="icon icon-search" aria-hidden="true"></i> Find' in page and page.index('id="finder"') > page.index("A renamed camera saves new clips"))
 
 # ---------- ntfy settings ----------
 before = common.Ntfy(logging.getLogger("n"))
