@@ -31,7 +31,13 @@ def check(name, ok, detail=""):
 
 
 state = tempfile.mkdtemp(prefix="homedeck-pickers-")
-os.environ.update(HOMEDECK_CONFIG=str(SERVER / "homedeck.toml"),
+# The template ships __HA_URL__ for the installer to fill in from the address
+# typed at setup, so it does not validate as it stands. Fill it in the way
+# build_kit.sh and tools/check.sh do.
+conf = Path(state) / "homedeck.toml"
+conf.write_text((SERVER / "homedeck.toml").read_text(encoding="utf-8")
+                .replace("__HA_URL__", "http://127.0.0.1:8123"), encoding="utf-8")
+os.environ.update(HOMEDECK_CONFIG=str(conf),
                   STATE_DIRECTORY=state, HOMEDECK_READONLY="1")
 sys.path.insert(0, str(SERVER))
 
