@@ -34,7 +34,7 @@ button, .btn { display: inline-block; padding: 12px 18px; border-radius: 14px; b
 .found span:first-child { color: var(--mute); } .found b { font-weight: 600; text-align: right; }
 .tip { color: var(--mute); font-size: 13.5px; margin-top: 10px; }
 .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--mute); margin-right: 6px; }
-.dot.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); } .dot.bad { background: var(--bad); }
+.dot.ok { background: var(--ok); } .dot.bad { background: var(--bad); }
 </style>
 </head>
 <body>
@@ -73,8 +73,7 @@ button, .btn { display: inline-block; padding: 12px 18px; border-radius: 14px; b
 <script>
 const $ = s => document.querySelector(s);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-function show(s) {
-  $('#haurl').textContent = s.ha_url; $('#profile').href = s.ha_url + '/profile/security';
+function show(s) { $('#haurl').textContent = s.ha_url; $('#profile').href = s.ha_url + '/profile/security';
   $('#hadot').className = 'dot ' + (s.connected ? 'ok' : s.token_set ? 'bad' : '');
   $('#n1').classList.toggle('done', !!s.connected); $('#n2').classList.toggle('done', !!s.connected);
   if (s.token_set && !s.connected) { $('#msg').className = 'msg bad'; $('#msg').textContent = 'Not connected: ' + (s.error || 'Home Assistant did not answer'); }
@@ -95,8 +94,7 @@ function show(s) {
   $('#tips').innerHTML = tips.map(t => '• ' + t).join('<br>');
 }
 async function load() { try { show(await (await fetch('/api/setup', { cache: 'no-store' })).json()); } catch (e) { $('#msg').textContent = e.message; } }
-$('#save').onclick = async () => {
-  const t = $('#tok').value.trim(); if (!t) return;
+$('#save').onclick = async () => { const t = $('#tok').value.trim(); if (!t) return;
   $('#msg').className = 'msg'; $('#msg').textContent = 'Testing…';
   await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ha_token: t }) });
   $('#tok').value = '';

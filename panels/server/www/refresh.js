@@ -1,7 +1,7 @@
 /* Home Deck refresh for panels saved to the home screen (no browser bar = no reload button). Loaded by cam.js and the design kit.
  *   - pull-to-refresh: from the very top of the page, pull down > 90 px and let go; ignored when the pull starts on a slider,
  *     a sideways strip, a text field or anything marked data-no-ptr (so it never fights a control)
- *   - ↻ button: a small button above the 📷 button in home-screen apps (window.deckRefresh.button() adds it elsewhere)
+ *   - ↻ button: a small button above the camera button in home-screen apps (window.deckRefresh.button() adds it elsewhere)
  *   - back after > 15 min in the background (phone locked, app switched): reload by itself, so the page is never stale
  */
 (() => {

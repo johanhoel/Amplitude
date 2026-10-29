@@ -25,7 +25,7 @@
   document.head.appendChild(css);
 
   const b = document.createElement('a'); b.id = 'dklogout'; b.href = '/start'; b.setAttribute('role', 'button');
-  b.innerHTML = '<span aria-hidden="true">🔒</span><span>Log out</span>'; b.title = 'Lock admin on this device'; b.setAttribute('aria-label', 'Log out of admin on this device');
+  b.innerHTML = '<i class="icon icon-lock" aria-hidden="true"></i><span>Log out</span>'; b.title = 'Lock admin on this device'; b.setAttribute('aria-label', 'Log out of admin on this device');
   let st = null, busy = false;
   const go = async () => {
     if (busy) return; busy = true; b.lastChild.textContent = 'Logging out…';

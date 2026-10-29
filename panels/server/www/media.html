@@ -108,6 +108,7 @@ input[type=range]::-moz-range-progress { height: 5px; border-radius: 5px; backgr
 #swp a small { display: block; color: var(--mute); font-weight: 400; font-size: 12px; } #swp a.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <div id="bg"></div><div id="bg2"></div><div id="shade"></div>
@@ -125,15 +126,15 @@ input[type=range]::-moz-range-progress { height: 5px; border-radius: 5px; backgr
   </section>
   <div class="cap">Living room TV</div>
   <section class="tv" id="tv">
-    <div class="tvart" id="tvart"><span>📺</span></div>
+    <div class="tvart" id="tvart"><span><i class="icon icon-tv" aria-hidden="true"></i></span></div>
     <div class="tvm"><div class="src" id="tvsrc">APPLE TV</div><h3 id="tvtitle">–</h3>
       <div class="prog"><i id="tvbar"></i></div><div class="times num"><span id="tvpos"></span><span id="tvleft"></span></div>
       <div class="ctl sm"><button data-atv="skip_backward" aria-label="Back 10 seconds"><svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg></button>
         <button class="main" data-atv="play_pause" aria-label="Play or pause"><svg viewBox="0 0 24 24" id="tvppi"><path d="M8 5v14l11-7z"/></svg></button>
         <button data-atv="skip_forward" aria-label="Forward 10 seconds"><svg viewBox="0 0 24 24"><path d="M12 5V2l5 4-5 4V7a6 6 0 1 0 6 6h2a8 8 0 1 1-8-8z"/></svg></button></div></div>
     <div class="pad">
-      <button data-atv="up" class="u" aria-label="Up">▲</button><button data-atv="left" class="l" aria-label="Left">◀</button>
-      <button data-atv="select" class="ok">OK</button><button data-atv="right" class="r" aria-label="Right">▶</button><button data-atv="down" class="d" aria-label="Down">▼</button>
+      <button data-atv="up" class="u" aria-label="Up"><i class="icon icon-up" aria-hidden="true"></i></button><button data-atv="left" class="l" aria-label="Left"><i class="icon icon-left" aria-hidden="true"></i></button>
+      <button data-atv="select" class="ok">OK</button><button data-atv="right" class="r" aria-label="Right"><i class="icon icon-right" aria-hidden="true"></i></button><button data-atv="down" class="d" aria-label="Down"><i class="icon icon-down" aria-hidden="true"></i></button>
       <div class="padrow"><button data-atv="menu">Back</button><button data-atv="home">Home</button><button id="tvpower">Turn off</button></div>
     </div>
   </section>

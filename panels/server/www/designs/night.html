@@ -33,7 +33,8 @@ nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-cont
   background: linear-gradient(transparent, #000 30%); }
 nav button { flex: 1; min-width: 0; max-width: 128px; min-height: 54px; border-radius: 27px; color: var(--mute); font-size: 15px; font-weight: 600; } nav button.on { color: var(--ink); background: rgba(245,200,136,.1); }
 .wakeveil { position: fixed; inset: 0; z-index: 70; display: none; } body.dim .wakeveil { display: block; }
-</style></head><body>
+</style><link rel="stylesheet" href="/icons.css">
+</head><body>
 <div class="wakeveil" aria-hidden="true"></div>
 <main>
   <section class="v on" data-v="now"><div class="clock" id="clock">–</div><div class="date" id="date"></div><div class="line" id="line"></div></section>

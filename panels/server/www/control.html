@@ -46,6 +46,7 @@
 .legend { color: var(--dim); font-size: 12px; margin-top: 16px; text-align: center; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <div class="wrap">
@@ -68,27 +69,27 @@ function tiles() {
   const door = H?.door?.state, g = S?.genelec, gon = g?.power === 'ACTIVE';
   const T = [
     ['g-home', 'grp', 'House'],
-    { id: 'lock', ic: door === 'locked' ? '🔒' : '🔓', t: 'Front door', s: door === 'locked' ? 'Locked' : (door || '–') + ' · hold to lock', on: door === 'locked', c: '#34d399', cls: door === 'locked' ? '' : 'bad', hold: true, run: () => home({ do: 'lock' }), ok: 'Locking…' },
-    { id: 'alloff', ic: '💡', t: 'All lights off', s: `${H ? H.rooms.reduce((a, r) => a + r.lights.filter(l => l.on).length, 0) : '–'} on now`, hold: true, run: () => home({ do: 'all_off' }), ok: 'All lights off' },
-    { id: 'detect', ic: '◎', t: 'Camera alerts', s: H?.detect ? 'On' : 'Off', on: !!H?.detect, c: '#fb7185', hold: true, run: () => home({ do: 'detect' }), ok: 'Camera alerts switched' },
-    { id: 'charger', ic: '⚡', t: 'EV charger', s: H?.charger_on ? 'Enabled' : 'Paused', on: !!H?.charger_on, c: '#fbbf24', hold: true, run: () => home({ do: 'charger' }), ok: 'Charger switched' },
-    { id: 'vac', ic: '🧹', t: H?.vacuum?.state === 'cleaning' ? 'Vacuum: dock' : 'Vacuum: start', s: (H?.vacuum?.state || '–').replace(/_/g, ' '), on: H?.vacuum?.state === 'cleaning', c: '#22d3ee',
+    { id: 'lock', ic: door === 'locked' ? '<i class="icon icon-lock" aria-hidden="true"></i>' : '<i class="icon icon-unlock" aria-hidden="true"></i>', t: 'Front door', s: door === 'locked' ? 'Locked' : (door || '–') + ' · hold to lock', on: door === 'locked', c: '#34d399', cls: door === 'locked' ? '' : 'bad', hold: true, run: () => home({ do: 'lock' }), ok: 'Locking…' },
+    { id: 'alloff', ic: 'bulb', t: 'All lights off', s: `${H ? H.rooms.reduce((a, r) => a + r.lights.filter(l => l.on).length, 0) : '–'} on now`, hold: true, run: () => home({ do: 'all_off' }), ok: 'All lights off' },
+    { id: 'detect', ic: 'target', t: 'Camera alerts', s: H?.detect ? 'On' : 'Off', on: !!H?.detect, c: '#fb7185', hold: true, run: () => home({ do: 'detect' }), ok: 'Camera alerts switched' },
+    { id: 'charger', ic: 'bolt', t: 'EV charger', s: H?.charger_on ? 'Enabled' : 'Paused', on: !!H?.charger_on, c: '#fbbf24', hold: true, run: () => home({ do: 'charger' }), ok: 'Charger switched' },
+    { id: 'vac', ic: 'vacuum', t: H?.vacuum?.state === 'cleaning' ? 'Vacuum: dock' : 'Vacuum: start', s: (H?.vacuum?.state || '–').replace(/_/g, ' '), on: H?.vacuum?.state === 'cleaning', c: '#22d3ee',
       run: () => home({ do: 'vacuum', value: H?.vacuum?.state === 'cleaning' ? 'return_to_base' : 'start' }), ok: 'Vacuum told' },
     { id: 'wake', ic: '⏻', t: 'Wake PC', s: S?.pc_online ? 'PC is on' : 'PC is off', on: !!S?.pc_online, c: '#60a5fa', run: () => home({ do: 'wake_pc' }), ok: 'Wake-on-LAN sent' },
     ['g-audio', 'grp', 'Speakers & media'],
     'VOL',
-    { id: 'spk', ic: '🔈', t: 'Speakers', s: gon ? 'Active' : g?.power ? 'Standby' : '–', on: gon, c: '#7dd3fc', run: () => post('/api/genelec', { action: 'power', value: !gon }), ok: gon ? 'Speakers to standby' : 'Waking speakers' },
-    { id: 'mute', ic: g?.mute ? '🔇' : '🔊', t: g?.mute ? 'Unmute' : 'Mute', s: g?.mute ? 'Muted' : 'Sound on', on: !!g?.mute, c: '#fb7185', run: () => post('/api/genelec', { action: 'mute', value: !g?.mute }), ok: 'Mute switched' },
-    { id: 'srcpc', ic: '🖥', t: 'Source: PC', s: S?.dante?.source === 'pc' ? 'Playing from PC' : 'Switch to PC', on: S?.dante?.source === 'pc', c: '#60a5fa', run: () => post('/api/dante/source', { source: 'pc' }), ok: 'Source: PC' },
+    { id: 'spk', ic: 'volume', t: 'Speakers', s: gon ? 'Active' : g?.power ? 'Standby' : '–', on: gon, c: '#7dd3fc', run: () => post('/api/genelec', { action: 'power', value: !gon }), ok: gon ? 'Speakers to standby' : 'Waking speakers' },
+    { id: 'mute', ic: g?.mute ? '<i class="icon icon-mute" aria-hidden="true"></i>' : '<i class="icon icon-speaker" aria-hidden="true"></i>', t: g?.mute ? 'Unmute' : 'Mute', s: g?.mute ? 'Muted' : 'Sound on', on: !!g?.mute, c: '#fb7185', run: () => post('/api/genelec', { action: 'mute', value: !g?.mute }), ok: 'Mute switched' },
+    { id: 'srcpc', ic: 'desktop', t: 'Source: PC', s: S?.dante?.source === 'pc' ? 'Playing from PC' : 'Switch to PC', on: S?.dante?.source === 'pc', c: '#60a5fa', run: () => post('/api/dante/source', { source: 'pc' }), ok: 'Source: PC' },
     { id: 'srcbt', ic: 'ᛒ', t: 'Source: Bluetooth', s: S?.dante?.source === 'bt' ? 'Playing from Bluetooth' : 'Switch to Bluetooth', on: S?.dante?.source === 'bt', c: '#22d3ee', run: () => post('/api/dante/source', { source: 'bt' }), ok: 'Source: Bluetooth' },
     'MEDIA',
     ['g-pc', 'grp', 'Computer'],
     { id: 'pclock', ic: '⌘', t: 'Lock PC', s: 'Windows lock screen', hold: true, run: () => post('/api/pc/do', { action: 'lock' }), ok: 'PC locked' },
-    { id: 'mic', ic: '🎙', t: 'Mic mute', s: 'Toggle default mic', run: () => post('/api/pc/do', { action: 'mic' }), ok: 'Mic toggled' },
-    { id: 'game', ic: '🎮', t: 'Game mode', s: 'Power plan', run: () => post('/api/pc/do', { action: 'gamemode' }), ok: 'Game mode toggled' },
-    { id: 'sleep', ic: '☾', t: 'Sleep PC', s: 'Hold to sleep', hold: true, run: () => post('/api/pc/do', { action: 'sleep' }), ok: 'PC going to sleep' },
+    { id: 'mic', ic: 'mic', t: 'Mic mute', s: 'Toggle default mic', run: () => post('/api/pc/do', { action: 'mic' }), ok: 'Mic toggled' },
+    { id: 'game', ic: 'gamepad', t: 'Game mode', s: 'Power plan', run: () => post('/api/pc/do', { action: 'gamemode' }), ok: 'Game mode toggled' },
+    { id: 'sleep', ic: 'moon', t: 'Sleep PC', s: 'Hold to sleep', hold: true, run: () => post('/api/pc/do', { action: 'sleep' }), ok: 'PC going to sleep' },
     ['g-lab', 'grp', 'Network'],
-    ...(SNAP?.lab_commands || []).filter(c => !c.two).map(c => ({ id: 'lab-' + c.key, ic: c.key.startsWith('speed') ? '⇅' : c.key.startsWith('resume') ? '▶' : '⏸', t: c.label, s: 'Pi-hole ×2',
+    ...(SNAP?.lab_commands || []).filter(c => !c.two).map(c => ({ id: 'lab-' + c.key, ic: c.key.startsWith('speed') ? '⇅' : c.key.startsWith('resume') ? '<i class="icon icon-play" aria-hidden="true"></i>' : '<i class="icon icon-pause" aria-hidden="true"></i>', t: c.label, s: 'Pi-hole ×2',
       run: () => post('/api/ops/act', { key: c.key }), ok: c.label })),
   ];
   return T;
@@ -96,17 +97,17 @@ function tiles() {
 function mediaTile(p, label) {
   if (!p) return '';
   const art = p.art ? `/api/art?e=${encodeURIComponent(p.id)}&k=${encodeURIComponent(p.art_key)}` : '';
-  return `<div class="card tl mp" data-mp="${esc(p.id)}"><div class="art" style="${art ? `background-image:url('${art}')` : ''}">${art ? '' : '♫'}</div>
+  return `<div class="card tl mp" data-mp="${esc(p.id)}"><div class="art" style="${art ? `background-image:url('${art}')` : ''}">${art ? '' : '<i class="icon icon-music" aria-hidden="true"></i>'}</div>
     <div style="min-width:0"><b>${esc(p.title || label)}</b><small>${esc(p.title ? [p.artist, p.app, label].filter(Boolean).join(' · ') : (p.state || 'off'))}</small></div>
-    <div class="bt">${p.id.startsWith('media_player.spotify') ? '<button data-m="media_previous_track" aria-label="Previous">⏮</button>' : ''}
-      <button class="pp" data-m="media_play_pause" aria-label="Play or pause">${p.state === 'playing' ? '⏸' : '▶'}</button>
-      ${p.id.startsWith('media_player.spotify') ? '<button data-m="media_next_track" aria-label="Next">⏭</button>' : ''}</div></div>`;
+    <div class="bt">${p.id.startsWith('media_player.spotify') ? '<button data-m="media_previous_track" aria-label="Previous"><i class="icon icon-prev" aria-hidden="true"></i></button>' : ''}
+      <button class="pp" data-m="media_play_pause" aria-label="Play or pause">${p.state === 'playing' ? '<i class="icon icon-pause" aria-hidden="true"></i>' : '<i class="icon icon-play" aria-hidden="true"></i>'}</button>
+      ${p.id.startsWith('media_player.spotify') ? '<button data-m="media_next_track" aria-label="Next"><i class="icon icon-next" aria-hidden="true"></i></button>' : ''}</div></div>`;
 }
 function volTile() {
   const g = S?.genelec || {}, on = g.power === 'ACTIVE', lv = g.level;
   const pct = lv == null ? 0 : Math.max(0, Math.min(100, (lv + 60) / 60 * 100));
   return `<div class="card tl vol"><div class="sl ${on && lv != null ? '' : 'off'}" id="vol" style="--p:${pct}"><i style="height:${pct}%"></i>
-    <span id="voltxt">${lv != null ? Math.round(lv) + ' dB' : on ? '–' : 'Standby'}</span>${!on ? '<em style="bottom:40%;font-size:13px;mix-blend-mode:normal;color:var(--mute)">Tap Speakers to wake</em>' : ''}<em>${g.mute ? '🔇' : '🔊'}</em></div>
+    <span id="voltxt">${lv != null ? Math.round(lv) + ' dB' : on ? '–' : 'Standby'}</span>${!on ? '<em style="bottom:40%;font-size:13px;mix-blend-mode:normal;color:var(--mute)">Tap Speakers to wake</em>' : ''}<em>${g.mute ? '<i class="icon icon-mute" aria-hidden="true"></i>' : '<i class="icon icon-speaker" aria-hidden="true"></i>'}</em></div>
     <footer><button data-vol="-2">−2</button><button data-vol="2">+2</button></footer></div>`;
 }
 function render() {
@@ -120,7 +121,7 @@ function render() {
     if (Array.isArray(t)) return `<div class="grp">${esc(t[2])}</div>`;
     const busy = hold[t.id];
     return `<button class="tl ${t.on ? 'on' : ''} ${t.cls || ''} ${busy || ''}" data-id="${t.id}" style="--c:${t.c || '#34d399'}"><i class="fill"></i>
-      ${t.hold ? '<span class="hold">hold</span>' : ''}<span class="ic">${esc(t.ic)}</span><span><b>${esc(t.t)}</b><small>${esc(t.s)}</small></span></button>`;
+      ${t.hold ? '<span class="hold">hold</span>' : ''}<span class="ic"><i class="icon icon-${t.ic}" aria-hidden="true"></i></span><span><b>${esc(t.t)}</b><small>${esc(t.s)}</small></span></button>`;
   }).join('');
 }
 const byId = id => tiles().find(t => t && t.id === id);

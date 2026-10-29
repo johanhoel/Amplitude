@@ -1,8 +1,8 @@
 /* Home Deck camera popup - <script src="/cam.js" defer></script> on any panel (nav.js loads it on the ring panels).
  * The front camera live over the current panel: MJPEG from /api/cam/<entity>/stream (the server ends it after 10 min),
  * a snapshot if the stream fails, full screen, Esc / tap outside to close (the stream stops then). A new camera event opens it
- * automatically for 60 s (per-device switch, localStorage navCamAuto). Without the nav pill it adds its own 📷 button.
- * data-links="0" on the script tag (family pages): no link to other panels inside the popup; data-bottom="84" lifts the 📷 button
+ * automatically for 60 s (per-device switch, localStorage navCamAuto). Without the nav pill it adds its own camera button.
+ * data-links="0" on the script tag (family pages): no link to other panels inside the popup; data-bottom="84" lifts the camera button
  * above a page's own bottom bar; data-into="<selector>" puts it inside a header instead of floating.
  * Also loads /refresh.js (pull-to-refresh + ↻ for home-screen apps) so every page with cam.js gets it. Key: C opens it.
  */
@@ -91,7 +91,7 @@
   window.deckCam = { open: camOpen, close: camClose, isOpen: () => C.classList.contains('open') };
   // own button unless the nav pill has one
   const addFab = () => { if (document.getElementById('nvcambtn') || document.getElementById('nvcamfab')) return;
-    const b = document.createElement('button'); b.id = 'nvcamfab'; b.textContent = '📷'; b.setAttribute('aria-label', 'Front camera live'); b.title = 'Camera live (C)';
+    const b = document.createElement('button'); b.id = 'nvcamfab'; b.innerHTML = '<i class="icon icon-camera" aria-hidden="true"></i>'; b.setAttribute('aria-label', 'Front camera live'); b.title = 'Camera live (C)';
     const into = me?.dataset.into && document.querySelector(me.dataset.into);   // long card pages: a header button instead of a floating one
     if (into) { b.classList.add('inline'); b.addEventListener('click', () => camOpen()); into.appendChild(b); return; }
     if (me?.dataset.bottom) b.style.setProperty('--camfab-bottom', me.dataset.bottom + 'px');

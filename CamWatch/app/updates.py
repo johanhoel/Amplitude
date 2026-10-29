@@ -78,7 +78,9 @@ def check(force=False):
             return _cache["result"]
     q = urllib.parse.quote
     try:
-        commits = _get(f"/repos/{opts['repo']}/commits?sha={q(opts['branch'])}&path={q(opts['folder'])}&per_page=1",
+        # 20 rather than 1: the extra entries cost nothing on the same call and
+        # are what the release notes are built from below.
+        commits = _get(f"/repos/{opts['repo']}/commits?sha={q(opts['branch'])}&path={q(opts['folder'])}&per_page=20",
                        opts["token"])
         if not commits:
             raise GitHubError(f"no commits in {opts['folder']}/ on {opts['branch']}")
@@ -98,12 +100,42 @@ def check(force=False):
                 pass
         result = {"current": current, "newer": newer, "checked": dt.datetime.now().isoformat(timespec="seconds"),
                   "latest": {"sha": sha, "short": sha[:7], "version": version[:40],
-                             "date": info["committer"]["date"][:10], "message": info["message"].split("\n")[0][:120]}}
+                             "date": info["committer"]["date"][:10], "message": info["message"].split("\n")[0][:120],
+                             "notes": _notes(commits, current["commit"])}}
     except (GitHubError, KeyError, IndexError, TypeError, ValueError) as exc:
         result = {"current": current, "error": str(exc) if isinstance(exc, GitHubError) else f"unexpected answer: {exc}"}
     with _lock:
         _cache.update(at=time.time(), key=key, result=result)
     return result
+
+
+def _notes(commits, running):
+    """What changed in this folder since the running commit: one line each.
+
+    Built from the commit list the check already fetched, so it costs no extra
+    request. Only commits that touched the folder are in that list, which is
+    what makes this usable in a repository holding several projects.
+
+    Stops at the running commit. An install that does not know its commit, or
+    one further back than the page of commits fetched, gets the newest few and
+    says so by returning everything it has.
+    """
+    out = []
+    for c in commits:
+        if running and c["sha"].startswith(running):
+            break
+        line = (c.get("commit", {}).get("message") or "").split("\n")[0].strip()
+        if not line:
+            continue
+        # A merge commit is bookkeeping, not a change anyone reads about.
+        if line.startswith("Merge "):
+            continue
+        out.append({"short": c["sha"][:7],
+                    "date": c["commit"]["committer"]["date"][:10],
+                    "text": line[:140]})
+        if len(out) >= 15:
+            break
+    return out
 
 
 def ready():

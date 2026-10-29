@@ -20,18 +20,8 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.4 var(-
 a { color: inherit; text-decoration: none; }
 a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
-.wrap { max-width: 1000px; margin: 0 auto; }
-header { display: flex; align-items: center; gap: 10px; margin: 2px 0 14px; }
-header h1 { flex: 1; margin: 0; font-size: 26px; font-weight: 750; } header h1 small { color: var(--mute); font-size: 15px; font-weight: 600; margin-left: 6px; }
 .arm { min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-weight: 700; font-size: 14px; }
 .arm.on { border-color: var(--accent); color: var(--accent); }
-.cap { margin: 18px 2px 8px; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); font-weight: 700; }
-/* status strip */
-.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-.stat { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 12px 14px; min-height: 88px; }
-.stat b { display: block; font-size: 26px; font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.15; }
-.stat span { color: var(--mute); font-size: 13px; } .stat .ok { color: var(--ok); } .stat .bad { color: var(--bad); } .stat .warn { color: var(--warn); }
-.stat .small { font-size: 16px; font-weight: 700; display: block; line-height: 1.3; margin-top: 4px; }
 /* hero: live picture linking to the wall view */
 .hero { display: grid; grid-template-columns: 1.6fr 1fr; gap: 10px; }
 @media (max-width: 700px) { .hero { grid-template-columns: 1fr; } }
@@ -41,13 +31,6 @@ header h1 { flex: 1; margin: 0; font-size: 26px; font-weight: 750; } header h1 s
 .last { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; }
 .last img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; background: #0b0e12; }
 .last .m { padding: 10px 14px 12px; } .last .m span { color: var(--mute); font-size: 13px; display: block; }
-/* page tiles */
-.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-.tile { display: flex; flex-direction: column; gap: 4px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px; min-height: 104px; transition: border-color .15s; }
-@media (hover: hover) and (pointer: fine) { .tile:hover { border-color: var(--accent); } }
-.tile i { font-style: normal; font-size: 26px; } .tile b { font-size: 15.5px; } .tile span { color: var(--mute); font-size: 12.5px; }
-.search { margin-top: 12px; } .search input { width: 100%; min-height: 48px; padding: 0 16px; border-radius: 16px; border: 1px solid var(--line);
-  background: var(--card); color: var(--ink); font: inherit; font-size: 16px; } .search input:focus { outline: none; border-color: var(--accent); }
 .camgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
 .camgrid a { position: relative; display: block; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: #000; aspect-ratio: 16/9; }
 .camgrid img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -57,51 +40,53 @@ header h1 { flex: 1; margin: 0; font-size: 26px; font-weight: 750; } header h1 s
 /* JS fills these in; without this they paint a broken-image icon on first load. */
 img:not([src]), img[src=""] { visibility: hidden; }
 </style>
+<link rel="stylesheet" href="/static/icons.css">
+<link rel="stylesheet" href="/static/shell.css">
 </head>
 <body>
-<div class="wrap">
-  <header><h1><img src="/static/mark.svg" alt="" width="34" height="34" style="vertical-align:-8px;margin-right:8px">camwatch <small id="cam"></small></h1><form method="post" action="/arm"><button class="arm" id="arm"></button></form></header>
+<div class="ui-page">
+  <header class="ui-head"><h1><img src="/static/mark.svg" alt="" width="34" height="34" style="vertical-align:-8px;margin-right:8px">camwatch <small id="cam"></small></h1><form method="post" action="/arm"><button class="arm" id="arm"></button></form></header>
 
-  <div class="stats">
-    <div class="stat"><span>Camera</span><b id="s-cam">…</b><span id="s-cam2"></span></div>
-    <div class="stat"><span>Events today</span><b id="s-today">…</b><span id="s-week"></span></div>
-    <div class="stat"><span>Seen today</span><span class="small" id="s-people">…</span></div>
-    <div class="stat"><span>Last event</span><span class="small" id="s-last">…</span><span id="s-last2"></span></div>
-    <div class="stat"><span>Packages</span><span class="small" id="s-pkg">…</span></div>
-    <div class="stat"><span>Storage</span><b id="s-disk">…</b><span id="s-disk2"></span></div>
+  <div class="ui-stats">
+    <div class="ui-stat"><span>Camera</span><b id="s-cam">…</b><span id="s-cam2"></span></div>
+    <div class="ui-stat"><span>Events today</span><b id="s-today">…</b><span id="s-week"></span></div>
+    <div class="ui-stat"><span>Seen today</span><span class="small" id="s-people">…</span></div>
+    <div class="ui-stat"><span>Last event</span><span class="small" id="s-last">…</span><span id="s-last2"></span></div>
+    <div class="ui-stat"><span>Packages</span><span class="small" id="s-pkg">…</span></div>
+    <div class="ui-stat"><span>Storage</span><b id="s-disk">…</b><span id="s-disk2"></span></div>
   </div>
 
-  <form class="search" action="/search" method="get"><input name="q" placeholder="🔍 Search recordings: white van, person with a dog, red jacket…" aria-label="Search recordings"></form>
+  <form class="ui-search" action="/search" method="get"><input name="q" placeholder="Search recordings: white van, person with a dog, red jacket…" aria-label="Search recordings"></form>
 
-  <div class="cap">Now</div>
+  <div class="ui-cap">Now</div>
   <div class="hero">
-    <a class="live" href="/view"><img id="snap" alt="Live camera"><span class="lbl">📱 Open the camera view</span></a>
+    <a class="live" href="/view"><img id="snap" alt="Live camera"><span class="lbl"><i class="icon icon-phone" aria-hidden="true"></i> Open the camera view</span></a>
     <a class="last" id="lastlink" href="/view"><img id="lastimg" alt=""><div class="m"><b id="lastwho">Latest recording</b><span id="lastwhen"></span></div></a>
   </div>
 
-  <div id="camsection" hidden><div class="cap">Cameras</div><div class="camgrid" id="camgrid"></div></div>
+  <div id="camsection" hidden><div class="ui-cap">Cameras</div><div class="camgrid" id="camgrid"></div></div>
 
-  <div class="cap">Pages</div>
-  <div class="tiles">
-    <a class="tile" href="/m"><i>📲</i><b>Phone home</b><span>Made for phones: what needs attention, cameras, recent visits</span></a>
-    <a class="tile" href="/view"><i>📱</i><b>Camera view</b><span>Live picture, recordings, player, tagging</span></a>
-    <a class="tile" href="/"><i>🎞</i><b>Clips</b><span>All recordings by day, timeline, filters</span></a>
-    <a class="tile" href="/live"><i>📡</i><b>Live</b><span>Live video and the test button</span></a>
-    <a class="tile" href="/log"><i>📋</i><b>Log</b><span>Who came and when, arrived / left</span></a>
-    <a class="tile" href="/report"><i>📊</i><b>Weekly report</b><span>Visits per day and hour, people, cars, packages</span></a>
-    <a class="tile" href="/report#heat"><i>🔥</i><b>Heatmap</b><span>Where people walk</span></a>
-    <a class="tile" href="/search"><i>🔍</i><b>Search</b><span>Find clips by description</span></a>
-    <a class="tile" href="/timelapse"><i>⏩</i><b>Timelapse</b><span>The day in a minute, highlights reel</span></a>
-    <a class="tile" href="/strangers"><i>❔</i><b>Strangers</b><span>Unknown faces seen again and again</span></a>
-    <a class="tile" href="/people"><i>🧑</i><b>People</b><span>Reference photos for face matching</span></a>
-    <a class="tile" href="/plates"><i>🚗</i><b>Plates</b><span>Known and seen number plates</span></a>
-    <a class="tile" href="/zones"><i>🗺</i><b>Zones</b><span>Ignore, trigger, house/street, parking, package</span></a>
-    <a class="tile" href="/settings"><i>⚙️</i><b>Settings</b><span>Arming schedule, loitering</span></a>
-    <a class="tile" href="/?starred=1"><i>⭐</i><b>Starred</b><span>Clips kept forever</span></a>
-    <a class="tile" href="/homeassistant"><i>🏠</i><b>Home Assistant</b><span>Setup guide and automations</span></a>
+  <div class="ui-cap">Pages</div>
+  <div class="ui-tiles">
+    <a class="ui-tile" href="/m"><i class="icon icon-phone" aria-hidden="true"></i><b>Phone home</b><span>Made for phones: what needs attention, cameras, recent visits</span></a>
+    <a class="ui-tile" href="/view"><i class="icon icon-phone" aria-hidden="true"></i><b>Camera view</b><span>Live picture, recordings, player, tagging</span></a>
+    <a class="ui-tile" href="/"><i class="icon icon-film" aria-hidden="true"></i><b>Clips</b><span>All recordings by day, timeline, filters</span></a>
+    <a class="ui-tile" href="/live"><i class="icon icon-antenna" aria-hidden="true"></i><b>Live</b><span>Live video and the test button</span></a>
+    <a class="ui-tile" href="/log"><i class="icon icon-list" aria-hidden="true"></i><b>Log</b><span>Who came and when, arrived / left</span></a>
+    <a class="ui-tile" href="/report"><i class="icon icon-chart" aria-hidden="true"></i><b>Weekly report</b><span>Visits per day and hour, people, cars, packages</span></a>
+    <a class="ui-tile" href="/report#heat"><i class="icon icon-fire" aria-hidden="true"></i><b>Heatmap</b><span>Where people walk</span></a>
+    <a class="ui-tile" href="/search"><i class="icon icon-search" aria-hidden="true"></i><b>Search</b><span>Find clips by description</span></a>
+    <a class="ui-tile" href="/timelapse"><i class="icon icon-refresh" aria-hidden="true"></i><b>Timelapse</b><span>The day in a minute, highlights reel</span></a>
+    <a class="ui-tile" href="/strangers"><i class="icon icon-question" aria-hidden="true"></i><b>Strangers</b><span>Unknown faces seen again and again</span></a>
+    <a class="ui-tile" href="/people"><i class="icon icon-person" aria-hidden="true"></i><b>People</b><span>Reference photos for face matching</span></a>
+    <a class="ui-tile" href="/plates"><i class="icon icon-car" aria-hidden="true"></i><b>Plates</b><span>Known and seen number plates</span></a>
+    <a class="ui-tile" href="/zones"><i class="icon icon-map" aria-hidden="true"></i><b>Zones</b><span>Ignore, trigger, house/street, parking, package</span></a>
+    <a class="ui-tile" href="/settings"><i class="icon icon-gear" aria-hidden="true"></i><b>Settings</b><span>Arming schedule, loitering</span></a>
+    <a class="ui-tile" href="/?starred=1"><i class="icon icon-star" aria-hidden="true"></i><b>Starred</b><span>Clips kept forever</span></a>
+    <a class="ui-tile" href="/homeassistant"><i class="icon icon-home" aria-hidden="true"></i><b>Home Assistant</b><span>Setup guide and automations</span></a>
   </div>
 
-  <div class="cap" id="heat">Where people walked · last 7 days</div>
+  <div class="ui-cap" id="heat">Where people walked · last 7 days</div>
   <a class="heat" href="/report"><img loading="lazy" src="/api/heatmap.jpg?days=7&w=1280" alt="Heatmap of the last 7 days"></a>
 </div>
 
@@ -138,11 +123,11 @@ async function status() {
     $('#s-cam').textContent = `${online}/${cams.length} online`; $('#s-cam').className = online === cams.length ? 'ok' : online ? 'warn' : 'bad';
     $('#s-cam2').textContent = cams.filter(c => !c.online).map(c => c.name + ' offline').join(', ') || 'all cameras sending';
     if ($('#camgrid').children.length !== cams.length) {
-      $('#camgrid').innerHTML = cams.map(c => `<a href="/live?camera=${esc(c.name)}"><img data-cam="${esc(c.name)}" alt=""><span>${c.online ? '🟢' : '⚪'} ${esc(c.name)}</span></a>`).join('');
+      $('#camgrid').innerHTML = cams.map(c => `<a href="/live?camera=${esc(c.name)}"><img data-cam="${esc(c.name)}" alt=""><span>${c.online ? '<i class="icon icon-dot" aria-hidden="true"></i>' : '<i class="icon icon-dot" aria-hidden="true"></i>'} ${esc(c.name)}</span></a>`).join('');
     }
     $('#camsection').hidden = false; camTiles();
   }
-  $('#arm').textContent = s.armed ? '🛡 Armed' : '🔕 Disarmed'; $('#arm').classList.toggle('on', s.armed);
+  $('#arm').innerHTML = s.armed ? '<i class="icon icon-shield" aria-hidden="true"></i> Armed' : '<i class="icon icon-bell-off" aria-hidden="true"></i> Disarmed'; $('#arm').classList.toggle('on', s.armed);
   $('#arm').title = s.mode === 'schedule' ? `Schedule ${s.schedule}` : 'Tap to switch';
   $('#s-today').textContent = s.today;
   $('#s-week').textContent = `${s.week} in the last 7 days`;
@@ -153,7 +138,7 @@ async function status() {
     $('#lastimg').src = `/api/thumb/${s.last.day}/${s.last.stem}.jpg?w=640`; $('#lastlink').href = `/clip/${s.last.day}/${s.last.stem}`;
   } else { $('#s-last').textContent = 'none yet'; }
   $('#s-pkg').innerHTML = s.packages_waiting.length
-    ? s.packages_waiting.map(p => `<span class="warn">📦 at ${esc(p.zone)}</span> <span>since ${hm(p.at)}</span>`).join('<br>') : '<span>None waiting</span>';
+    ? s.packages_waiting.map(p => `<span class="warn"><i class="icon icon-package" aria-hidden="true"></i> at ${esc(p.zone)}</span> <span>since ${hm(p.at)}</span>`).join('<br>') : '<span>None waiting</span>';
   if (s.version) $('#ver').textContent = `camwatch ${s.version.text}${s.version.date ? ' · ' + s.version.date : ''}`;
   const pct = Math.round(s.disk.used * 100 / s.disk.total);
   $('#s-disk').textContent = pct + '%'; $('#s-disk').className = pct >= 90 ? 'bad' : pct >= 80 ? 'warn' : '';

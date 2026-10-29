@@ -51,10 +51,9 @@ h2 a { font-size: 13px; color: var(--accent); text-decoration: none; font-weight
 .rb .o svg { width: 28px; height: 28px; fill: none; stroke: var(--c); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .rb:active .o, .rb.press .o { transform: scale(.9); }
 .rb.on { color: var(--ink); }
-.rb.on .o { background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--c) 85%, #fff), var(--c) 70%);
-  box-shadow: 0 0 26px color-mix(in srgb, var(--c) 55%, transparent); border-color: transparent; }
+.rb.on .o { background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--c) 85%, #fff), var(--c) 70%); border-color: transparent; }
 .rb.on .o svg { stroke: #14101f; }
-.rb.flash .o { box-shadow: 0 0 0 3px var(--c), 0 0 22px color-mix(in srgb, var(--c) 60%, transparent); }
+.rb.flash .o { box-shadow: 0 0 0 3px var(--c); }
 .rb.off { opacity: .32; pointer-events: none; }
 .rb .ring { position: absolute; inset: -5px; transform: rotate(-90deg); pointer-events: none; }
 .rb .ring circle { fill: none; stroke: var(--c); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 264; stroke-dashoffset: 264; }
@@ -105,6 +104,7 @@ nav button.on { color: var(--ink); background: rgba(255,255,255,.09); }
 .hint.show { opacity: 1; transform: translate(-50%, 0); }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <header><div><div class="clock num" id="clock">--:--</div><div class="hello" id="hello"></div></div><div class="who" id="who"></div></header>
@@ -125,7 +125,7 @@ nav button.on { color: var(--ink); background: rgba(255,255,255,.09); }
   <section class="tab games" data-tab="games"><h2>Gaming <small id="gamestate"></small></h2><div class="grid" id="gamebtns"></div></section>
 
   <section class="tab house" data-tab="house"><h2>Home</h2>
-    <div class="np"><div class="art" id="art"></div><div style="min-width:0"><div class="t" id="np-t">—</div><div class="a" id="np-a"></div></div><button class="pp" id="np-pp" aria-label="Play or pause">▶</button></div>
+    <div class="np"><div class="art" id="art"></div><div style="min-width:0"><div class="t" id="np-t">—</div><div class="a" id="np-a"></div></div><button class="pp" id="np-pp" aria-label="Play or pause"><i class="icon icon-play" aria-hidden="true"></i></button></div>
     <div class="door" id="door"><div class="lbl" id="door-lbl">–</div><div class="knob"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0"/></svg></div></div>
     <div class="sub">House</div><div class="grid" id="housebtns"></div></section>
 </main>
@@ -143,7 +143,7 @@ nav button.on { color: var(--ink); background: rgba(255,255,255,.09); }
 <script>
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const I = {   // 24x24 stroke icons
+const I = { // 24x24 stroke icons
   bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>',
   bed: '<path d="M3 18V8M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="1.6"/>',
   garage: '<path d="M3 20V9l9-5 9 5v11"/><path d="M7 20v-7h10v7M7 16h10"/>', door: '<path d="M6 21V4h12v17M3 21h18"/><circle cx="14.5" cy="12.5" r=".8"/>',
@@ -166,31 +166,27 @@ const I = {   // 24x24 stroke icons
 let H = null, S = null;
 const hold = {};
 function hint(t) { const h = $('#hint'); h.textContent = t; h.classList.add('show'); clearTimeout(h._t); h._t = setTimeout(() => h.classList.remove('show'), 1500); }
-async function post(url, body) {
-  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+async function post(url, body) { const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || r.status); return j;
 }
 const ha = (body, msg) => post('/api/home/do', body).then(() => { if (msg) hint(msg); setTimeout(loadHome, 500); }).catch(e => { hint('✗ ' + e.message); loadHome(); });
 const pc = (action, msg) => post('/api/pc/do', { action }).then(() => hint(msg || 'Sent')).catch(e => hint('✗ ' + e.message));
 
 /* round button; opts.hold = ms to hold before it fires (with a filling ring) */
-function rb(box, id, label, icon, fn, opts = {}) {
-  const b = document.createElement('button'); b.className = 'rb'; b.id = id;
+function rb(box, id, label, icon, fn, opts = {}) { const b = document.createElement('button'); b.className = 'rb'; b.id = id;
   b.innerHTML = `<span class="o"><svg viewBox="0 0 24 24">${I[icon]}</svg>${opts.hold ? '<svg class="ring" viewBox="0 0 90 90"><circle cx="45" cy="45" r="42"/></svg>' : ''}</span><span>${esc(label)}</span>`;
   let raf = 0;
   const ring = b.querySelector('.ring circle');
   const reset = () => { cancelAnimationFrame(raf); raf = 0; if (ring) ring.style.strokeDashoffset = 264; b.classList.remove('press'); };
   let down = null;          // taps fire on lift and only if the finger stayed put: scrolling never presses a button
-  b.addEventListener('pointerdown', e => {
-    if (e.button > 0) return; b.classList.add('press'); down = { x: e.clientX, y: e.clientY };
+  b.addEventListener('pointerdown', e => { if (e.button > 0) return; b.classList.add('press'); down = { x: e.clientX, y: e.clientY };
     if (!opts.hold) return;
     e.preventDefault(); b.setPointerCapture(e.pointerId); const t0 = performance.now(); hint('Hold…');
     const step = now => { const p = Math.min(1, (now - t0) / opts.hold); ring.style.strokeDashoffset = 264 * (1 - p);
       if (p < 1) raf = requestAnimationFrame(step); else { raf = 0; navigator.vibrate && navigator.vibrate(30); fn(b); setTimeout(reset, 300); } };
     raf = requestAnimationFrame(step);
   });
-  b.addEventListener('pointerup', e => {
-    if (!opts.hold) { b.classList.remove('press');
+  b.addEventListener('pointerup', e => { if (!opts.hold) { b.classList.remove('press');
       if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 10) { navigator.vibrate && navigator.vibrate(10); fn(b); b.classList.add('flash'); setTimeout(() => b.classList.remove('flash'), 260); }
       down = null; return; }
     if (raf) { reset(); hint('Released – nothing sent'); } else b.classList.remove('press'); });
@@ -202,8 +198,7 @@ function rb(box, id, label, icon, fn, opts = {}) {
 /* ---------- build the tabs (same keys as the Stream Deck folders) ---------- */
 const LIGHTS = [['light.tak', 'Office', 'desk'], ['light.bed_table', 'Bed', 'bed'], ['light.taklampa_hall', 'Hall', 'door'],
                 ['light.belysning_vardagsrum', 'Living room', 'sofa'], ['light.taklampa_5', 'Garage', 'garage'], ['light.utelampa_entre', 'Entrance', 'sun']];
-LIGHTS.forEach(([id, label, icon]) => rb($('#lights'), 'l-' + id, label, icon, b => {
-  const on = !b.classList.contains('on'); b.classList.toggle('on', on); hold[id] = Date.now() + 3000; ha({ do: 'toggle', entity: id });
+LIGHTS.forEach(([id, label, icon]) => rb($('#lights'), 'l-' + id, label, icon, b => { const on = !b.classList.contains('on'); b.classList.toggle('on', on); hold[id] = Date.now() + 3000; ha({ do: 'toggle', entity: id });
 }));
 const genelec = (action, value) => post('/api/genelec', { action, value }).catch(e => hint('✗ Speakers: ' + e.message));
 let vol = null, muted = false, volBusy = 0;
@@ -231,7 +226,8 @@ rb($('#housebtns'), 'h-vac', 'Vacuum', 'vac', b => { const c = b.classList.conta
 rb($('#housebtns'), 'h-charger', 'Charger', 'ev', b => { b.classList.toggle('on'); ha({ do: 'charger' }); });
 rb($('#housebtns'), 'h-tv', 'TV room ⏯', 'tv', () => ha({ do: 'tv' }, 'TV room play/pause'));
 rb($('#housebtns'), 'h-next', 'Next song', 'music', () => ha({ do: 'media', value: 'media_next_track' }));
-$('#np-pp').addEventListener('pointerdown', e => { e.preventDefault(); const p = $('#np-pp').textContent === '⏸'; $('#np-pp').textContent = p ? '▶' : '⏸';
+$('#np-pp').addEventListener('pointerdown', e => { e.preventDefault(); const p = $('#np-pp').firstElementChild.classList.contains('icon-pause');
+    $('#np-pp').firstElementChild.className = (p ? 'icon icon-play' : 'icon icon-pause');
   $('#art').classList.toggle('spin', !p); ha({ do: 'media', value: 'media_play_pause' }); });
 const closeOv = () => { $('#ov').classList.remove('open'); $('#ov-img').src = ''; };
 $('#ov-x').addEventListener('pointerdown', e => { e.preventDefault(); closeOv(); });
@@ -268,8 +264,7 @@ function paintDial(v) { vol = v; const f = (v - MIN) / (MAX - MIN), a = A0 + SWE
 })();
 
 /* ---------- live state ---------- */
-async function loadHome() {
-  if (document.visibilityState !== 'visible') return;
+async function loadHome() { if (document.visibilityState !== 'visible') return;
   try { H = await (await fetch('/api/home/state')).json(); } catch { return; }
   if (!H.configured || H.error) return;
   const lights = {}; (H.rooms || []).forEach(r => r.lights.forEach(l => lights[l.id] = l));
@@ -282,12 +277,11 @@ async function loadHome() {
   $('#h-detect').classList.toggle('on', !!H.detect); $('#h-charger').classList.toggle('on', !!H.charger_on);
   $('#h-vac').classList.toggle('on', (H.vacuum || {}).state === 'cleaning');
   const m = H.media || {}; $('#np-t').textContent = m.title || 'Nothing playing'; $('#np-a').textContent = m.artist || 'Spotify';
-  $('#np-pp').textContent = m.state === 'playing' ? '⏸' : '▶'; $('#art').classList.toggle('spin', m.state === 'playing');
+  $('#np-pp').firstElementChild.className = (m.state === 'playing' ? 'icon icon-pause' : 'icon icon-play'); $('#art').classList.toggle('spin', m.state === 'playing');
   const art = m.art ? `url(/api/art?k=${encodeURIComponent(m.art_key)})` : ''; if ($('#art').style.backgroundImage !== art) $('#art').style.backgroundImage = art;
   renderStatus();
 }
-async function loadStatus() {
-  if (document.visibilityState !== 'visible') return;
+async function loadStatus() { if (document.visibilityState !== 'visible') return;
   try { S = await (await fetch('/api/status')).json(); } catch { return; }
   const g = S.genelec || {};
   $('#dial').classList.toggle('off', g.level == null);
@@ -303,8 +297,7 @@ async function loadStatus() {
   $('#pcstate').textContent = pcOn ? 'online' : 'off – Wake PC'; $('#gamestate').textContent = pcOn ? '' : 'PC is off';
   renderStatus();
 }
-function renderStatus() {
-  const st = [];
+function renderStatus() { const st = [];
   if (S) st.push([S.internet_ms != null ? 'ok' : 'bad', S.internet_ms != null ? `Internet ${S.internet_ms} ms` : 'Internet down'], [S.pc_online ? 'ok' : '', S.pc_online ? 'PC on' : 'PC off']);
   if (H && H.door) st.push(H.door.state === 'locked' ? ['ok', 'Door locked'] : H.door.state === 'unlocked' ? ['warn', 'Door unlocked'] : ['', 'Door lock offline']);
   if (H && H.outside != null) st.push(['', `${Math.round(H.outside)}° outside`]);

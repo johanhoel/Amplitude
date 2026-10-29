@@ -47,8 +47,8 @@ h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 .pulse svg.spark { width: 100%; height: 70px; }
 .holes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
 .hole { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--line); font-size: 13px; }
-.hole i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 10px var(--ok); }
-.hole.off i { background: var(--warn); box-shadow: 0 0 10px var(--warn); }
+.hole i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.hole.off i { background: var(--warn); }
 .pause { position: relative; padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(251,191,36,.5); color: var(--warn); font-size: 13.5px; font-weight: 650; overflow: hidden; touch-action: none; }
 .pause .fill { position: absolute; inset: 0; width: 0; background: rgba(251,191,36,.22); }
 .pause span { position: relative; }
@@ -59,7 +59,7 @@ h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 .dots { display: flex; flex-wrap: wrap; gap: 8px; }
 .d { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px 6px 8px; border-radius: 999px; background: rgba(255,255,255,.045); border: 1px solid var(--line); font-size: 12.5px; white-space: nowrap; }
 .d i { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); }
-.d.on i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.d.on i { background: var(--ok); }
 .d.new { border-color: rgba(251,191,36,.55); } .d.new::after { content: "new"; font-size: 12px; color: var(--warn); font-weight: 700; margin-left: 2px; }
 .d small { color: var(--mute); }
 .blocked { display: grid; gap: 8px; }
@@ -80,6 +80,7 @@ h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 #swp a small { display: block; color: var(--mute); font-weight: 400; font-size: 12px; } #swp a.on { background: #0e7490; border-color: transparent; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <button id="sw" aria-label="All panels"><svg viewBox="0 0 24 24"><circle cx="5" cy="5" r="2.2"/><circle cx="12" cy="5" r="2.2"/><circle cx="19" cy="5" r="2.2"/><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="12" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/></svg></button>
@@ -125,8 +126,7 @@ const hm = t => new Date(t * 1000).toLocaleTimeString([], { hour: '2-digit', min
 function smooth(pts) { if (pts.length < 2) return ''; let d = `M${pts[0][0]},${pts[0][1]}`;
   for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], cx = (x0 + x1) / 2; d += ` C${cx},${y0} ${cx},${y1} ${x1},${y1}`; } return d; }
 
-function wave(d) {
-  const din = d.wan_in, dout = d.wan_out; if (!din.length) return;
+function wave(d) { const din = d.wan_in, dout = d.wan_out; if (!din.length) return;
   const t0 = din[0][0], t1 = din[din.length - 1][0], max = Math.max(1e6, ...din.map(p => p[1]), ...dout.map(p => p[1] * 2));
   const X = t => (t - t0) / (t1 - t0) * 1000, mid = 175, up = 165, dn = 115;
   const top = din.map(([t, v]) => [X(t), mid - Math.sqrt(v / max) * up]), bot = dout.map(([t, v]) => [X(t), mid + Math.sqrt(v / max) * dn]);
@@ -140,8 +140,7 @@ function wave(d) {
     <circle cx="${top[top.length - 1][0]}" cy="${top[top.length - 1][1]}" r="6" fill="#22d3ee"><animate attributeName="r" values="5;9;5" dur="2s" repeatCount="indefinite"/></circle>`;
   $('#dl').textContent = mb(din[din.length - 1][1]); $('#ul').textContent = mb(dout[dout.length - 1][1]); $('#ax0').textContent = hm(t0);
 }
-function gauge(s) {
-  const v = s.down || 0, f = Math.min(1, v / 1e9), R = 105, a = Math.PI * (1 - f);
+function gauge(s) { const v = s.down || 0, f = Math.min(1, v / 1e9), R = 105, a = Math.PI * (1 - f);
   const arc = (from, to, col, w) => { const x1 = 130 + R * Math.cos(Math.PI * (1 - from)), y1 = 135 - R * Math.sin(Math.PI * (1 - from)), x2 = 130 + R * Math.cos(Math.PI * (1 - to)), y2 = 135 - R * Math.sin(Math.PI * (1 - to));
     return `<path d="M${x1},${y1} A${R},${R} 0 0 1 ${x2},${y2}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round"/>`; };
   $('#gauge').innerHTML = `<defs><linearGradient id="gg" x1="0" x2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs>
@@ -150,9 +149,7 @@ function gauge(s) {
   $('#sp').textContent = s.down ? Math.round(s.down / 1e6) : '–';
   $('#spx').textContent = s.down ? `Mbit/s ↓ · ${Math.round(s.up / 1e6)} ↑ · ${(s.ping * 1000).toFixed(0)} ms · ${hm(s.at)}` : '';
 }
-function dns(d) {
-  const pts = d.dns, bl = d.blocked; if (pts.length) {
-    const t0 = pts[0][0], t1 = pts[pts.length - 1][0], max = Math.max(1, ...pts.map(p => p[1]));
+function dns(d) { const pts = d.dns, bl = d.blocked; if (pts.length) { const t0 = pts[0][0], t1 = pts[pts.length - 1][0], max = Math.max(1, ...pts.map(p => p[1]));
     const X = t => (t - t0) / (t1 - t0) * 300, Y = v => 66 - v / max * 60;
     $('#spark').innerHTML = `<path d="${smooth(pts.map(([t, v]) => [X(t), Y(v)]))} L300,70 L0,70 Z" fill="rgba(255,111,181,.16)"/>
       <path d="${smooth(pts.map(([t, v]) => [X(t), Y(v)]))}" fill="none" stroke="#ff6fb5" stroke-width="2"/>
@@ -168,7 +165,7 @@ function dns(d) {
        : '<button class="pause" id="resume" style="border-color:rgba(52,211,153,.5);color:#34d399"><span class="fill" style="background:rgba(52,211,153,.2)"></span><span>Hold to resume blocking</span></button>');
   const btn = $('#pause') || $('#resume'); holdButton(btn, btn.id === 'pause' ? 'pause5:all' : 'resume:all');
 }
-function holdButton(b, key) {      // 0.8 s hold; releasing early sends nothing
+function holdButton(b, key) { // 0.8 s hold; releasing early sends nothing
   let raf = 0; const fill = b.querySelector('.fill');
   const cancel = () => { cancelAnimationFrame(raf); raf = 0; fill.style.width = '0'; };
   b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture(e.pointerId); const t0 = performance.now();
@@ -181,18 +178,15 @@ function holdButton(b, key) {      // 0.8 s hold; releasing early sends nothing
   b.addEventListener('pointercancel', cancel);
 }
 const KIND = d => d.kind || 'Computers & phones';
-function devices(d) {
-  const groups = {}; d.devices.forEach(x => (groups[KIND(x)] = groups[KIND(x)] || []).push(x));
+function devices(d) { const groups = {}; d.devices.forEach(x => (groups[KIND(x)] = groups[KIND(x)] || []).push(x));
   const order = ['People', 'Computers & phones', 'Home & media', 'Servers', 'Network'];
   const label = x => x.owner ? `${x.owner}` : x.label || x.name || 'Unknown device';
   $('#devcap').textContent = `Devices · ${d.online} online now · ${d.devices.length} seen this week`;
-  $('#groups').innerHTML = order.filter(g => groups[g]).map(g => `<div class="g"><h3>${g}<span>${groups[g].filter(x => x.online).length}/${groups[g].length}</span></h3><div class="dots">${
-    groups[g].sort((a, b) => b.online - a.online).map(x => `<span class="d ${x.online ? 'on' : ''} ${x.new && !x.owner && !/^bc:24:11/.test(x.mac) ? 'new' : ''}" title="${esc(x.mac)} ${esc(x.ip)}"><i></i>${esc(label(x))}${x.ip ? `<small>.${esc(x.ip.split('.').pop())}</small>` : ''}</span>`).join('')}</div></div>`).join('');
+  $('#groups').innerHTML = order.filter(g => groups[g]).map(g => `<div class="g"><h3>${g}<span>${groups[g].filter(x => x.online).length}/${groups[g].length}</span></h3><div class="dots">${ groups[g].sort((a, b) => b.online - a.online).map(x => `<span class="d ${x.online ? 'on' : ''} ${x.new && !x.owner && !/^bc:24:11/.test(x.mac) ? 'new' : ''}" title="${esc(x.mac)} ${esc(x.ip)}"><i></i>${esc(label(x))}${x.ip ? `<small>.${esc(x.ip.split('.').pop())}</small>` : ''}</span>`).join('')}</div></div>`).join('');
   const maxB = Math.max(1, ...d.top_blocked.map(b => b.n));
   $('#blocked').innerHTML = d.top_blocked.map(b => `<div class="b"><span>${esc(b.domain)}</span><b class="num">${b.n}</b><div class="bar"><i style="width:${b.n / maxB * 100}%"></i></div></div>`).join('') || '<span class="sub">Nothing blocked.</span>';
 }
-async function load() {
-  if (document.visibilityState !== 'visible') return;
+async function load() { if (document.visibilityState !== 'visible') return;
   try { const d = await (await fetch('/api/net')).json(); if (d.error) return;
     $('#sub').textContent = `${d.online} devices online · ${d.services_up ?? '–'}/${d.services_total ?? '–'} services up · Pi-hole ${Math.round(d.blocked_pct || 0)}% blocked today`;
     wave(d); gauge(d.speed); dns(d); devices(d); } catch (e) { console.error(e); }

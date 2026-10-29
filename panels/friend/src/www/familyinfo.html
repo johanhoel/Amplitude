@@ -123,6 +123,7 @@ body:not(.editing) .hidden { display: none; }
   .day { grid-template-columns: 78px 30px 38px 1fr 38px 48px; gap: 8px; font-size: 15px; } }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <div class="wrap">
@@ -154,10 +155,10 @@ const hm = d => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', h
 const ms = iso => iso ? new Date(iso).getTime() : NaN;
 const badge = (l, sm) => `<span class="ln ${sm ? 'sm' : ''}" style="--lb:${esc(l.backgroundColor || '#fff')};--lt:${esc(l.textColor || '#000')}">${esc(l.shortName)}</span>`;
 const WARN = '<svg viewBox="0 0 24 24"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg>';
-const COND = { 'sunny': ['☀️', 'Sunny'], 'clear-night': ['🌙', 'Clear'], 'partlycloudy': ['⛅', 'Partly cloudy'], 'cloudy': ['☁️', 'Cloudy'], 'rainy': ['🌧️', 'Rain'],
-  'pouring': ['🌧️', 'Heavy rain'], 'lightning': ['🌩️', 'Thunder'], 'lightning-rainy': ['⛈️', 'Thunder and rain'], 'snowy': ['❄️', 'Snow'], 'snowy-rainy': ['🌨️', 'Sleet'],
-  'hail': ['🌨️', 'Hail'], 'fog': ['🌫️', 'Fog'], 'windy': ['💨', 'Windy'], 'windy-variant': ['💨', 'Windy'], 'exceptional': ['⚠️', 'Severe weather'] };
-const cond = c => COND[c] || ['🌡️', c || '–'];
+const COND = { 'sunny': ['<i class="icon icon-sun" aria-hidden="true"></i>', 'Sunny'], 'clear-night': ['<i class="icon icon-moon" aria-hidden="true"></i>', 'Clear'], 'partlycloudy': ['<i class="icon icon-partly" aria-hidden="true"></i>', 'Partly cloudy'], 'cloudy': ['<i class="icon icon-cloud" aria-hidden="true"></i>', 'Cloudy'], 'rainy': ['<i class="icon icon-rain" aria-hidden="true"></i>', 'Rain'],
+  'pouring': ['<i class="icon icon-rain" aria-hidden="true"></i>', 'Heavy rain'], 'lightning': ['<i class="icon icon-storm" aria-hidden="true"></i>', 'Thunder'], 'lightning-rainy': ['<i class="icon icon-storm" aria-hidden="true"></i>', 'Thunder and rain'], 'snowy': ['<i class="icon icon-snow" aria-hidden="true"></i>', 'Snow'], 'snowy-rainy': ['<i class="icon icon-snow" aria-hidden="true"></i>', 'Sleet'],
+  'hail': ['<i class="icon icon-snow" aria-hidden="true"></i>', 'Hail'], 'fog': ['<i class="icon icon-fog" aria-hidden="true"></i>', 'Fog'], 'windy': ['<i class="icon icon-wind" aria-hidden="true"></i>', 'Windy'], 'windy-variant': ['<i class="icon icon-wind" aria-hidden="true"></i>', 'Windy'], 'exceptional': ['⚠', 'Severe weather'] };
+const cond = c => COND[c] || ['<i class="icon icon-thermo" aria-hidden="true"></i>', c || '–'];
 const deg = v => v == null ? '–' : Math.round(v) + '°';
 let bus = null, wx = null, leave = null, busAt = 0, wxAt = 0;
 // layout (edit mode: /familyinfo?edit, opened from Admin). Captions may use {stop} for the bus stop name.
@@ -243,7 +244,7 @@ function renderWx(now) {
   // rain hint for the next 6 hours: when it starts, or that it stays dry
   const next6 = hours.slice(0, 6), wet = next6.find(h => (h.precipitation || 0) >= 0.2 && (h.precipitation_probability ?? 100) >= 40);
   const total = next6.reduce((a, h) => a + (h.precipitation || 0), 0);
-  const hint = wet ? `<div class="hint">☔ ${ms(wet.datetime) <= now ? 'Raining now' : 'Rain from ' + hm(new Date(wet.datetime))} · about ${total.toFixed(1)} mm in the next 6 h</div>`
+  const hint = wet ? `<div class="hint"><i class="icon icon-rain" aria-hidden="true"></i> ${ms(wet.datetime) <= now ? 'Raining now' : 'Rain from ' + hm(new Date(wet.datetime))} · about ${total.toFixed(1)} mm in the next 6 h</div>`
     : '<div class="hint dry">No rain expected in the next 6 hours</div>';
   const n = wx.now || {}, [e, label] = cond(n.condition);
   const today = (wx.daily || [])[0];

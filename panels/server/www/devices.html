@@ -45,7 +45,7 @@ button { font: inherit; cursor: pointer; border: 0; }
 .dev .t { flex: 1; min-width: 0; } .dev .t b { display: block; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dev .t span { color: var(--mute); font-size: 13px; }
 .dev .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--mute); }
-.dev .dot.ok { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.dev .dot.ok { background: var(--ok); }
 .hold { position: relative; overflow: hidden; min-height: 40px; padding: 0 14px; border-radius: 999px; background: rgba(251,113,133,.14); color: #fecdd3; font-weight: 650; font-size: 13.5px; flex: none; }
 .hold i { position: absolute; inset: 0; background: rgba(251,113,133,.45); transform-origin: left; transform: scaleX(0); }
 .hold span { position: relative; }
@@ -55,6 +55,7 @@ button { font: inherit; cursor: pointer; border: 0; }
 .tip { color: var(--mute); font-size: 13.5px; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <main>
@@ -94,21 +95,19 @@ const $ = s => document.querySelector(s);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const ago = t => { if (!t) return 'never'; const s = Date.now() / 1000 - t;
   return s < 120 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' days ago'; };
-const icon = d => d.platform === 'android' ? '🤖' : '📱';
+const icon = d => d.platform === 'android' ? '<i class="icon icon-robot" aria-hidden="true"></i>' : '<i class="icon icon-phone" aria-hidden="true"></i>';
 let known = new Set(), pairing = null, timerT = null;
 
-async function api(path, body) {
-  const r = await fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { cache: 'no-store' });
+async function api(path, body) { const r = await fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { cache: 'no-store' });
   const j = await r.json().catch(() => ({}));
   if (r.status === 401 && j.admin) location.replace('/pin?next=/devices');
   if (!r.ok) throw new Error(j.error || r.status);
   return j;
 }
 
-async function load() {
-  let d; try { d = await api('/api/devices'); } catch (e) { $('#list').innerHTML = `<span class="empty">${esc(e.message)}</span>`; return; }
+async function load() { let d; try { d = await api('/api/devices'); } catch (e) { $('#list').innerHTML = `<span class="empty">${esc(e.message)}</span>`; return; }
   const devs = d.devices;
-  if (pairing) for (const x of devs) if (!known.has(x.id)) {           // the phone just claimed the code
+  if (pairing) for (const x of devs) if (!known.has(x.id)) { // the phone just claimed the code
     clearInterval(timerT); pairing = null;
     $('#timer').innerHTML = `<span class="done">✓ ${esc(x.name)} is paired.</span>`; $('#qr').style.opacity = .25;
   }
@@ -121,15 +120,13 @@ async function load() {
     : '<span class="empty">No devices yet.</span>';
 }
 
-$('#list').addEventListener('click', async e => {
-  const b = e.target.closest('.ren'); if (!b) return;
+$('#list').addEventListener('click', async e => { const b = e.target.closest('.ren'); if (!b) return;
   const id = b.closest('.dev').dataset.id, cur = b.closest('.dev').querySelector('b').textContent;
   const name = prompt('New name', cur); if (!name || name === cur) return;
   try { await api('/api/devices/rename', { id, name }); load(); } catch (err) { alert(err.message); }
 });
 // Remove = press and hold 1 s (the bar fills); letting go earlier cancels
-$('#list').addEventListener('pointerdown', e => {
-  const b = e.target.closest('.hold'); if (!b) return;
+$('#list').addEventListener('pointerdown', e => { const b = e.target.closest('.hold'); if (!b) return;
   const bar = b.querySelector('i'), id = b.closest('.dev').dataset.id;
   bar.style.transition = 'transform 1s linear'; bar.style.transform = 'scaleX(1)';
   const t = setTimeout(async () => { navigator.vibrate?.(30); try { await api('/api/devices/remove', { id }); } catch (err) { alert(err.message); } load(); }, 1000);
@@ -137,8 +134,7 @@ $('#list').addEventListener('pointerdown', e => {
   addEventListener('pointerup', stop); addEventListener('pointercancel', stop);
 });
 
-$('#start').onclick = async () => {
-  $('#msg').className = 'msg'; $('#msg').textContent = '';
+$('#start').onclick = async () => { $('#msg').className = 'msg'; $('#msg').textContent = '';
   try { pairing = await api('/api/devices/pair', { name: $('#name').value, person: $('#person').value }); }
   catch (e) { $('#msg').className = 'msg bad'; $('#msg').textContent = e.message; return; }
   const q = qrcode(0, 'M'); q.addData(pairing.url); q.make();
@@ -151,8 +147,7 @@ $('#start').onclick = async () => {
   tick(); timerT = setInterval(tick, 1000);
 };
 
-fetch('/api/home/state').then(r => r.json()).then(h => {
-  $('#people').innerHTML = (h.people || []).map(p => `<option value="${esc(p.name)}">`).join('');
+fetch('/api/home/state').then(r => r.json()).then(h => { $('#people').innerHTML = (h.people || []).map(p => `<option value="${esc(p.name)}">`).join('');
 }).catch(() => {});
 load(); setInterval(load, 3000);
 </script>

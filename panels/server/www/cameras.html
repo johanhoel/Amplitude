@@ -10,7 +10,7 @@
 <title>Cameras</title>
 <style>
 /* Cameras (phone first): live view on top, every recording below, newest first, day by day as you scroll.
-   Live: a snapshot every 4 s (light on mobile data); tap ▶ Live for video (MJPEG, stops by itself after 2 min).
+   Live: a snapshot every 4 s (light on mobile data); tap <i class="icon icon-play" aria-hidden="true"></i> Live for video (MJPEG, stops by itself after 2 min).
    Recordings: /api/sec/days + /api/sec/visits?day= (camwatch-feed), thumbnails /api/sec/thumb, video /api/sec/video (Range).
    Player: full screen, swipe or ‹ › for the previous / next recording, the phone's Back closes it. */
 /* page-local only; the palette comes from wall.css */
@@ -64,6 +64,7 @@ header a, header select { min-height: 40px; padding: 0 14px; border-radius: 999p
 [hidden] { display: none !important; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <div class="wrap">
@@ -72,7 +73,7 @@ header a, header select { min-height: 40px; padding: 0 14px; border-radius: 999p
   <section class="live" id="live">
     <img id="snap" alt="Live camera">
     <div class="top"><span class="badge" id="badge">SNAPSHOT</span><span class="when" id="when"></span></div>
-    <div class="bot"><button class="pill" id="golive">▶ Live</button><button class="pill" id="full" aria-label="Full screen">⤢</button></div>
+    <div class="bot"><button class="pill" id="golive"><i class="icon icon-play" aria-hidden="true"></i> Live</button><button class="pill" id="full" aria-label="Full screen">⤢</button></div>
   </section>
 
   <div class="chips" id="chips"></div>
@@ -84,7 +85,7 @@ header a, header select { min-height: 40px; padding: 0 14px; border-radius: 999p
   <div class="ptop"><div class="t"><b id="pt"></b><span id="ps"></span></div><button class="x" id="px" aria-label="Close">✕</button></div>
   <div class="faces" id="pf"></div>
   <video id="pv" controls playsinline preload="metadata"></video>
-  <div class="pbot"><button id="pprev" aria-label="Newer recording">‹ Newer</button><span class="sp" id="pn"></span><a id="pdl" download>⬇</a><button id="pnext" aria-label="Older recording">Older ›</button></div>
+  <div class="pbot"><button id="pprev" aria-label="Newer recording">‹ Newer</button><span class="sp" id="pn"></span><a id="pdl" download><i class="icon icon-download" aria-hidden="true"></i></a><button id="pnext" aria-label="Older recording">Older ›</button></div>
 </div>
 
 <script>
@@ -92,7 +93,7 @@ const $ = s => document.querySelector(s);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const hm = d => new Date(d).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
 const get = u => fetch(u, { cache: 'no-store' }).then(r => r.ok ? r.json() : Promise.reject(r.status));
-const FILTERS = [['all', 'All'], ['person', '🧍 People'], ['known', '😀 Known faces'], ['vehicle', '🚗 Cars'], ['star', '⭐ Starred']];
+const FILTERS = [['all', 'All'], ['person', '<i class="icon icon-person" aria-hidden="true"></i> People'], ['known', '<i class="icon icon-person" aria-hidden="true"></i> Known faces'], ['vehicle', '<i class="icon icon-car" aria-hidden="true"></i> Cars'], ['star', '<i class="icon icon-star" aria-hidden="true"></i> Starred']];
 let filter = 'all', days = [], nextDay = 0, loading = false, shown = [];          // shown = every visit on screen, in order (for ‹ ›)
 
 // ---------- live ----------
@@ -105,7 +106,7 @@ function snapshot() {
 }
 function setLive(on) {
   streaming = on; clearTimeout(liveOff);
-  $('#golive').classList.toggle('on', on); $('#golive').textContent = on ? '■ Stop' : '▶ Live';
+  $('#golive').classList.toggle('on', on); $('#golive').innerHTML = on ? '<i class="icon icon-square" aria-hidden="true"></i> Stop' : '<i class="icon icon-play" aria-hidden="true"></i> Live';
   $('#badge').classList.toggle('on', on); $('#badge').textContent = on ? 'LIVE' : 'SNAPSHOT';
   if (on) { $('#snap').src = `/api/cam/${cam}/stream?t=${Date.now()}`; $('#when').textContent = 'live video'; liveOff = setTimeout(() => setLive(false), 120000); }
   else { $('#snap').src = 'data:,'; snapshot(); }
@@ -140,7 +141,7 @@ async function loadDay(d) {
   sec.innerHTML = `<div class="day"><span>${esc(dayName(d.day))}</span><span>${vs.length}${filter === 'all' ? '' : ' of ' + cache[d.day].length}</span></div>`
     + (vs.length ? `<div class="list">${vs.map(v => { const i = shown.push(v) - 1;
         return `<button class="v" data-i="${i}"><img loading="lazy" src="/api/sec/thumb/${esc(v.day)}/${esc(v.stem)}.jpg?w=480" alt="">
-          <span class="dur">${secs(v)} s</span>${v.star ? '<span class="star">⭐</span>' : ''}
+          <span class="dur">${secs(v)} s</span>${v.star ? '<span class="star"><i class="icon icon-star" aria-hidden="true"></i></span>' : ''}
           <div class="meta"><b>${hm(v.start)}</b><span class="w ${v.people?.length ? 'known' : ''}">${esc(who(v))}</span></div></button>`; }).join('')}</div>`
       : `<div class="empty">Nothing ${filter === 'all' ? '' : 'matching '}this day.</div>`);
   $('#days').appendChild(sec);

@@ -26,9 +26,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 /* ---------- top ---------- */
 header { display: flex; align-items: center; gap: 22px; padding: calc(env(safe-area-inset-top) + 18px) 28px 8px; }
 .clock { font-size: 44px; font-weight: 200; letter-spacing: -.03em; line-height: 1; }
-.orb { width: 14px; height: 14px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 6px rgba(52,211,153,.12), 0 0 24px var(--ok);
+.orb { width: 14px; height: 14px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 6px rgba(52,211,153,.12);
   flex: none; transition: background .2s, box-shadow .2s; }
-.orb.bad { background: var(--bad); box-shadow: 0 0 0 6px rgba(248,113,113,.14), 0 0 24px var(--bad); }
+.orb.bad { background: var(--bad); box-shadow: 0 0 0 6px rgba(248,113,113,.14); }
 .headline { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
 .headline b { font-size: 20px; font-weight: 600; white-space: nowrap; }
 .headline span { color: var(--mute); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -84,13 +84,13 @@ main { display: grid; gap: 26px 34px; padding: 8px 28px calc(env(safe-area-inset
 .cap-g .mem { position: absolute; left: 18px; right: 18px; bottom: 5px; height: 2px; border-radius: 2px; background: var(--faint); }
 .cap-g .mem i { display: block; height: 100%; width: 0; border-radius: 2px; background: var(--c); transition: width .6s ease; }
 .cap-g > :not(.fill):not(.mem) { position: relative; }
-.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); flex: none; box-shadow: 0 0 10px var(--ok); }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); flex: none; }
 .cap-g b { font-size: 15px; font-weight: 620; white-space: nowrap; }
 .cap-g small { color: var(--mute); font-size: 11.5px; }
 .cap-g .pct { margin-left: auto; color: var(--mute); font-size: 12px; }
 .cap-g.stopped { border-style: dashed; background: transparent; } .cap-g.stopped .dot { background: var(--faint); box-shadow: none; }
 .cap-g.stopped b { color: var(--mute); }
-.cap-g.busy { border-color: var(--warn); } .cap-g.busy .dot { background: var(--warn); box-shadow: 0 0 10px var(--warn); animation: blink 1s infinite; }
+.cap-g.busy { border-color: var(--warn); } .cap-g.busy .dot { background: var(--warn); animation: blink 1s infinite; }
 @keyframes blink { 50% { opacity: .25; } }
 
 /* side: quick actions, services, activity */
@@ -146,6 +146,7 @@ body.open #scrim { opacity: 1; pointer-events: auto; } body.open #drawer { trans
 #drawer .cap { margin-top: 26px; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <header>
@@ -181,8 +182,7 @@ body.open #scrim { opacity: 1; pointer-events: auto; } body.open #drawer { trans
 const $ = s => document.querySelector(s);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const NODE_C = { turbo: 'var(--turbo)', edvin: 'var(--edvin)', prippen: 'var(--prippen)' };
-const ICON = {
-  start: '<path d="M8 5l11 7-11 7z"/>', resume: '<path d="M8 5l11 7-11 7z"/>',
+const ICON = { start: '<path d="M8 5l11 7-11 7z"/>', resume: '<path d="M8 5l11 7-11 7z"/>',
   reboot: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>', restartdns: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>',
   svc: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>', ha_restart: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>',
   nreboot: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>', reload_auto: '<path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/>',
@@ -208,22 +208,19 @@ function ago(t) { if (!t) return 'never'; const s = Date.now() / 1000 - t; retur
 const lvl = (p, w, b) => p >= b ? 'var(--bad)' : p >= w ? 'var(--warn)' : null;
 
 /* ---------- ring svg ---------- */
-function ring(size, rings, mid) {          // rings: [{r, w, p, c}]
-  return `<div class="ring" style="width:${size}px;height:${size}px"><svg viewBox="0 0 100 100">` + rings.map(x => {
-    const C = 2 * Math.PI * x.r;
+function ring(size, rings, mid) { // rings: [{r, w, p, c}]
+  return `<div class="ring" style="width:${size}px;height:${size}px"><svg viewBox="0 0 100 100">` + rings.map(x => { const C = 2 * Math.PI * x.r;
     return `<circle cx="50" cy="50" r="${x.r}" stroke="rgba(255,255,255,.08)" stroke-width="${x.w}"/>` +
            `<circle data-p cx="50" cy="50" r="${x.r}" stroke="${x.c}" stroke-width="${x.w}" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - Math.min(1, x.p / 100))).toFixed(1)}"/>`;
   }).join('') + `</svg><div class="mid">${mid}</div></div>`;
 }
-function setRing(el, values) {             // patch existing ring arcs without rebuilding (keeps the CSS transition)
-  el.querySelectorAll('circle[data-p]').forEach((c, i) => {
-    const C = 2 * Math.PI * c.r.baseVal.value; c.style.stroke = values[i].c; c.style.strokeDashoffset = (C * (1 - Math.min(1, values[i].p / 100))).toFixed(1);
+function setRing(el, values) { // patch existing ring arcs without rebuilding (keeps the CSS transition)
+  el.querySelectorAll('circle[data-p]').forEach((c, i) => { const C = 2 * Math.PI * c.r.baseVal.value; c.style.stroke = values[i].c; c.style.strokeDashoffset = (C * (1 - Math.min(1, values[i].p / 100))).toFixed(1);
   });
 }
 
 /* ---------- render (patching, not rebuilding) ---------- */
-function render(s) {
-  S = s;
+function render(s) { S = s;
   const probs = s.problems || [];
   $('#orb').classList.toggle('bad', probs.length > 0 || !!s.pve_err);
   $('#head').textContent = s.pve_err ? 'Proxmox not answering' : probs.length ? `${probs.length} thing${probs.length > 1 ? 's' : ''} need${probs.length > 1 ? '' : 's'} attention` : 'All systems normal';
@@ -232,13 +229,11 @@ function render(s) {
 
   // nodes
   const nodes = $('#nodes');
-  s.nodes.forEach(n => {
-    let el = nodes.querySelector(`[data-node="${n.node}"]`);
+  s.nodes.forEach(n => { let el = nodes.querySelector(`[data-node="${n.node}"]`);
     const cpu = 100 * (n.cpu || 0), mem = pct(n.mem, n.maxmem), c = NODE_C[n.node] || 'var(--accent)';
     const vals = [{ p: cpu, c: lvl(cpu, 60, 85) || c }, { p: mem, c: lvl(mem, 80, 92) || 'rgba(255,255,255,.75)' }];
     const gs = s.guests.filter(g => g.node === n.node), gr = gs.filter(g => g.status === 'running').length;
-    if (!el) {
-      el = document.createElement('button'); el.className = 'node'; el.dataset.node = n.node;
+    if (!el) { el = document.createElement('button'); el.className = 'node'; el.dataset.node = n.node;
       el.innerHTML = ring(112, [{ r: 44, w: 7, ...vals[0] }, { r: 33, w: 5, ...vals[1] }], '<div><b class="num" data-cpu></b><br><i>CPU</i></div>') +
         `<div><h2>${esc(n.node)}</h2><div class="meta" data-meta></div><div class="legend"><span><i style="background:${c}"></i>CPU</span><span><i style="background:rgba(255,255,255,.75)"></i>RAM <b class="num" data-mem></b></span></div></div>`;
       tapOpen(el, () => openNode(n.node)); nodes.appendChild(el);
@@ -275,22 +270,18 @@ function render(s) {
 
   // lanes
   const lanes = $('#lanes'), now = Date.now();
-  s.nodes.forEach(n => {
-    let lane = lanes.querySelector(`[data-lane="${n.node}"]`);
-    if (!lane) {
-      lane = document.createElement('div'); lane.className = 'lane'; lane.dataset.lane = n.node;
+  s.nodes.forEach(n => { let lane = lanes.querySelector(`[data-lane="${n.node}"]`);
+    if (!lane) { lane = document.createElement('div'); lane.className = 'lane'; lane.dataset.lane = n.node;
       lane.innerHTML = `<div class="cap"><i style="background:${NODE_C[n.node] || 'var(--accent)'}"></i>${esc(n.node)}</div><div class="caps"></div>`;
       lanes.appendChild(lane);
     }
     const box = lane.querySelector('.caps'), ids = [];
-    s.guests.filter(g => g.node === n.node).forEach(g => {
-      ids.push(String(g.vmid));
+    s.guests.filter(g => g.node === n.node).forEach(g => { ids.push(String(g.vmid));
       let el = box.querySelector(`[data-vm="${g.vmid}"]`);
-      if (!el) {                                           // a guest that just migrated here moves its capsule
+      if (!el) { // a guest that just migrated here moves its capsule
         el = document.querySelector(`[data-vm="${g.vmid}"]`) || Object.assign(document.createElement('button'), { className: 'cap-g' });
         el.dataset.vm = g.vmid;
-        if (!el.innerHTML) {
-          el.innerHTML = '<span class="fill"></span><span class="mem"><i></i></span><i class="dot"></i><span><b></b><br><small></small></span><span class="pct num"></span>';
+        if (!el.innerHTML) { el.innerHTML = '<span class="fill"></span><span class="mem"><i></i></span><i class="dot"></i><span><b></b><br><small></small></span><span class="pct num"></span>';
           tapOpen(el, () => openGuest(g.vmid));
         }
         box.appendChild(el);
@@ -331,7 +322,7 @@ const short = n => SHORT[n] || n;
 function nameOf(t) { if (t === 'all') return 'both Pi-holes'; const g = S && S.guests.find(x => x.vmid === t); return g ? g.name : t; }
 
 /* ---------- taps ---------- */
-function tapOpen(el, fn) {      // open on lift, only if the finger did not travel (lanes can scroll on phones)
+function tapOpen(el, fn) { // open on lift, only if the finger did not travel (lanes can scroll on phones)
   let d = null;
   el.addEventListener('pointerdown', e => { d = { x: e.clientX, y: e.clientY }; });
   el.addEventListener('pointerup', e => { if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 12) fn(); d = null; });
@@ -341,8 +332,7 @@ function hint(t) { const h = $('#hint'); h.textContent = t; h.classList.add('sho
 
 /* round action button: single-step commands run on touch-down; disruptive ones run after a 0.7 s hold */
 const HOLD = 700;
-function actButton(c) {
-  const w = document.createElement('div'); w.className = 'qa';
+function actButton(c) { const w = document.createElement('div'); w.className = 'qa';
   const b = document.createElement('button'); b.className = `hb t-${c.tone || 'accent'}`; b.disabled = !!c.disabled;
   const kind = (c.key || '').split(':')[0];
   b.innerHTML = `<svg class="ic" viewBox="0 0 24 24">${ICON[kind] || ICON.start}</svg>` + (c.two ? '<svg class="pr" viewBox="0 0 80 80"><circle class="trk" cx="40" cy="40" r="38"/><circle cx="40" cy="40" r="38"/></svg>' : '');
@@ -351,32 +341,28 @@ function actButton(c) {
   const arc = b.querySelector('.pr circle:not(.trk)');
   const cancel = () => { cancelAnimationFrame(raf); raf = 0; if (arc) { arc.style.transition = 'stroke-dashoffset .15s'; arc.style.strokeDashoffset = 239; } };
   let down = null;                      // single-step: fire on lift, only if the finger did not move (a scroll
-  b.addEventListener('pointerdown', e => {  // that starts on a button must never press it)
+  b.addEventListener('pointerdown', e => { // that starts on a button must never press it)
     if (e.button > 0) return;
     down = { x: e.clientX, y: e.clientY };
     if (!c.two) return;
     e.preventDefault();
     b.setPointerCapture(e.pointerId); t0 = performance.now(); arc.style.transition = 'none'; hint('Keep holding to ' + c.label.toLowerCase());
-    const step = now => {
-      const p = Math.min(1, (now - t0) / HOLD); arc.style.strokeDashoffset = 239 * (1 - p);
+    const step = now => { const p = Math.min(1, (now - t0) / HOLD); arc.style.strokeDashoffset = 239 * (1 - p);
       if (p < 1) raf = requestAnimationFrame(step); else { raf = 0; fire(c, b); }
     };
     raf = requestAnimationFrame(step);
   });
-  b.addEventListener('pointerup', e => {
-    if (!c.two) { if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 10) fire(c, b); down = null; return; }
+  b.addEventListener('pointerup', e => { if (!c.two) { if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 10) fire(c, b); down = null; return; }
     if (raf) { cancel(); hint('Released – nothing sent'); } });
   b.addEventListener('pointercancel', () => { down = null; cancel(); });
   b.addEventListener('contextmenu', e => e.preventDefault());
   return w;
 }
-async function fire(c, b) {
-  navigator.vibrate && navigator.vibrate(30);
+async function fire(c, b) { navigator.vibrate && navigator.vibrate(30);
   b.classList.add('done'); setTimeout(() => { b.classList.remove('done'); const a = b.querySelector('.pr circle:not(.trk)'); if (a) { a.style.transition = 'stroke-dashoffset .3s'; a.style.strokeDashoffset = 239; } }, 450);
   pending[c.key] = Date.now() + 15000; if (S) render(S);               // capsule shows "working…" this frame
   hint(c.label + ' · sent');
-  try {
-    const r = await fetch('/api/ops/act', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: c.key }) });
+  try { const r = await fetch('/api/ops/act', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: c.key }) });
     const j = await r.json().catch(() => ({}));
     hint(r.ok ? `${c.label} · ${j.msg || 'done'}` : `✗ ${c.label}: ${j.msg || j.error || r.status}`);
     if (!r.ok) delete pending[c.key];
@@ -390,25 +376,21 @@ function closeDrawer() { document.body.classList.remove('open'); openId = null; 
 $('#close').addEventListener('pointerdown', e => { e.preventDefault(); closeDrawer(); });
 $('#scrim').addEventListener('pointerdown', e => { e.preventDefault(); closeDrawer(); });
 addEventListener('keydown', e => e.key === 'Escape' && closeDrawer());
-function gaugesFor(r) {
-  const cpu = 100 * (r.cpu || 0), mem = pct(r.mem, r.maxmem), disk = pct(r.disk, r.maxdisk);
+function gaugesFor(r) { const cpu = 100 * (r.cpu || 0), mem = pct(r.mem, r.maxmem), disk = pct(r.disk, r.maxdisk);
   const g = (p, label, sub, c) => `<div class="gauge">${ring(86, [{ r: 42, w: 7, p, c }], `<div><b class="num">${Math.round(p)}%</b></div>`)}${label}<small>${sub}</small></div>`;
   return `<div class="gauges">${g(cpu, 'CPU', (r.maxcpu || '?') + ' cores', lvl(cpu, 60, 85) || 'var(--accent)')}${g(mem, 'Memory', gb(r.mem || 0) + ' / ' + gb(r.maxmem || 0), lvl(mem, 80, 92) || 'var(--ok)')}` +
     (r.disk ? g(disk, 'Disk', gb(r.disk) + ' / ' + gb(r.maxdisk), lvl(disk, 80, 92) || 'var(--prippen)') : '') + '</div>';
 }
 let drawerSig = '';
-function refreshDrawer(first) {
-  if (!S || !openId) return;
+function refreshDrawer(first) { if (!S || !openId) return;
   let html, cmds;
-  if (openId[0] === 'g') {
-    const g = S.guests.find(x => x.vmid === +openId.slice(1)); if (!g) return closeDrawer();
+  if (openId[0] === 'g') { const g = S.guests.find(x => x.vmid === +openId.slice(1)); if (!g) return closeDrawer();
     const runG = g.status === 'running';
     html = `<div class="cap">${g.type === 'qemu' ? 'Virtual machine' : 'Container'} ${g.vmid} · ${esc(g.node)}</div><h1>${esc(g.name)}</h1>
       <div class="meta">${runG ? `<span style="color:var(--ok)">● running</span> · up ${dur(g.uptime)}` : `<span style="color:var(--bad)">● ${esc(g.status)}</span>`}${g.ip ? ' · ' + esc(g.ip) : ''}<br>
       Last backup: ${g.backup ? ago(g.backup) + ' ago' : 'none'}</div>${runG ? gaugesFor(g) : ''}${g.note ? `<div class="note">${esc(g.note)}</div>` : ''}`;
     cmds = g.commands;
-  } else {
-    const n = S.nodes.find(x => x.node === openId.slice(1)); if (!n) return closeDrawer();
+  } else { const n = S.nodes.find(x => x.node === openId.slice(1)); if (!n) return closeDrawer();
     html = `<div class="cap">Proxmox node</div><h1>${esc(n.node)}</h1><div class="meta">${n.status === 'online' ? `<span style="color:var(--ok)">● online</span> · up ${dur(n.uptime)}` : '<span style="color:var(--bad)">● offline</span>'}</div>
       ${gaugesFor(n)}${n.note ? `<div class="note">${esc(n.note)}</div>` : ''}`;
     cmds = n.commands;
@@ -416,8 +398,7 @@ function refreshDrawer(first) {
   // rebuild the buttons only when the command set changes, so a hold in progress is never interrupted
   const sig = openId + JSON.stringify(cmds.map(c => [c.key, c.disabled]));
   const body = $('#dbody');
-  if (first || sig !== drawerSig || !body.querySelector('.acts')) {
-    body.innerHTML = `<div data-info>${html}</div><div class="cap">Actions <span style="text-transform:none;letter-spacing:0;font-weight:400">· hold the ringed ones</span></div><div class="acts"></div>`;
+  if (first || sig !== drawerSig || !body.querySelector('.acts')) { body.innerHTML = `<div data-info>${html}</div><div class="cap">Actions <span style="text-transform:none;letter-spacing:0;font-weight:400">· hold the ringed ones</span></div><div class="acts"></div>`;
     const a = body.querySelector('.acts'); cmds.forEach(c => a.appendChild(actButton(c))); drawerSig = sig;
   } else body.querySelector('[data-info]').innerHTML = html;
   if (first) document.body.classList.add('open');
@@ -427,8 +408,7 @@ function refreshDrawer(first) {
 function tick() { $('#clock').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); }
 tick(); setInterval(tick, 1000);
 let es;
-function connect() {
-  es = new EventSource('/api/ops/events');
+function connect() { es = new EventSource('/api/ops/events');
   es.onmessage = e => { $('#live').classList.add('on'); try { render(JSON.parse(e.data)); } catch (err) { console.error(err); } };
   es.onerror = () => { $('#live').classList.remove('on'); };      // EventSource reconnects by itself
 }

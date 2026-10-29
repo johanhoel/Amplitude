@@ -2139,22 +2139,29 @@ ol li,ul li{margin:4px 0}
 .timeline .tick{stroke:var(--line)}.timeline a rect{cursor:pointer}
 .k-known{fill:var(--known)}.k-person{fill:var(--accent)}.k-vehicle{fill:#f59e0b}.k-animal{fill:#a78bfa}
 .k-test,.k-motion{fill:var(--faint)}
+/* camera pill: the online/offline dot that replaced the two coloured-circle emoji */
+.icon.is-on{color:var(--known)}.icon.is-off{color:var(--faint)}
 .tag.dir-arrived{color:var(--known)}.tag.dir-left{color:var(--accent)}.tag.dir-visited{color:var(--unknown)}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
-</style></head><body>
+/* Release notes under "New version": what actually changed in this folder
+   since the running commit, newest first. */
+.relnotes{list-style:none;margin:8px 0 2px;padding:0;display:grid;gap:7px;max-height:260px;overflow:auto}
+.relnotes li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:baseline;font-size:13.5px;line-height:1.45}
+.relnotes time{color:var(--dim);font-variant-numeric:tabular-nums;font-size:12.5px}
+.relnotes code{color:var(--dim);font-size:11.5px}
+</style><link rel="stylesheet" href="/static/icons.css">
+</head><body>
 <header><a class="brand" href="{{ url_for('dashboard') }}"><img src="/static/mark.svg" alt="" width="29" height="29">camwatch</a>
-<nav aria-label="Pages">{% for ep, label in [('dashboard', '🏠 Home'), ('wall_view', '📱 View'), ('index', '🎞 Clips'), ('search_page', '🔍 Search'),
-  ('live', '📡 Live'), ('log_page', '📋 Log'), ('report_page', '📊 Report'), ('timelapse_page', '⏩ Timelapse'), ('people_page', '🧑 People'), ('strangers_page', '❔ Strangers'),
-  ('plates_page', '🚗 Plates'), ('zones_page', '🗺 Zones'), ('settings_page', '⚙️ Settings'), ('ha_page', '🏠 Home Assistant')] %}
-<a href="{{ url_for(ep) }}" class="{{ 'on' if request.endpoint == ep }}">{{ label }}</a>{% endfor %}</nav>
-<div class="tools">{% if update_ready %}<a class="upd-pill" href="{{ url_for('settings_page') }}#updates" title="Version {{ update_ready }} is ready">⬆ Update</a>{% endif %}
+<nav aria-label="Pages">{% for ep, ic, label in [('dashboard', 'home', 'Home'), ('wall_view', 'phone', 'View'), ('index', 'film', 'Clips'), ('search_page', 'search', 'Search'), ('live', 'antenna', 'Live'), ('log_page', 'list', 'Log'), ('report_page', 'chart', 'Report'), ('timelapse_page', 'refresh', 'Timelapse'), ('people_page', 'person', 'People'), ('strangers_page', 'question', 'Strangers'), ('plates_page', 'car', 'Plates'), ('zones_page', 'map', 'Zones'), ('settings_page', 'gear', 'Settings'), ('ha_page', 'home', 'Home Assistant')] %}
+<a href="{{ url_for(ep) }}" class="{{ 'on' if request.endpoint == ep }}"><i class="icon icon-{{ ic }}" aria-hidden="true"></i> {{ label }}</a>{% endfor %}</nav>
+<div class="tools">{% if update_ready %}<a class="upd-pill" href="{{ url_for('settings_page') }}#updates" title="Version {{ update_ready }} is ready"><i class="icon icon-upload" aria-hidden="true"></i> Update</a>{% endif %}
 {% if people %}<form method="get" action="{{ url_for('index') }}"><select name="person" onchange="this.form.submit()" aria-label="Filter by person">
 <option value="">Person…</option>{% for p in people %}<option {{ 'selected' if p == person }}>{{ p }}</option>{% endfor %}</select></form>{% endif %}
-<form method="post" action="{{ url_for('quick_arm') }}" title="Mode: {{ arm_mode }}"><button class="{{ 'armed' if armed }}">{{ '🛡 Armed' if armed else '🔕 Disarmed' }}</button></form></div>
+<form method="post" action="{{ url_for('quick_arm') }}" title="Mode: {{ arm_mode }}"><button class="{{ 'armed' if armed }}">{% if armed %}<i class="icon icon-shield" aria-hidden="true"></i> Armed{% else %}<i class="icon icon-bell-off" aria-hidden="true"></i> Disarmed{% endif %}</button></form></div>
 </header>
 <main>{% block body %}{% endblock %}</main>
-<footer class="ver">camwatch {{ app_version.text }}{% if app_version.date %} · {{ app_version.date }}{% endif %} · <a href="{{ url_for('requests_page') }}">💡 Request a feature</a></footer></body></html>""",
+<footer class="ver">camwatch {{ app_version.text }}{% if app_version.date %} · {{ app_version.date }}{% endif %} · <a href="{{ url_for('requests_page') }}"><i class="icon icon-bulb" aria-hidden="true"></i> Request a feature</a></footer></body></html>""",
 
     "requests.html": """{% extends "base.html" %}
 {% block title %}Request a feature{% endblock %}
@@ -2201,7 +2208,7 @@ filled in, and you press Submit there.{% endif %}</p>
 <nav class="days"><a class="pill {{ 'on' if starred }}" href="{{ url_for('index', starred=1) }}">★ Starred</a>
 {% for d in days %}<a class="pill {{ 'on' if d == day and not person and not starred }}" href="{{ url_for('index', day=d) }}">{{ d }}</a>{% endfor %}</nav>
 <div class="row"><h1>{{ heading }} <span class="muted">· {{ clips|length }} clip{{ '' if clips|length == 1 else 's' }}</span></h1>
-{% if clips %}<span style="margin-left:auto"></span><button type="button" id="pick-start" onclick="picking(true)">☑ Select</button>{% endif %}</div>
+{% if clips %}<span style="margin-left:auto"></span><button type="button" id="pick-start" onclick="picking(true)"><i class="icon icon-check-box" aria-hidden="true"></i> Select</button>{% endif %}</div>
 {% if timeline %}
 <svg class="timeline" viewBox="0 0 1440 56" preserveAspectRatio="none" role="img" aria-label="Events over the day">
 <rect class="bg" x="0" y="0" width="1440" height="38" rx="6"/>
@@ -2223,7 +2230,7 @@ filled in, and you press Submit there.{% endif %}</p>
 {% if c.snapshot %}<img loading="lazy" src="{{ url_for('media', day=c.day, name=c.snapshot) }}" alt="">{% else %}<div class="ph"></div>{% endif %}
 <div class="meta"><span class="time">{% if c.starred %}<span style="color:#f5b301">★</span> {% endif %}{% if person or starred %}{{ c.day }} {% endif %}{{ c.time }}</span>
 {% if c.duration is not none %}<span class="muted">{{ c.duration }}s</span>{% endif %}</div>
-<div class="meta" style="padding-top:0">{% for d in c.detected %}<span class="tag">{{ d }}</span>{% endfor %}{% for z in c.zones %}<span class="tag">@{{ z }}</span>{% endfor %}{% for p in c.plates %}<span class="tag {{ 'k' if p.name }}">🚗 {{ p.name or p.plate }}</span>{% endfor %}{% if c.loitering %}<span class="tag u">loitering</span>{% endif %}{% if c.unusual %}<span class="tag u" title="{{ c.unusual }}">⚠ unusual</span>{% endif %}{% if c.visit %}<span class="tag" title="Same visit">🔗 {{ c.visit|map(attribute='camera')|unique|join(', ') }}</span>{% endif %}{% for n in c.names %}<span class="tag k">{{ n }}</span>{% endfor %}
+<div class="meta" style="padding-top:0">{% for d in c.detected %}<span class="tag">{{ d }}</span>{% endfor %}{% for z in c.zones %}<span class="tag">@{{ z }}</span>{% endfor %}{% for p in c.plates %}<span class="tag {{ 'k' if p.name }}"><i class="icon icon-car" aria-hidden="true"></i> {{ p.name or p.plate }}</span>{% endfor %}{% if c.loitering %}<span class="tag u">loitering</span>{% endif %}{% if c.unusual %}<span class="tag u" title="{{ c.unusual }}">⚠ unusual</span>{% endif %}{% if c.visit %}<span class="tag" title="Same visit"><i class="icon icon-link" aria-hidden="true"></i> {{ c.visit|map(attribute='camera')|unique|join(', ') }}</span>{% endif %}{% for n in c.names %}<span class="tag k">{{ n }}</span>{% endfor %}
 {% if c.unknown %}<span class="tag u">{{ c.unknown }} unknown</span>{% endif %}
 {% if c.faces is none %}<span class="muted">not analysed yet</span>{% endif %}</div></a>
 {% endfor %}</div>
@@ -2246,8 +2253,8 @@ body.picking main{padding-bottom:110px}
 <form id="pickbar" method="post">
 <b id="pick-count">0 selected</b>
 <button type="button" onclick="pickAll()">Select all</button>
-<button type="submit" class="primary" formaction="{{ url_for('download_clips') }}" id="pick-dl" disabled>⬇ Download</button>
-<button type="submit" class="danger" formaction="{{ url_for('delete_clips') }}" id="pick-del" disabled>🗑 Delete</button>
+<button type="submit" class="primary" formaction="{{ url_for('download_clips') }}" id="pick-dl" disabled><i class="icon icon-download" aria-hidden="true"></i> Download</button>
+<button type="submit" class="danger" formaction="{{ url_for('delete_clips') }}" id="pick-del" disabled><i class="icon icon-trash" aria-hidden="true"></i> Delete</button>
 <button type="button" onclick="picking(false)">Cancel</button>
 <input type="hidden" name="back" value="{{ request.full_path }}">
 <span id="pick-inputs"></span>
@@ -2312,7 +2319,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') picking(fals
  src="{{ url_for('media', day=c.day, name=c.video) }}"></video>
 {% if c.visit %}{% set members = (c.visit + [{'stem': c.stem, 'camera': c.camera, 'time': c.time}])|sort(attribute='time') %}
 <h2>Same visit <span class="muted">· {{ members|length }} clips on {{ members|map(attribute='camera')|unique|list|length }} cameras</span></h2>
-<div class="row" style="margin-bottom:8px"><button class="primary" id="playall">▶ Play all in order</button><span class="muted" id="playing"></span></div>
+<div class="row" style="margin-bottom:8px"><button class="primary" id="playall"><i class="icon icon-play" aria-hidden="true"></i> Play all in order</button><span class="muted" id="playing"></span></div>
 <div class="grid">{% for m in members %}<a class="card" href="{{ url_for('clip_page', day=c.day, stem=m.stem) }}"{% if m.stem == c.stem %} style="border-color:var(--accent)"{% endif %}>
 <img loading="lazy" src="{{ url_for('media', day=c.day, name=m.stem ~ '.jpg') }}" alt="">
 <div class="meta"><span class="time">{{ m.time }}</span><span class="tag">{{ m.camera }}</span>{% if m.stem == c.stem %}<span class="muted">this clip</span>{% endif %}</div></a>{% endfor %}</div>
@@ -2391,7 +2398,7 @@ sound removed, 1280 px wide. Takes about a minute; the copy is kept for 7 days.<
 {% if share %}<script>
 (async function poll() {
   const r = await fetch('/api/share/{{ share.id }}', { cache: 'no-store' }); const s = await r.json(), el = document.getElementById('sharestatus');
-  if (s.state === 'done') { el.innerHTML = '<a class="pill on" href="' + s.url + '">⬇ Download the blurred copy</a>'; return; }
+  if (s.state === 'done') { el.innerHTML = '<a class="pill on" href="' + s.url + '"><i class="icon icon-download" aria-hidden="true"></i> Download the blurred copy</a>'; return; }
   if (s.state === 'error') { el.textContent = 'Could not make the copy: ' + s.error; return; }
   el.textContent = (s.state === 'queued' ? 'Waiting for another copy to finish…' : 'Blurring… ' + Math.round(s.progress * 100) + '%');
   setTimeout(poll, 1500);
@@ -2409,7 +2416,7 @@ sound removed, 1280 px wide. Takes about a minute; the copy is kept for 7 days.<
 {% block body %}
 <h1>Live <span class="muted">· {{ camera }}</span></h1>
 {% if cameras|length > 1 %}<nav class="days" style="margin:8px 0">{% for c in cameras %}
-<a class="pill {{ 'on' if c.name == camera }}" href="?camera={{ c.name }}">{{ '🟢' if c.online else '⚪' }} {{ c.name }}</a>{% endfor %}</nav>{% endif %}
+<a class="pill {{ 'on' if c.name == camera }}" href="?camera={{ c.name }}"><i class="icon icon-dot {{ 'is-on' if c.online else 'is-off' }}" aria-hidden="true"></i> {{ c.name }}</a>{% endfor %}</nav>{% endif %}
 <img id="live" src="{{ url_for('live_stream', camera=camera) }}" alt="Live view" style="width:100%;border-radius:10px;background:#000;min-height:200px">
 <p id="nolive" class="box" hidden>No picture: the recorder isn't receiving the camera stream right now.
 <button onclick="location.reload()">Retry</button></p>
@@ -2659,7 +2666,7 @@ yesterday becomes a timelapse and a highlights reel (4 s of every recording with
 <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))">
 {% for kind, label in [('timelapse', 'The whole day'), ('highlights', 'Highlights')] %}{% if it[kind] %}
 <div class="box" style="padding:10px"><div class="row" style="margin-bottom:6px"><b>{{ label }}</b>
-<a class="pill" style="margin-left:auto" href="{{ url_for('timelapse_file', name=it[kind]) }}" download>⬇</a></div>
+<a class="pill" style="margin-left:auto" href="{{ url_for('timelapse_file', name=it[kind]) }}" download><i class="icon icon-download" aria-hidden="true"></i></a></div>
 <video controls playsinline preload="metadata" src="{{ url_for('timelapse_file', name=it[kind]) }}"></video></div>
 {% endif %}{% endfor %}</div>{% endfor %}
 {% endblock %}""",
@@ -2697,7 +2704,7 @@ yesterday becomes a timelapse and a highlights reel (4 s of every recording with
 {% if p.name %}<span class="tag k" title="{{ p.source }}{{ ' ' ~ p.detail if p.detail else '' }}">{{ p.name }}{{ ' (' ~ p.detail ~ ')' if p.source == 'plate' else '' }}</span>
 {% elif p.kind == 'person' %}<span class="tag u">unknown person</span>
 {% else %}<span class="tag" style="color:var(--muted)">{{ p.detail or p.kind }}</span>{% endif %}
-{% if p.kind == 'vehicle' and p.direction %}<span class="tag dir-{{ p.direction }}">🚗 {{ {'arrived': '→ arrived', 'left': '← left'}[p.direction] }}</span>{% endif %}
+{% if p.kind == 'vehicle' and p.direction %}<span class="tag dir-{{ p.direction }}"><i class="icon icon-car" aria-hidden="true"></i> {{ {'arrived': '→ arrived', 'left': '← left'}[p.direction] }}</span>{% endif %}
 {% else %}<span class="muted">motion</span>{% endfor %}
 {% if v.loitering %}<span class="tag u">loitering</span>{% endif %}
 {% if v.faces_seen is none %}<span class="muted" title="Face check not done yet">face check pending</span>{% endif %}</span>
@@ -2855,15 +2862,15 @@ Its recordings stay. Switch it on again to bring it back.</p>
 <input type="text" name="detect_{{ c.slot }}" value="{{ c.detect_url }}" placeholder="low-res substream, saves CPU - rtsp://…/stream2" autocomplete="off" spellcheck="false"></label></div>
 <div class="foot">
 <label class="switch"><input type="checkbox" name="enabled_{{ c.slot }}" value="1" {{ 'checked' if c.enabled or not c.saved }}> On</label>
-<button type="button" onclick="openFinder({{ c.slot }})">🔍 Find</button>
-<button type="button" onclick="testCam(this, {{ c.slot }})">📷 Test picture</button>
-{% if c.enabled or (c.saved and c.slot != 1) %}<button type="button" class="danger" onclick='removeCam(this, {{ c.slot }}, {{ c.name|tojson }})'>🗑 Remove</button>{% endif %}
+<button type="button" onclick="openFinder({{ c.slot }})"><i class="icon icon-search" aria-hidden="true"></i> Find</button>
+<button type="button" onclick="testCam(this, {{ c.slot }})"><i class="icon icon-camera" aria-hidden="true"></i> Test picture</button>
+{% if c.enabled or (c.saved and c.slot != 1) %}<button type="button" class="danger" onclick='removeCam(this, {{ c.slot }}, {{ c.name|tojson }})'><i class="icon icon-trash" aria-hidden="true"></i> Remove</button>{% endif %}
 <span class="msg" data-msg hidden></span></div>
 </div>{% endfor %}
 </div>
 <div class="savebar"><button class="primary">Save cameras</button>
 <span class="muted">Saved passwords show as ••••••. Leave the dots as they are to keep a password.
-<b>🗑 Remove</b> stops a camera. Its recordings stay. A renamed camera saves new clips under the new name.</span></div></form>
+<b><i class="icon icon-trash" aria-hidden="true"></i> Remove</b> stops a camera. Its recordings stay. A renamed camera saves new clips under the new name.</span></div></form>
 <dialog id="finder" class="finder">
 <div class="fhead"><b>Find cameras</b> <span class="muted" id="f-slot"></span><button type="button" aria-label="Close" onclick="this.closest('dialog').close()">✕</button></div>
 <div class="row"><input type="text" id="f-subnet" value="{{ scan_subnet }}" spellcheck="false" style="flex:1;font-family:ui-monospace,Consolas,monospace">
@@ -3087,18 +3094,18 @@ On the public ntfy.sh server anyone who knows the topic can read it, so use a lo
 Alarms (strangers, unusual activity) go up right away, the rest every night.</p>
 {% if off_connected and off.type %}
 <div class="row"><span class="state on">● Connected</span><b>{{ off_types[off.type].label }}</b><code>{{ off.path }}</code>
-{% if off.encrypt %}<span class="tag k">🔒 encrypted</span>{% endif %}</div>
+{% if off.encrypt %}<span class="tag k"><i class="icon icon-lock" aria-hidden="true"></i> encrypted</span>{% endif %}</div>
 <div class="muted">{% if off_status.running %}Uploading now (since {{ off_status.run_started[11:16] }})…
 {% elif off_status.last_ok %}Last upload {{ off_status.last_ok|replace('T', ' ') }}{% if off_status.last_counts %}: {{ off_status.last_counts.clips }} clip files, {{ off_status.last_counts.starred }} starred, {{ off_status.last_counts.timelapse }} timelapses, {{ off_status['last_counts']['db-backup'] }} backups checked{% endif %}.
 {% else %}No upload yet{% if not off.enabled %} (switched off){% endif %}.{% endif %}
 {% if off_queue %} · {{ off_queue }} alarm{{ 's' if off_queue > 1 }} waiting{% endif %}</div>
 {% if off_status.error %}<div class="bad" style="font-size:14px">⚠ {{ off_status.error }} <span class="muted">({{ off_status.error_at|replace('T', ' ') }})</span></div>{% endif %}
-<div class="row"><form class="inline" method="post" action="{{ url_for('offsite_run') }}"><button>⬆ Upload now</button></form>
+<div class="row"><form class="inline" method="post" action="{{ url_for('offsite_run') }}"><button><i class="icon icon-upload" aria-hidden="true"></i> Upload now</button></form>
 <button type="button" onclick="offTest(this)">Test connection</button><span class="muted" id="off-test"></span>
 <span style="margin-left:auto"></span>
-<button type="button" onclick="offReconnect()">🔑 Sign in again</button>
+<button type="button" onclick="offReconnect()"><i class="icon icon-key" aria-hidden="true"></i> Sign in again</button>
 <form class="inline" method="post" action="{{ url_for('offsite_disconnect') }}" onsubmit="return confirm('Disconnect and forget this destination{{ ' and its encryption keys - files already uploaded can then only be read with the downloaded keys' if off.encrypt }}?')"><button class="danger">Disconnect</button></form></div>
-{% if off.encrypt %}<p class="muted" style="margin:0">🔑 <a href="{{ url_for('offsite_recovery') }}">Download the encryption keys</a> and keep them safe
+{% if off.encrypt %}<p class="muted" style="margin:0"><i class="icon icon-key" aria-hidden="true"></i> <a href="{{ url_for('offsite_recovery') }}">Download the encryption keys</a> and keep them safe
 (password manager, printed copy): without them nobody - you included - can read the uploads if this server is lost.</p>{% endif %}
 <form method="post" action="{{ url_for('offsite_save') }}" style="display:grid;gap:10px;border-top:1px solid var(--line);padding-top:12px">
 <label><input type="checkbox" name="enabled" value="1" {{ 'checked' if off.enabled }}> Upload</label>
@@ -3211,12 +3218,14 @@ async function offTest(btn) {
 <div class="row"><span>This server runs <b>{{ app_version.text }}</b></span>{% if app_version.date %}<span class="muted">from {{ app_version.date }}</span>{% endif %}</div>
 <div class="row"><span id="upd-check" class="muted">Checking GitHub for a new version…</span>
 <button type="button" id="upd-again" onclick="updates(true)" hidden>↻ Check again</button></div>
-<div class="muted">Missing something? <a href="{{ url_for('requests_page') }}">💡 Request a feature</a></div>
+<div class="muted">Missing something? <a href="{{ url_for('requests_page') }}"><i class="icon icon-bulb" aria-hidden="true"></i> Request a feature</a></div>
 <div id="upd-new" hidden>
 <div style="margin-bottom:8px"><span class="state on">● New version</span> <b id="upd-version"></b> <span class="muted" id="upd-detail"></span></div>
+<details id="upd-notes" hidden open><summary style="cursor:pointer" id="upd-notes-sum">What changed</summary>
+<ul class="relnotes" id="upd-notes-list"></ul></details>
 <form method="post" action="{{ url_for('run_update') }}" onsubmit="return confirm('Install the new version now? camwatch stops for a few minutes. When the new version fails, the old version comes back by itself.')">
 <input type="hidden" name="sha" id="upd-sha">
-<button class="primary" id="upd-button" {{ 'disabled' if not upd_status.helper }}>⬆ Update now</button></form></div>
+<button class="primary" id="upd-button" {{ 'disabled' if not upd_status.helper }}><i class="icon icon-upload" aria-hidden="true"></i> Update now</button></form></div>
 {% if not upd_status.helper %}<div class="warn" style="font-size:14px">The update helper is not installed on the server yet. Run <code>sudo ./deploy.sh</code> once.</div>{% endif %}
 <div id="upd-status" class="muted" {{ 'hidden' if upd_status.state == 'idle' }}>
 {% if upd_status.state == 'waiting' %}Waiting for the server to start the update…
@@ -3261,6 +3270,20 @@ async function updates(force) {
     $('upd-banner').hidden = false;
     $('upd-detail').textContent = `from ${r.latest.date}: ${r.latest.message}`;
     $('upd-sha').value = r.latest.sha;
+    const notes = r.latest.notes || [], list = $('upd-notes-list');
+    list.textContent = '';
+    for (const n of notes) {
+      const li = document.createElement('li');
+      const t = document.createElement('time'); t.textContent = n.date;
+      const b = document.createElement('span');
+      // A commit message is text from a repository, so it is written as text.
+      b.textContent = n.text;
+      const c = document.createElement('code'); c.textContent = ' ' + n.short;
+      b.append(c); li.append(t, b); list.append(li);
+    }
+    $('upd-notes').hidden = !notes.length;
+    $('upd-notes-sum').textContent = notes.length === 1
+      ? 'What changed · 1 change' : `What changed · ${notes.length} changes`;
   } catch (e) { $('upd-check').textContent = 'The check for a new version failed: ' + e; $('upd-again').hidden = false; }
 }
 updates(false);
@@ -3474,7 +3497,7 @@ That means CamWatch sends requests by itself now.</p>
 {% block body %}
 <h1>Zones{% if cameras|length > 1 %} <span class="muted">· {{ camera }}</span>{% endif %}</h1>
 {% if cameras|length > 1 %}<nav class="days" style="margin:8px 0">{% for c in cameras %}
-<a class="pill {{ 'on' if c.name == camera }}" href="?camera={{ c.name }}">{{ '🟢' if c.online else '⚪' }} {{ c.name }}</a>{% endfor %}</nav>{% endif %}
+<a class="pill {{ 'on' if c.name == camera }}" href="?camera={{ c.name }}"><i class="icon icon-dot {{ 'is-on' if c.online else 'is-off' }}" aria-hidden="true"></i> {{ c.name }}</a>{% endfor %}</nav>{% endif %}
 <p class="muted"><b style="color:#dc2626">Ignore zones</b> are excluded from motion and detection (trees, the street, the timestamp).
 <b style="color:#2563eb">Trigger zones</b>: if you draw any, only people/objects whose feet are inside one count, and alerts say which zone
 ("person at door"). Each trigger zone also becomes a sensor in Home Assistant.<br>
@@ -3484,7 +3507,7 @@ Draw them where people's feet are when they come into view from the street, and 
 <b style="color:#7c3aed">Parking</b> zones: where the car stands when it's home (draw around its wheels). A car appearing there is
 logged as <i>arrived</i>, disappearing as <i>left</i>, even inside an ignore zone.</p>
 <div style="max-width:1100px">
-<div class="row" style="margin-bottom:8px"><button id="heat" type="button">🔥 Show where people walk (14 days)</button>
+<div class="row" style="margin-bottom:8px"><button id="heat" type="button"><i class="icon icon-fire" aria-hidden="true"></i> Show where people walk (14 days)</button>
 <span class="muted">Helps to draw house/street/trigger zones where people actually go.</span></div>
 <!-- the drawing layer covers the picture only: zone points are fractions of the picture -->
 <div style="position:relative">
@@ -3552,7 +3575,7 @@ window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); 
 $('heat').onclick = () => {
   const on = !bg.src.includes('heatmap');
   bg.src = on ? '/api/heatmap.jpg?days=14&w=1600&camera={{ camera }}' : '{{ url_for('live_still', camera=camera) }}';
-  $('heat').textContent = on ? '📷 Show the camera picture' : '🔥 Show where people walk (14 days)';
+  $('heat').innerHTML = on ? '<i class="icon icon-camera" aria-hidden="true"></i> Show the camera picture' : '<i class="icon icon-fire" aria-hidden="true"></i> Show where people walk (14 days)';
 };
 bg.onload = refresh; window.onresize = draw; refresh();
 </script>
@@ -3563,6 +3586,6 @@ app.jinja_env.globals["timedelta"] = dt.timedelta
 
 
 if __name__ == "__main__":
-    updates.start_background_check()      # the ⬆ Update button in the top bar
+    updates.start_background_check()      # the <i class="icon icon-upload" aria-hidden="true"></i> Update button in the top bar
     log.info("web UI on :8080%s", " (password protected)" if WEB_PASSWORD else "")
     serve(app, host="0.0.0.0", port=8080, threads=8)
