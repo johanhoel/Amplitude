@@ -38,9 +38,13 @@
   --accent-ink:  #ffffff;  /*  9.33:1 the type that sits ON --accent only */
 
   /* ---- shape ---------------------------------------------------------- */
-  --r:    24px;  /* a card */
-  --r-sm:  9px;  /* a pill, a chip, an input */
-  --r-lg: 22px;  /* a sheet, a full-bleed panel */
+  /* Three radii, and nothing in between. A card was 14px in the panels and
+     18px in CamWatch, with 10, 12, 16, 20, 22 and 28 scattered about; that
+     is the shape equivalent of the fourteen --faint values. */
+  --r:    24px;  /* a card, a tile, a stat */
+  --r-sm: 12px;  /* an input, a chip, a small control */
+  --r-lg: 24px;  /* a sheet, a full-bleed panel */
+  --r-pill: 999px;
 
   /* ---- motion ---------------------------------------------------------
      Entrances and exits use --ease-out; things moving on screen use

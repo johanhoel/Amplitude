@@ -14,7 +14,7 @@
 
 .attn { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
 .attn:empty { display: none; }
-.attn a { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 14px; font-size: 14px; font-weight: 600;
+.attn a { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: var(--r); font-size: 14px; font-weight: 600;
   background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.35); color: #fde68a; }
 .attn a.bad { background: rgba(251,113,133,.13); border-color: rgba(251,113,133,.4); color: #fecdd3; }
 .attn a.ok { background: rgba(52,211,153,.1); border-color: rgba(52,211,153,.3); color: #a7f3d0; }
@@ -39,7 +39,7 @@
 .pp.away .av { filter: grayscale(.9) brightness(.5); box-shadow: none; } .pp.away { color: var(--mute); }
 .pp small { font-size: 11px; color: var(--dim); font-weight: 500; }
 .np { display: flex; gap: 14px; align-items: center; }
-.np .art { width: 76px; height: 76px; border-radius: 16px; background: #1a1630 center/cover; flex: none; display: grid; place-items: center; font-size: 28px; }
+.np .art { width: 76px; height: 76px; border-radius: var(--r); background: #1a1630 center/cover; flex: none; display: grid; place-items: center; font-size: 28px; }
 .np b { display: block; font-size: 18px; line-height: 1.2; } .np span { color: var(--mute); font-size: 13.5px; }
 .bar { height: 5px; border-radius: 5px; background: rgba(255,255,255,.08); overflow: hidden; margin-top: 6px; } .bar i { display: block; height: 100%; background: var(--c, var(--accent)); border-radius: 5px; }
 .lights { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }

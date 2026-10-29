@@ -42,20 +42,20 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outlin
 
 /* needs attention */
 .alerts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin-top: 12px; }
-.alert { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: var(--card); border: 1px solid var(--line);
+.alert { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--r); background: var(--card); border: 1px solid var(--line);
   border-left: 4px solid var(--warn); min-height: 60px; }
 .alert.bad { border-left-color: var(--bad); } .alert.info { border-left-color: var(--accent); }
 .alert i { font-style: normal; font-size: 22px; flex: none; width: 28px; text-align: center; }
 .alert div { flex: 1; min-width: 0; } .alert b { display: block; font-size: 15px; }
 .alert span { display: block; color: var(--mute); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .alert .act { flex: none; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); font-size: 13.5px; font-weight: 700; }
-.allok { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 16px; background: rgba(34,197,94,.08);
+.allok { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--r); background: rgba(34,197,94,.08);
   border: 1px solid rgba(34,197,94,.3); color: #86efac; font-weight: 650; font-size: 15px; margin-top: 12px; }
 
 /* live cameras: swipe */
 .cams { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin: 0 -14px; padding: 0 14px; }
 .cams::-webkit-scrollbar { display: none; }
-.cam { position: relative; flex: 0 0 86%; scroll-snap-align: center; border-radius: 20px; overflow: hidden; background: #000;
+.cam { position: relative; flex: 0 0 86%; scroll-snap-align: center; border-radius: var(--r); overflow: hidden; background: #000;
   border: 1px solid var(--line); aspect-ratio: 16/9; }
 .cams.single .cam { flex-basis: 100%; }
 .cam img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -71,7 +71,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outlin
 
 /* today */
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.stat { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; }
 .stat b { display: block; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .stat span { color: var(--mute); font-size: 12.5px; }
 .people { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 10px -14px 0; padding: 0 14px; }
@@ -83,9 +83,9 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outlin
 
 /* recent visits */
 .list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
-.visit { display: flex; gap: 12px; align-items: center; padding: 8px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); min-height: 76px; }
+.visit { display: flex; gap: 12px; align-items: center; padding: 8px; border-radius: var(--r); background: var(--card); border: 1px solid var(--line); min-height: 76px; }
 .visit:active { background: var(--card-hi); }
-.visit img { flex: none; width: 104px; aspect-ratio: 16/9; object-fit: cover; border-radius: 10px; background: #0b0e12; }
+.visit img { flex: none; width: 104px; aspect-ratio: 16/9; object-fit: cover; border-radius: var(--r-sm); background: #0b0e12; }
 .visit .m { flex: 1; min-width: 0; }
 .visit .who { font-weight: 700; font-size: 15.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .visit .who.known { color: #86efac; }
@@ -95,7 +95,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outlin
 .tag.u { color: var(--warn); } .tag.s { color: #f5b301; } .tag.l { color: var(--accent); }
 .day { margin: 14px 2px 6px; color: var(--mute); font-size: 13px; font-weight: 700; }
 .empty { color: var(--mute); text-align: center; padding: 30px 10px; }
-.skel { background: linear-gradient(90deg, var(--card) 25%, var(--card-hi) 50%, var(--card) 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: 16px; height: 76px; }
+.skel { background: linear-gradient(90deg, var(--card) 25%, var(--card-hi) 50%, var(--card) 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: var(--r); height: 76px; }
 @keyframes sk { to { background-position: -200% 0; } }
 
 /* bottom tabs */

@@ -102,7 +102,7 @@ for page in PAGES:
 
 # The contrast gate itself, so a bad token value fails here too and not only
 # in the design/ checker someone may forget to run.
-for name in ("check-contrast.py", "check-icons.py"):
+for name in ("check-contrast.py", "check-icons.py", "check-theme.py"):
     checker = REPO / "design" / name
     if not checker.exists():
         check(f"design/{name} is present", False, f"missing at {checker}")

@@ -2054,7 +2054,7 @@ h2 .muted{text-transform:none;letter-spacing:0}
 .pill.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
 @media (max-width:460px){.grid{grid-template-columns:1fr 1fr;gap:8px}}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;color:var(--fg);display:block;transition:border-color .15s}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;color:var(--fg);display:block;transition:border-color .15s}
 .card:hover{border-color:var(--accent)}
 .card img,.ph{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#0b0e12}
 .card .meta{padding:8px 10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
@@ -2062,16 +2062,16 @@ h2 .muted{text-transform:none;letter-spacing:0}
 .muted{color:var(--muted);font-size:13px}
 .tag{font-size:12px;padding:1px 9px;border-radius:999px;border:1px solid currentColor;color:var(--muted);white-space:nowrap}
 .tag.k{color:var(--known)}.tag.u{color:var(--unknown)}
-video{width:100%;max-height:70vh;background:#000;border-radius:18px;display:block}
+video{width:100%;max-height:70vh;background:#000;border-radius:var(--r);display:block}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 button,select,input[type=text],input[type=password],input[type=number],input[type=time],input[type=file]{font:inherit;color:var(--fg);background:var(--card-hi);
-  border:1px solid var(--line);border-radius:10px;padding:0 12px;min-height:38px}
+  border:1px solid var(--line);border-radius:var(--r-sm);padding:0 12px;min-height:38px}
 input[type=file]{padding:6px 10px}
 [hidden]{display:none !important}
 .upd-pill{display:inline-flex;align-items:center;min-height:38px;padding:0 14px;border-radius:999px;white-space:nowrap;font-weight:700;
   color:#04140b;background:#34d399;text-decoration:none}
 .upd-pill:hover{background:#6ee7b7}
-textarea{font:inherit;color:var(--fg);background:var(--card-hi);border:1px solid var(--line);border-radius:10px;padding:8px 12px;width:100%;resize:vertical}
+textarea{font:inherit;color:var(--fg);background:var(--card-hi);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 12px;width:100%;resize:vertical}
 .field{display:grid;gap:4px}
 .field>span{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .field>span i{font-style:normal;font-weight:500;letter-spacing:0;text-transform:none;color:var(--dim)}
@@ -2084,14 +2084,14 @@ button.danger{color:var(--danger);border-color:rgba(239,68,68,.6);background:tra
 input[type=checkbox],input[type=radio]{accent-color:var(--accent);width:17px;height:17px;vertical-align:-3px}
 label{cursor:pointer}
 .faces{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
-.face{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:10px}
-.face img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;background:#0b0e12}
+.face{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px}
+.face img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--r-sm);background:#0b0e12}
 .face form{display:grid;gap:6px;margin-top:8px}
-.box{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px}
 .box.ok{border-color:rgba(34,197,94,.5)}.box.warn{border-color:rgba(245,158,11,.5)}.box.bad{border-color:rgba(239,68,68,.6)}
 .inline{display:inline}
 table{border-collapse:collapse}th{font-weight:600}td,th{padding:6px 8px 6px 0}
-pre{background:#0b0e12;border:1px solid var(--line);border-radius:14px;padding:12px;overflow-x:auto;font-size:13px;margin:6px 0 0}
+pre{background:#0b0e12;border:1px solid var(--line);border-radius:var(--r);padding:12px;overflow-x:auto;font-size:13px;margin:6px 0 0}
 code{background:var(--card-hi);border:1px solid var(--line);border-radius:6px;padding:0 5px;font-size:13px}
 .copy{float:right;font-size:12px;min-height:28px;padding:0 10px}
 ol li,ul li{margin:4px 0}
@@ -2208,7 +2208,7 @@ body.picking .card.sel{outline:3px solid var(--accent);outline-offset:-3px}
 body.picking .card.sel .pick{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 body.picking .card.sel .pick::after{content:"✓";display:block;text-align:center;line-height:24px;font-weight:800;color:#0b1220}
 #pickbar{display:none;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:20;gap:8px;align-items:center;flex-wrap:wrap;
-  justify-content:center;max-width:calc(100vw - 24px);padding:10px 14px;border-radius:18px;background:var(--card);border:1px solid var(--line);
+  justify-content:center;max-width:calc(100vw - 24px);padding:10px 14px;border-radius:var(--r);background:var(--card);border:1px solid var(--line);
   box-shadow:0 8px 30px rgba(0,0,0,.5)}
 body.picking #pickbar{display:flex}
 body.picking main{padding-bottom:110px}
@@ -2305,7 +2305,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') picking(fals
 <p class="row muted"><a href="{{ url_for('media', day=c.day, name=c.video) }}" download>Download</a>
 {% if c.video.endswith('.mkv') %}· MKV files may not play in the browser. Download to watch.{% endif %}</p>
 {% else %}
-{% if c.snapshot %}<img src="{{ url_for('media', day=c.day, name=c.snapshot) }}" style="width:100%;border-radius:10px" alt="">{% endif %}
+{% if c.snapshot %}<img src="{{ url_for('media', day=c.day, name=c.snapshot) }}" style="width:100%;border-radius:var(--r-sm)" alt="">{% endif %}
 <p class="box">Recording in progress. This page refreshes until the clip is saved.</p>
 {% endif %}
 
@@ -2380,7 +2380,7 @@ sound removed, 1280 px wide. Takes about a minute; the copy is kept for 7 days.<
 <h1>Live <span class="muted">· {{ camera }}</span></h1>
 {% if cameras|length > 1 %}<nav class="days" style="margin:8px 0">{% for c in cameras %}
 <a class="pill {{ 'on' if c.name == camera }}" href="?camera={{ c.name }}"><i class="icon icon-dot {{ 'is-on' if c.online else 'is-off' }}" aria-hidden="true"></i> {{ c.name }}</a>{% endfor %}</nav>{% endif %}
-<img id="live" src="{{ url_for('live_stream', camera=camera) }}" alt="Live view" style="width:100%;border-radius:10px;background:#000;min-height:200px">
+<img id="live" src="{{ url_for('live_stream', camera=camera) }}" alt="Live view" style="width:100%;border-radius:var(--r-sm);background:#000;min-height:200px">
 <p id="nolive" class="box" hidden>No picture: the recorder isn't receiving the camera stream right now.
 <button onclick="location.reload()">Retry</button></p>
 <p class="muted">About 5 frames per second, no sound. It shows exactly what motion detection sees.</p>
@@ -2561,7 +2561,7 @@ Reads are matched allowing one wrong character.</p>
 <div class="row" style="margin-bottom:8px">{% for l in ['person', 'car', 'dog', 'cat', 'bicycle'] %}
 <a class="pill {{ 'on' if l == label }}" href="{{ url_for('report_page', week=monday, label=l) }}">{{ l }}</a>{% endfor %}</div>
 <img src="/api/heatmap.jpg?from={{ monday }}&to={{ monday + timedelta(days=6) }}&label={{ label }}&w=1600" alt="Heatmap"
- style="width:100%;border-radius:10px;background:#000">
+ style="width:100%;border-radius:var(--r-sm);background:#000">
 <p class="muted">Brighter = more time spent there, from every detection this week (foot position).</p>
 {% endif %}
 {% endblock %}""",
@@ -2771,7 +2771,7 @@ A VPN only works here if its traffic reaches camwatch with the VPN address (rout
 <style>
 .cams{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 @media (max-width:760px){.cams{grid-template-columns:1fr}}
-.camcard{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s}
+.camcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s}
 .camcard.live{border-color:rgba(34,197,94,.45)}
 .camcard .view{position:relative;aspect-ratio:16/9;background:#0b0e12;display:grid;place-items:center;overflow:hidden}
 .camcard .view img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -2847,11 +2847,11 @@ Its recordings stay. Switch it on again to bring it back.</p>
 <p style="margin:12px 0 0"><a href="#" onclick="$f('finder').close(); return false" class="muted">Not listed? Enter the address yourself</a></p>
 </dialog>
 <style>
-.finder{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:18px;padding:16px;width:min(640px,calc(100vw - 32px));max-height:85vh;overflow:auto}
+.finder{background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:var(--r);padding:16px;width:min(640px,calc(100vw - 32px));max-height:85vh;overflow:auto}
 .finder::backdrop{background:rgba(0,0,0,.6)}
 .fhead{display:flex;align-items:center;gap:8px;margin:0 0 10px}.fhead button{margin-left:auto;min-height:32px;width:32px;padding:0}
 .flist{display:grid;gap:6px}
-.flist button{display:flex;gap:10px;align-items:center;justify-content:flex-start;border-radius:12px;text-align:left;width:100%;font-weight:500;min-height:44px}
+.flist button{display:flex;gap:10px;align-items:center;justify-content:flex-start;border-radius:var(--r-sm);text-align:left;width:100%;font-weight:500;min-height:44px}
 .flist button.on{border-color:var(--accent)}.flist b{font-family:ui-monospace,Consolas,monospace;font-weight:650}
 .stream{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
 .stream code{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -3379,7 +3379,7 @@ logged as <i>arrived</i>, disappearing as <i>left</i>, even inside an ignore zon
 <span class="muted">Helps to draw house/street/trigger zones where people actually go.</span></div>
 <!-- the drawing layer covers the picture only: zone points are fractions of the picture -->
 <div style="position:relative">
-<img id="bg" src="{{ url_for('live_still', camera=camera) }}" alt="Camera view" style="width:100%;display:block;border-radius:10px;background:#000;min-height:200px">
+<img id="bg" src="{{ url_for('live_still', camera=camera) }}" alt="Camera view" style="width:100%;display:block;border-radius:var(--r-sm);background:#000;min-height:200px">
 <canvas id="cv" style="position:absolute;inset:0;width:100%;height:100%;cursor:crosshair"></canvas></div></div>
 <div class="row" style="margin-top:10px">
 <input type="text" id="zname" placeholder="Zone name, e.g. door" maxlength="40">

@@ -57,7 +57,7 @@ CSS = """
 .ui-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .ui-stat {
   background: var(--card); border: 1px solid var(--line);
-  border-radius: 18px; padding: 12px 14px; min-height: 88px;
+  border-radius: var(--r, 18px); padding: 12px 14px; min-height: 88px;
 }
 .ui-stat b { display: block; font-size: 26px; font-weight: 750; line-height: 1.15;
   font-variant-numeric: tabular-nums; }
@@ -72,7 +72,7 @@ CSS = """
 .ui-tile {
   display: flex; flex-direction: column; gap: 4px;
   background: var(--card); border: 1px solid var(--line);
-  border-radius: 18px; padding: 14px; min-height: 104px;
+  border-radius: var(--r, 18px); padding: 14px; min-height: 104px;
   color: inherit; text-decoration: none;
   transition: border-color .15s var(--ease-out, ease), transform .15s var(--ease-out, ease);
 }
@@ -110,7 +110,7 @@ CSS = """
 .ui-search { margin-top: 12px; }
 .ui-search input {
   width: 100%; min-height: 48px; padding: 0 16px;
-  border-radius: 16px; border: 1px solid var(--line);
+  border-radius: var(--r-sm, 12px); border: 1px solid var(--line);
   background: var(--card); color: var(--ink); font: inherit; font-size: 16px;
 }
 .ui-search input::placeholder { color: var(--dim); }

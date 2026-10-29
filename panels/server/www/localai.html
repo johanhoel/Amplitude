@@ -18,7 +18,7 @@
 @media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
 .grp { grid-column: 1 / -1; margin-top: 6px; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); font-weight: 700; padding: 10px 2px 0; }
-.cd { border-radius: 22px; background: var(--card); border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.cd { border-radius: var(--r-lg); background: var(--card); border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
 .cd h3 { margin: 0; font-size: 17px; font-weight: 650; } .cd .tag { font-size: 12px; color: var(--mute); }
 .cd p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--ink); opacity: .85; }
 .cd .st { font-size: 13px; color: var(--mute); } .cd .st b { color: var(--ink); }
@@ -27,13 +27,13 @@
 .bt { min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.07); color: var(--ink); font: inherit; font-weight: 650; }
 .bt.go { background: var(--hue); border-color: transparent; color: #140b2a; } .bt:disabled { opacity: .4; }
 .bt.warn { color: #fecaca; border-color: rgba(239,68,68,.45); }
-select.sel { min-height: 40px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--ink); font: inherit; padding: 0 10px; }
+select.sel { min-height: 40px; border-radius: var(--r-sm); border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--ink); font: inherit; padding: 0 10px; }
 .top { grid-column: 1 / -1; display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; }
 @media (max-width: 700px) { .top { grid-template-columns: 1fr; } }
 .pcst { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 650; }
 .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--faint, #555); } .dot.ok { background: #34d399; } .dot.bad { background: #f87171; }
 .gbar { height: 10px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; } .gbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--hue2), var(--hue)); }
-.note { border-radius: 14px; padding: 10px 12px; font-size: 13.5px; background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.3); }
+.note { border-radius: var(--r); padding: 10px 12px; font-size: 13.5px; background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.3); }
 .job { font-size: 13.5px; color: var(--mute); } .job.busy::before { content: ''; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%;
   border: 2px solid var(--hue); border-right-color: transparent; animation: spin .8s linear infinite; vertical-align: -1px; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -41,21 +41,21 @@ select.sel { min-height: 40px; border-radius: 12px; border: 1px solid var(--line
 .cw { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 14px; } @media (max-width: 700px) { .cw { grid-template-columns: minmax(0, 1fr); } }
 .cw > div, .cd, .grid > * { min-width: 0; } .wrap { padding-bottom: 96px; }   /* long chat titles never widen the page; room above the menu pill */
 .clist { display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow-y: auto; }
-.ci { text-align: left; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.04); color: var(--ink); font: inherit; }
+.ci { text-align: left; padding: 10px 12px; border-radius: var(--r); border: 1px solid var(--line); background: rgba(255,255,255,.04); color: var(--ink); font: inherit; }
 .ci.on { border-color: var(--hue); } .ci b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ci small { color: var(--mute); font-size: 12px; }
 .chip { font-size: 11px; padding: 1px 8px; border-radius: 99px; margin-left: 4px; background: rgba(255,255,255,.08); } .chip.answering, .chip.waiting { background: color-mix(in srgb, var(--hue) 35%, transparent); }
 .chip.cut { background: rgba(251,191,36,.18); color: #fde68a; }
-.code { position: relative; margin: 8px 0; border-radius: 12px; background: #0b0e14; border: 1px solid var(--line); }
+.code { position: relative; margin: 8px 0; border-radius: var(--r-sm); background: #0b0e14; border: 1px solid var(--line); }
 .code pre { margin: 0; padding: 12px; overflow-x: auto; font: 12.5px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; white-space: pre; }
 .code .cl { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 6px 12px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--mute); }
 .code .cl button { min-height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.08); color: var(--ink); font: inherit; font-weight: 650; }
 .msg.assistant { white-space: normal; } .msg.assistant:has(.code) { width: 100%; max-width: 100%; } .msg .tx { white-space: pre-wrap; }
 .msg .cut { display: block; margin-top: 6px; font-size: 12.5px; color: #fde68a; }
 .msgs { display: flex; flex-direction: column; gap: 10px; max-height: 55vh; overflow-y: auto; }
-.msg { max-width: 92%; padding: 10px 14px; border-radius: 16px; white-space: pre-wrap; font-size: 14.5px; line-height: 1.5; }
+.msg { max-width: 92%; padding: 10px 14px; border-radius: var(--r); white-space: pre-wrap; font-size: 14.5px; line-height: 1.5; }
 .msg.user { align-self: flex-end; background: color-mix(in srgb, var(--hue) 30%, transparent); }
 .msg.assistant { align-self: flex-start; background: rgba(255,255,255,.07); }
-textarea.in { width: 100%; min-height: 70px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.05); color: var(--ink); font: inherit; padding: 10px 12px; resize: vertical; }
+textarea.in { width: 100%; min-height: 70px; border-radius: var(--r); border: 1px solid var(--line); background: rgba(255,255,255,.05); color: var(--ink); font: inherit; padding: 10px 12px; resize: vertical; }
 </style>
 <link rel="stylesheet" href="/wall.css">
 <link rel="stylesheet" href="/icons.css">

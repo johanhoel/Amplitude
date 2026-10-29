@@ -51,7 +51,7 @@ TEMPLATE = """<!doctype html>
 * {{ box-sizing: border-box; }}
 body {{ margin: 0; min-height: 100vh; color: var(--text); font-family: var(--font);
   background: radial-gradient(60% 50% at 15% 10%, rgba(91,60,255,.45), transparent 70%), #06070c; padding: 24px; }}
-.card {{ background: var(--glass); border: 1px solid var(--line); border-radius: 22px; padding: 18px 20px; max-width: 520px; }}
+.card {{ background: var(--glass); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px 20px; max-width: 520px; }}
 h1 {{ font-weight: 300; font-size: 44px; margin: 0 0 8px; }}
 .sub {{ color: var(--mute); }}
 </style>

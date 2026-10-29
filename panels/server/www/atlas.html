@@ -20,12 +20,12 @@
 @media (min-width: 1080px) { .layout { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); } }
 .graph { padding: 8px; } .graph svg { width: 100%; height: auto; display: block; }
 .tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 4px 0 8px; }
-.tools input { flex: 1; min-width: 180px; height: 42px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); padding: 0 14px; font-size: 15px; outline: none; }
+.tools input { flex: 1; min-width: 180px; height: 42px; border-radius: var(--r); border: 1px solid var(--line); background: var(--card); padding: 0 14px; font-size: 15px; outline: none; }
 .tools input:focus { border-color: rgba(96,165,250,.6); }
-.tools button { height: 42px; padding: 0 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); font-size: 13.5px; font-weight: 650; }
+.tools button { height: 42px; padding: 0 14px; border-radius: var(--r); background: var(--card); border: 1px solid var(--line); font-size: 13.5px; font-weight: 650; }
 .tools button.on { background: var(--ink); color: #141a20; }
 .eps { display: grid; gap: 6px; }
-.ep { border-radius: 16px; background: var(--card); border: 1px solid var(--line); overflow: hidden; }
+.ep { border-radius: var(--r); background: var(--card); border: 1px solid var(--line); overflow: hidden; }
 .ep > button { width: 100%; display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; text-align: left; }
 .ep .m { font: 700 12px ui-monospace, SFMono-Regular, Menlo, monospace; padding: 4px 0; border-radius: 7px; text-align: center; background: rgba(96,165,250,.15); color: #93c5fd; }
 .ep .m.post { background: rgba(251,191,36,.14); color: #fcd34d; }
@@ -36,11 +36,11 @@
 .ep .more { display: none; padding: 0 14px 14px 76px; font-size: 13px; color: var(--mute); }
 .ep.open .more { display: block; }
 .ep .more .row { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; } .ep .more .chip { font-size: 12px; padding: 4px 9px; }
-.ep .more pre { margin: 8px 0 0; padding: 10px 12px; border-radius: 12px; background: rgba(0,0,0,.35); color: #cbd5e1; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+.ep .more pre { margin: 8px 0 0; padding: 10px 12px; border-radius: var(--r-sm); background: rgba(0,0,0,.35); color: #cbd5e1; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
   white-space: pre-wrap; word-break: break-word; max-height: 260px; overflow: auto; }
 @media (max-width: 640px) { .ep .more { padding-left: 14px; } .ep > button { grid-template-columns: 46px minmax(0, 1fr) auto; } }
 .svc { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px; }
-.svc div { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); font-size: 13px; font-weight: 600; }
+.svc div { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: var(--r); background: var(--card); border: 1px solid var(--line); font-size: 13px; font-weight: 600; }
 .svc div span { margin-left: auto; color: var(--dim); font-weight: 500; font-size: 12px; font-variant-numeric: tabular-nums; }
 .hidden { display: none !important; }
 </style>

@@ -45,7 +45,7 @@ section h2 small { letter-spacing: 0; text-transform: none; font-weight: 400; co
 @media (hover: hover) and (pointer: fine) { .card:hover { border-color: rgba(255,255,255,.22); background: rgba(28,30,44,.6); } }
 .card:active { transform: scale(.98); }
 .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.ic { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 18%, transparent);
+.ic { width: 46px; height: 46px; border-radius: var(--r); display: grid; place-items: center; background: color-mix(in srgb, var(--c) 18%, transparent);
   border: 1px solid color-mix(in srgb, var(--c) 35%, transparent); color: var(--c); }
 .ic svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .t, .d, .u { display: block; }
@@ -70,7 +70,7 @@ section h2 small { letter-spacing: 0; text-transform: none; font-weight: 400; co
 .ncol h3 small { letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--dim); }
 .nlist { max-height: 300px; overflow-y: auto; padding-right: 8px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin;
   -webkit-mask-image: linear-gradient(#000 calc(100% - 26px), transparent); mask-image: linear-gradient(#000 calc(100% - 26px), transparent); padding-bottom: 20px; }
-.ni { display: block; padding: 10px 10px 10px 12px; border-radius: 14px; border-left: 3px solid transparent; cursor: pointer; }
+.ni { display: block; padding: 10px 10px 10px 12px; border-radius: var(--r); border-left: 3px solid transparent; cursor: pointer; }
 @media (hover: hover) and (pointer: fine) { .ni:hover { background: rgba(255,255,255,.06); border-left-color: var(--accent); } } .ni:active { background: rgba(255,255,255,.1); }
 .ni b { display: block; font-size: 15px; font-weight: 600; line-height: 1.3; }
 .ni span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--mute); font-size: 13px; line-height: 1.4; margin-top: 3px; }

@@ -103,7 +103,7 @@ for p in pages + [WWW / "wall.css", WWW / "deck.css"]:
 
 # The contrast and icon gates, so a bad value or a stray emoji fails here too
 # and not only in a design/ script someone may forget to run.
-for name in ("check-contrast.py", "check-icons.py"):
+for name in ("check-contrast.py", "check-icons.py", "check-theme.py"):
     proc = subprocess.run([sys.executable, str(ROOT / "design" / name)],
                           capture_output=True, text=True)
     check(f"design/{name} passes", proc.returncode == 0,
