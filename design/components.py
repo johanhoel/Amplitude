@@ -76,9 +76,18 @@ CSS = """
   color: inherit; text-decoration: none;
   transition: border-color .15s var(--ease-out, ease), transform .15s var(--ease-out, ease);
 }
-.ui-tile .icon { font-size: 26px; color: var(--accent); }
-.ui-tile b { font-size: 15.5px; font-weight: 650; letter-spacing: -0.005em; }
-.ui-tile span { color: var(--mute); font-size: 12.5px; line-height: 1.4; }
+/* A tile may carry its own accent, so a wall of them is still scannable by
+   colour. It falls back to the one accent when nothing sets --c. */
+.ui-tile .icon { font-size: 26px; color: var(--c, var(--accent)); }
+.ui-tile b { font-size: 15.5px; font-weight: 650; letter-spacing: -0.005em;
+  display: flex; align-items: center; gap: 7px; }
+.ui-tile > span { color: var(--mute); font-size: 12.5px; line-height: 1.4; }
+/* An optional third line: the address a tile opens, or any quiet detail.
+   It must not push the tile wider, so it truncates. */
+.ui-tile small { display: block; margin-top: auto; padding-top: 6px;
+  color: var(--dim); font-size: 11.5px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.ui-tile b .ui-dot { margin-left: auto; }
 /* Hover only where there is a pointer: on a touch screen it sticks after a tap. */
 @media (hover: hover) and (pointer: fine) {
   .ui-tile:hover { border-color: var(--accent); }
