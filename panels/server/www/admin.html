@@ -33,7 +33,7 @@ h1 { margin: 0; font-size: 34px; font-weight: 750; letter-spacing: -.03em; }
 
 /* health */
 .health { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 14px; }
-.hc { padding: 9px 10px; border-radius: 16px; min-width: 0; background: var(--card); border: 1px solid var(--line); display: block; }
+.hc { padding: 9px 10px; border-radius: var(--r); min-width: 0; background: var(--card); border: 1px solid var(--line); display: block; }
 .hc b { display: block; font-size: 16px; font-weight: 650; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -.01em; }
 .hc span { font-size: 12px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 @media (min-width: 700px) { .health { grid-template-columns: repeat(8, minmax(0, 1fr)); } .hc b { font-size: 18px; } }
@@ -47,31 +47,23 @@ h1 { margin: 0; font-size: 34px; font-weight: 750; letter-spacing: -.03em; }
 /* search */
 .search { position: sticky; top: 0; z-index: 10; margin: 18px -16px 0; padding: calc(env(safe-area-inset-top) * 0 + 10px) 16px 10px;
   background: linear-gradient(var(--bg) 70%, transparent); }
-.search input { width: 100%; height: 46px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.07); padding: 0 16px 0 42px; font-size: 16px; outline: none;
+.search input { width: 100%; height: 46px; border-radius: var(--r); border: 1px solid var(--line); background: rgba(255,255,255,.07); padding: 0 16px 0 42px; font-size: 16px; outline: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2.2'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: 14px center; background-size: 18px; -webkit-appearance: none; appearance: none; }
 .search input:focus { border-color: rgba(56,189,248,.7); }
 
 /* quick tasks */
 .tasks { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
-.task { position: relative; overflow: hidden; min-height: 64px; padding: 12px 14px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); text-align: left; display: grid; gap: 3px; align-content: center; }
+.task { position: relative; overflow: hidden; min-height: 64px; padding: 12px 14px; border-radius: var(--r); background: var(--card); border: 1px solid var(--line); text-align: left; display: grid; gap: 3px; align-content: center; }
 .task b { font-size: 15px; font-weight: 650; } .task small { font-size: 12px; color: var(--mute); }
 .task .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: rgba(56,189,248,.35); pointer-events: none; }
 .task.warn { border-color: rgba(251,191,36,.25); } .task.bad { border-color: rgba(251,113,133,.3); }
 .task.busy { opacity: .6; } .task.done { border-color: var(--ok); } .task.fail { border-color: var(--bad); }
 
 /* rows: nodes, guests, links */
-.list { border-radius: 20px; background: var(--card); border: 1px solid var(--line); overflow: hidden; }
-.row { display: grid; grid-template-columns: 30px 1fr auto; gap: 12px; align-items: center; padding: 11px 14px; min-height: 54px; border-top: 1px solid var(--line); }
-.row:first-child { border-top: 0; }
 a.row:active { background: rgba(255,255,255,.06); }
-.row .ic { font-size: 20px; text-align: center; }
-.row .t { min-width: 0; } .row .t b { display: block; font-size: 15.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row .t small { display: block; font-size: 12.5px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
-.row .r { display: flex; align-items: center; gap: 8px; color: var(--mute); font-size: 12px; }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,.2); flex: none; }
 .dot.up { background: var(--ok); } .dot.down { background: var(--bad); }
-.chev { opacity: .35; font-size: 18px; }
 .grow { display: grid; grid-template-columns: minmax(0, 1fr) 52px; border-top: 1px solid var(--line); } .grow:first-child { border-top: 0; } .grow .row { border-top: 0; }
 .con { display: grid; place-items: center; font: 600 13px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--mute); border-left: 1px solid var(--line); }
 .con:active { background: rgba(56,189,248,.18); color: var(--ink); }
@@ -112,6 +104,7 @@ body.editing .editbtn { display: none; }
 </style>
 <link rel="stylesheet" href="/wall.css">
 <link rel="stylesheet" href="/icons.css">
+<link rel="stylesheet" href="/shell.css">
 </head>
 <body>
 <div class="wrap">
@@ -120,8 +113,8 @@ body.editing .editbtn { display: none; }
     <section class="health" id="health"></section>
     <div class="problems" id="problems"></div>
     <div class="grid2">
-      <div data-sec="nodes"><div class="cap">Proxmox nodes</div><section class="list" id="nodes"></section></div>
-      <div data-sec="guests"><div class="cap">Guests <small id="gcount"></small></div><section class="list" id="guests"></section></div>
+      <div data-sec="nodes"><div class="cap">Proxmox nodes</div><section class="ui-list" id="nodes"></section></div>
+      <div data-sec="guests"><div class="cap">Guests <small id="gcount"></small></div><section class="ui-list" id="guests"></section></div>
     </div>
   </aside>
   <main id="main">
@@ -226,10 +219,10 @@ document.addEventListener('click', e => { const c = e.target.closest('.cap.fold'
 const iconHTML = v => /^[a-z][a-z0-9-]{1,19}$/.test(v || '')
   ? `<i class="icon icon-${v}" aria-hidden="true"></i>` : esc(v || '');
 function renderLinks() { const ed = editing();
-  $('#links').innerHTML = model.groups.map(({ name: g, icon: ic, items }, gi) => `<div data-sec="g${gi}" class="${shut.includes(g) && !ed ? 'shut' : ''}"><div class="cap fold" data-g="${esc(g)}" data-edit="group" data-gi="${gi}">${iconHTML(ic)} ${esc(g)}</div><section class="list">${items.map(({ label: l, url: u, note: n, id }, ii) =>
-    `<a class="row" href="${esc(u)}" target="_blank" rel="noopener" data-edit="item" data-gi="${gi}" data-ii="${ii}" data-q="${esc((l + ' ' + n + ' ' + u + ' ' + g).toLowerCase())}">
-      <span class="ic">${iconHTML(ic)}</span><span class="t"><b>${esc(l)}</b><small>${esc(n)}</small></span>
-      <span class="r">${id ? `<i class="dot ${links[id] ? (links[id].up ? 'up' : 'down') : ''}" data-id="${id}"></i>` : ''}<span class="chev">›</span></span></a>`).join('')}</section>
+  $('#links').innerHTML = model.groups.map(({ name: g, icon: ic, items }, gi) => `<div data-sec="g${gi}" class="${shut.includes(g) && !ed ? 'shut' : ''}"><div class="cap fold" data-g="${esc(g)}" data-edit="group" data-gi="${gi}">${iconHTML(ic)} ${esc(g)}</div><section class="ui-list">${items.map(({ label: l, url: u, note: n, id }, ii) =>
+    `<a class="ui-list-row" href="${esc(u)}" target="_blank" rel="noopener" data-edit="item" data-gi="${gi}" data-ii="${ii}" data-q="${esc((l + ' ' + n + ' ' + u + ' ' + g).toLowerCase())}">
+      ${iconHTML(ic)}<span class="ui-list-text"><b>${esc(l)}</b><small>${esc(n)}</small></span>
+      <span class="ui-list-meta">${id ? `<i class="dot ${links[id] ? (links[id].up ? 'up' : 'down') : ''}" data-id="${id}"></i>` : ''}<span class="ui-chev">›</span></span></a>`).join('')}</section>
       ${ed ? `<button class="eadd" data-add="item" data-gi="${gi}">+ Add link to ${esc(g)}</button>` : ''}</div>`).join('')
     + (ed ? '<button class="eadd" data-add="group" style="margin-top:22px">+ Add group</button>' : '');
   filter();
@@ -284,16 +277,16 @@ function renderSnap() { const d = snap; if (!d) return;
   ].join('');
   const cfg = health?.settings && !health.settings.ok ? [`Settings: ${health.settings.problems.length} problem(s) in homedeck.toml, running on the last good copy`] : [];
   $('#problems').innerHTML = [...cfg, ...(d.problems || []), ...svcDown.map(s => s.name + ' down')].map(p => `<span class="pb">${esc(p)}</span>`).join('');
-  $('#nodes').innerHTML = (d.nodes || []).map(n => `<a class="row" href="https://${NODE_IP[n.node] || n.node}:8006/" target="_blank" data-q="${esc((n.node + ' node proxmox ' + (NODE_IP[n.node] || '')).toLowerCase())}">
-    <span class="ic"><i class="icon icon-desktop" aria-hidden="true"></i></span><span class="t"><b>${esc(n.node)}</b><small>${n.status === 'online' ? `CPU ${Math.round(n.cpu * 100)}% · RAM ${gb(n.mem)}/${gb(n.maxmem)} GB · up ${ago(Date.now() / 1000 - n.uptime)}` : 'offline'}</small></span>
-    <span class="r"><span class="meter"><i style="width:${Math.round(n.mem / n.maxmem * 100)}%"></i></span><i class="dot ${n.status === 'online' ? 'up' : 'down'}"></i></span></a>`).join('');
+  $('#nodes').innerHTML = (d.nodes || []).map(n => `<a class="ui-list-row" href="https://${NODE_IP[n.node] || n.node}:8006/" target="_blank" data-q="${esc((n.node + ' node proxmox ' + (NODE_IP[n.node] || '')).toLowerCase())}">
+    <span class="ic"><i class="icon icon-desktop" aria-hidden="true"></i></span><span class="ui-list-text"><b>${esc(n.node)}</b><small>${n.status === 'online' ? `CPU ${Math.round(n.cpu * 100)}% · RAM ${gb(n.mem)}/${gb(n.maxmem)} GB · up ${ago(Date.now() / 1000 - n.uptime)}` : 'offline'}</small></span>
+    <span class="ui-list-meta"><span class="meter"><i style="width:${Math.round(n.mem / n.maxmem * 100)}%"></i></span><i class="dot ${n.status === 'online' ? 'up' : 'down'}"></i></span></a>`).join('');
   $('#gcount').textContent = `${run} of ${all} running`;
   const con = g => `https://${NODE_IP[g.node] || g.node}:8006/?console=${g.type === 'qemu' ? 'kvm&novnc=1' : 'lxc&xtermjs=1'}&vmid=${g.vmid}&vmname=${encodeURIComponent(g.name)}&node=${g.node}&resize=off&cmd=`;
-  $('#guests').innerHTML = (d.guests || []).sort((a, b) => a.vmid - b.vmid).map(g => `<div class="grow" data-q="${esc((g.vmid + ' ' + g.name + ' ' + (g.ip || '') + ' ' + g.node + ' guest').toLowerCase())}"><a class="row" target="_blank"
+  $('#guests').innerHTML = (d.guests || []).sort((a, b) => a.vmid - b.vmid).map(g => `<div class="grow" data-q="${esc((g.vmid + ' ' + g.name + ' ' + (g.ip || '') + ' ' + g.node + ' guest').toLowerCase())}"><a class="ui-list-row" target="_blank"
       href="https://${NODE_IP[g.node] || g.node}:8006/#v1:0:=${g.type === 'qemu' ? 'qemu' : 'lxc'}%2F${g.vmid}:4:::::::">
-    <span class="ic num" style="font-size:12px;color:var(--mute)">${g.vmid}</span><span class="t"><b>${esc(g.name)}</b>
+    <span class="ic num" style="font-size:12px;color:var(--mute)">${g.vmid}</span><span class="ui-list-text"><b>${esc(g.name)}</b>
       <small>${esc(g.ip || '')}${g.ip ? ' · ' : ''}${esc(g.node)}${g.status === 'running' ? ` · CPU ${Math.round(g.cpu * 100)}% · ${gb(g.mem)}/${gb(g.maxmem)} GB` : ' · ' + esc(g.status)}${g.backup ? ' · backup ' + ago(g.backup) + ' ago' : ''}</small></span>
-    <span class="r"><i class="dot ${g.status === 'running' ? 'up' : 'down'}"></i></span></a>${g.status === 'running' ? `<a class="con" href="${con(g)}" target="_blank" title="Console">&gt;_</a>` : '<span class="con off"></span>'}</div>`).join('') || '<div class="empty">No guests reported.</div>';
+    <span class="ui-list-meta"><i class="dot ${g.status === 'running' ? 'up' : 'down'}"></i></span></a>${g.status === 'running' ? `<a class="con" href="${con(g)}" target="_blank" title="Console">&gt;_</a>` : '<span class="con off"></span>'}</div>`).join('') || '<div class="empty">No guests reported.</div>';
   filter();
 }
 

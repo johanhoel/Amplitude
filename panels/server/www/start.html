@@ -272,7 +272,7 @@ function actions() {
   const docked = vac === 'docked', homing = vac === 'returning';
   const one = [['vac', '<i class="icon icon-vacuum" aria-hidden="true"></i>', 'Start the vacuum', cleaning ? 'Cleaning now · tap to change rooms' : (vac || '–').replace(/_/g, ' '), cleaning],
                ['dock', '<i class="icon icon-home" aria-hidden="true"></i>', 'Return to dock', docked ? 'Docked' : homing ? 'On its way home' : (vac || '–').replace(/_/g, ' '), homing],
-               ['wake', '⏻', 'Wake the PC', pc ? 'PC is on' : 'PC is off', pc],
+               ['wake', '<i class="icon icon-power" aria-hidden="true"></i>', 'Wake the PC', pc ? 'PC is on' : 'PC is off', pc],
                ['detect', '<i class="icon icon-target" aria-hidden="true"></i>', H.detect ? 'Camera alerts off' : 'Camera alerts on', H.detect ? 'Alerts are on' : 'Alerts are off', !!H.detect]];
   const two = [['lock', '<i class="icon icon-lock" aria-hidden="true"></i>', 'Lock the front door', S?.door === 'locked' ? 'Locked now' : 'Not locked'], ['alloff', '<i class="icon icon-bulb" aria-hidden="true"></i>', 'All lights off', `${S?.lightsOn ?? '–'} on now`],
                ['sleep', '<i class="icon icon-moon" aria-hidden="true"></i>', 'Sleep the PC', pc ? 'PC is on' : 'PC is off']];

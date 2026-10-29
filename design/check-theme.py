@@ -25,7 +25,9 @@ SKIP_PARTS = {"designs", ".drafts"}    # theme explorations and drafts differ on
 
 # Being converted by another session right now. Remove these as they land;
 # each entry is a file still holding hardcoded card radii.
-IN_FLIGHT = {"admin.html", "boards.html", "board.html"}
+# Empty: every page is on the scale. A name here means a file is mid-conversion
+# in another session; the check below stops the list growing back.
+IN_FLIGHT = set()
 
 results = []
 

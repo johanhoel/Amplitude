@@ -2205,7 +2205,7 @@ filled in, and you press Submit there.{% endif %}</p>
 {% block body %}
 {% if cameras|length > 1 %}<nav class="days" style="margin-bottom:8px"><a class="pill {{ 'on' if not camera }}" href="{{ url_for('index', day=day) }}">All cameras</a>
 {% for c in cameras %}<a class="pill {{ 'on' if c.name == camera }}" href="{{ url_for('index', day=day, camera=c.name) }}">{{ c.name }}</a>{% endfor %}</nav>{% endif %}
-<nav class="days"><a class="pill {{ 'on' if starred }}" href="{{ url_for('index', starred=1) }}">★ Starred</a>
+<nav class="days"><a class="pill {{ 'on' if starred }}" href="{{ url_for('index', starred=1) }}"><i class="icon icon-star" aria-hidden="true"></i> Starred</a>
 {% for d in days %}<a class="pill {{ 'on' if d == day and not person and not starred }}" href="{{ url_for('index', day=d) }}">{{ d }}</a>{% endfor %}</nav>
 <div class="row"><h1>{{ heading }} <span class="muted">· {{ clips|length }} clip{{ '' if clips|length == 1 else 's' }}</span></h1>
 {% if clips %}<span style="margin-left:auto"></span><button type="button" id="pick-start" onclick="picking(true)"><i class="icon icon-check-box" aria-hidden="true"></i> Select</button>{% endif %}</div>
@@ -2228,7 +2228,7 @@ filled in, and you press Submit there.{% endif %}</p>
 {% for c in clips %}<a class="card" href="{{ url_for('clip_page', day=c.day, stem=c.stem) }}" data-clip="{{ c.day }}/{{ c.stem }}"{% if c.starred %} data-starred="1"{% endif %}>
 <span class="pick" aria-hidden="true"></span>
 {% if c.snapshot %}<img loading="lazy" src="{{ url_for('media', day=c.day, name=c.snapshot) }}" alt="">{% else %}<div class="ph"></div>{% endif %}
-<div class="meta"><span class="time">{% if c.starred %}<span style="color:#f5b301">★</span> {% endif %}{% if person or starred %}{{ c.day }} {% endif %}{{ c.time }}</span>
+<div class="meta"><span class="time">{% if c.starred %}<span style="color:var(--warn)"><i class="icon icon-star" aria-hidden="true"></i></span> {% endif %}{% if person or starred %}{{ c.day }} {% endif %}{{ c.time }}</span>
 {% if c.duration is not none %}<span class="muted">{{ c.duration }}s</span>{% endif %}</div>
 <div class="meta" style="padding-top:0">{% for d in c.detected %}<span class="tag">{{ d }}</span>{% endfor %}{% for z in c.zones %}<span class="tag">@{{ z }}</span>{% endfor %}{% for p in c.plates %}<span class="tag {{ 'k' if p.name }}"><i class="icon icon-car" aria-hidden="true"></i> {{ p.name or p.plate }}</span>{% endfor %}{% if c.loitering %}<span class="tag u">loitering</span>{% endif %}{% if c.unusual %}<span class="tag u" title="{{ c.unusual }}">⚠ unusual</span>{% endif %}{% if c.visit %}<span class="tag" title="Same visit"><i class="icon icon-link" aria-hidden="true"></i> {{ c.visit|map(attribute='camera')|unique|join(', ') }}</span>{% endif %}{% for n in c.names %}<span class="tag k">{{ n }}</span>{% endfor %}
 {% if c.unknown %}<span class="tag u">{{ c.unknown }} unknown</span>{% endif %}
@@ -2309,7 +2309,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') picking(fals
 {% if older %}<a class="pill" href="{{ url_for('clip_page', day=c.day, stem=older) }}">← Older</a>{% endif %}
 {% if newer %}<a class="pill" href="{{ url_for('clip_page', day=c.day, stem=newer) }}">Newer →</a>{% endif %}</div>
 <h1><form class="inline" method="post" action="{{ url_for('toggle_star', day=c.day, stem=c.stem) }}">
-<button class="star" title="{{ 'Unstar' if c.starred else 'Star: never auto-delete' }}">{{ '★' if c.starred else '☆' }}</button></form>
+<button class="star" title="{{ 'Unstar' if c.starred else 'Star: never auto-delete' }}">{% if c.starred %}<i class="icon icon-star" aria-hidden="true"></i>{% else %}<i class="icon icon-star-outline" aria-hidden="true"></i>{% endif %}</button></form>
 {{ c.time }} <span class="muted">· {{ c.meta.camera or c.stem }}{% if c.duration is not none %} · {{ c.duration }}s{% endif %}</span>
 {% for d in c.detected %}<span class="tag">{{ d }}{% if c.meta.labels and c.meta.labels[d] %} {{ '%.0f'|format(c.meta.labels[d] * 100) }}%{% endif %}</span>{% endfor %}</h1>
 

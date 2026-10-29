@@ -73,7 +73,7 @@ header a, header select { min-height: 40px; padding: 0 14px; border-radius: 999p
   <section class="live" id="live">
     <img id="snap" alt="Live camera">
     <div class="top"><span class="badge" id="badge">SNAPSHOT</span><span class="when" id="when"></span></div>
-    <div class="bot"><button class="pill" id="golive"><i class="icon icon-play" aria-hidden="true"></i> Live</button><button class="pill" id="full" aria-label="Full screen">⤢</button></div>
+    <div class="bot"><button class="pill" id="golive"><i class="icon icon-play" aria-hidden="true"></i> Live</button><button class="pill" id="full" aria-label="Full screen"><i class="icon icon-frame" aria-hidden="true"></i> Full</button></div>
   </section>
 
   <div class="chips" id="chips"></div>
@@ -82,7 +82,7 @@ header a, header select { min-height: 40px; padding: 0 14px; border-radius: 999p
 </div>
 
 <div id="pl" role="dialog" aria-label="Recording">
-  <div class="ptop"><div class="t"><b id="pt"></b><span id="ps"></span></div><button class="x" id="px" aria-label="Close">✕</button></div>
+  <div class="ptop"><div class="t"><b id="pt"></b><span id="ps"></span></div><button class="x" id="px" aria-label="Close"><i class="icon icon-close" aria-hidden="true"></i></button></div>
   <div class="faces" id="pf"></div>
   <video id="pv" controls playsinline preload="metadata"></video>
   <div class="pbot"><button id="pprev" aria-label="Newer recording">‹ Newer</button><span class="sp" id="pn"></span><a id="pdl" download><i class="icon icon-download" aria-hidden="true"></i></a><button id="pnext" aria-label="Older recording">Older ›</button></div>
@@ -112,7 +112,8 @@ function setLive(on) {
   else { $('#snap').src = 'data:,'; snapshot(); }
 }
 $('#golive').onclick = () => setLive(!streaming);
-$('#full').onclick = () => { const l = $('#live'); l.classList.toggle('full'); $('#full').textContent = l.classList.contains('full') ? '✕' : '⤢'; };
+$('#full').onclick = () => { const l = $('#live'); l.classList.toggle('full'); $('#full').innerHTML = l.classList.contains('full')
+    ? '<i class="icon icon-close" aria-hidden="true"></i> Close' : '<i class="icon icon-frame" aria-hidden="true"></i> Full'; };
 $('#snap').onclick = () => { if ($('#live').classList.contains('full')) $('#full').click(); else setLive(!streaming); };
 document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible' && streaming) setLive(false); else snapshot(); });
 async function cams() {
