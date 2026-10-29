@@ -59,8 +59,24 @@ if ($Uninstall) {
 }
 
 # ---------------------------------------------------------------- checks
-if ([Environment]::OSVersion.Version.Build -lt 19041) {
-    Write-Host 'This needs Windows 10 version 2004 or newer, or Windows 11.' -ForegroundColor Red; Done 1
+# Not [Environment]::OSVersion. That asks GetVersionEx, which since Windows 8.1
+# reports an old version (6.2, build 9200) to any program whose manifest does
+# not explicitly claim Windows 10 - and the ps2exe wrapper this ships as did
+# not claim it. So the check saw build 9200, decided every machine was too old
+# and refused to install on Windows 11. The registry holds the real build
+# whatever the manifest says; OSVersion is only the fallback.
+$build = 0
+try {
+    $build = [int](Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' `
+        -Name CurrentBuildNumber -ErrorAction Stop).CurrentBuildNumber
+} catch {
+    $build = [Environment]::OSVersion.Version.Build
+}
+if ($build -lt 19041) {
+    Write-Host 'This needs Windows 10 version 2004 (build 19041) or newer, or Windows 11.' -ForegroundColor Red
+    # Printed so a wrong answer here is diagnosable instead of a dead end.
+    Write-Host "This machine reports build $build." -ForegroundColor Red
+    Done 1
 }
 if ($Project -eq 'dstreamer') {
     Write-Host ''

@@ -28,7 +28,11 @@ jobs:
           foreach ($p in $projects.GetEnumerator()) {
             $script = (Get-Content installers/windows/Install.ps1 -Raw) -replace '__PROJECT__', $p.Key
             Set-Content -Path "build-$($p.Key).ps1" -Value $script -Encoding UTF8
-            Invoke-ps2exe -inputFile "build-$($p.Key).ps1" -outputFile "dist/$($p.Value)-Setup.exe" -requireAdmin `
+            # -supportOS writes the compatibility manifest that tells Windows this
+            # program understands Windows 10. Without it GetVersionEx answers 6.2
+            # (build 9200) and anything in the script that asks the OS its version
+            # gets 2012's answer.
+            Invoke-ps2exe -inputFile "build-$($p.Key).ps1" -outputFile "dist/$($p.Value)-Setup.exe" -requireAdmin -supportOS `
               -title "$($p.Value) Setup" -product $p.Value -company 'johanhoel/amplitude' -version '1.0.0.0'
           }
           Get-ChildItem dist
