@@ -2,8 +2,7 @@
 # homedeck.sh: create Home Deck (wall, tablet, phone and desktop panels for Home Assistant) on this Proxmox node.
 # Run as root on the node:
 #
-#   bash <(curl -fsSL https://home.example.net:8443/homedeck.sh)
-#   bash <(curl -fsSL http://192.168.1.41/homedeck.sh)            # inside the home LAN
+#   bash <(curl -fsSL https://raw.githubusercontent.com/johanhoel/Amplitude/main/panels/kit/homedeck.sh)
 #
 # Or paste the whole file into a root shell: everything is one function that runs in a
 # subshell, so the paste is read completely before the first question and an error never
@@ -12,22 +11,24 @@
 # What it does:
 #   1. asks for your Home Assistant address and checks that this node can reach it
 #   2. creates a small Debian 13 container (unprivileged, 1 core, 512 MB, starts at boot)
-#   3. downloads Home Deck (checked with SHA-256) and installs it inside: panels on port 80, editor on 8088
+#   3. builds Home Deck from the public source and installs it inside: panels on port 80, editor on 8088
 # Then open the address it prints: the setup page asks for a Home Assistant token, and rooms, lights, people and
 # media players are read from Home Assistant by themselves.
 # Update later:  pct exec <CTID> -- homedeck-update   (keeps settings, token, layouts and your own edits).
 #
-# Overrides (environment): HOMEDECK_REPO (space-separated base URLs), HOMEDECK_TEMPLATE
-# (a vztmpl volume to use instead of the newest Debian 13 standard template).
+# Overrides (environment): HOMEDECK_GITHUB_REPO (owner/name), HOMEDECK_REF (a branch, tag or
+# commit; default main), HOMEDECK_TEMPLATE (a vztmpl volume to use instead of the newest
+# Debian 13 standard template).
 
 pve_homedeck() (
   set -euo pipefail
 
   # ---- settings ------------------------------------------------------------------
-  local REPOS="${HOMEDECK_REPO:-https://home.example.net:8443 http://192.168.1.41}"
-  # the repo only serves the kit to requests with this header (keeps browsers and casual downloads out)
-  local -a REPO_HDR=(-H "X-Winrepo-Key: ${WIN_REPO_KEY:-VKcUYRQvHZAm2ZQD1c2eV7KoSqacgmsA}")
-  local KIT=homedeck/homedeck-kit.tar.gz
+  # Home Deck is built from its public source. It used to come from a private file
+  # server, which meant a key in this file and an install that only worked inside one
+  # house. The source is the same thing the update command fetches.
+  local GH="${HOMEDECK_GITHUB_REPO:-johanhoel/Amplitude}"
+  local REF="${HOMEDECK_REF:-main}"
   local TTY="${HOMEDECK_TTY:-/dev/tty}"
 
   # ---- helpers -------------------------------------------------------------------
@@ -73,16 +74,13 @@ pve_homedeck() (
 
   # ---- checks --------------------------------------------------------------------
   [[ $(id -u) -eq 0 ]] || die "Run as root on the Proxmox node."
-  for c in pct pveam pvesm pvesh curl sha256sum; do
+  for c in pct pveam pvesm pvesh curl tar python3; do
     command -v "$c" >/dev/null || die "'$c' not found: run this on a Proxmox VE node."
   done
   [[ -r $TTY ]] || die "No terminal for the questions ($TTY)."
 
-  local REPO="" r
-  for r in $REPOS; do
-    if curl -fsS -m 10 "${REPO_HDR[@]}" -o /dev/null "$r/$KIT.sha256" 2>/dev/null; then REPO=$r; break; fi
-  done
-  [[ -n $REPO ]] || die "Can't reach the Home Deck download ($REPOS)."
+  curl -fsS -m 10 -o /dev/null "https://codeload.github.com/$GH/tar.gz/$REF" \
+    || die "Can't reach the Home Deck source (github.com/$GH at $REF)."
 
   printf '\n\033[1mHome Deck on Proxmox\033[0m\n'
   echo "Creates a small container with Home Deck: panels for your Home Assistant (lights by room, music, who's home,"
@@ -173,14 +171,22 @@ pve_homedeck() (
   [[ $ok -eq 1 ]] || die "Container $CTID has no internet/DNS. Check the bridge and address, then run the installer by hand (see the guide)."
 
   # ---- 4. kit --------------------------------------------------------------------
-  say "Downloading Home Deck"
+  say "Building Home Deck from source"
   local tmp; tmp=$(mktemp -d)
   trap 'rm -rf "$tmp"' EXIT
-  curl -fsSL "${REPO_HDR[@]}" -o "$tmp/kit.tgz" "$REPO/$KIT"
-  curl -fsSL "${REPO_HDR[@]}" -o "$tmp/kit.sha256" "$REPO/$KIT.sha256"
-  [[ $(sha256sum "$tmp/kit.tgz" | awk '{print $1}') == "$(awk '{print $1}' "$tmp/kit.sha256")" ]] \
-    || die "The download is damaged (SHA-256 mismatch); run the command again."
-  pct push "$CTID" "$tmp/kit.tgz" /root/homedeck-kit.tar.gz
+  curl -fsSL --max-time 300 -o "$tmp/src.tgz" "https://codeload.github.com/$GH/tar.gz/$REF" \
+    || die "Download failed."
+  tar xzf "$tmp/src.tgz" -C "$tmp" || die "The download was not a readable archive."
+  local src; src=$(echo "$tmp"/*/panels)
+  # A truncated download still untars. Refuse one that is missing the parts a working
+  # install is built from, rather than building half a release.
+  [[ -f $src/build_kit.sh && -f $src/server/server.py && -d $src/server/www ]] \
+    || die "The download is incomplete; run the command again."
+  # build_kit.sh also refuses code that does not import, so a broken commit stops here
+  # rather than inside a container you have just created.
+  bash "$src/build_kit.sh" "$(cat "$src/server/VERSION" 2>/dev/null || date +%Y.%m.%d)" >/dev/null \
+    || die "The downloaded source did not build."
+  pct push "$CTID" "$src/dist/homedeck-kit.tar.gz" /root/homedeck-kit.tar.gz
   pct exec "$CTID" -- tar xzf /root/homedeck-kit.tar.gz -C /root
 
   # ---- 5. Home Deck installer inside the container

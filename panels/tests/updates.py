@@ -128,6 +128,23 @@ check("the guard does not ban the product's own vocabulary",
       not ({"claude", "llm", "\\\\bllm\\\\b", "anthropic"} & _guard_alts()),
       "the Local AI panel routes under /llm/ and launches a setup called claude")
 
+# ---- nothing published carries a secret ------------------------------
+# kit/ is what a stranger downloads and reads. It carried the file-server key
+# for every install in this repo's public history; the key is gone from the
+# files but not from the history, so it still has to be rotated. This keeps
+# the next one from being added.
+SECRETISH = re.compile(r"(?i)(key|token|secret|password|passwd)\s*[:=]\s*[\"']?[A-Za-z0-9+/]{16,}")
+leaky = []
+for f in sorted((ROOT / "kit").iterdir()):
+    if f.is_file():
+        for i, line in enumerate(f.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            if SECRETISH.search(line) and "${" not in line:
+                leaky.append(f"{f.name}:{i}")
+check("no file in kit/ carries a credential", not leaky, ", ".join(leaky))
+check("the installer needs no private file server",
+      "winrepo" not in (ROOT / "kit" / "homedeck.sh").read_text(encoding="utf-8").lower(),
+      "anyone should be able to install this; a key in a public file helps nobody")
+
 # ---- the card --------------------------------------------------------
 check("the admin page has the update card", 'id="upd"' in ADMIN)
 check("the card is hidden until there is something to say",
