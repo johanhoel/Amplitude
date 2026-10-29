@@ -3311,7 +3311,7 @@ A GPU runs these models faster and leaves the CPU free for recording.</p>
 <label><input type="checkbox" name="gpu" value="1" {{ 'checked' if proc.gpu }}> Use the GPU when the server has one</label>
 <div class="row"><button class="primary">Save</button> <span class="muted">Without a GPU, the models use the CPU.</span></div>
 {% if accel_parts %}<table class="accel"><tr><th>Part</th><th>Runs on</th><th>Since</th></tr>
-{% for a in accel_parts %}<tr><td>{{ a.part }}</td><td>{{ a.name }}{% if a.error %} <span class="bad" title="{{ a.error }}">⚠ the GPU failed</span>{% endif %}</td>
+{% for a in accel_parts %}<tr><td>{{ a.part }}</td><td>{{ a.name }}{% if a.error %} <span class="muted" title="{{ a.error }}">· this GPU cannot run this model</span>{% endif %}</td>
 <td class="muted">{{ (a.at or '')|replace('T', ' ') }}</td></tr>{% endfor %}</table>
 {% else %}<p class="muted" style="margin:0">No model has started yet.</p>{% endif %}
 </form>

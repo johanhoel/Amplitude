@@ -34,11 +34,19 @@ ENV SEARCH_MODEL_DIR=/models/fastembed
 RUN python -c "from fastembed import ImageEmbedding, TextEmbedding; ImageEmbedding('Qdrant/clip-ViT-B-32-vision', cache_dir='/models/fastembed'); TextEmbedding('Qdrant/clip-ViT-B-32-text', cache_dir='/models/fastembed')"
 
 # GPU support (Settings -> Image processing). CAMWATCH_GPU in .env picks it; the host helper sets it there.
-#   intel:  OpenVINO for the ONNX models, OpenCL for the face models (Intel iGPU or Arc through /dev/dri)
+#   intel:  OpenVINO for the ONNX models, through /dev/dri (Intel iGPU or Arc). OpenVINO needs the OpenCL driver.
 #   nvidia: CUDA for the ONNX models (needs the NVIDIA Container Toolkit on the host)
 # Both replace the onnxruntime package; fastembed and fast-alpr use whichever one is installed.
 ARG GPU=
-RUN if [ "$GPU" = intel ]; then         apt-get update && apt-get install -y --no-install-recommends intel-opencl-icd && rm -rf /var/lib/apt/lists/*         && pip uninstall -y onnxruntime && pip install --no-cache-dir onnxruntime-openvino==1.24.1;     elif [ "$GPU" = nvidia ]; then         pip uninstall -y onnxruntime && pip install --no-cache-dir "onnxruntime-gpu[cuda,cudnn]==1.31.1";     elif [ -n "$GPU" ]; then echo "GPU=$GPU: use intel, nvidia or nothing" >&2; exit 1; fi     && python -c "import onnxruntime as o; print('onnxruntime', o.__version__, o.get_available_providers())"
+RUN if [ "$GPU" = intel ]; then \
+        apt-get update && apt-get install -y --no-install-recommends intel-opencl-icd && rm -rf /var/lib/apt/lists/* \
+        && pip uninstall -y onnxruntime && pip install --no-cache-dir onnxruntime-openvino==1.24.1; \
+    elif [ "$GPU" = nvidia ]; then \
+        pip uninstall -y onnxruntime && pip install --no-cache-dir "onnxruntime-gpu[cuda,cudnn]==1.31.1"; \
+    elif [ -n "$GPU" ]; then \
+        echo "GPU=$GPU: use intel, nvidia or nothing" >&2; exit 1; \
+    fi \
+    && python -c "import onnxruntime as o; print('onnxruntime', o.__version__, o.get_available_providers())"
 
 COPY models/ /models/
 COPY app/ /app/

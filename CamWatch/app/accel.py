@@ -1,7 +1,7 @@
 """Where the image models run: on the CPU, or on a GPU when Settings -> Image processing allows it.
 
-Every ONNX model in camwatch (objects, number plates, search) gets its providers and session options here, and the
-face models (OpenCV) their target. A GPU needs three things: the switch in Settings, a CamWatch build with GPU support
+Every ONNX model in camwatch (objects, number plates, search) gets its providers and session options here. The face
+models (OpenCV) stay on the CPU, see facematch.py. A GPU needs three things: the switch in Settings, a GPU build
 (CAMWATCH_GPU=intel or nvidia in .env, see Dockerfile) and the device in the container (docker-compose.gpu-*.yml).
 Without one of them the models run on the CPU, as before.
 
@@ -22,7 +22,7 @@ CPU = "CPUExecutionProvider"
 # The GPU providers camwatch uses, best first, with the options that point them at the GPU
 GPU = {"CUDAExecutionProvider": {}, "OpenVINOExecutionProvider": {"device_type": "GPU"}, "DmlExecutionProvider": {}}
 NAMES = {"CUDAExecutionProvider": "NVIDIA GPU (CUDA)", "OpenVINOExecutionProvider": "Intel GPU (OpenVINO)",
-         "DmlExecutionProvider": "GPU (DirectML)", "OpenCL": "GPU (OpenCL)", CPU: "CPU"}
+         "DmlExecutionProvider": "GPU (DirectML)", CPU: "CPU"}
 _cache = {"mtime": None, "providers": [CPU]}
 
 
@@ -74,17 +74,6 @@ def session(model_path, threads=2, part=None):
     if part:
         report(part, s.get_providers()[0], error)
     return s, wanted
-
-
-def opencl():
-    """True when the face models (OpenCV) may use the GPU through OpenCL."""
-    if len(providers()) == 1:
-        return False
-    try:
-        import cv2
-        return cv2.ocl.haveOpenCL()
-    except Exception:
-        return False
 
 
 def report(part, provider, error=""):

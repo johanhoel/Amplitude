@@ -7,6 +7,8 @@ Newest changes first.
 - New in Settings: Image processing. The image models can now use a GPU.
 - Each model switches the next time it runs. Recording does not stop.
 - Settings shows what each part runs on: objects, number plates, faces and search.
+- On an Intel HD Graphics 630, object detection is about 3 times faster on the GPU.
+- When a GPU cannot run a model, that model stays on the CPU. The face models always use the CPU.
 - New in Settings: GPU on the server. The update helper scans the server for a GPU.
 - The scan finds GPUs in Proxmox containers, in virtual machines and without a driver. Settings shows the next step.
 - **Add GPU support** builds CamWatch with Intel (OpenVINO) or NVIDIA (CUDA) support. A failed build rolls back.

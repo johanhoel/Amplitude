@@ -66,27 +66,17 @@ class Face:
 
 class FaceEngine:
     def __init__(self, part=None):
-        self.part = part
-        self._open()
-
-    def _open(self):
-        """The face models on the GPU through OpenCL when Settings -> Image processing allows it, else the CPU."""
-        import accel
-        self.providers = accel.providers()
-        gpu = accel.opencl()
-        target = cv2.dnn.DNN_TARGET_OPENCL if gpu else cv2.dnn.DNN_TARGET_CPU
+        # Always on the CPU: OpenCV's OpenCL code for these models did not compile on an Intel HD 630 (2026-10-29),
+        # and faces are read in finished clips, where speed matters less. Settings lists the part as CPU.
         self.detector = cv2.FaceDetectorYN.create(
-            str(MODELS_DIR / "face_detection_yunet_2023mar.onnx"), "", (320, 320), DET_SCORE, 0.3, 5000,
-            cv2.dnn.DNN_BACKEND_OPENCV, target)
+            str(MODELS_DIR / "face_detection_yunet_2023mar.onnx"), "", (320, 320), DET_SCORE, 0.3, 5000)
         self.recognizer = cv2.FaceRecognizerSF.create(
-            str(MODELS_DIR / "face_recognition_sface_2021dec.onnx"), "", cv2.dnn.DNN_BACKEND_OPENCV, target)
-        if self.part:
-            accel.report(self.part, "OpenCL" if gpu else accel.CPU)
+            str(MODELS_DIR / "face_recognition_sface_2021dec.onnx"), "")
+        if part:
+            import accel
+            accel.report(part, accel.CPU)
 
     def faces(self, img, min_size=MIN_FACE_PX, max_width=MAX_WIDTH):
-        import accel
-        if accel.providers() != self.providers:      # Settings -> Image processing changed
-            self._open()
         h, w = img.shape[:2]
         scale = 1.0
         if w > max_width:

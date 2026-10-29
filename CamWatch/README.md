@@ -122,9 +122,14 @@ Settings shows the steps.
 ### GPU
 
 CamWatch finds people, cars, number plates and faces with image models. By default these models run on the CPU.
-**Settings → Image processing → Use the GPU when the server has one** moves them to a GPU.
+**Settings → Image processing → Use the GPU when the server has one** moves the object, plate and search models to a GPU.
 Each model switches the next time it runs, and recording does not stop.
-The table below the switch shows what each part runs on. When the GPU fails, a part goes back to the CPU.
+The table below the switch shows what each part runs on.
+When a GPU cannot run a model, that model stays on the CPU, and the table says so.
+The face models always run on the CPU.
+
+Measured on an Intel HD Graphics 630 (i7-8809G): object detection takes 68 ms per frame on the GPU, against 212 ms on the CPU.
+On that GPU, OpenVINO cannot run the number plate detector, so plates stay on the CPU.
 
 **Settings → GPU on the server** shows what the update helper found.
 The helper scans the PCI bus, so it also finds a GPU in a virtual machine or a GPU without a driver.
