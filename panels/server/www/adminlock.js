@@ -17,7 +17,7 @@
     -webkit-user-select: none; user-select: none; touch-action: manipulation; }
   #dklogout.float { position: fixed; z-index: 57; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 6px 22px rgba(0,0,0,.35); }
   #dklogout.innav { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; gap: 6px; cursor: pointer; white-space: nowrap; }
-  #dklogout:not(.innav):hover { border-color: rgba(255,255,255,.3); } #dklogout.down { transform: scale(.96); }
+  @media (hover: hover) and (pointer: fine) { #dklogout:not(.innav):hover { border-color: rgba(255,255,255,.3); } } #dklogout.down { transform: scale(.96); }
   #dklogout:focus-visible { outline: 3px solid #38bdf8; outline-offset: 3px; }
   @media (max-width: 599px) { #dklogout.compact { width: 44px; height: 44px; min-height: 44px; padding: 0; justify-content: center; } #dklogout.compact span + span { display: none; } }
   nav .start-link { white-space: nowrap; } nav:has(> #dklogout) { align-items: center; }

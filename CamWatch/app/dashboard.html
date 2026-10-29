@@ -46,7 +46,7 @@ header h1 { flex: 1; margin: 0; font-size: 26px; font-weight: 750; } header h1 s
 /* page tiles */
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .tile { display: flex; flex-direction: column; gap: 4px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px; min-height: 104px; transition: border-color .15s; }
-.tile:hover { border-color: var(--accent); }
+@media (hover: hover) and (pointer: fine) { .tile:hover { border-color: var(--accent); } }
 .tile i { font-style: normal; font-size: 26px; } .tile b { font-size: 15.5px; } .tile span { color: var(--mute); font-size: 12.5px; }
 .search { margin-top: 12px; } .search input { width: 100%; min-height: 48px; padding: 0 16px; border-radius: 16px; border: 1px solid var(--line);
   background: var(--card); color: var(--ink); font: inherit; font-size: 16px; } .search input:focus { outline: none; border-color: var(--accent); }

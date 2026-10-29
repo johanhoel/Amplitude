@@ -130,7 +130,7 @@ body.col.left #corner .dwx { justify-content: flex-end; }
 body.glass .mod { background: rgba(16,17,26,.58) !important; border-color: rgba(255,255,255,.09) !important; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
 #fab { display: none; position: fixed; top: 10px; right: 10px; z-index: 50; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line);
   background: rgba(16,17,26,.7); color: var(--ink); opacity: .12; transition: opacity .2s; }
-body.col #fab { display: block; } #fab:hover, #fab:focus-visible { opacity: 1; } body.editing #fab { display: none; }
+body.col #fab { display: block; } #fab:focus-visible { opacity: 1; } @media (hover: hover) and (pointer: fine) { #fab:hover { opacity: 1; } } body.editing #fab { display: none; }
 /* blank boxes */
 .mod.bare { background: none !important; border-color: transparent !important; box-shadow: none !important; padding: 0; }
 body.editing .mod.bare { border-color: var(--line) !important; }
@@ -145,7 +145,7 @@ body.editing .rz { display: block; } body.editing .medit { cursor: grab; } body.
 .mod.drag { opacity: .6; outline: 2px solid var(--accent) !important; z-index: 6; }
 /* placed grid (edit mode): every free cell shows as a dotted square; click one to put a new card there */
 .cell { border: 1.5px dashed rgba(56,189,248,.22); border-radius: 18px; display: grid; place-items: center; color: transparent; font-size: 26px; cursor: pointer; min-width: 0; }
-.cell:hover { border-color: rgba(56,189,248,.7); color: #7dd3fc; background: rgba(56,189,248,.06); }
+@media (hover: hover) and (pointer: fine) { .cell:hover { border-color: rgba(56,189,248,.7); color: #7dd3fc; background: rgba(56,189,248,.06); } }
 .cell.drop { border-color: var(--accent); background: rgba(56,189,248,.16); }
 /* free canvas: every card at its own position on a fixed-size page, scaled to fit the screen */
 body.canvas { overflow: hidden; padding: 0; } body.canvas header { display: none; } body.canvas #fab { display: block; }

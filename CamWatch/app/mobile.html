@@ -14,6 +14,7 @@
 /* Phone home screen (/m): what needs attention, live cameras, today, recent visits. Data from /api/status and /api/visits. */
 :root { --bg: #101418; --ink: #eef2f6; --mute: #8b98a8; --faint: #5d6b7b; --line: #2a333d; --card: #1a2027; --card-hi: #222a33;
   --accent: #38bdf8; --ok: #22c55e; --warn: #f59e0b; --bad: #ef4444;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif;
   --tab: calc(64px + env(safe-area-inset-bottom)); }
 * { box-sizing: border-box; }
@@ -33,7 +34,8 @@ a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outlin
 .top h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.01em; flex: 1; }
 .top h1 small { display: block; font-size: 12.5px; font-weight: 600; color: var(--mute); letter-spacing: 0; }
 .arm { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px; font-weight: 750; font-size: 15px;
-  border: 1.5px solid var(--line); background: var(--card); transition: all .15s; }
+  border: 1.5px solid var(--line); background: var(--card);
+  transition: border-color .15s var(--ease-out), color .15s var(--ease-out), background-color .15s var(--ease-out); }
 .arm.on { border-color: var(--accent); color: var(--accent); background: rgba(56,189,248,.1); }
 .arm.off { color: var(--mute); }
 .arm:active { transform: scale(.96); }
@@ -110,7 +112,12 @@ nav.tabs a.on { color: var(--accent); }
 .toast { position: fixed; left: 50%; bottom: calc(var(--tab) + 14px); transform: translateX(-50%); background: var(--card-hi); border: 1px solid var(--line);
   padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 650; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 30; }
 .toast.show { opacity: 1; }
-@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+/* Reduced motion removes movement, not the opacity and colour changes that explain a state change. */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important;
+      transition-property: opacity, color, background-color, border-color, fill, stroke !important;
+      transition-duration: .15s !important; }
+}
 </style>
 </head>
 <body>

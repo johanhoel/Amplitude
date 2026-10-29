@@ -12,6 +12,7 @@
 <title>Home Deck</title>
 <style>
 :root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --accent: #38bdf8; --glass: rgba(18, 20, 30, .48); --glass-hi: rgba(255,255,255,.07);
   --line: rgba(255,255,255,.12); --text: #f4f5fb; --mute: rgba(244,245,251,.58);
   --ok: #34d399; --warn: #fbbf24; --bad: #f87171; --r: 26px;
@@ -170,7 +171,7 @@ input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border: 0; bord
 .checks label { display: flex; gap: 10px; align-items: center; }
 .save { width: 100%; margin-top: 18px; padding: 14px; border-radius: 16px; background: var(--accent); font-weight: 700; }
 .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 24px); transform: translateX(-50%) translateY(20px);
-  opacity: 0; transition: all .3s; padding: 10px 16px; border-radius: 999px; background: rgba(20,20,28,.92); border: 1px solid var(--line);
+  opacity: 0; transition: opacity .3s var(--ease-out), transform .3s var(--ease-out); padding: 10px 16px; border-radius: 999px; background: rgba(20,20,28,.92); border: 1px solid var(--line);
   font-size: 14px; z-index: 20; pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 

@@ -77,7 +77,8 @@ a.row:active { background: rgba(255,255,255,.06); }
 .chev { opacity: .35; font-size: 18px; }
 .grow { display: grid; grid-template-columns: minmax(0, 1fr) 52px; border-top: 1px solid var(--line); } .grow:first-child { border-top: 0; } .grow .row { border-top: 0; }
 .con { display: grid; place-items: center; font: 600 13px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--mute); border-left: 1px solid var(--line); }
-.con:active, .con:hover { background: rgba(56,189,248,.18); color: var(--ink); } .con.off { opacity: 0; }
+.con:active { background: rgba(56,189,248,.18); color: var(--ink); }
+@media (hover: hover) and (pointer: fine) { .con:hover { background: rgba(56,189,248,.18); color: var(--ink); } } .con.off { opacity: 0; }
 .meter { width: 54px; height: 5px; border-radius: 5px; background: rgba(255,255,255,.08); overflow: hidden; } .meter i { display: block; height: 100%; background: var(--accent); }
 .grid2 { display: grid; gap: 0 20px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 900px) { .grid2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .wrap { padding-left: calc(var(--sl) + 28px); padding-right: calc(var(--sr) + 28px); } }
@@ -104,7 +105,7 @@ header { order: 0; } .health { order: 1; } .problems { order: 2; } #main > .sear
   #side .health { grid-template-columns: repeat(4, minmax(0, 1fr)); } #side .grid2 { grid-template-columns: minmax(0, 1fr); }
   #links { columns: 2; column-gap: 20px; } #links > [data-sec] { break-inside: avoid; }
   .search { margin: 14px 0 0; padding: 0 0 6px; } .tasks { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
-  a.row:hover, .task:hover { background: rgba(255,255,255,.07); } .hc:hover { border-color: rgba(255,255,255,.18); }
+  @media (hover: hover) and (pointer: fine) { a.row:hover, .task:hover { background: rgba(255,255,255,.07); } .hc:hover { border-color: rgba(255,255,255,.18); } }
   #links .cap { margin-top: 0; padding-top: 22px; }   /* padding, not margin: margins collapse unevenly at column tops */
 }
 @media (min-width: 1500px) { #links { columns: 3; } }

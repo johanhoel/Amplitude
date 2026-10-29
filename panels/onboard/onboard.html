@@ -27,7 +27,7 @@ button { padding: 12px 18px; border-radius: 14px; border: 0; background: var(--a
 button.ghost { background: rgba(255,255,255,.08); }
 button:disabled { opacity: .45; cursor: default; }
 .opt { display: flex; gap: 12px; align-items: flex-start; padding: 9px 10px; border-radius: 12px; cursor: pointer; }
-.opt:hover { background: rgba(255,255,255,.05); }
+@media (hover: hover) and (pointer: fine) { .opt:hover { background: rgba(255,255,255,.05); } }
 .opt input { margin-top: 4px; accent-color: var(--accent); width: 17px; height: 17px; flex: none; }
 .opt b { font-weight: 600; } .opt small { display: block; color: var(--mute); font-size: 12.5px; }
 .tag { font-size: 11px; padding: 1px 7px; border-radius: 99px; margin-left: 6px; vertical-align: 1px; }
@@ -35,7 +35,7 @@ button:disabled { opacity: .45; cursor: default; }
 .tag.chg { background: rgba(124,92,255,.25); color: #cfc4ff; }
 .info { margin: 8px 0 0; padding: 8px 12px; border-radius: 12px; background: rgba(255,255,255,.04); color: var(--mute); font-size: 13px; }
 .bar { height: 8px; border-radius: 6px; background: rgba(255,255,255,.08); overflow: hidden; margin: 12px 0 6px; }
-.bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), #22d3ee); transition: width .4s; }
+.bar i { display: block; height: 100%; width: 100%; transform: scaleX(0); transform-origin: left; background: linear-gradient(90deg, var(--accent), #22d3ee); transition: transform .4s cubic-bezier(0.23, 1, 0.32, 1); }
 .msg { min-height: 1.4em; margin-top: 6px; } .msg.ok { color: var(--ok); } .msg.bad { color: var(--bad); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .chips span { background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 12px; padding: 6px 10px; font-size: 13px; }
@@ -146,7 +146,7 @@ const VIEWS = {
     if (!st.done || st.running) await api('/api/scan', {});
     for (;;) {
       const s = await api('/api/scan');
-      $('#bar').style.width = s.pct + '%'; $('#stext').textContent = s.text;
+      $('#bar').style.transform = `scaleX(${Math.max(0, Math.min(100, s.pct)) / 100})`; $('#stext').textContent = s.text;
       if (!s.running && s.done) break;
       if (!s.running && !s.done) { $('#stext').className = 'msg bad'; return; }
       await new Promise(r => setTimeout(r, 700));

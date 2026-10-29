@@ -49,7 +49,8 @@
     padding: 5px; border-radius: 999px; background: rgba(18,16,32,.78); border: 1px solid rgba(255,255,255,.12); -webkit-backdrop-filter: blur(18px) saturate(160%);
     backdrop-filter: blur(18px) saturate(160%); box-shadow: 0 12px 40px rgba(0,0,0,.45); font: 600 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; color: #f3f4fb; }
   #nvorb a, #nvorb button { display: grid; place-items: center; height: 40px; min-width: 40px; border-radius: 999px; color: inherit; text-decoration: none; background: none; border: 0; font: inherit; cursor: pointer; }
-  #nvorb .side { color: rgba(243,244,251,.6); font-size: 17px; } #nvorb .side:hover, #nvorb .side:active { background: rgba(255,255,255,.08); color: #fff; }
+  #nvorb .side { color: rgba(243,244,251,.6); font-size: 17px; } #nvorb .side:active { background: rgba(255,255,255,.08); color: #fff; }
+  @media (hover: hover) and (pointer: fine) { #nvorb .side:hover { background: rgba(255,255,255,.08); color: #fff; } }
   #nvorb .mid { padding: 0 16px 0 12px; gap: 8px; display: flex; align-items: center; background: rgba(255,255,255,.08); }
   #nvorb .mid i { font-style: normal; font-size: 15px; opacity: .85; } #nvorb .mid kbd { font: 600 10.5px inherit; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,.1); color: rgba(243,244,251,.6); }
   #nvorb .dots { display: flex; gap: 4px; padding: 0 6px; } #nvorb .dots span { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.22); } #nvorb .dots span.on { background: #7dd3fc; width: 14px; border-radius: 3px; }
@@ -67,7 +68,8 @@
   #nvl a .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(255,255,255,.07); font-size: 16px; }
   #nvl a b { font-weight: 650; } #nvl a small { display: block; color: rgba(243,244,251,.55); font-size: 12.5px; margin-top: 1px; }
   #nvl a .here { font-size: 11px; color: #7dd3fc; font-weight: 700; }
-  #nvl a.sel, #nvl a:hover { background: rgba(56,189,248,.22); }
+  #nvl a.sel { background: rgba(56,189,248,.22); }
+  @media (hover: hover) and (pointer: fine) { #nvl a:hover { background: rgba(56,189,248,.22); } }
   #nvl .hint { padding: 9px 16px; border-top: 1px solid rgba(255,255,255,.07); color: rgba(243,244,251,.4); font-size: 12px; display: flex; gap: 14px; flex-wrap: wrap; }
   #nvoff { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 10px); transform: translateX(-50%); z-index: 80; display: none; max-width: calc(100% - 24px);
     padding: 10px 16px; border-radius: 14px; background: rgba(120,53,15,.92); border: 1px solid rgba(251,191,36,.5); color: #fef3c7;

@@ -76,7 +76,7 @@ body:not(.editing) .hidden { display: none; }
 .dep .at { text-align: right; color: var(--mute); font-size: 14px; line-height: 1.5; }
 .dep .at b { color: var(--ink); font-size: 18px; font-weight: 650; }
 .dep .bar { height: 6px; border-radius: 6px; background: rgba(255,255,255,.06); overflow: hidden; }
-.dep .bar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--ok), #22d3ee); transition: width .6s; }
+.dep .bar i { display: block; height: 100%; width: 100%; transform-origin: left; border-radius: 6px; background: linear-gradient(90deg, var(--ok), #22d3ee); transition: transform .3s cubic-bezier(0.23, 1, 0.32, 1); }
 .dep.cancelled .mins { color: var(--bad); font-size: 34px; font-weight: 600; }
 
 /* arrivals */
@@ -222,7 +222,7 @@ function renderBus(now) {
         <small>${d.via ? 'via ' + esc(d.via) + ' · ' : ''}${d.platform ? 'stop ' + esc(d.platform) : ''}</small></div></div>
       <div class="when"><div class="mins num ${m < 1 && !d.cur.isCancelled ? 'now' : ''}">${mins}</div>
         <div class="at">leaves <b class="num">${hm(t)}</b>${d.after ? `<br>then <span class="num">${hm(new Date(d.after.time))}</span>` : ''}</div></div>
-      <div class="bar"><i style="width:${Math.max(3, 100 - Math.min(100, m / 30 * 100))}%"></i></div></div>`;
+      <div class="bar"><i style="transform:scaleX(${Math.max(3, 100 - Math.min(100, m / 30 * 100)) / 100})"></i></div></div>`;
   }).join('') : '<span class="empty">No departures in the coming hour.</span>';
   const arrs = (bus.arrivals || []).filter(a => ms(a.time) > now - 60000).slice(0, model.arrivals || 8);
   $('#arrs').innerHTML = arrs.length ? arrs.map(a => {
