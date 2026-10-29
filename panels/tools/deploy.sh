@@ -4,7 +4,7 @@
 # The owner runs this; coding agents never do.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-H=root@192.168.1.52; R=/opt/panel-wrapper
+H=root@192.168.100.52; R=/opt/panel-wrapper
 [ -z "$(git status --porcelain server)" ] || { echo "Commit your changes first."; exit 1; }
 if [ -f .deployed.md5 ]; then
   ssh $H "cd $R && md5sum -c --quiet" < .deployed.md5 \
