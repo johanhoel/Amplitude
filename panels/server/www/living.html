@@ -137,6 +137,7 @@ nav a.on { background: rgba(255,255,255,.12); color: var(--ink); }
 .hint.show { opacity: 1; transform: translate(-50%, 0); }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<script src="/addons.js"></script>
 <link rel="stylesheet" href="/icons.css">
 </head>
 <body>
@@ -155,20 +156,20 @@ nav a.on { background: rgba(255,255,255,.12); color: var(--ink); }
       <div class="cam" id="cam"><img id="cam-img" alt=""><span class="tag" id="cam-tag">Camera</span>
         <button class="arr l" data-step="-1" aria-label="Previous camera">‹</button><button class="arr r" data-step="1" aria-label="Next camera">›</button></div>
     </div>
-    <div class="chips"><button class="chip" id="detect"><i></i>Motion alerts</button><button class="chip" id="vac"><i></i><span>Vacuum</span></button><span class="chip" id="charger" style="pointer-events:none"><i></i><span>Charger</span></span></div>
+    <div class="chips"><button class="chip" id="detect" data-addon="cameras"><i></i>Motion alerts</button><button class="chip" id="vac" data-addon="vacuum"><i></i><span>Vacuum</span></button><span class="chip" id="charger" style="pointer-events:none" data-addon="charger"><i></i><span>Charger</span></span></div>
   </section>
 
   <section class="mid">
-    <div class="dial" id="dial">
+    <div class="dial" id="dial" data-addon="speakers">
       <svg viewBox="0 0 200 200"><defs><linearGradient id="vg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#ff7ac6"/></linearGradient></defs>
         <path class="track" id="trk"/><path class="val" id="arc"/><circle class="thumb" id="thumb" r="11" style="display:none"/></svg>
       <button class="face" id="face"><div><b class="num" id="db">--</b><span id="dbl">dB · tap to mute</span></div></button>
     </div>
     <div class="ctrls">
-    <div class="spk" id="spk"></div>
+    <div class="spk" id="spk" data-addon="speakers"></div>
     <div style="display:flex;gap:12px;flex-wrap:wrap">
-      <span class="seg" id="src"><button data-s="pc">PC</button><button data-s="bt">Bluetooth</button></span>
-      <button class="chip" id="power"><i></i>Speakers on</button>
+      <span class="seg" id="src" data-addon="speakers"><button data-s="pc">PC</button><button data-s="bt">Bluetooth</button></span>
+      <button class="chip" id="power" data-addon="pc"><i></i>Speakers on</button>
     </div>
     <div class="np"><div class="vinyl" id="art"></div>
       <div style="min-width:0"><div class="cap">Now playing</div><div class="t" id="np-t">—</div><div class="a" id="np-a"></div>

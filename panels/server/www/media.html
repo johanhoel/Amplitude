@@ -108,6 +108,7 @@ input[type=range]::-moz-range-progress { height: 5px; border-radius: 5px; backgr
 #swp a small { display: block; color: var(--mute); font-weight: 400; font-size: 12px; } #swp a.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<script src="/addons.js"></script>
 <link rel="stylesheet" href="/icons.css">
 </head>
 <body>
@@ -118,14 +119,14 @@ input[type=range]::-moz-range-progress { height: 5px; border-radius: 5px; backgr
   <h1>Media</h1>
   <section class="now">
     <div class="art" id="art"></div>
-    <div class="meta"><div class="src" id="src">SPOTIFY</div><h2 id="title">Nothing playing</h2><div class="ar" id="artist"></div>
+    <div class="meta"><div class="src" id="src" data-addon="speakers">SPOTIFY</div><h2 id="title">Nothing playing</h2><div class="ar" id="artist"></div>
       <div class="prog"><i id="bar"></i></div><div class="times num"><span id="pos"></span><span id="len"></span></div>
       <div class="ctl"><button data-m="media_previous_track" aria-label="Previous"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
         <button class="main" data-m="media_play_pause" id="pp" aria-label="Play or pause"><svg viewBox="0 0 24 24" id="ppi"><path d="M8 5v14l11-7z"/></svg></button>
         <button data-m="media_next_track" aria-label="Next"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button></div></div>
   </section>
-  <div class="cap">Living room TV</div>
-  <section class="tv" id="tv">
+  <div class="cap" data-addon="tv">Living room TV</div>
+  <section class="tv" id="tv" data-addon="tv">
     <div class="tvart" id="tvart"><span><i class="icon icon-tv" aria-hidden="true"></i></span></div>
     <div class="tvm"><div class="src" id="tvsrc">APPLE TV</div><h3 id="tvtitle">–</h3>
       <div class="prog"><i id="tvbar"></i></div><div class="times num"><span id="tvpos"></span><span id="tvleft"></span></div>
@@ -138,10 +139,10 @@ input[type=range]::-moz-range-progress { height: 5px; border-radius: 5px; backgr
       <div class="padrow"><button data-atv="menu">Back</button><button data-atv="home">Home</button><button id="tvpower">Turn off</button></div>
     </div>
   </section>
-  <div class="apps" id="tvapps"></div>
-  <div class="cap">Genelec speakers</div>
+  <div class="apps" id="tvapps" data-addon="tv"></div>
+  <div class="cap" data-addon="speakers">Genelec speakers</div>
   <section class="spk"><div class="arc" id="arc"><svg viewBox="0 0 230 140" id="arcsvg"></svg><div class="v"><b class="num" id="db">--</b><small>dB · drag the arc</small></div></div>
-    <div><div class="chips"><button class="chip" id="mute"><i></i>Mute</button><button class="chip" id="power"><i></i>Speakers on</button>
+    <div><div class="chips"><button class="chip" id="mute"><i></i>Mute</button><button class="chip" id="power" data-addon="pc"><i></i>Speakers on</button>
       <button class="chip" data-s="pc"><i></i>PC</button><button class="chip" data-s="bt"><i></i>Bluetooth</button></div><div class="sub" id="spks"></div></div></section>
   <div class="cap">Rooms</div>
   <section class="rooms" id="rooms"></section>

@@ -26,9 +26,9 @@
 import json, os, re, subprocess, time, urllib.error, urllib.parse, urllib.request
 from http.server import SimpleHTTPRequestHandler
 
-from . import audio, auth, devices, localai, studio, home, insights, layouts, leave, links, news, presence, status, transit, weather
+from . import addons, audio, auth, devices, localai, studio, home, insights, layouts, leave, links, news, presence, status, transit, weather
 from .config import C, REPORT
-from .ha import ha_call, ha_get
+from .ha import entities as entity_list, ha_call, ha_get
 from .store import SECRETS, SETTINGS, STATIC, WALLS, load, save
 
 PAGES = ('ops', 'living', 'remote', 'family', 'net', 'security', 'ambient', 'media', 'start', 'familyinfo', 'admin', 'desktop',
@@ -165,6 +165,11 @@ class Handler(SimpleHTTPRequestHandler):
         if p.startswith('/api/bus/stops?'):
             q = urllib.parse.parse_qs(urllib.parse.urlparse(p).query).get('q', [''])[0].strip()
             return self.json_or_502(lambda: transit.stop_search(q) if len(q) >= 2 else [], 120)
+        m = re.fullmatch(r'/api/ha/entities\?domain=([a-z_]+)', p)
+        if m:
+            # Everything Home Assistant has in one domain, for the pickers in
+            # edit mode. Names, not states: this answers "which one", not "how is it".
+            return self.json_or_502(lambda: entity_list(m.group(1)), 30)
         m = re.fullmatch(r'/api/news\?f=([a-z]+)', p)
         if m and m.group(1) in C.NEWS_FEEDS:
             return self.json_or_502(lambda: news.news(m.group(1)), 120)
@@ -172,6 +177,10 @@ class Handler(SimpleHTTPRequestHandler):
             return self.json_or_502(weather.weather_state)
         if p == '/api/bus':
             return self.json_or_502(transit.bus_state)
+        if p == '/api/addons':
+            # What this house has, derived from its settings. The pages hide
+            # what is off, so one set of pages serves any house.
+            return self.send_json({'enabled': addons.enabled(), 'state': addons.state()})
         if p.split('?')[0] == '/ha':                                      # Studio's Home Assistant link
             self.send_response(302); self.send_header('Location', C.HA + '/'); self.send_header('Content-Length', '0'); self.end_headers(); return
         if p == '/api/watched':                                           # Device status card (names + online only, no PIN)

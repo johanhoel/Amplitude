@@ -9,6 +9,7 @@ from .config import C
 from .ha import ha_call, ha_get, ha_states, ha_vacuum_rooms, invalidate
 from .notify import ntfy
 from .presence import presence
+from .weather import entity as weather_entity
 
 
 def num(v):
@@ -90,7 +91,7 @@ def home_state():
     vac = by.get(C.VACUUM, {})
     det = by.get(C.CAM_DETECT, {})
     summ = ha_summary_from(states)
-    wx = by.get(C.WEATHER, {})
+    wx = by.get(weather_entity(), {})
     return {'configured': True, 'rooms': [{'room': r, 'lights': sorted(rooms[r], key=lambda l: l['name'])}
                                           for r in sorted(rooms, key=order)],
             'door': {'id': lock_.get('entity_id', C.LOCK), 'state': lock_.get('state')}, 'people': people,

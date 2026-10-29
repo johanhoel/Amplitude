@@ -22,13 +22,14 @@ def ha_call(domain, service, data):
     urllib.request.urlopen(req, context=NOCHECK, timeout=5).read()
 
 
-def ha_forecast(kind):
+def ha_forecast(kind, entity=None):
+    entity = entity or C.WEATHER
     tok = secret('ha_token')
     req = urllib.request.Request(f'{C.HA}/api/services/weather/get_forecasts?return_response', method='POST',
-                                 data=json.dumps({'entity_id': C.WEATHER, 'type': kind}).encode(),
+                                 data=json.dumps({'entity_id': entity, 'type': kind}).encode(),
                                  headers={'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json'})
     with urllib.request.urlopen(req, context=NOCHECK, timeout=8) as r:
-        return json.load(r)['service_response'][C.WEATHER]['forecast']
+        return json.load(r)['service_response'][entity]['forecast']
 
 
 def ha_vacuum_rooms(entity):
@@ -49,6 +50,14 @@ def ha_states(max_age=1.5):
     if time.time() - _states['at'] > max_age:
         _states['data'], _states['at'] = ha_get('/api/states'), time.time()
     return _states['data']
+
+
+def entities(domain):
+    """[{id, name}] for one domain, sorted by name - what the edit-mode pickers list."""
+    pre = domain + '.'
+    out = [{'id': s['entity_id'], 'name': s.get('attributes', {}).get('friendly_name') or s['entity_id'][len(pre):]}
+           for s in (ha_states(30) or []) if s['entity_id'].startswith(pre)]
+    return sorted(out, key=lambda e: e['name'].lower())
 
 
 def invalidate():
