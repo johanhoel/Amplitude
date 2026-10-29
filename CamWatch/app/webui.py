@@ -2313,7 +2313,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') picking(fals
 {{ c.time }} <span class="muted">· {{ c.meta.camera or c.stem }}{% if c.duration is not none %} · {{ c.duration }}s{% endif %}</span>
 {% for d in c.detected %}<span class="tag">{{ d }}{% if c.meta.labels and c.meta.labels[d] %} {{ '%.0f'|format(c.meta.labels[d] * 100) }}%{% endif %}</span>{% endfor %}</h1>
 
-{% if c.unusual %}<p class="box warn">⚠ <b>Unusual:</b> {{ c.unusual }}</p>{% endif %}
+{% if c.unusual %}<p class="box warn"><b>Unusual:</b> {{ c.unusual }}</p>{% endif %}
 {% if c.video %}
 <video id="player" controls autoplay muted playsinline preload="metadata" {% if c.snapshot %}poster="{{ url_for('media', day=c.day, name=c.snapshot) }}"{% endif %}
  src="{{ url_for('media', day=c.day, name=c.video) }}"></video>
@@ -3467,7 +3467,7 @@ Set <b>Issues</b> to <b>Read and write</b>: CamWatch sends your feature requests
 GitHub can add <b>Metadata</b> by itself. Leave it there.</li>
 <li>Scroll to the bottom. Click the green <b>Generate token</b> button. If GitHub asks again, click <b>Generate token</b> again.</li>
 <li>GitHub shows your key. It is a long line that starts with <code>github_pat_</code>. Click the small copy button next to it.
-<br><span class="warn">⚠ GitHub shows the key only once. Keep this page open until you finish Part 2.</span></li>
+<br><span class="warn">GitHub shows the key only once. Keep this page open until you finish Part 2.</span></li>
 </ol>
 <p class="muted">Can't find <b>Contents</b>? Check step 4. GitHub shows the full list only after you pick a repository.</p>
 

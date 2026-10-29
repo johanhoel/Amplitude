@@ -213,5 +213,32 @@ for p in files:
 check("no bare glyph sits among drawn icons", not mixed,
       "; ".join(mixed[:5]) + "  - give it an icon from design/icons.py")
 
+# The same thing one step stricter: a glyph on the SAME LINE as a drawn icon.
+# Adjacency rather than proximity. The rule above reads a whole block, so it
+# only sees a glyph held in a quoted data value; this one sees a glyph typed
+# straight into markup, which is how "<span>loitering</span> <span>WARN
+# unusual</span> <i class=icon-link>" sat on one row of the clip card with
+# three different ways of saying the same kind of thing.
+TAG_TEXT = re.compile(r">([^<>]{0,40})<")
+TYPOGRAPHY = set("\u2026\u2013\u2014\u2018\u2019\u201c\u201d\u00b7\u00d7"
+                 "\u2192\u2190\u2191\u2193\u2039\u203a\u00a7\u00b0\u00b1"
+                 "\u2265\u2264\u2248\u2033\u2032")
+# A keyboard shortcut is not an icon: <kbd>CMD K</kbd> keeps its symbol.
+KBD = re.compile(r"<kbd[^>]*>[^<]*</kbd>")
+adjacent = []
+for p in files:
+    if p.name == "qrcode.js":
+        continue
+    for i, line in enumerate(p.read_text(encoding="utf-8").split("\n"), 1):
+        if '<i class="icon' not in line:
+            continue
+        bare = KBD.sub("", line)
+        for m in TAG_TEXT.finditer(bare):
+            text = m.group(1)
+            if any(_symbol(c) and c not in TYPOGRAPHY for c in text):
+                adjacent.append(f"{p.relative_to(ROOT)}:{i} {text.strip()[:24]!r}")
+check("no bare glyph sits beside a drawn icon on one line", not adjacent,
+      "; ".join(adjacent[:5]) + "  - give it an icon, or move it away from them")
+
 print(f"\n{sum(results)}/{len(results)} passed")
 sys.exit(0 if all(results) else 1)
