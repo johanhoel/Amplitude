@@ -23,7 +23,7 @@ echo "1/4  Private values from the server ..."
 ssh $H "cat $R/private.map" > "$work/private.map" \
   || { echo "No $R/private.map on the server: without it the panels would get the placeholders."; exit 1; }
 mkdir "$work/build"
-git archive HEAD:panels/server $FILES | tar xf - -C "$work/build"      # what is committed, with Linux line endings
+git -C "$(git rev-parse --show-toplevel)" archive HEAD:panels/server $FILES | tar xf - -C "$work/build"      # what is committed, with Linux line endings
 "$PY" tools/private.py apply "$work/private.map" "$work/build"
 "$PY" -m py_compile "$work"/build/homedeck/*.py "$work/build/server.py"
 find "$work/build" -name __pycache__ -type d -prune -exec rm -rf {} +
