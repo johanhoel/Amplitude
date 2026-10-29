@@ -25,3 +25,6 @@ __pycache__/
 tests/.cache/
 .aider*
 !.aider.conf.yml
+
+# Test output (screenshots and fixtures)
+tests/out/

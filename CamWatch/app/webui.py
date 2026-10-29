@@ -23,6 +23,7 @@ import accel
 import alerts
 import feature_requests
 import homedeck
+import studio
 import offsite
 import settings
 import updates
@@ -1099,6 +1100,53 @@ def scan_default():
     except ValueError:
         pass
     return "192.168.1.0/24"
+
+
+@app.get("/studio")
+def studio_page():
+    """One list of every camera and every device, with a draft of the changes not applied yet."""
+    return render_template("studio.html", people=people())
+
+
+@app.get("/api/studio")
+def studio_state():
+    items = studio.inventory(cameras())
+    d = studio.draft()["changes"]
+    return as_json({"items": items, "attention": studio.attention(items),
+                    "changes": studio.masked(d, mask_url),
+                    "described": [studio.describe(c) for c in d],
+                    "free": studio.free_slots(), "max": settings.MAX_CAMERAS,
+                    "history": studio.history()[:5], "linked": bool(homedeck.key())})
+
+
+@app.post("/api/studio/draft")
+def studio_draft():
+    error = studio.add_change(request.get_json(silent=True) or {})
+    return (as_json({"error": error}), 400) if error else studio_state()
+
+
+@app.post("/api/studio/draft/drop")
+def studio_draft_drop():
+    try:
+        index = int((request.get_json(silent=True) or {}).get("index", -1))
+    except (TypeError, ValueError):
+        index = -1
+    error = studio.drop_change(index)
+    return (as_json({"error": error}), 400) if error else studio_state()
+
+
+@app.post("/api/studio/apply")
+def studio_apply():
+    applied, error = studio.apply()
+    if error:
+        return as_json({"error": error}), 400
+    return as_json({"applied": applied})
+
+
+@app.post("/api/studio/undo")
+def studio_undo():
+    error = studio.undo()
+    return (as_json({"error": error}), 400) if error else as_json({"ok": True})
 
 
 @app.post("/settings/cameras/scan")
@@ -2194,7 +2242,7 @@ ol li,ul li{margin:4px 0}
 </style><link rel="stylesheet" href="/static/icons.css">
 </head><body>
 <header><a class="brand" href="{{ url_for('dashboard') }}"><img src="/static/mark.svg" alt="" width="29" height="29">camwatch</a>
-<nav aria-label="Pages">{% for ep, ic, label in [('dashboard', 'home', 'Home'), ('wall_view', 'phone', 'View'), ('index', 'film', 'Clips'), ('search_page', 'search', 'Search'), ('live', 'antenna', 'Live'), ('log_page', 'list', 'Log'), ('report_page', 'chart', 'Report'), ('timelapse_page', 'refresh', 'Timelapse'), ('people_page', 'person', 'People'), ('strangers_page', 'question', 'Strangers'), ('plates_page', 'car', 'Plates'), ('zones_page', 'map', 'Zones'), ('settings_page', 'gear', 'Settings'), ('ha_page', 'home', 'Home Assistant')] %}
+<nav aria-label="Pages">{% for ep, ic, label in [('dashboard', 'home', 'Home'), ('wall_view', 'phone', 'View'), ('index', 'film', 'Clips'), ('search_page', 'search', 'Search'), ('live', 'antenna', 'Live'), ('log_page', 'list', 'Log'), ('report_page', 'chart', 'Report'), ('timelapse_page', 'refresh', 'Timelapse'), ('people_page', 'person', 'People'), ('strangers_page', 'question', 'Strangers'), ('plates_page', 'car', 'Plates'), ('zones_page', 'map', 'Zones'), ('studio_page', 'grid', 'Studio'), ('settings_page', 'gear', 'Settings'), ('ha_page', 'home', 'Home Assistant')] %}
 <a href="{{ url_for(ep) }}" class="{{ 'on' if request.endpoint == ep }}"><i class="icon icon-{{ ic }}" aria-hidden="true"></i> {{ label }}</a>{% endfor %}</nav>
 <div class="tools">{% if update_ready %}<a class="upd-pill" href="{{ url_for('settings_page') }}#updates" title="Version {{ update_ready }} is ready"><i class="icon icon-upload" aria-hidden="true"></i> Update</a>{% endif %}
 {% if people %}<form method="get" action="{{ url_for('index') }}"><select name="person" onchange="this.form.submit()" aria-label="Filter by person">
@@ -2756,6 +2804,164 @@ yesterday becomes a timelapse and a highlights reel (4 s of every recording with
 </div>{% endfor %}</div>
 {% endfor %}
 {% endif %}
+{% endblock %}""",
+
+    "studio.html": """{% extends "base.html" %}
+{% block title %}Studio{% endblock %}
+{% block body %}
+<h1>Studio <span class="muted">every camera and every device, in one list</span></h1>
+<div id="att"></div>
+<nav class="days" style="margin:10px 0">
+  <button class="pill on" data-tab="discover">Discover</button>
+  <button class="pill" data-tab="added">Added</button>
+  <button class="pill" id="scan" style="margin-left:auto"><i class="icon icon-search" aria-hidden="true"></i> Scan the network</button>
+</nav>
+<div id="list" class="muted">Loading...</div>
+<div id="draft"></div>
+<div id="hist"></div>
+<style>
+.srow{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:8px}
+.srow .who{min-width:0;flex:1}
+.srow b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:999px;flex:none;background:var(--faint)}
+.dot.up{background:var(--ok,#34d399)}.dot.down{background:var(--bad,#f87171)}
+.att{display:grid;gap:6px;margin:10px 0}
+.att div{border-radius:var(--r-sm);padding:9px 12px;border:1px solid var(--line);background:var(--card)}
+.att .bad{border-color:var(--bad,#f87171)}.att .warn{border-color:var(--warn,#fbbf24)}
+.addf{display:grid;gap:8px;margin:8px 0 14px;padding:12px;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+.addf label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.addf input,.addf select{min-height:38px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:0 10px;font:inherit}
+.chg{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line)}
+.chg:last-child{border-bottom:0}
+</style>
+<script>
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let S = null, tab = 'discover', adding = null, found = [];
+const $ = q => document.querySelector(q);
+
+async function load() {
+  S = await (await fetch('/api/studio')).json();
+  render();
+}
+
+function render() {
+  $('#att').innerHTML = S.attention.length
+    ? '<div class="att">' + S.attention.map(a => `<div class="${esc(a.level)}">${esc(a.text)}</div>`).join('') + '</div>'
+    : '';
+  const want = tab === 'added' ? i => i.added : i => !i.added;
+  const rows = S.items.filter(want);
+  $('#list').innerHTML = rows.length ? rows.map(row).join('')
+    : `<p class="muted">${tab === 'added' ? 'No cameras yet.' : 'Nothing found. Try Scan the network.'}</p>`;
+  rows.forEach(i => {
+    const b = document.getElementById('a-' + i.key);
+    if (b) b.onclick = () => { adding = adding === i.key ? null : i.key; render(); };
+  });
+  if (adding) {
+    const el = document.getElementById('f-' + adding);
+    if (el) el.innerHTML = addForm(S.items.find(i => i.key === adding));
+    wireAdd();
+  }
+  drafts();
+  hist();
+}
+
+function row(i) {
+  const dot = i.online === null ? '' : `<span class="dot ${i.online ? 'up' : 'down'}"></span>`;
+  const sub = i.added ? `camera ${i.slot}${i.enabled ? '' : ' · off'}${i.ip ? ' · ' + esc(i.ip) : ''}`
+                      : `${esc(i.ip)}${i.maker ? ' · ' + esc(i.maker) : ''}${i.camera_like ? ' · looks like a camera' : ''}`;
+  const act = i.added
+    ? `<button class="pill" data-act="${i.enabled ? 'disable' : 'enable'}" data-slot="${i.slot}">${i.enabled ? 'Switch off' : 'Switch on'}</button>
+       <button class="pill" data-act="remove" data-slot="${i.slot}">Remove</button>`
+    : `<button class="pill" id="a-${esc(i.key)}">Add</button>`;
+  return `<div class="srow">${dot}<span class="who"><b>${esc(i.name)}</b><span class="muted" style="font-size:13px">${sub}</span></span>${act}</div>
+          <div id="f-${esc(i.key)}">${adding === i.key ? addForm(i) : ''}</div>`;
+}
+
+function addForm(i) {
+  if (!i) return '';
+  const slots = S.free.length ? S.free : [];
+  return `<div class="addf">
+    <label>Camera slot<select id="n-slot">${slots.map(s => `<option value="${s}">Camera ${s}</option>`).join('')}</select></label>
+    <label>Name <i>lowercase letters, digits or _</i><input id="n-name" maxlength="24" value="${esc((i.name || '').toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 24))}"></label>
+    <label>Stream address<input id="n-rtsp" placeholder="rtsp://user:password@${esc(i.ip)}:554/stream" value=""></label>
+    <label>Detection stream <i>optional, a smaller one</i><input id="n-detect" placeholder="rtsp://..." value=""></label>
+    <div class="row"><button class="primary" id="n-go">Add to the draft</button> <span class="muted" id="n-err"></span></div>
+  </div>`;
+}
+
+function wireAdd() {
+  const go = $('#n-go');
+  if (!go) return;
+  go.onclick = async () => {
+    const body = {kind: 'add', slot: $('#n-slot') && $('#n-slot').value, name: $('#n-name').value,
+                  rtsp_url: $('#n-rtsp').value, detect_url: $('#n-detect').value};
+    const r = await fetch('/api/studio/draft', {method: 'POST', headers: {'Content-Type': 'application/json'},
+                                                body: JSON.stringify(body)});
+    const d = await r.json();
+    if (d.error) { $('#n-err').textContent = d.error; return; }
+    S = d; adding = null; render();
+  };
+}
+
+function drafts() {
+  if (!S.described.length) { $('#draft').innerHTML = ''; return; }
+  $('#draft').innerHTML = `<h2>Waiting to be applied</h2>
+    <div class="card">${S.described.map((t, n) => `<div class="chg"><span style="flex:1">${esc(t)}</span>
+      <button class="pill" data-drop="${n}">Drop</button></div>`).join('')}</div>
+    <div class="row" style="margin-top:10px"><button class="primary" id="apply">Apply ${S.described.length} change${S.described.length > 1 ? 's' : ''}</button>
+      <span class="muted" id="ap-err"></span></div>`;
+  $('#apply').onclick = async () => {
+    const d = await (await fetch('/api/studio/apply', {method: 'POST'})).json();
+    if (d.error) { $('#ap-err').textContent = d.error; return; }
+    load();
+  };
+}
+
+function hist() {
+  if (!S.history.length) { $('#hist').innerHTML = ''; return; }
+  $('#hist').innerHTML = `<h2>Applied before</h2><div class="card">${S.history.map((h, n) => `<div class="chg">
+    <span style="flex:1">${esc(new Date(h.at * 1000).toLocaleString())} · ${esc(h.changes.join('; '))}</span>
+    ${n === 0 ? '<button class="pill" id="undo">Undo this</button>' : ''}</div>`).join('')}</div>`;
+  const u = $('#undo');
+  if (u) u.onclick = async () => { await fetch('/api/studio/undo', {method: 'POST'}); load(); };
+}
+
+document.addEventListener('click', async e => {
+  const t = e.target.closest('[data-tab]');
+  if (t) { tab = t.dataset.tab; adding = null;
+           document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b === t)); render(); return; }
+  const a = e.target.closest('[data-act]');
+  if (a) {
+    const d = await (await fetch('/api/studio/draft', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({kind: a.dataset.act, slot: a.dataset.slot})})).json();
+    if (!d.error) { S = d; render(); }
+    return;
+  }
+  const dr = e.target.closest('[data-drop]');
+  if (dr) {
+    const d = await (await fetch('/api/studio/draft/drop', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({index: Number(dr.dataset.drop)})})).json();
+    if (!d.error) { S = d; render(); }
+  }
+});
+
+$('#scan').onclick = async () => {
+  $('#scan').textContent = 'Scanning...';
+  try {
+    const r = await fetch('/settings/cameras/scan', {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: ''});
+    const d = await r.json();
+    found = d.found || [];
+    // A scan finds addresses the Home Deck list does not have; show them in the same list.
+    const have = new Set(S.items.map(i => i.ip));
+    found.filter(f => !have.has(f.ip)).forEach(f => S.items.push({
+      kind: 'device', key: 'ip' + f.ip, name: f.name || f.maker || f.ip, ip: f.ip, slot: null,
+      enabled: false, added: false, online: null, maker: f.maker || '', mac: '', camera_like: true}));
+    render();
+  } finally { $('#scan').innerHTML = '<i class="icon icon-search" aria-hidden="true"></i> Scan the network'; }
+};
+
+load();
+</script>
 {% endblock %}""",
 
     "settings.html": """{% extends "base.html" %}
