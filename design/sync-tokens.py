@@ -32,35 +32,12 @@ MARK_END = "/* <<< end generated tokens */"
 # so an override still has to clear AA.
 FIXED = {"ink", "mute", "dim", "ok", "warn", "bad"}
 
-# The friend edition is violet, not cyan. All three accent tokens move
-# together: a violet readable AS text on a dark card is too pale to sit under
-# black type, so this accent takes white type where the owner's cyan takes
-# black. --status-ink stays dark in both, because green, amber and red are
-# light colours whoever is looking at them.
-FRIEND_ACCENT = {
-    "accent": "#7958ff",
-    "accent-text": "#a075ff",   # 4.50:1, the brand violet lightened until it reads
-    "accent-ink": "#ffffff",    # 4.51:1 on the accent; black would be 4.43 and fail
-    "r": "24px",                # the friend pages were drawn with a softer corner
-}
-
 TARGETS = {
     "panels/server/www/wall.css": {},
     "panels/server/www/deck.css": {
         # The deck is the phone/tablet home screen: full-bleed cards with a
         # much larger radius than a dashboard panel.
         "override": {"r": "22px"},
-    },
-    # The friend edition ships its own sheet twice on purpose: extra/ is the
-    # source build_www.py copies into every build (it copies that whole folder,
-    # so this needs no change to the generator), and src/www/ is the build
-    # output that is checked in and served today. Both come from here, so they
-    # cannot disagree.
-    "panels/friend/extra/wall.css": {
-        "override": dict(FRIEND_ACCENT),
-    },
-    "panels/friend/src/www/wall.css": {
-        "override": dict(FRIEND_ACCENT),
     },
     "CamWatch/app/static/tokens.css": {
         "extra": {

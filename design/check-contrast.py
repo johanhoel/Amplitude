@@ -14,11 +14,12 @@ TOKENS = ROOT / "design" / "tokens.css"
 # Every sheet sync-tokens.py writes, because a project may override its accent
 # and an override has to clear AA too. Checking only the source would let an
 # unreadable brand colour ship.
+# The sheets design/sync-tokens.py writes. Two panels sheets since 0870c2b
+# folded the second edition away; deck.css is still separate because the
+# phone deck overrides its radius.
 GENERATED = [
     "panels/server/www/wall.css",
     "panels/server/www/deck.css",
-    "panels/friend/extra/wall.css",
-    "panels/friend/src/www/wall.css",
     "CamWatch/app/static/tokens.css",
 ]
 

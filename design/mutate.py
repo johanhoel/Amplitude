@@ -134,6 +134,10 @@ M = [
      "<script>const m = { icon: 'nosuchicon' };</script>"),
     ("check-icons", "says where it came from", "edit", "panels/server/www/icons.css",
      "design/icons.py", "nowhere.py"),
+    ("check-theme", "ships to every server", "remove",
+     "CamWatch/app/static/shell.css"),
+    ("check-icons", "icons.css exists", "remove",
+     "CamWatch/app/static/icons.css"),
     ("check-icons", "every server ships the same icons", "edit",
      "CamWatch/app/static/icons.css", ".icon {", ".icon { /* drift */"),
     ("check-icons", "defines every icon in design/icons.py", "edit",
@@ -163,6 +167,22 @@ SCRATCH = [ROOT / "panels/server/www/_mutate.html",
            ROOT / "CamWatch/app/_mutate.html"]
 
 
+def _tree_is_clean(files):
+    """Refuse to start if any file we mutate already differs from git.
+
+    save() snapshots the files before mutating and restore() copies the
+    snapshot back. If a previous run was killed - a timeout, a Ctrl-C, an
+    OOM - its finally never ran, a mutation is still in the working tree,
+    and the NEXT run's snapshot captures the damage and faithfully restores
+    it. The corruption survives every subsequent run and looks like clean
+    state. That happened: a run killed at 600s left 'nosuchicon' in the
+    CamWatch nav, and the following green run put it back.
+    """
+    out = subprocess.run(["git", "-C", str(ROOT), "status", "--porcelain", "--"] + list(files),
+                         capture_output=True, text=True).stdout.strip()
+    return out
+
+
 def save(files):
     BACKUP.mkdir(exist_ok=True)
     for rel in files:
@@ -175,6 +195,7 @@ def restore(files):
     for rel in files:
         bk = BACKUP / rel.replace("/", "__")
         if bk.exists():
+            # copy, not copy-if-missing: a "remove" mutation deleted it.
             shutil.copy(bk, ROOT / rel)
     for p in SCRATCH:
         p.unlink(missing_ok=True)
@@ -209,14 +230,35 @@ def main():
     only = sys.argv[1] if len(sys.argv) > 1 else None
     mutations = [m for m in M if only is None or m[0] == only]
     gates = sorted({m[0] for m in mutations})
-    touched = sorted({m[3] for m in mutations if m[2] == "edit"})
+    touched = sorted({m[3] for m in mutations if m[2] in ("edit", "remove")})
+    dirty = _tree_is_clean(touched)
+    if dirty:
+        print("refusing to run: these files already differ from git, and a\n"
+              "snapshot of them would preserve whatever is wrong with them.\n"
+              "Commit them, or restore with git checkout, then run again.\n")
+        print(dirty)
+        return 2
     save(touched)
 
     print(f"{'gate':18} {'assertion':44} outcome")
     print("-" * 92)
     dead, uninjected = [], []
+    # Ctrl-C or a crash mid-loop would otherwise leave a mutated file and a
+    # scratch page inside the scanned tree, where the next gate run reads them
+    # as real source and "git add -A" commits them.
+    try:
+        _mutate_loop(mutations, touched, dead, uninjected)
+    finally:
+        restore(touched)
+    return _report(dead, uninjected, _coverage(only))
+
+
+def _mutate_loop(mutations, touched, dead, uninjected):
     for gate, expect, kind, *rest in mutations:
-        if kind == "edit":
+        if kind == "remove":
+            rel = rest[0]
+            (ROOT / rel).unlink(missing_ok=True)
+        elif kind == "edit":
             rel, find, repl = rest
             path = ROOT / rel
             src = path.read_text(encoding="utf-8")
@@ -241,7 +283,16 @@ def main():
             print(f"{gate:18} {expect[:44]:44} STAYED GREEN  got: {got}")
             dead.append((gate, expect))
 
-    # ---- coverage ----
+
+def _coverage(only):
+    """Every assertion with no mutation aimed at it. Returns how many.
+
+    Its own function because it belongs to the run, not to the mutation loop:
+    when it lived inside the loop it read `only` from a scope that did not
+    have it, and main() then passed a `total_missing` that was never defined
+    outside it. Neither shows up when a single gate is named on the command
+    line; both crash a full pass on the first line of output.
+    """
     print()
     print("coverage")
     print("-" * 92)
@@ -257,7 +308,10 @@ def main():
         print(f"  {name:18} {len(labels):3} assertions   {mark}")
         for l in missing:
             print(f"        no mutation aims at: {l[:70]}")
+    return total_missing
 
+
+def _report(dead, uninjected, total_missing):
     print()
     if dead:
         print(f"{len(dead)} assertion(s) could not be made to fail — these are not checks:")

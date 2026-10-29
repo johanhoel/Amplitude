@@ -14,8 +14,6 @@ from components import CSS  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 TARGETS = [
     "panels/server/www/shell.css",
-    "panels/friend/src/www/shell.css",
-    "panels/friend/extra/shell.css",   # build_www.py copies all of extra/
     "CamWatch/app/static/shell.css",
 ]
 

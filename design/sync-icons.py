@@ -19,8 +19,6 @@ from icons import ICONS, FILLED  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 TARGETS = [
     "panels/server/www/icons.css",
-    "panels/friend/src/www/icons.css",
-    "panels/friend/extra/icons.css",   # build_www.py copies all of extra/ into each build
     "CamWatch/app/static/icons.css",
 ]
 

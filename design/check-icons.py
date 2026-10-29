@@ -78,8 +78,10 @@ check("no U+FE0F variation selectors", not vs_hits,
       f"{len(vs_hits)}: {', '.join(vs_hits[:6])}")
 
 # Every generated stylesheet is present and current.
-GENERATED = ["panels/server/www/icons.css", "panels/friend/src/www/icons.css",
-             "panels/friend/extra/icons.css", "CamWatch/app/static/icons.css"]
+# Two servers since 0870c2b removed the second panels edition. The count is
+# derived from this list rather than written into the message, so adding a
+# third server does not leave a check saying "all two".
+GENERATED = ["panels/server/www/icons.css", "CamWatch/app/static/icons.css"]
 bodies = {}
 for rel in GENERATED:
     p = ROOT / rel

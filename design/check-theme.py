@@ -20,6 +20,11 @@ ROOT = Path(__file__).resolve().parent.parent
 # card shape this is about.
 CARD_MIN, CARD_MAX = 10, 28
 
+# Every server that receives the generated sheets. One list, so the scan and
+# the fan-out check cannot drift apart, and no message hardcodes a number -
+# "all four servers" was wrong within a day of being written.
+SERVERS = ("panels/server/www", "CamWatch/app/static")
+
 SKIP_NAMES = {"network.html"}          # embeds a base64 font
 SKIP_PARTS = {"designs", ".drafts"}    # theme explorations and drafts differ on purpose
 
@@ -32,7 +37,7 @@ def check(name, ok, detail=""):
 
 
 def sources():
-    for rel in ("panels/server/www", "panels/friend", "CamWatch/app"):
+    for rel in ("panels/server/www", "CamWatch/app"):
         for ext in ("*.html", "*.css", "*.py"):
             for p in (ROOT / rel).rglob(ext):
                 if p.name in SKIP_NAMES or SKIP_PARTS & set(p.parts):
@@ -75,10 +80,9 @@ if len(scale) >= 3:
           int(scale["r-sm"]) < int(scale["r"]) < int(scale["r-lg"]),
           f"{scale}")
 
-# Both projects start from the same card radius. deck.css and the friend
-# edition may override it; those are declared in design/sync-tokens.py.
-OVERRIDE = {"panels/server/www/deck.css", "panels/friend/src/www/wall.css",
-            "panels/friend/extra/wall.css"}
+# Both projects start from the same card radius. deck.css may override it;
+# that override is declared in design/sync-tokens.py.
+OVERRIDE = {"panels/server/www/deck.css"}
 base = None
 for rel in ("panels/server/www/wall.css", "CamWatch/app/static/tokens.css"):
     m = re.search(r"--r:\s*(\d+)px", (ROOT / rel).read_text())
@@ -107,12 +111,11 @@ if ui_cap and legacy:
 # --- the shared sheets are all present and identical ------------------
 for name in ("icons.css", "shell.css"):
     bodies = {}
-    for rel in ("panels/server/www", "panels/friend/src/www",
-                "panels/friend/extra", "CamWatch/app/static"):
+    for rel in SERVERS:
         p = ROOT / rel / name
         if p.exists():
             bodies[rel] = p.read_text()
-    check(f"{name} ships to all four servers", len(bodies) == 4,
+    check(f"{name} ships to every server ({len(SERVERS)})", len(bodies) == len(SERVERS),
           f"found {sorted(bodies)}")
     check(f"{name} is identical on every server", len(set(bodies.values())) <= 1,
           "run the matching design/sync-*.py")
