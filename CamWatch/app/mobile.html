@@ -4,19 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#101418">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#12151d">
 <meta name="apple-mobile-web-app-title" content="camwatch">
 <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
 <link rel="icon" type="image/svg+xml" href="/static/mark.svg"><link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png"><link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <script>if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 <title>camwatch</title>
+<link rel="stylesheet" href="/static/tokens.css">
 <style>
 /* Phone home screen (/m): what needs attention, live cameras, today, recent visits. Data from /api/status and /api/visits. */
-:root { --bg: #101418; --ink: #eef2f6; --mute: #8b98a8; --faint: #5d6b7b; --line: #2a333d; --card: #1a2027; --card-hi: #222a33;
-  --accent: #38bdf8; --ok: #22c55e; --warn: #f59e0b; --bad: #ef4444;
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif;
-  --tab: calc(64px + env(safe-area-inset-bottom)); }
 * { box-sizing: border-box; }
 html { background: var(--bg); -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.4 var(--font); -webkit-tap-highlight-color: transparent;
@@ -172,7 +168,7 @@ nav.tabs a.on { color: var(--accent); }
 
   <div class="cap"><span>Recent</span><a href="/">All clips →</a></div>
   <div class="list" id="recent"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
-  <p id="ver" style="text-align:center;color:var(--faint);font-size:12px;margin:22px 0 4px"></p>
+  <p id="ver" style="text-align:center;color:var(--dim);font-size:12px;margin:22px 0 4px"></p>
 </main>
 
 <nav class="tabs" aria-label="Pages">

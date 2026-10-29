@@ -1785,8 +1785,11 @@ self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', e => {
   if (e.request.mode !== 'navigate') return;
+  // The colours below are literals, not var(): the worker serves this page
+  // with no stylesheet attached, so a custom property would resolve to nothing
+  // and the offline notice would render unstyled. Kept in step by tests/test_design_tokens.py.
   e.respondWith(fetch(e.request).catch(() => new Response(
-    '<!doctype html><meta name=viewport content="width=device-width"><body style="background:#101418;color:#eef2f6;font:16px system-ui;padding:24px">'
+    '<!doctype html><meta name=viewport content="width=device-width"><body style="background:#12151d;color:#eef2f7;font:16px system-ui;padding:24px">'
     + '<h2>camwatch is not reachable</h2><p>Check the connection (home Wi-Fi or VPN) and try again.</p>',
     {headers: {'Content-Type': 'text/html'}})));
 });
@@ -2012,18 +2015,16 @@ TEMPLATES = {
     "base.html": """<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#101418">
+<meta name="theme-color" content="#12151d">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="camwatch">
 <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
 <link rel="icon" type="image/svg+xml" href="/static/mark.svg"><link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png"><link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <script>if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 <title>{% block title %}Clips{% endblock %} · camwatch</title>
+<link rel="stylesheet" href="/static/tokens.css">
 <style>
 /* Same "Wall" look as /dashboard and /view: dark slate, solid rounded tiles, one cyan accent. */
-:root{--bg:#101418;--card:#1a2027;--card-hi:#222a33;--fg:#eef2f6;--muted:#8b98a8;--faint:#5d6b7b;--line:#2a333d;
-  --accent:#38bdf8;--accent-ink:#062033;--danger:#ef4444;--known:#22c55e;--unknown:#f59e0b;
-  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,Roboto,sans-serif}
 *{box-sizing:border-box}[hidden]{display:none!important}
 html{background:var(--bg);color-scheme:dark;-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 var(--font);-webkit-tap-highlight-color:transparent}
@@ -2042,7 +2043,7 @@ header .tools{display:flex;gap:6px;align-items:center;flex:none}
 header .tools button.armed{border-color:var(--accent);color:var(--accent);background:var(--card)}
 @media (max-width:820px){header{flex-wrap:wrap;row-gap:8px}header nav{order:3;flex-basis:100%}header .tools{margin-left:auto}}
 main{max-width:1100px;margin:0 auto;padding:12px 12px 24px}
-footer.ver{max-width:1100px;margin:0 auto;padding:0 12px 28px;color:var(--faint);font-size:12px;text-align:center}
+footer.ver{max-width:1100px;margin:0 auto;padding:0 12px 28px;color:var(--dim);font-size:12px;text-align:center}
 h1{font-size:26px;font-weight:750;margin:16px 0 12px;line-height:1.2}h1 .muted{font-size:15px;font-weight:600}
 h2{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:24px 2px 10px}
 h2 .muted{text-transform:none;letter-spacing:0}
@@ -2073,7 +2074,7 @@ input[type=file]{padding:6px 10px}
 textarea{font:inherit;color:var(--fg);background:var(--card-hi);border:1px solid var(--line);border-radius:10px;padding:8px 12px;width:100%;resize:vertical}
 .field{display:grid;gap:4px}
 .field>span{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.field>span i{font-style:normal;font-weight:500;letter-spacing:0;text-transform:none;color:var(--faint)}
+.field>span i{font-style:normal;font-weight:500;letter-spacing:0;text-transform:none;color:var(--dim)}
 .field input{width:100%}
 select{padding-right:8px}
 button{cursor:pointer;font-weight:650;border-radius:999px;padding:0 15px}
@@ -2767,7 +2768,7 @@ A VPN only works here if its traffic reaches camwatch with the VPN address (rout
 .camcard.live{border-color:rgba(34,197,94,.45)}
 .camcard .view{position:relative;aspect-ratio:16/9;background:#0b0e12;display:grid;place-items:center;overflow:hidden}
 .camcard .view img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.camcard .view .ph{background:none;color:var(--faint);font-size:13px;display:grid;place-items:center;gap:4px;aspect-ratio:auto;text-align:center}
+.camcard .view .ph{background:none;color:var(--dim);font-size:13px;display:grid;place-items:center;gap:4px;aspect-ratio:auto;text-align:center}
 .camcard .view .ph b{font-size:34px;line-height:1;color:var(--line)}
 .camcard .head{display:flex;align-items:center;gap:10px;padding:12px 14px 4px}
 .camcard .num{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:750;font-size:14px;background:var(--card-hi);border:1px solid var(--line)}

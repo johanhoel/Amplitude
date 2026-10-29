@@ -1,13 +1,68 @@
 /* Home Deck shared look for the ring panels (Pulse, Today, Rooms, Control, Atlas).
    Dark glass on a deep background; tokens on :root; safe areas for iPhone/iPad home-screen apps. */
-:root {
-  --bg: #07080f; --ink: #f3f4fb; --mute: rgba(243,244,251,.58); --faint: rgba(243,244,251,.3); --line: rgba(255,255,255,.09);
-  --card: rgba(255,255,255,.045); --card-hi: rgba(255,255,255,.08); --accent: #38bdf8; --ok: #34d399; --warn: #fbbf24; --bad: #fb7185;
-  --cyan: #22d3ee; --amber: #f59e0b; --pink: #f472b6; --blue: #60a5fa; --r: 24px;
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Inter, Roboto, sans-serif;
-  --sl: env(safe-area-inset-left); --sr: env(safe-area-inset-right); --st: env(safe-area-inset-top); --sb: env(safe-area-inset-bottom);
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+/* >>> generated from design/tokens.css - edit there, run design/sync-tokens.py */
+/* --r overridden for this project */
+:root, :root body {
+  /* ---- surfaces, darkest to lightest ---------------------------------- */
+  --bg:      #12151d;  /* page */
+  --card:    #1b2029;  /* a panel on the page */
+  --card-hi: #232935;  /* that panel, raised or hovered */
+  --line:    #2b323d;  /* hairline between things, never a text colour */
+  --faint:   #6e7f92;  /* inactive status dot, progress track. NOT text. */
+
+  /* ---- text, in the order you should reach for it ----------------------
+     ratio is against --card-hi, the worst case                            */
+  --ink:  #eef2f7;  /* 12.97:1  titles, values, anything being read */
+  --mute: #9aa7b6;  /*  5.96:1  the label under a title */
+  --dim:  #7e91a7;  /*  4.51:1  timestamps, units, counts */
+
+  /* ---- state ----------------------------------------------------------
+     These read as text on a dark surface AND take black type when used as
+     a fill, so one value works for a dot, a pill and a word.              */
+  --ok:   #34d399;  /*  8.50:1 as text   10.40:1 with #07080f on it */
+  --warn: #fbbf24;  /*  9.79:1           11.97:1 */
+  --bad:  #f87171;  /*  5.91:1            7.23:1 */
+
+  /* ---- accent ---------------------------------------------------------
+     --accent is the brand colour and may be overridden per project.
+     --accent-text is the same hue lightened until it passes AA as type;
+     the two are separate because one value cannot do both jobs: a violet
+     readable on a dark card is too pale to sit under white text.          */
+  --accent:      #38bdf8;  /* fills, active pills, focus rings */
+  --accent-text: #38bdf8;  /*  7.63:1 as type. Cyan passes unchanged. */
+  --accent-ink:  #07080f;  /*  9.33:1 the type that sits ON --accent */
+
+  /* ---- shape ---------------------------------------------------------- */
+  --r:    22px;  /* a card */
+  --r-sm:  9px;  /* a pill, a chip, an input */
+  --r-lg: 22px;  /* a sheet, a full-bleed panel */
+
+  /* ---- motion ---------------------------------------------------------
+     Entrances and exits use --ease-out; things moving on screen use
+     --ease-in-out. Never ease-in: it delays the first frame, the one the
+     eye is already on.                                                    */
+  --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
+  /* ---- type ----------------------------------------------------------- */
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+          "Segoe UI", Inter, Roboto, sans-serif;
+
+  /* ---- safe areas, for the home-screen apps --------------------------- */
+  --sl: env(safe-area-inset-left);  --sr: env(safe-area-inset-right);
+  --st: env(safe-area-inset-top);   --sb: env(safe-area-inset-bottom);
+
+  /* ---- aliases --------------------------------------------------------
+     Names the pages already use. Kept so nothing has to be renamed, but
+     pointed at one value each, which is the whole point of this file.     */
+  --text: var(--ink);  --glass: var(--card);  --glass-hi: var(--card-hi);
+  --tile: var(--card); --tile2: var(--card-hi);
+  --hue: var(--accent); --hue2: var(--accent); --cyan: var(--accent);
+  --warm: var(--warn); --amber: var(--warn);
+  --blue: #60a5fa; --pink: #f472b6;
+  --glow: transparent;
 }
+/* <<< end generated tokens */
 @view-transition { navigation: auto; }
 ::view-transition-old(root) { animation: 180ms var(--ease-out) both vt-out; }
 ::view-transition-new(root) { animation: 260ms var(--ease-out) both vt-in; }
@@ -35,7 +90,7 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 700px) { .head h1 { font-size: 28px; } .head .clock { font-size: 28px; } }
 .cap { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); font-weight: 680; margin: 26px 2px 10px;
   display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-.cap small { letter-spacing: 0; text-transform: none; font-weight: 500; color: var(--faint); }
+.cap small { letter-spacing: 0; text-transform: none; font-weight: 500; color: var(--dim); }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; position: relative; min-width: 0; }
 a.card:active, button.card:active { transform: scale(.985); }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px; background: var(--card-hi); border: 1px solid var(--line);
@@ -43,7 +98,7 @@ a.card:active, button.card:active { transform: scale(.985); }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; display: inline-block; }
 .dot.ok { background: var(--ok); box-shadow: 0 0 8px color-mix(in srgb, var(--ok) 70%, transparent); }
 .dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); box-shadow: 0 0 8px color-mix(in srgb, var(--bad) 70%, transparent); }
-.mute { color: var(--mute); } .faint { color: var(--faint); }
+.mute { color: var(--mute); } .faint { color: var(--dim); }
 .empty { color: var(--mute); font-size: 14px; padding: 6px 2px; }
 .toast { position: fixed; left: 50%; bottom: calc(var(--sb) + 92px); transform: translateX(-50%); z-index: 70; padding: 11px 18px; border-radius: 999px;
   background: #1b1830; border: 1px solid var(--line); font-size: 14px; font-weight: 600; opacity: 0; transition: opacity .2s var(--ease-out); pointer-events: none; max-width: calc(100% - 32px); }

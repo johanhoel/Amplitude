@@ -1,0 +1,62 @@
+/* >>> generated from design/tokens.css - edit there, run design/sync-tokens.py */
+:root, :root body {
+  /* ---- surfaces, darkest to lightest ---------------------------------- */
+  --bg:      #12151d;  /* page */
+  --card:    #1b2029;  /* a panel on the page */
+  --card-hi: #232935;  /* that panel, raised or hovered */
+  --line:    #2b323d;  /* hairline between things, never a text colour */
+  --faint:   #6e7f92;  /* inactive status dot, progress track. NOT text. */
+
+  /* ---- text, in the order you should reach for it ----------------------
+     ratio is against --card-hi, the worst case                            */
+  --ink:  #eef2f7;  /* 12.97:1  titles, values, anything being read */
+  --mute: #9aa7b6;  /*  5.96:1  the label under a title */
+  --dim:  #7e91a7;  /*  4.51:1  timestamps, units, counts */
+
+  /* ---- state ----------------------------------------------------------
+     These read as text on a dark surface AND take black type when used as
+     a fill, so one value works for a dot, a pill and a word.              */
+  --ok:   #34d399;  /*  8.50:1 as text   10.40:1 with #07080f on it */
+  --warn: #fbbf24;  /*  9.79:1           11.97:1 */
+  --bad:  #f87171;  /*  5.91:1            7.23:1 */
+
+  /* ---- accent ---------------------------------------------------------
+     --accent is the brand colour and may be overridden per project.
+     --accent-text is the same hue lightened until it passes AA as type;
+     the two are separate because one value cannot do both jobs: a violet
+     readable on a dark card is too pale to sit under white text.          */
+  --accent:      #38bdf8;  /* fills, active pills, focus rings */
+  --accent-text: #38bdf8;  /*  7.63:1 as type. Cyan passes unchanged. */
+  --accent-ink:  #07080f;  /*  9.33:1 the type that sits ON --accent */
+
+  /* ---- shape ---------------------------------------------------------- */
+  --r:    14px;  /* a card */
+  --r-sm:  9px;  /* a pill, a chip, an input */
+  --r-lg: 22px;  /* a sheet, a full-bleed panel */
+
+  /* ---- motion ---------------------------------------------------------
+     Entrances and exits use --ease-out; things moving on screen use
+     --ease-in-out. Never ease-in: it delays the first frame, the one the
+     eye is already on.                                                    */
+  --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
+  /* ---- type ----------------------------------------------------------- */
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+          "Segoe UI", Inter, Roboto, sans-serif;
+
+  /* ---- safe areas, for the home-screen apps --------------------------- */
+  --sl: env(safe-area-inset-left);  --sr: env(safe-area-inset-right);
+  --st: env(safe-area-inset-top);   --sb: env(safe-area-inset-bottom);
+
+  /* ---- aliases --------------------------------------------------------
+     Names the pages already use. Kept so nothing has to be renamed, but
+     pointed at one value each, which is the whole point of this file.     */
+  --text: var(--ink);  --glass: var(--card);  --glass-hi: var(--card-hi);
+  --tile: var(--card); --tile2: var(--card-hi);
+  --hue: var(--accent); --hue2: var(--accent); --cyan: var(--accent);
+  --warm: var(--warn); --amber: var(--warn);
+  --blue: #60a5fa; --pink: #f472b6;
+  --glow: transparent;
+}
+/* <<< end generated tokens */

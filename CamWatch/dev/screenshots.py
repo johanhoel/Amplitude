@@ -75,7 +75,9 @@ def main():
         import html
         import urllib.parse
         q = {k: v[0] for k, v in urllib.parse.parse_qs(environ.get("QUERY_STRING", "")).items()}
-        body = (f'<body style="margin:0;background:#101418"><iframe id="f" src="{html.escape(q["src"])}" width="{int(q["w"])}" '
+        # Literal, not var(--bg): this wrapper page loads no stylesheet, so a
+        # custom property would resolve to nothing and the shot would letterbox white.
+        body = (f'<body style="margin:0;background:#12151d"><iframe id="f" src="{html.escape(q["src"])}" width="{int(q["w"])}" '
                 f'height="{int(q["h"])}" style="border:0;display:block"></iframe><script>'
                 "const f = document.getElementById('f');"
                 "f.onload = () => setTimeout(() => { const id = location.search.match(/%23([\\w-]+)/);"

@@ -66,13 +66,13 @@
   position: fixed; inset: 0; z-index: 100;
   display: grid; place-items: center; gap: 18px;
   padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
-  background: var(--bg, #101418);
+  background: var(--bg, #12151d);
   transition: opacity 240ms var(--cw-ease, cubic-bezier(0.23, 1, 0.32, 1));
 }
 .cw-splash .cw-mark { width: 96px; height: 96px; }
 .cw-splash .cw-word {
   font: 600 15px/1 -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif;
-  letter-spacing: .14em; text-transform: lowercase; color: var(--mute, #8b98a8);
+  letter-spacing: .14em; text-transform: lowercase; color: var(--mute, #9aa7b6);
   opacity: 0; animation: cw-fade-up 320ms var(--cw-ease) 700ms forwards;
 }
 @keyframes cw-fade-up {

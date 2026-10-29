@@ -4,20 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#101418">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#12151d">
 <meta name="apple-mobile-web-app-title" content="Cameras">
 <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
 <link rel="icon" type="image/svg+xml" href="/static/mark.svg"><link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png"><link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <script>if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 <title>Cameras · camwatch</title>
+<link rel="stylesheet" href="/static/tokens.css">
 <style>
 /* Wall view (phone/tablet first): live picture on top, every recording below, newest first, day by day as you scroll.
    Live: a snapshot every 4 s (light on mobile data); ▶ Live switches to MJPEG video, which stops by itself after 2 min.
    Recordings: /api/days + /api/visits?day=, thumbnails /api/thumb, video and face crops via /media (Range for seeking).
    Player: full screen, swipe or ‹ › for the next / previous recording, the phone's Back closes it. */
-:root { --bg: #101418; --ink: #eef2f6; --mute: #8b98a8; --faint: #5d6b7b; --line: #2a333d; --card: #1a2027; --card-hi: #222a33;
-  --accent: #38bdf8; --ok: #22c55e; --warn: #f59e0b; --bad: #ef4444; --live: #e11d48;
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
 * { box-sizing: border-box; }
 html { background: var(--bg); -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.4 var(--font); -webkit-tap-highlight-color: transparent; overscroll-behavior-y: contain;
@@ -57,7 +55,7 @@ header .arm.on { border-color: var(--accent); color: var(--accent); }
 .v .w { display: block; font-size: 12.5px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .v .w.known { color: #86efac; } .v .w.unknown { color: #fbbf24; } .v .star { position: absolute; top: 6px; right: 8px; font-size: 16px; text-shadow: 0 1px 3px #000; }
 .v .dur { position: absolute; top: 6px; left: 6px; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,.6); }
-.more { text-align: center; color: var(--mute); padding: 18px; } .empty { color: var(--faint); padding: 10px 2px 4px; font-size: 14px; }
+.more { text-align: center; color: var(--mute); padding: 18px; } .empty { color: var(--dim); padding: 10px 2px 4px; font-size: 14px; }
 /* player */
 #pl { position: fixed; inset: 0; z-index: 80; background: #000; display: none; flex-direction: column; touch-action: pan-y; }
 #pl.open { display: flex; }
@@ -73,7 +71,7 @@ header .arm.on { border-color: var(--accent); color: var(--accent); }
 #pl .faces { display: flex; gap: 6px; padding: 0 12px 6px; overflow-x: auto; } #pl .faces img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; }
 /* pull to refresh */
 #dkptr { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 6px); z-index: 99; width: 42px; height: 42px; margin-left: -21px; border-radius: 50%;
-  display: grid; place-items: center; background: #1a2027; color: #fff; font: 700 20px var(--font); box-shadow: 0 6px 20px rgba(0,0,0,.45);
+  display: grid; place-items: center; background: var(--card); color: #fff; font: 700 20px var(--font); box-shadow: 0 6px 20px rgba(0,0,0,.45);
   transform: translateY(-70px); opacity: 0; transition: opacity .15s; pointer-events: none; }
 #dkptr.ready { background: #0284c7; } #dkptr.go { animation: dkspin .8s linear infinite; } @keyframes dkspin { to { rotate: 360deg; } }
 /* tag sheet */
