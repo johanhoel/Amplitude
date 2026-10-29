@@ -19,20 +19,16 @@ header h1 { flex: 1; margin: 0; font-size: 30px; font-weight: 700; }
 header a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--card);
   color: var(--ink); text-decoration: none; font-weight: 650; font-size: 14px; }
 .lead { color: var(--mute); margin: 0 0 18px; }
-.list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
-.b { display: flex; flex-direction: column; gap: 4px; min-height: 120px; padding: 16px 18px; border-radius: 22px; background: var(--card); border: 1px solid var(--line);
-  text-decoration: none; color: var(--ink); }
-.b b { font-size: 19px; } .b span { color: var(--mute); font-size: 13.5px; } .b .ic { font-size: 22px; margin-top: auto; letter-spacing: 4px; }
-.new { border: 1.5px dashed rgba(56,189,248,.6); background: rgba(56,189,248,.08); color: #bae6fd; font: 650 16px var(--font); cursor: pointer; justify-content: center; align-items: center; }
 </style>
 <link rel="stylesheet" href="/wall.css">
 <link rel="stylesheet" href="/icons.css">
+<link rel="stylesheet" href="/shell.css">
 </head>
 <body>
 <main>
   <header><a href="/start" class="start-link">‹ Start</a><h1>Boards</h1></header>
   <p class="lead">Your own dashboards, built from modules: lights, people, buses, weather, camera, media, buttons and more.</p>
-  <div class="list" id="list"></div>
+  <div class="ui-tiles" id="list" style="--ui-tile-w:230px"></div>
 </main>
 <script src="/wallkit.js"></script>
 <script src="/edit.js"></script>
@@ -55,9 +51,9 @@ const TEMPLATES = {
 
 async function load() {
   const r = await fetch('/api/boards', { cache: 'no-store' }).then(x => x.json()).catch(() => ({ boards: [] }));
-  document.getElementById('list').innerHTML = r.boards.map(b => `<a class="b" href="/board/${esc(b.name)}"><b>${esc(b.title || b.name)}</b>
-      <span>${b.count} module${b.count === 1 ? '' : 's'} · /board/${esc(b.name)}</span><span class="ic">${b.icons.map(t => MODULES[t] ? `<i class="icon icon-${MODULES[t].icon}" aria-hidden="true"></i>` : '').join('')}</span></a>`).join('')
-    + `<button class="b new" id="new">+ New board</button>`;
+  document.getElementById('list').innerHTML = r.boards.map(b => `<a class="ui-tile" href="/board/${esc(b.name)}"><b>${esc(b.title || b.name)}</b>
+      <span>${b.count} module${b.count === 1 ? '' : 's'} · /board/${esc(b.name)}</span><span class="ui-tile-icons">${b.icons.map(t => MODULES[t] ? `<i class="icon icon-${MODULES[t].icon}" aria-hidden="true"></i>` : '').join('')}</span></a>`).join('')
+    + `<button class="ui-tile is-new" id="new">+ New board</button>`;
   document.getElementById('new').onclick = newBoard;
 }
 async function create() {

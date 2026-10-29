@@ -25,7 +25,7 @@ SKIP_PARTS = {"designs", ".drafts"}    # theme explorations and drafts differ on
 
 # Being converted by another session right now. Remove these as they land;
 # each entry is a file still holding hardcoded card radii.
-IN_FLIGHT = {"admin.html", "boards.html", "board.html"}
+IN_FLIGHT = {"board.html"}
 
 results = []
 

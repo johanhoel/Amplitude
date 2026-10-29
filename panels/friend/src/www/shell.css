@@ -79,6 +79,22 @@
   color: var(--dim); font-size: 11.5px; overflow: hidden;
   text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .ui-tile b .ui-dot { margin-left: auto; }
+/* A row of small icons at the foot of a tile, saying what is inside it -
+   which modules a board holds, which cameras a group covers. Muted, because
+   it is a hint about the contents, not the contents. */
+.ui-tile-icons { display: flex; gap: 7px; margin-top: auto; padding-top: 10px;
+  font-size: 17px; flex-wrap: wrap; }
+/* Specific enough to beat .ui-tile .icon, which paints the tile's own icon in
+   the accent. These are a hint about the contents, so they stay muted. */
+.ui-tile .ui-tile-icons .icon { color: var(--dim); }
+/* The tile that adds another one. Dashed, so it reads as an outline waiting
+   to be filled rather than a card that failed to load. */
+.ui-tile.is-new {
+  border-style: dashed; border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  color: var(--accent-text); font-weight: 650;
+  align-items: center; justify-content: center; text-align: center;
+}
 /* Hover only where there is a pointer: on a touch screen it sticks after a tap. */
 @media (hover: hover) and (pointer: fine) {
   .ui-tile:hover { border-color: var(--accent); }
@@ -154,6 +170,41 @@
   .ui-ctl { transition-duration: .01ms; }
   .ui-ctl:active { transform: none; }
 }
+
+/* ---- grouped list ----------------------------------------------------
+   A card of rows divided by hairlines, each row an icon, a title with a line
+   under it, and something on the right - a status, a count, a chevron. The
+   third shape both projects need and neither shared: admin's console links,
+   CamWatch's settings. A tile is for a handful of destinations you scan; a
+   list is for many you read down. */
+.ui-list {
+  border-radius: var(--r); background: var(--card);
+  border: 1px solid var(--line); overflow: hidden;
+}
+.ui-list-row {
+  display: grid; grid-template-columns: 30px minmax(0, 1fr) auto;
+  gap: 12px; align-items: center;
+  padding: 11px 14px; min-height: 54px;
+  border-top: 1px solid var(--line);
+  color: inherit; text-decoration: none;
+  transition: background .15s var(--ease-out, ease);
+}
+/* The card's own border draws the top edge of the first row. */
+.ui-list-row:first-child { border-top: 0; }
+.ui-list-row .icon { font-size: 20px; color: var(--accent); justify-self: center; }
+.ui-list-row b { display: block; font-size: 15.5px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ui-list-row small { display: block; font-size: 12.5px; color: var(--mute);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.ui-list-meta { display: flex; align-items: center; gap: 8px;
+  color: var(--mute); font-size: 12px; }
+.ui-chev { opacity: .35; font-size: 18px; }
+@media (hover: hover) and (pointer: fine) {
+  .ui-list-row:hover { background: var(--card-hi); }
+}
+.ui-list-row:active { background: var(--card-hi); }
+.ui-list-row:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+@media (prefers-reduced-motion: reduce) { .ui-list-row { transition-duration: .01ms; } }
 
 /* ---- search ---------------------------------------------------------- */
 .ui-search { margin-top: 12px; }
