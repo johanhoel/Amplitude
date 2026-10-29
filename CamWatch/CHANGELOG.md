@@ -16,6 +16,9 @@ Newest changes first.
 - Fix: the recorder log no longer fills with `pthread_setaffinity_np failed` errors.
 - The number plate models now get a fixed number of threads, like the other models.
 - The version is now 2026.10.29.1.
+- The face models now always use the CPU. Their GPU code did not compile on the Intel HD 630.
+- A model that a GPU cannot run shows "this GPU cannot run this model" in grey, not a red error.
+- The version is now 2026.10.29.2.
 
 ## 2026-10-28
 
