@@ -72,7 +72,7 @@ h2 a { font-size: 13px; color: var(--accent); text-decoration: none; font-weight
 .dial .val { fill: none; stroke: url(#vg); stroke-width: 15; stroke-linecap: round; }
 .dial .face { position: absolute; inset: 24%; border-radius: 50%; display: grid; place-items: center; text-align: center;
   background: radial-gradient(circle at 50% 30%, #23202f, #121019 72%); box-shadow: 0 14px 32px rgba(0,0,0,.45); }
-.dial .face b { font-size: 42px; font-weight: 200; display: block; line-height: 1; } .dial .face span { font-size: 11px; color: var(--mute); letter-spacing: .12em; }
+.dial .face b { font-size: 42px; font-weight: 200; display: block; line-height: 1; } .dial .face span { font-size: 12px; color: var(--mute); letter-spacing: .12em; }
 .dial.muted .val { stroke: rgba(255,255,255,.25); } .dial.muted .face b { color: var(--bad); } .dial.off { opacity: .4; }
 .seg { display: flex; padding: 4px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--line); margin: 6px auto 0; width: max-content; }
 .seg button { padding: 10px 20px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--mute); }
@@ -97,7 +97,7 @@ h2 a { font-size: 13px; color: var(--accent); text-decoration: none; font-weight
 /* tab bar */
 nav { position: fixed; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 10px); display: flex; justify-content: space-around;
   padding: 8px; border-radius: 999px; background: rgba(22,20,32,.94); border: 1px solid var(--line); box-shadow: 0 12px 40px rgba(0,0,0,.5); z-index: 5; }
-nav button { flex: 1; display: grid; justify-items: center; gap: 3px; padding: 7px 0; border-radius: 999px; font-size: 10.5px; color: var(--mute); font-weight: 600; }
+nav button { flex: 1; display: grid; justify-items: center; gap: 3px; padding: 7px 0; border-radius: 999px; font-size: 12px; color: var(--mute); font-weight: 600; }
 nav button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 nav button.on { color: var(--ink); background: rgba(255,255,255,.09); }
 #ov { position: fixed; inset: 0; z-index: 20; display: none; place-items: center; background: rgba(4,3,8,.9); padding: 14px; }

@@ -140,6 +140,8 @@ nav a.on { background: rgba(255,255,255,.12); color: var(--ink); }
   padding: 11px 18px; border-radius: 999px; background: #1c1824; border: 1px solid var(--line); font-size: 14px; transition: opacity .15s, transform .15s; pointer-events: none; }
 .hint.show { opacity: 1; transform: translate(-50%, 0); }
 #dial, #spk, #src, #power, #detect, #charger { display: none !important; }
+/* JS fills these in; without this they paint a broken-image icon on first load. */
+img:not([src]), img[src=""] { visibility: hidden; }
 </style>
 </head>
 <body>

@@ -92,6 +92,8 @@ header .arm.on { border-color: var(--accent); color: var(--accent); }
 #sheet .close { min-height: 34px; padding: 0 14px; border-radius: 999px; background: var(--card-hi); border: 1px solid var(--line); font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--ink); }
 #sheet .msg { color: var(--mute); font-size: 13px; padding: 4px 0; }
 [hidden] { display: none !important; }
+/* JS fills these in; without this they paint a broken-image icon on first load. */
+img:not([src]), img[src=""] { visibility: hidden; }
 </style>
 </head>
 <body>

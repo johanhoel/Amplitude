@@ -11,8 +11,8 @@
 <title>Start | Home Deck</title>
 <style>
 :root {
-  --accent: #7c5cff; --glass: rgba(18, 20, 30, .5); --glass-hi: rgba(255,255,255,.06); --line: rgba(255,255,255,.11);
-  --text: #f4f5fb; --mute: rgba(244,245,251,.58); --faint: rgba(244,245,251,.32);
+  --accent: #7958ff; --glass: rgba(18, 20, 30, .5); --glass-hi: rgba(255,255,255,.06); --line: rgba(255,255,255,.11);
+  --text: #f4f5fb; --mute: rgba(244,245,251,.58); --faint: rgba(244,245,251,.48);
   --ok: #34d399; --warn: #fbbf24; --bad: #f87171; --r: 24px;
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif;
 }
@@ -144,8 +144,8 @@ const GROUPS = [
   ]],
   ['Settings', 'Home Assistant, editing and setup', [
     ['ha', '/ha', 'Home Assistant', 'Devices, automations, areas', 'ha', '#18bcf2', 'feat'],
-    ['editor', '/editor', 'Panel editor', 'Edit the panels: code, live preview, history', 'keys', '#7c5cff'],
-    ['editstart', '/start?edit', 'Edit this page', 'Move, rename, hide or add cards', 'grid', '#7c5cff'],
+    ['editor', '/editor', 'Panel editor', 'Edit the panels: code, live preview, history', 'keys', '#7958ff'],
+    ['editstart', '/start?edit', 'Edit this page', 'Move, rename, hide or add cards', 'grid', '#7958ff'],
     ['setup', '/setup', 'Setup', 'Home Assistant token and what was found', 'box', '#6f8fe0'],
   ]],
 ];
@@ -176,7 +176,7 @@ render();
 // ---------- edit mode ----------
 const ICONS = Object.keys(I).map(k => [k, k]);
 async function editItem(gi, ii, isNew) {
-  const g = model.groups[gi], it = isNew ? { id: '', url: 'https://', name: '', desc: '', icon: 'grid', color: '#7c5cff', feat: false } : g.items[ii];
+  const g = model.groups[gi], it = isNew ? { id: '', url: 'https://', name: '', desc: '', icon: 'grid', color: '#7958ff', feat: false } : g.items[ii];
   const r = await Edit.sheet({ title: isNew ? 'New card' : 'Edit card', fields: [
       { key: 'name', label: 'Name', value: it.name }, { key: 'desc', label: 'Description', value: it.desc },
       { key: 'url', label: 'Address', type: 'url', value: it.url, hint: 'Full address, or a Home Deck path like /familyinfo' },
@@ -187,7 +187,7 @@ async function editItem(gi, ii, isNew) {
   if (!r) return;
   if (r.action === 'del') { if (confirm(`Delete "${it.name}"?`)) g.items.splice(ii, 1); return render(); }
   const v = r.values; if (!v.name || !v.url) return Edit.toast('Name and address are needed');
-  const upd = { ...it, name: v.name, desc: v.desc, url: v.url, icon: v.icon, color: v.color || '#7c5cff', feat: v.feat }; if (upd.url !== it.url) upd.id = '';
+  const upd = { ...it, name: v.name, desc: v.desc, url: v.url, icon: v.icon, color: v.color || '#7958ff', feat: v.feat }; if (upd.url !== it.url) upd.id = '';
   if (isNew) g.items.push(upd); else g.items[ii] = upd;
   const at = isNew ? g.items.length - 1 : ii;
   if (+v.gi !== gi) { g.items.splice(at, 1); model.groups[+v.gi].items.push(upd); }

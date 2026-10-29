@@ -31,14 +31,14 @@ a { color: inherit; text-decoration: none; }
 header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 h1 { margin: 0; font-size: 34px; font-weight: 750; letter-spacing: -.03em; }
 .sub { color: var(--mute); font-size: 14px; }
-.cap { font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); font-weight: 650; margin: 26px 2px 10px; display: flex; justify-content: space-between; }
+.cap { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); font-weight: 650; margin: 26px 2px 10px; display: flex; justify-content: space-between; }
 .cap small { letter-spacing: 0; text-transform: none; font-weight: 500; }
 
 /* health */
 .health { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 14px; }
 .hc { padding: 9px 10px; border-radius: 16px; min-width: 0; background: var(--card); border: 1px solid var(--line); display: block; }
 .hc b { display: block; font-size: 16px; font-weight: 650; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -.01em; }
-.hc span { font-size: 11px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.hc span { font-size: 12px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 @media (min-width: 700px) { .health { grid-template-columns: repeat(8, minmax(0, 1fr)); } .hc b { font-size: 18px; } }
 .hc.bad { border-color: rgba(251,113,133,.45); background: rgba(251,113,133,.10); } .hc.bad b { color: var(--bad); }
 .hc.warn { border-color: rgba(251,191,36,.4); background: rgba(251,191,36,.08); } .hc.warn b { color: var(--warn); }

@@ -21,7 +21,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .wrap { max-width: 1440px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 22px) 28px calc(env(safe-area-inset-bottom) + 40px); }
 h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 .sub { color: var(--mute); font-size: 15px; margin-top: 6px; }
-.cap { font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); font-weight: 650; margin: 0 0 12px; }
+.cap { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--mute); font-weight: 650; margin: 0 0 12px; }
 .grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); gap: 28px 36px; margin-top: 24px; }
 @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
 
@@ -32,7 +32,7 @@ h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 .readout b { font-size: 54px; font-weight: 200; letter-spacing: -.03em; }
 .readout small { font-size: 15px; color: var(--mute); margin-left: 4px; }
 .readout .dl b { color: var(--dl); } .readout .ul b { color: #7dd3fc; }
-.axis { display: flex; justify-content: space-between; color: var(--mute); font-size: 11.5px; margin-top: 4px; }
+.axis { display: flex; justify-content: space-between; color: var(--mute); font-size: 12px; margin-top: 4px; }
 
 /* speed gauge + dns */
 .side { display: grid; gap: 26px; align-content: start; }
@@ -44,7 +44,7 @@ h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 .donut { width: 104px; height: 104px; position: relative; }
 .donut svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .donut div { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; line-height: 1.1; }
-.donut b { font-size: 24px; font-weight: 300; } .donut small { font-size: 10.5px; color: var(--mute); display: block; }
+.donut b { font-size: 24px; font-weight: 300; } .donut small { font-size: 12px; color: var(--mute); display: block; }
 .pulse svg.spark { width: 100%; height: 70px; }
 .holes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
 .hole { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--line); font-size: 13px; }
@@ -61,7 +61,7 @@ h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 .d { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px 6px 8px; border-radius: 999px; background: rgba(255,255,255,.045); border: 1px solid var(--line); font-size: 12.5px; white-space: nowrap; }
 .d i { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); }
 .d.on i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
-.d.new { border-color: rgba(251,191,36,.55); } .d.new::after { content: "new"; font-size: 10px; color: var(--warn); font-weight: 700; margin-left: 2px; }
+.d.new { border-color: rgba(251,191,36,.55); } .d.new::after { content: "new"; font-size: 12px; color: var(--warn); font-weight: 700; margin-left: 2px; }
 .d small { color: var(--mute); }
 .blocked { display: grid; gap: 8px; }
 .b { display: grid; grid-template-columns: 1fr auto; gap: 10px; font-size: 13.5px; }

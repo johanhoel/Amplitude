@@ -98,6 +98,8 @@ body.left .date { margin-left: 0; margin-right: calc(.6 * var(--u)); }
 body.left .wx { justify-content: flex-end; margin-left: 0; margin-right: calc(.6 * var(--u)); }
 body.left .stale { right: auto; left: calc(var(--left) + 1.6 * var(--u)); }
 .stale { position: fixed; right: calc(2.6 * var(--u)); bottom: calc(var(--bottom) + .6 * var(--u)); font-size: calc(1.1 * var(--u)); color: var(--faint); }
+/* JS fills these in; without this they paint a broken-image icon on first load. */
+img:not([src]), img[src=""] { visibility: hidden; }
 </style>
 </head>
 <body>

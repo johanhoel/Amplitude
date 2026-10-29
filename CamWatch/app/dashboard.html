@@ -56,6 +56,8 @@ header h1 { flex: 1; margin: 0; font-size: 26px; font-weight: 750; } header h1 s
 .camgrid span { position: absolute; left: 8px; bottom: 8px; padding: 3px 10px; border-radius: 999px; background: rgba(0,0,0,.6); font-weight: 700; font-size: 13px; }
 .heat { display: block; border-radius: 20px; overflow: hidden; border: 1px solid var(--line); background: #000; }
 .heat img { width: 100%; display: block; }
+/* JS fills these in; without this they paint a broken-image icon on first load. */
+img:not([src]), img[src=""] { visibility: hidden; }
 </style>
 </head>
 <body>

@@ -100,7 +100,7 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 .pill { padding: 9px 14px; border-radius: 999px; background: var(--glass-hi); border: 1px solid var(--line); font-size: 13px;
   font-weight: 600; transition: transform .12s, background .2s; }
 .pill:active { transform: scale(.95); }
-.pill.on { background: var(--accent); border-color: transparent; box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 45%, transparent); }
+.pill.on { background: var(--accent); color: #07080f; border-color: transparent; box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 45%, transparent); }
 .pill.red.on { background: #e5484d; box-shadow: 0 6px 20px rgba(229,72,77,.4); }
 .seg { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(0,0,0,.3); border: 1px solid var(--line); }
 .seg button { padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--mute); }
@@ -287,26 +287,26 @@ body.lab .deck { justify-self: center; }
 <div id="sheet"><div class="back" data-close></div>
   <div class="panel">
     <h2><span>Personalize</span><button data-close aria-label="Close">✕</button></h2>
-    <h4>Wallpaper</h4>
+    <h3>Wallpaper</h3>
     <div class="swatches" id="walls"></div>
     <input type="file" id="upload" accept="image/*" hidden>
-    <h4>Accent</h4>
+    <h3>Accent</h3>
     <div class="accents" id="accents"></div>
-    <h4>Dim wallpaper</h4>
+    <h3>Dim wallpaper</h3>
     <input type="range" id="dim" min="0" max="80" value="25">
-    <h4>Wallpaper motion</h4>
+    <h3>Wallpaper motion</h3>
     <span class="seg" id="motion"><button data-mo="auto">Auto</button><button data-mo="on">On</button><button data-mo="off">Off</button></span>
     <div class="sub">Auto turns the aurora animation off on low-power devices (tablets).</div>
-    <h4>Camera on Home</h4>
+    <h3>Camera on Home</h3>
     <span class="seg" id="campick"><span class="sub" style="padding:7px 10px">Loading…</span></span>
-    <h4>Deck card on Home</h4>
+    <h3>Deck card on Home</h3>
     <span class="seg" id="deckmode"><button data-d="full">Full lab overview</button><button data-d="fav">Favourites 3×2</button></span>
-    <h4>Connections</h4>
+    <h3>Connections</h3>
     <div class="field">Home Assistant long-lived token <span id="ha-set"></span>
       <input type="password" id="ha" placeholder="Paste token (stored on the server only)" autocomplete="off"></div>
     <div class="field">Genelec password (user admin) <span id="gen-set"></span>
       <input type="password" id="gen" placeholder="Speaker password" autocomplete="off"></div>
-    <h4>Temperatures to show</h4>
+    <h3>Temperatures to show</h3>
     <div class="checks" id="temp-pick"><span class="sub">Connect Home Assistant first.</span></div>
     <button class="save" id="save">Save</button>
   </div>

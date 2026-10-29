@@ -4,7 +4,7 @@
  * Not used on: ambient (night clock keeps its dim amber) and network.html (printable document).
  */
 :root, :root body {
-  --bg: #101418; --ink: #eef2f6; --text: #eef2f6; --mute: #8b98a8; --faint: #5d6b7b; --line: #2a333d;
+  --bg: #101418; --ink: #eef2f6; --text: #eef2f6; --mute: #8b98a8; --faint: #6e7f92; --line: #2a333d;
   --card: #1a2027; --card-hi: #222a33; --glass: #1a2027; --glass-hi: #222a33; --tile: #1a2027; --tile2: #222a33;
   --accent: #38bdf8; --ok: #22c55e; --warn: #f59e0b; --bad: #ef4444; --warm: #f59e0b; --amber: #f59e0b;
   --hue: #38bdf8; --hue2: #38bdf8; --cyan: #38bdf8; --blue: #60a5fa; --glow: transparent;
@@ -32,3 +32,6 @@ a:focus-visible, button:focus-visible, [role=button]:focus-visible { outline: 3p
 /* floating helpers (camera, reload, Start, Log out): solid like the Wall tiles */
 #dkcam, #dkreload, .start-link, #dklogout:not(.innav), #sw, #orb, .orb { background: #1a2027 !important; border-color: #2a333d !important; box-shadow: 0 6px 20px rgba(0, 0, 0, .45) !important; }
 #dkptr.ready { background: #0284c7; }
+
+/* JS fills these in; without this they paint a broken-image icon on first load. */
+img:not([src]), img[src=""] { visibility: hidden; }
