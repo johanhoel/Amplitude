@@ -2016,7 +2016,7 @@ TEMPLATES = {
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="camwatch">
 <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
-<link rel="icon" type="image/svg+xml" href="/static/logo.svg"><link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png"><link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="icon" type="image/svg+xml" href="/static/mark.svg"><link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png"><link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <script>if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('/sw.js').catch(() => {});</script>
 <title>{% block title %}Clips{% endblock %} · camwatch</title>
 <style>
@@ -2105,7 +2105,7 @@ ol li,ul li{margin:4px 0}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 </style></head><body>
-<header><a class="brand" href="{{ url_for('dashboard') }}"><img src="/static/logo-mark.svg" alt="" width="36" height="29">camwatch</a>
+<header><a class="brand" href="{{ url_for('dashboard') }}"><img src="/static/mark.svg" alt="" width="29" height="29">camwatch</a>
 <nav aria-label="Pages">{% for ep, label in [('dashboard', '🏠 Home'), ('wall_view', '📱 View'), ('index', '🎞 Clips'), ('search_page', '🔍 Search'),
   ('live', '📡 Live'), ('log_page', '📋 Log'), ('report_page', '📊 Report'), ('timelapse_page', '⏩ Timelapse'), ('people_page', '🧑 People'), ('strangers_page', '❔ Strangers'),
   ('plates_page', '🚗 Plates'), ('zones_page', '🗺 Zones'), ('settings_page', '⚙️ Settings'), ('ha_page', '🏠 Home Assistant')] %}

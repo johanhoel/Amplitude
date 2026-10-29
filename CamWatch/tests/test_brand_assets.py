@@ -64,5 +64,20 @@ check("splash only on a standalone launch", "display-mode: standalone" in mob)
 check("splash shows once per session", "sessionStorage" in mob)
 check("splash removes itself", "el.remove()" in mob)
 
+# The mark has to be visible, not just present. This is the check that was missing
+# the first time round: the asset shipped while every header still drew the old one.
+APP = Path(__file__).resolve().parents[1] / "app"
+for page in ("dashboard.html", "wallview.html", "mobile.html", "webui.py"):
+    text = (APP / page).read_text()
+    check(f"{page} draws the new mark", "/static/mark.svg" in text)
+    check(f"{page} no longer draws the old mark", "logo-mark.svg" not in text)
+    check(f"{page} favicon is the new mark", 'href="/static/logo.svg"' not in text)
+
+# Square mark in a slot sized for the old 512x410 one would squash it.
+for page in ("dashboard.html", "wallview.html", "mobile.html", "webui.py"):
+    text = (APP / page).read_text()
+    for w, h in re.findall(r'<img src="/static/mark\.svg"[^>]*width="(\d+)" height="(\d+)"', text):
+        check(f"{page} draws the mark square ({w}x{h})", w == h, "the mark is 1:1")
+
 print(f"{sum(results)}/{len(results)} passed")
 raise SystemExit(0 if all(results) else 1)
