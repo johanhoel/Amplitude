@@ -125,6 +125,7 @@ footer { color: var(--dim); font-size: 13px; line-height: 1.5; margin-top: 26px;
 @media (min-width: 761px) and (max-height: 620px) { .board { grid-template-rows: repeat(2, minmax(150px, 1fr)); } #v-home { overflow-y: auto; } }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<script src="/addons.js"></script>
 <link rel="stylesheet" href="/icons.css">
 <link rel="stylesheet" href="/shell.css">
 </head><body>
@@ -237,7 +238,7 @@ function board() {
     <a class="t" href="/familyinfo" data-t="wx"><span class="k">Outside<i>${esc(Wall.WXT[wx.condition] || '')}</i></span>
       <div class="mid"><span class="ic">${Wall.WX[wx.condition] || '·'}</span><span class="val num">${wx.temperature != null ? Math.round(wx.temperature) + '°' : '–'}</span></div>
       <span class="sub">${rain ? `Rain around ${Wall.hm(rain.datetime)}` : temps.length ? `Today ${Math.round(Math.min(...temps))}° to ${Math.round(Math.max(...temps))}°` : ''}</span></a>
-    <a class="t" href="/familyinfo" data-t="bus"><span class="k">Next bus<i>${b && !b.none ? esc(b.line) : ''}</i></span>
+    <a class="t" href="/familyinfo" data-t="bus" data-addon="bus"><span class="k">Next bus<i>${b && !b.none ? esc(b.line) : ''}</i></span>
       <div class="mid"><span class="ic"><i class="icon icon-bus" aria-hidden="true"></i></span><span class="val ${b?.none ? 's' : 'num'}">${b?.none ? 'None this hour' : b ? (b.min < 1 ? 'Now' : b.min + '<small>min</small>') : '–'}</span></div>
       <span class="sub">${b && !b.none ? `to ${esc(b.to)} · ${b.at}` : 'Storgatan'}</span></a>
     <a class="t" href="/media" data-t="media"><span class="k">Now playing<i>${p ? esc(p.label || '') : ''}</i></span>
