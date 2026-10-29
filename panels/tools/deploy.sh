@@ -46,7 +46,7 @@ fi
 echo "2/4  Trying the new version on the server (port 8099, real settings, read-only) ..."
 try=/tmp/homedeck-try
 tar czf - -C "$work/build" $FILES | ssh $H "rm -rf $try && mkdir -p $try/state && chmod 700 $try && tar xzf - -C $try --no-same-owner"
-pages=$(cd "$work/build/www" && ls *.html | sed 's/\.html$//' | grep -vE '^(index|offline|setup)$' | tr '\n' ' ')
+pages=$(cd "$work/build/www" && ls *.html | sed 's/\.html$//' | grep -vE '^(index|offline|setup|board)$' | tr '\n' ' ')
 ssh $H "set -e; cd $try
   sed 's#^static_dir = .*#static_dir = \"$try/www\"#' $R/homedeck.toml > state/homedeck.toml
   cp /var/lib/panel-wrapper/secrets.json state/ 2>/dev/null || true
