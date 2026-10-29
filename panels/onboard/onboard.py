@@ -205,6 +205,16 @@ class H(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         p = self.path.split('?')[0]
+        # The installer tells you to run `homedeck-onboard`, so that is the
+        # path people type. It is a command, not a route, and landing on it
+        # used to return {"error": "setup code needed"} as raw JSON, which
+        # reads like the code was wrong rather than the address.
+        if p in ('/homedeck-onboard', '/setup', '/onboard.html'):
+            self.send_response(302)
+            self.send_header('Location', '/' + (('?' + self.path.split('?', 1)[1])
+                                                if '?' in self.path else ''))
+            self.send_header('Content-Length', '0'); self.end_headers()
+            return
         if p in ('/', '/onboard'):
             with open(os.path.join(HERE, 'onboard.html'), 'rb') as f:
                 data = f.read()
