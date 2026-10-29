@@ -14,9 +14,33 @@ the network, so a fresh install shows what the house has and nothing else.
 
 The names are the ones build_www.py used to strip, because that list was
 already the inventory of what is personal.
+
+Plugins: the person who lives here can also switch a configured addon off
+(the gear on the start page, Plugins). That only ever hides: an addon is on
+when it is configured AND not switched off. The switches are a list of names
+in settings.json ('addons_off'), so they survive updates and need no restart.
 """
+import threading
+
 from .config import C
 from .layouts import layout_get
+from .store import SETTINGS, load, save
+
+# What each addon is, for the Plugins list: name -> (label, what it shows, what it needs when it is not set up)
+PLUGINS = {
+    'deck': ('Deck', 'The Buttons panel on Home', 'a Buttons address under [links] in homedeck.toml'),
+    'speakers': ('Speakers', 'Volume dial, speaker and source picker', 'Genelec speakers in homedeck.toml'),
+    'pc': ('PC', 'Wake, sleep and whether the PC is on', 'a PC under [pc] in homedeck.toml'),
+    'cameras': ('Motion alerts', 'Camera motion alerts and the strip that shows them', 'a camera detection setting'),
+    'charger': ('Car charger', 'The charger\'s power reading', 'a charger sensor'),
+    'tv': ('TV', 'The TV section and its app shortcuts', 'a TV in homedeck.toml'),
+    'spotify': ('Spotify', 'Now playing and the transport controls', 'a Spotify player'),
+    'vacuum': ('Vacuum', 'The vacuum button', 'a vacuum entity'),
+    'lock': ('Door lock', 'The door lock', 'a lock entity'),
+    'bus': ('Bus departures', 'The next buses', 'a bus stop (the Family info editor)'),
+    'lab': ('Lab', 'The Proxmox cluster and the lab panel', 'a lab panel service'),
+}
+_lock = threading.Lock()
 
 
 def _set(name):
@@ -37,7 +61,17 @@ def _bus_stop():
     return gid or (str(getattr(C, 'BUS_STOP', '') or ''))
 
 
+def switched_off():
+    return set(load(SETTINGS, {}).get('addons_off') or [])
+
+
 def state():
+    """{name: bool} - what this house has and wants. Cheap: config and settings reads, no network."""
+    off = switched_off()
+    return {k: v and k not in off for k, v in configured().items()}
+
+
+def configured():
     """{name: bool} - what this house has. Cheap: config reads, no network."""
     pc_host = (getattr(C, 'PC', None) or ('', 0))[0]
     return {
@@ -57,9 +91,31 @@ def state():
         'lock': _set('LOCK'),
         # Next departures. On when a stop is set, here or in the editor.
         'bus': bool(_bus_stop()),
+        # The Buttons panel in the Deck card on Home.
+        'deck': bool((getattr(C, 'LINK_CHECKS', None) or {}).get('buttons')),
         # The Proxmox cluster and the lab panel.
         'lab': bool(getattr(C, 'LABPANEL', None)),
     }
+
+
+def catalog():
+    """[{name, label, what, needs, configured, on}] for the Plugins list, in a fixed order."""
+    have, off = configured(), switched_off()
+    return [{'name': k, 'label': lab, 'what': what, 'needs': needs, 'configured': have.get(k, False),
+             'on': have.get(k, False) and k not in off} for k, (lab, what, needs) in PLUGINS.items()]
+
+
+def switch(name, on):
+    """Show (on) or hide (off) a plugin. Hiding works for any plugin; showing one that is not set up does nothing."""
+    if name not in PLUGINS:
+        raise ValueError('unknown plugin')
+    with _lock:
+        settings = load(SETTINGS, {})
+        off = set(settings.get('addons_off') or [])
+        (off.discard if on else off.add)(name)
+        settings['addons_off'] = sorted(off)
+        save(SETTINGS, settings)
+    return {'enabled': enabled(), 'plugins': catalog()}
 
 
 def enabled():

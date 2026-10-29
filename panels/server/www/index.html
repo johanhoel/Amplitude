@@ -170,6 +170,14 @@ input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border: 0; bord
 .ok-badge { color: var(--ok); font-weight: 600; }
 .checks { display: grid; gap: 8px; font-size: 14px; }
 .checks label { display: flex; gap: 10px; align-items: center; }
+.plugins { display: grid; gap: 8px; }
+.plugins button { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center; text-align: left;
+  padding: 10px 12px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--glass-hi); color: inherit; font: inherit; cursor: pointer; }
+.plugins button .sw { grid-row: span 2; width: 38px; height: 22px; border-radius: var(--r-pill); background: var(--line); position: relative; transition: background .2s; }
+.plugins button .sw::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .2s; }
+.plugins button.on .sw { background: var(--accent); color: var(--accent-ink); }
+.plugins button.on .sw::after { left: 19px; }
+.plugins button[disabled] { opacity: .5; cursor: default; }
 .save { width: 100%; margin-top: 18px; padding: 14px; border-radius: var(--r); background: var(--accent); color: var(--accent-ink); font-weight: 700; }
 .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 24px); transform: translateX(-50%) translateY(20px);
   opacity: 0; transition: opacity .3s var(--ease-out), transform .3s var(--ease-out); padding: 10px 16px; border-radius: 999px; background: rgba(20,20,28,.92); border: 1px solid var(--line);
@@ -226,7 +234,7 @@ body.lab .deck { justify-self: center; }
     </div>
   </header>
 
-  <section class="deck glass">
+  <section class="deck glass" data-addon="deck">
     <div class="deck-head"><span class="label" id="deck-title">Deck</span><span class="label" id="deck-state"></span></div>
     <div id="clip"><iframe id="frame" title="Deck" scrolling="no"></iframe>
       <div id="deck-err" hidden>
@@ -309,6 +317,9 @@ body.lab .deck { justify-self: center; }
     <span class="seg" id="campick"><span class="sub" style="padding:7px 10px">Loading…</span></span>
     <h3>Deck card on Home</h3>
     <span class="seg" id="deckmode"><button data-d="full">Full lab overview</button><button data-d="fav">Favourites 3×2</button></span>
+    <h3>Plugins</h3>
+    <div class="sub">Tap a plugin to add it to the panels or remove it. A grey one needs setting up first.</div>
+    <div class="plugins" id="plugins"><span class="sub">Loading…</span></div>
     <h3>Connections</h3>
     <div class="field">Home Assistant long-lived token <span id="ha-set"></span>
       <input type="password" id="ha" placeholder="Paste token (stored on the server only)" autocomplete="off"></div>
@@ -453,7 +464,28 @@ $('#deckmode').onclick = e => { const b = e.target.closest('[data-d]'); if (!b) 
 $('#motion').onclick = e => { const b = e.target.closest('[data-mo]'); if (!b) return;
   settings.motion = b.dataset.mo; applyLook(); renderPickers(); api('/api/settings', { motion: settings.motion }); };
 $('#campick').onclick = e => { const b = e.target.closest('[data-cam]'); if (!b) return; setCam(b.dataset.cam, true); renderPickers(); };
-$('#gear').onclick = () => { renderPickers(); $('#sheet').classList.add('open'); };
+$('#gear').onclick = () => { renderPickers(); renderPlugins(); $('#sheet').classList.add('open'); };
+
+/* Plugins: the parts of the panels this house can show (addons.py). A switch only hides or shows; a plugin that is
+   not set up stays grey and says what it needs. The change applies to this page at once and to every panel on its
+   next load (addons.js). */
+async function renderPlugins() {
+  try { showPlugins((await api('/api/addons')).plugins || []); }
+  catch (e) { $('#plugins').innerHTML = `<span class="sub">Could not load the plugins: ${esc(e.message)}</span>`; }
+}
+function showPlugins(list) {
+  $('#plugins').innerHTML = list.map(p => `<button type="button" class="${p.on ? 'on' : ''}" data-plugin="${esc(p.name)}" ${p.configured ? '' : 'disabled'}
+    aria-pressed="${p.on}"><span class="sw"></span><b>${esc(p.label)}</b><span class="sub">${esc(p.configured ? p.what : 'Needs ' + p.needs)}</span></button>`).join('');
+}
+$('#plugins').onclick = async e => {
+  const b = e.target.closest('[data-plugin]'); if (!b || b.disabled) return;
+  const on = !b.classList.contains('on');
+  try { const r = await api('/api/addons', { name: b.dataset.plugin, on });
+    document.documentElement.setAttribute('data-addons', r.enabled);
+    try { localStorage.setItem('homedeck-addons', r.enabled); } catch (_) { /* private window */ }
+    showPlugins(r.plugins); fit(); toast(`${b.querySelector('b').textContent} ${on ? 'added' : 'removed'}`); }
+  catch (err) { toast('Error: ' + err.message); }
+};
 document.addEventListener('click', e => { if (e.target.closest('[data-close]')) $('#sheet').classList.remove('open');
   if (e.target.closest('[data-open]')) { renderPickers(); $('#sheet').classList.add('open'); }
 });

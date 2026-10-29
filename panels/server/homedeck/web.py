@@ -184,7 +184,7 @@ class Handler(SimpleHTTPRequestHandler):
         if p == '/api/addons':
             # What this house has, derived from its settings. The pages hide
             # what is off, so one set of pages serves any house.
-            return self.send_json({'enabled': addons.enabled(), 'state': addons.state()})
+            return self.send_json({'enabled': addons.enabled(), 'state': addons.state(), 'plugins': addons.catalog()})
         if p.split('?')[0] == '/ha':                                      # Studio's Home Assistant link
             self.send_response(302); self.send_header('Location', C.HA + '/'); self.send_header('Content-Length', '0'); self.end_headers(); return
         if p == '/api/watched':                                           # Device status card (names + online only, no PIN)
@@ -369,6 +369,12 @@ class Handler(SimpleHTTPRequestHandler):
                     return self.send_json(localai.act('video-use'))
                 except ValueError as e:
                     return self.send_json({'error': str(e)}, 409 if 'busy' in str(e) else 400)
+            if self.path == '/api/addons':                                # admin (auth.ADMIN_POSTS): Plugins on the start page
+                req = json.loads(self.body(4096) or b'{}')
+                try:
+                    return self.send_json(addons.switch(str(req.get('name', '')), bool(req.get('on'))))
+                except ValueError as e:
+                    return self.send_json({'error': str(e)}, 400)
             if self.path.startswith('/api/studio/'):                      # admin (auth.ADMIN_POSTS)
                 req = json.loads(self.body(64 * 1024) or b'{}')
                 try:
