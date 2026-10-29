@@ -7,20 +7,27 @@
 <style>
 :root { --bg: #0b0c12; --panel: #12131c; --panel2: #171926; --line: rgba(255,255,255,.09); --text: #eceefa; --mute: rgba(236,238,250,.55);
   --accent: #7c5cff; --ok: #34d399; --warn: #fbbf24; --bad: #f87171;
+  /* The brand violet is 4.3:1 as type on --panel, just under AA, but it has to
+     stay that value as a fill. Same split as design/tokens.css: one tone for
+     the fill, a lighter one for type, and the type that sits on the fill.
+     --accent-ink is black here and white in the friend edition, whose violet
+     is three hex digits away: #7c5cff takes black at 4.60 and white at 4.35,
+     #7958ff the reverse. Measured, not guessed. */
+  --accent-text: #a075ff; --accent-ink: #07080f;
   --font: "Segoe UI Variable Text", "Segoe UI", -apple-system, Inter, Roboto, sans-serif; }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13.5px/1.4 var(--font); overflow: hidden; }
 button, select, input { font: inherit; color: inherit; }
 button { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 6px 12px; cursor: pointer; }
 button:hover { border-color: rgba(255,255,255,.22); }
-button.pri { background: var(--accent); border-color: transparent; font-weight: 600; }
+button.pri { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
 button.pri:disabled { opacity: .45; cursor: default; }
 button.ghost { background: none; }
 select, input[type=text], input[type=password] { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 6px 10px; }
 #app { display: grid; grid-template-rows: 48px 1fr 26px; height: 100%; }
 header { display: flex; align-items: center; gap: 10px; padding: 0 12px; border-bottom: 1px solid var(--line); background: var(--panel); }
 header .brand { font-weight: 600; letter-spacing: .02em; margin-right: 8px; }
-header .brand i { color: var(--accent); font-style: normal; }
+header .brand i { color: var(--accent-text); font-style: normal; }
 header .file { font-weight: 600; } header .dirty { color: var(--warn); }
 header .sp { flex: 1; }
 main { display: grid; grid-template-columns: 230px 1fr 6px var(--pw, 42%); min-height: 0; }

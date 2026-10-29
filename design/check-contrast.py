@@ -9,7 +9,18 @@ import re
 import sys
 from pathlib import Path
 
-TOKENS = Path(__file__).resolve().parent / "tokens.css"
+ROOT = Path(__file__).resolve().parent.parent
+TOKENS = ROOT / "design" / "tokens.css"
+# Every sheet sync-tokens.py writes, because a project may override its accent
+# and an override has to clear AA too. Checking only the source would let an
+# unreadable brand colour ship.
+GENERATED = [
+    "panels/server/www/wall.css",
+    "panels/server/www/deck.css",
+    "panels/friend/extra/wall.css",
+    "panels/friend/src/www/wall.css",
+    "CamWatch/app/static/tokens.css",
+]
 
 # Text tokens and the floor each must clear. --dim is tertiary, but it is still
 # text, so it gets the body threshold too: 3:1 is for 24px+, and none of these
@@ -18,9 +29,9 @@ TEXT = {"ink": 4.5, "mute": 4.5, "dim": 4.5, "ok": 4.5, "warn": 4.5, "bad": 4.5,
         "accent-text": 4.5}
 # Anything a text token can sit on.
 SURFACES = ["bg", "card", "card-hi"]
-# Tokens used as a fill with --accent-ink type on top.
-FILLS = {"accent": "accent-ink", "ok": "accent-ink", "warn": "accent-ink",
-         "bad": "accent-ink"}
+# Tokens used as a fill, and the token naming the type that sits on each.
+FILLS = {"accent": "accent-ink", "ok": "status-ink", "warn": "status-ink",
+         "bad": "status-ink"}
 
 
 def channel(c):
@@ -42,18 +53,19 @@ def ratio(a, b):
     return (hi + 0.05) / (lo + 0.05)
 
 
-def load():
-    text = TOKENS.read_text()
+def load(path):
     # Only literal hex values; the aliases are var() and resolve to these.
-    return dict(re.findall(r"--([a-z-]+):\s*(#[0-9a-fA-F]{3,6})\s*;", text))
+    return dict(re.findall(r"--([a-z-]+):\s*(#[0-9a-fA-F]{3,6})\s*;",
+                           path.read_text()))
 
 
-def main():
-    tok = load()
+def audit(label, tok):
+    """Check one palette. Returns the list of failures, empty if it passes."""
+    print(f"\n=== {label} ===")
     missing = [n for n in list(TEXT) + SURFACES if n not in tok]
     if missing:
-        print(f"FAIL  tokens.css is missing: {', '.join(missing)}")
-        return 1
+        print(f"FAIL  missing: {', '.join(missing)}")
+        return [f"{label} is missing {', '.join(missing)}"]
 
     failures = []
     print(f"{'token':12} {'value':9} " + " ".join(f"{s:>9}" for s in SURFACES))
@@ -64,14 +76,15 @@ def main():
         print(f"{name:12} {tok[name]:9} " + " ".join(f"{r:9.2f}" for r in ratios)
               + f"  worst {worst:5.2f}  {mark}")
         if worst < floor:
-            failures.append(f"{name} is {worst:.2f}:1 on its worst surface, needs {floor}")
+            failures.append(f"{label}: --{name} is {worst:.2f}:1 on its worst "
+                            f"surface, needs {floor}")
 
     print()
     for fill, ink in FILLS.items():
         r = ratio(tok[fill], tok[ink])
         print(f"{ink} on --{fill:11} {r:5.2f}  {'ok ' if r >= 4.5 else 'FAIL'}")
         if r < 4.5:
-            failures.append(f"--{ink} on --{fill} is {r:.2f}:1, needs 4.5")
+            failures.append(f"{label}: --{ink} on --{fill} is {r:.2f}:1, needs 4.5")
 
     # A surface token must never be bright enough to be mistaken for text.
     # If --faint ever passes AA, someone will use it as type again.
@@ -81,15 +94,26 @@ def main():
         print(f"--faint on --{s:9} {r:5.2f}  (surface token: must stay under 4.5)")
         if r >= 4.5:
             failures.append(
-                f"--faint is {r:.2f}:1 on --{s}: bright enough to be used as "
-                "text, which is the bug this split fixed. Use --dim for text.")
+                f"{label}: --faint is {r:.2f}:1 on --{s}: bright enough to be "
+                "used as text, which is the bug this split fixed. Use --dim.")
+    return failures
+
+
+def main():
+    failures = audit("design/tokens.css (source)", load(TOKENS))
+    for rel in GENERATED:
+        path = ROOT / rel
+        if not path.exists():
+            failures.append(f"{rel} has not been generated; run design/sync-tokens.py")
+            continue
+        failures += audit(rel, load(path))
 
     print()
     if failures:
         for f in failures:
             print(f"FAIL  {f}")
         return 1
-    print("all token contrast checks passed")
+    print(f"all token contrast checks passed ({len(GENERATED) + 1} palettes)")
     return 0
 
 

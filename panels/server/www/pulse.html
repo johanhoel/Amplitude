@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#07080f">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#12151d">
 <meta name="apple-mobile-web-app-title" content="Pulse"><meta name="nav-related" content="/today,/rooms,/media,/security">
 <title>Pulse</title>
 <link rel="stylesheet" href="/deck.css">
 <style>
 /* Pulse: the whole house on one screen. An "attention" strip shows only what needs action; every tile opens its detail panel.
    Data: /api/home/state, /api/status, /api/presence, /api/bus, /api/weather, /api/net, /api/ops/snapshot, /api/sec/visits, /api/health */
-:root { --hue: #38bdf8; --hue2: #22d3ee; }
+
 .attn { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
 .attn:empty { display: none; }
 .attn a { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 14px; font-size: 14px; font-weight: 600;
@@ -25,7 +25,7 @@
 @media (hover: hover) and (pointer: fine) { a.t:hover { border-color: rgba(255,255,255,.2); background: var(--card-hi); } }
 .t.w2 { grid-column: span 2; } .t.h2 { grid-row: span 2; }
 .t .k { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); font-weight: 700; display: flex; justify-content: space-between; gap: 8px; }
-.t .k i { font-style: normal; color: var(--faint); letter-spacing: 0; text-transform: none; font-weight: 500; }
+.t .k i { font-style: normal; color: var(--dim); letter-spacing: 0; text-transform: none; font-weight: 500; }
 .t .v { font-size: 34px; font-weight: 300; letter-spacing: -.02em; line-height: 1.05; }
 .t .v small { font-size: 15px; color: var(--mute); font-weight: 500; margin-left: 4px; letter-spacing: 0; }
 .t .s { color: var(--mute); font-size: 13.5px; line-height: 1.4; }
@@ -37,7 +37,7 @@
 .pp .av { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 21px; font-weight: 750; color: #fff;
   background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 85%, #fff), var(--c) 60%); box-shadow: 0 8px 22px color-mix(in srgb, var(--c) 35%, transparent); }
 .pp.away .av { filter: grayscale(.9) brightness(.5); box-shadow: none; } .pp.away { color: var(--mute); }
-.pp small { font-size: 11px; color: var(--faint); font-weight: 500; }
+.pp small { font-size: 11px; color: var(--dim); font-weight: 500; }
 .np { display: flex; gap: 14px; align-items: center; }
 .np .art { width: 76px; height: 76px; border-radius: 16px; background: #1a1630 center/cover; flex: none; display: grid; place-items: center; font-size: 28px; }
 .np b { display: block; font-size: 18px; line-height: 1.2; } .np span { color: var(--mute); font-size: 13.5px; }
@@ -48,7 +48,7 @@
 .cam img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .75; }
 .cam .over { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px; background: linear-gradient(transparent, rgba(0,0,0,.8)); }
 .spark { width: 100%; height: 34px; margin-top: auto; }
-.upd { margin-top: 18px; color: var(--faint); font-size: 12px; text-align: center; }
+.upd { margin-top: 18px; color: var(--dim); font-size: 12px; text-align: center; }
 </style>
 <link rel="stylesheet" href="/wall.css">
 </head>

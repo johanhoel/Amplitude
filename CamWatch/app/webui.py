@@ -2198,7 +2198,7 @@ filled in, and you press Submit there.{% endif %}</p>
   border:2px solid #fff;background:rgba(0,0,0,.45);box-shadow:0 1px 4px rgba(0,0,0,.5)}
 body.picking .card .pick{display:block}
 body.picking .card.sel{outline:3px solid var(--accent);outline-offset:-3px}
-body.picking .card.sel .pick{background:var(--accent);border-color:var(--accent)}
+body.picking .card.sel .pick{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 body.picking .card.sel .pick::after{content:"✓";display:block;text-align:center;line-height:24px;font-weight:800;color:#0b1220}
 #pickbar{display:none;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:20;gap:8px;align-items:center;flex-wrap:wrap;
   justify-content:center;max-width:calc(100vw - 24px);padding:10px 14px;border-radius:18px;background:var(--card);border:1px solid var(--line);
@@ -2769,7 +2769,9 @@ A VPN only works here if its traffic reaches camwatch with the VPN address (rout
 .camcard .view{position:relative;aspect-ratio:16/9;background:#0b0e12;display:grid;place-items:center;overflow:hidden}
 .camcard .view img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .camcard .view .ph{background:none;color:var(--dim);font-size:13px;display:grid;place-items:center;gap:4px;aspect-ratio:auto;text-align:center}
-.camcard .view .ph b{font-size:34px;line-height:1;color:var(--line)}
+/* 34px placeholder glyph, so the large-text bar (3:1) applies and --faint clears it
+   at 3.98:1. --line is a hairline colour and was never meant to be read. */
+.camcard .view .ph b{font-size:34px;line-height:1;color:var(--faint)}
 .camcard .head{display:flex;align-items:center;gap:10px;padding:12px 14px 4px}
 .camcard .num{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:750;font-size:14px;background:var(--card-hi);border:1px solid var(--line)}
 .camcard .title{font-weight:700;font-size:17px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

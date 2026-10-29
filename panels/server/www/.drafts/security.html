@@ -4,14 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0b0a0d">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#12151d">
 <title>Security</title>
 <style>
 /* Security: one glance answers "is the house OK?". Camera first, then a verdict, the door, alerts, and the
    day's visits as a timeline of snapshots (camwatch: people, faces, vehicles). */
-:root { --bg: #0b0a0d; --ink: #f7f5f8; --mute: rgba(247,245,248,.55); --faint: rgba(247,245,248,.12); --line: rgba(255,255,255,.08);
-  --ok: #34d399; --warn: #fbbf24; --bad: #f87171; --accent: #f97316;
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
+
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font-family: var(--font); -webkit-user-select: none; user-select: none;
   -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
@@ -86,6 +84,7 @@ h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 #swp a { display: block; padding: 16px 18px; border-radius: 999px; background: rgba(255,255,255,.07); border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-weight: 600; }
 #swp a small { display: block; color: var(--mute); font-weight: 400; font-size: 12px; } #swp a.on { background: #c2410c; border-color: transparent; }
 </style>
+<link rel="stylesheet" href="/wall.css">
 </head>
 <body>
 <button id="sw" aria-label="All panels"><svg viewBox="0 0 24 24"><circle cx="5" cy="5" r="2.2"/><circle cx="12" cy="5" r="2.2"/><circle cx="19" cy="5" r="2.2"/><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="12" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/></svg></button>

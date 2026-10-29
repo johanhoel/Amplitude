@@ -7,16 +7,13 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Remote">
-<meta name="theme-color" content="#101418">
+<meta name="theme-color" content="#12151d">
 <title>Remote</title>
 <style>
 /* Phone remote: the Stream Deck folders as one-thumb controls. Tabs at the bottom (where the thumb is),
    round buttons that glow when on, every tap answers on touch-down and updates before the server replies. */
-:root {
-  --bg: #101418; --ink: #f6f4fb; --mute: rgba(246,244,251,.55); --faint: rgba(246,244,251,.12); --line: rgba(255,255,255,.08);
-  --accent: #38bdf8; --warm: #ffb547; --ok: #34d399; --warn: #fbbf24; --bad: #f87171; --cyan: #22d3ee; --green: #4ade80; --pink: #ff7ac6;
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif;
-}
+/* page-local only; the palette comes from wall.css */
+:root { --green: #4ade80; }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--font); overscroll-behavior: none;
   -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }

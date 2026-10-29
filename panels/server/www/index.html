@@ -7,17 +7,11 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Home Deck">
-<meta name="theme-color" content="#05060a">
+<meta name="theme-color" content="#12151d">
 <link rel="apple-touch-icon" href="http://192.168.1.52:4440/apple-touch-icon.png">
 <title>Home Deck</title>
 <style>
-:root {
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-  --accent: #38bdf8; --glass: rgba(18, 20, 30, .48); --glass-hi: rgba(255,255,255,.07);
-  --line: rgba(255,255,255,.12); --text: #f4f5fb; --mute: rgba(244,245,251,.58);
-  --ok: #34d399; --warn: #fbbf24; --bad: #f87171; --r: 26px;
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif;
-}
+
 * { box-sizing: border-box; }
 html { background: #05060a; }
 html, body { margin: 0; min-height: 100%; color: var(--text); font-family: var(--font); touch-action: manipulation;
@@ -100,7 +94,7 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 .pill { padding: 9px 14px; border-radius: 999px; background: var(--glass-hi); border: 1px solid var(--line); font-size: 13px;
   font-weight: 600; transition: transform .12s, background .2s; }
 .pill:active { transform: scale(.95); }
-.pill.on { background: var(--accent); color: #07080f; border-color: transparent; box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 45%, transparent); }
+.pill.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 45%, transparent); }
 .pill.red.on { background: #e5484d; box-shadow: 0 6px 20px rgba(229,72,77,.4); }
 .seg { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(0,0,0,.3); border: 1px solid var(--line); }
 .seg button { padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--mute); }
@@ -169,7 +163,7 @@ input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border: 0; bord
 .ok-badge { color: var(--ok); font-weight: 600; }
 .checks { display: grid; gap: 8px; font-size: 14px; }
 .checks label { display: flex; gap: 10px; align-items: center; }
-.save { width: 100%; margin-top: 18px; padding: 14px; border-radius: 16px; background: var(--accent); font-weight: 700; }
+.save { width: 100%; margin-top: 18px; padding: 14px; border-radius: 16px; background: var(--accent); color: var(--accent-ink); font-weight: 700; }
 .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 24px); transform: translateX(-50%) translateY(20px);
   opacity: 0; transition: opacity .3s var(--ease-out), transform .3s var(--ease-out); padding: 10px 16px; border-radius: 999px; background: rgba(20,20,28,.92); border: 1px solid var(--line);
   font-size: 14px; z-index: 20; pointer-events: none; }

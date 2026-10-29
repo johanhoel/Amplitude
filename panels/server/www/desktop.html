@@ -9,12 +9,8 @@
      clock once a minute: close to zero CPU. ?left=, ?bottom=, ?scale= adjust the clear zones and the size;
      data cards sit on the left by default, ?side=right puts them on the right. -->
 <style>
-:root {
-  --accent: #38bdf8; --glass: rgba(16, 17, 26, .58); --line: rgba(255,255,255,.09); --text: #f2f3fa;
-  --mute: rgba(242,243,250,.56); --faint: rgba(242,243,250,.3); --ok: #34d399; --warn: #fbbf24; --bad: #f87171;
-  --left: 10px; --bottom: 64px; --u: calc(1vh * var(--scale, 1));
-  --font: "Segoe UI Variable Display", "Segoe UI", -apple-system, "SF Pro Display", Inter, Roboto, sans-serif;
-}
+/* page-local only; the palette comes from wall.css */
+:root { --left: 10px; --bottom: 64px; --u: calc(1vh * var(--scale, 1)); }
 * { box-sizing: border-box; }
 html { background: #06070c; }
 body { margin: 0; height: 100%; overflow: hidden; color: var(--text); font-family: var(--font);
@@ -47,7 +43,7 @@ body { margin: 0; height: 100%; overflow: hidden; color: var(--text); font-famil
   backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 10px 30px rgba(0,0,0,.25); }
 .card h3 { margin: 0 0 calc(1.2 * var(--u)); font-size: calc(1.2 * var(--u)); letter-spacing: .16em; text-transform: uppercase; color: var(--mute);
   font-weight: 600; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.card h3 span:last-child { letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--faint); font-size: calc(1.3 * var(--u)); }
+.card h3 span:last-child { letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--dim); font-size: calc(1.3 * var(--u)); }
 .row { display: flex; align-items: center; gap: calc(1.2 * var(--u)); }
 .sub { color: var(--mute); font-size: calc(1.45 * var(--u)); }
 .dot { width: calc(.9 * var(--u)); height: calc(.9 * var(--u)); border-radius: 50%; background: var(--faint); flex: none; }
@@ -58,7 +54,7 @@ body { margin: 0; height: 100%; overflow: hidden; color: var(--text); font-famil
 .people { display: flex; gap: calc(1.2 * var(--u)); }
 .p { flex: 1; text-align: center; }
 .av { width: calc(5.4 * var(--u)); height: calc(5.4 * var(--u)); margin: 0 auto calc(.7 * var(--u)); border-radius: 50%; display: grid; place-items: center;
-  font-size: calc(2.1 * var(--u)); font-weight: 600; color: var(--faint); border: 2px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
+  font-size: calc(2.1 * var(--u)); font-weight: 600; color: var(--dim); border: 2px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
 .p.home .av { color: var(--text); border-color: var(--ok); box-shadow: 0 0 calc(1.8 * var(--u)) rgba(52,211,153,.3); background: rgba(52,211,153,.12); }
 .p .n { font-size: calc(1.5 * var(--u)); font-weight: 500; }
 .p .s { font-size: calc(1.25 * var(--u)); color: var(--mute); }
@@ -97,7 +93,7 @@ body.left .time { left: auto; right: calc(3.2 * var(--u)); text-align: right; }
 body.left .date { margin-left: 0; margin-right: calc(.6 * var(--u)); }
 body.left .wx { justify-content: flex-end; margin-left: 0; margin-right: calc(.6 * var(--u)); }
 body.left .stale { right: auto; left: calc(var(--left) + 1.6 * var(--u)); }
-.stale { position: fixed; right: calc(2.6 * var(--u)); bottom: calc(var(--bottom) + .6 * var(--u)); font-size: calc(1.1 * var(--u)); color: var(--faint); }
+.stale { position: fixed; right: calc(2.6 * var(--u)); bottom: calc(var(--bottom) + .6 * var(--u)); font-size: calc(1.1 * var(--u)); color: var(--dim); }
 </style>
 <link rel="stylesheet" href="/wall.css">
 </head>

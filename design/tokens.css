@@ -39,9 +39,16 @@
   /* ---- state ----------------------------------------------------------
      These read as text on a dark surface AND take black type when used as
      a fill, so one value works for a dot, a pill and a word.              */
-  --ok:   #34d399;  /*  8.50:1 as text   10.40:1 with #07080f on it */
+  --ok:   #34d399;  /*  8.50:1 as text   10.40:1 with --status-ink on it */
   --warn: #fbbf24;  /*  9.79:1           11.97:1 */
   --bad:  #f87171;  /*  5.91:1            7.23:1 */
+  /* The type that sits ON a status fill. All three states are light colours,
+     so this is dark in every project - unlike --accent-ink, which follows
+     whatever the brand colour happens to be. Keeping them separate is not
+     pedantry: making --accent-ink white for the violet edition silently made
+     white-on-amber, at 1.67:1. The contrast gate caught it; one token would
+     not have. */
+  --status-ink: #07080f;
 
   /* ---- accent ---------------------------------------------------------
      --accent is the brand colour and may be overridden per project.
@@ -50,7 +57,7 @@
      readable on a dark card is too pale to sit under white text.          */
   --accent:      #38bdf8;  /* fills, active pills, focus rings */
   --accent-text: #38bdf8;  /*  7.63:1 as type. Cyan passes unchanged. */
-  --accent-ink:  #07080f;  /*  9.33:1 the type that sits ON --accent */
+  --accent-ink:  #07080f;  /*  9.33:1 the type that sits ON --accent only */
 
   /* ---- shape ---------------------------------------------------------- */
   --r:    14px;  /* a card */

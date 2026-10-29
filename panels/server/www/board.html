@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#101418">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#12151d">
 <link rel="apple-touch-icon" href="/familyinfo-icon.png">
 <title>Board</title>
 <style>
@@ -12,9 +12,8 @@
    Layout = /api/layout/board_<name>: {title, density, modules: [{id, type, size, cfg}]}. Editing (✎) needs the admin PIN;
    every save is kept, so "Undo last save" in edit mode steps back. The grid fits any screen: phone 2 columns, tablet 4,
    wall panel / desktop more; "density" makes the cards smaller or bigger. */
-:root { --bg: #101418; --ink: #eef2f6; --mute: #8b98a8; --faint: #6e7f92; --line: #2a333d; --card: #1a2027; --card-hi: #222a33;
-  --accent: #38bdf8; --ok: #22c55e; --warn: #f59e0b; --bad: #ef4444; --gap: 12px;
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
+/* page-local only; the palette comes from wall.css */
+:root { --gap: 12px; }
 * { box-sizing: border-box; }
 html { background: var(--bg); -webkit-text-size-adjust: 100%; }
 body { margin: 0; min-height: 100vh; color: var(--ink); font: 15px/1.4 var(--font); -webkit-tap-highlight-color: transparent; touch-action: manipulation;
@@ -41,7 +40,7 @@ header a, header button { display: inline-flex; align-items: center; min-height:
 .mclock { font-size: clamp(40px, calc(var(--row) * .45), 120px); font-weight: 250; line-height: 1; font-variant-numeric: tabular-nums; margin-top: auto; }
 .msub { color: var(--mute); font-size: 13.5px; }
 .mod:has(.mclock) .mbody { justify-content: center; }
-.me { color: var(--faint); font-size: 14px; margin: auto 0; }
+.me { color: var(--dim); font-size: 14px; margin: auto 0; }
 .mrow { display: flex; gap: 6px; margin-top: auto; overflow: hidden; }
 .mhour { flex: 1; min-width: 0; background: var(--card-hi); border-radius: 10px; padding: 4px 2px; display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 13px; white-space: nowrap; }
 .mhour small { color: var(--mute); font-size: 11px; }
@@ -93,7 +92,7 @@ body.editing .addmod { display: block; }
 .dhours b { display: block; color: var(--ink); font-weight: 500; font-size: 15px; } .dhours i { display: block; font-style: normal; color: #7dd3fc; font-size: 11px; min-height: 1.2em; }
 .mav { display: flex; gap: 10px; }
 .mav > div { flex: 1; text-align: center; min-width: 0; } .mav span { width: 50px; height: 50px; margin: 0 auto 6px; border-radius: 50%; display: grid; place-items: center;
-  font-size: 20px; font-weight: 600; color: var(--faint); border: 2px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
+  font-size: 20px; font-weight: 600; color: var(--dim); border: 2px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
 .mav .on span { color: var(--ink); border-color: var(--ok); box-shadow: 0 0 16px rgba(52,211,153,.3); background: rgba(52,211,153,.12); }
 .mav b { display: block; font-size: 14px; font-weight: 500; } .mav small { color: var(--mute); font-size: 12px; white-space: nowrap; }
 .mhomeline { display: flex; gap: 18px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line); font-size: 14px; color: var(--mute); }

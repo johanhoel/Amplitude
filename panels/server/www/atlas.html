@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#07080f">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#12151d">
 <meta name="apple-mobile-web-app-title" content="Atlas"><meta name="nav-related" content="/admin,/ops,/net,/start">
 <title>Atlas</title>
 <link rel="stylesheet" href="/deck.css">
 <style>
 /* Atlas: every Home Deck endpoint and the services behind it, live. Read endpoints are probed from this browser (status, time,
    size; tap for a data summary); action endpoints are listed, never called. The graph shows Home Deck and its upstreams by health. */
-:root { --hue: #60a5fa; --hue2: #7dd3fc; }
+
 .kp { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 6px; }
 @media (max-width: 760px) { .kp { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .kp .card { padding: 12px 14px; } .kp b { display: block; font-size: 26px; font-weight: 700; } .kp span { color: var(--mute); font-size: 12.5px; }
@@ -41,7 +41,7 @@
 @media (max-width: 640px) { .ep .more { padding-left: 14px; } .ep > button { grid-template-columns: 46px minmax(0, 1fr) auto; } }
 .svc { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px; }
 .svc div { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); font-size: 13px; font-weight: 600; }
-.svc div span { margin-left: auto; color: var(--faint); font-weight: 500; font-size: 12px; font-variant-numeric: tabular-nums; }
+.svc div span { margin-left: auto; color: var(--dim); font-weight: 500; font-size: 12px; font-variant-numeric: tabular-nums; }
 .hidden { display: none !important; }
 </style>
 <link rel="stylesheet" href="/wall.css">

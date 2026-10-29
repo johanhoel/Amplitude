@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#07080f">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#12151d">
 <meta name="apple-mobile-web-app-title" content="Today"><meta name="nav-related" content="/pulse,/family,/security,/start">
 <title>Today</title>
 <link rel="stylesheet" href="/deck.css">
@@ -12,9 +12,9 @@
 /* Today: the day as one story. A 24 h ribbon (who was home, camera visits, now), "Coming up" (buses, weather, sun),
    and "Earlier today": arrivals/departures, camera visits, news, lab events merged in time order, with filters.
    Data: /api/family, /api/sec/visits, /api/bus, /api/weather, /api/home/state, /api/news, /api/ops/snapshot */
-:root { --hue: #22d3ee; --hue2: #f472b6; }
+
 .ribbon { padding: 16px 18px 12px; }
-.rb-hours { position: relative; height: 16px; color: var(--faint); font-size: 10.5px; margin-left: 86px; }
+.rb-hours { position: relative; height: 16px; color: var(--dim); font-size: 10.5px; margin-left: 86px; }
 .rb-hours span { position: absolute; transform: translateX(-50%); }
 .lane { display: grid; grid-template-columns: 86px 1fr; align-items: center; height: 26px; }
 .lane b { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; } .lane b i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
@@ -31,7 +31,7 @@
 .ev { display: grid; grid-template-columns: 58px 30px 1fr; gap: 10px; align-items: start; padding: 11px 0; border-bottom: 1px solid var(--line); }
 .ev:last-child { border-bottom: 0; }
 .ev time { font-size: 14px; font-weight: 650; color: var(--ink); text-align: right; padding-top: 2px; font-variant-numeric: tabular-nums; }
-.ev time small { display: block; font-size: 11px; color: var(--faint); font-weight: 500; }
+.ev time small { display: block; font-size: 11px; color: var(--dim); font-weight: 500; }
 .ev .ic { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; font-size: 15px; background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--c); }
 .ev .tx b { display: block; font-size: 15px; font-weight: 600; line-height: 1.3; } .ev .tx span { color: var(--mute); font-size: 13px; line-height: 1.4; display: block; margin-top: 2px; }
 .ev .tx img { width: 100%; max-width: 280px; border-radius: 12px; margin-top: 8px; display: block; aspect-ratio: 16/9; object-fit: cover; background: #111; }

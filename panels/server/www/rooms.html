@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#07080f">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#12151d">
 <meta name="apple-mobile-web-app-title" content="Rooms"><meta name="nav-related" content="/living,/control,/pulse">
 <title>Rooms</title>
 <link rel="stylesheet" href="/deck.css">
 <style>
 /* Rooms: every room as a card with its lights as glowing pills. Tap = on/off; slide sideways on a dimmable light = brightness
    (live preview, sent on release). Room "All off". Lit rooms glow. Data: /api/home/state; actions: /api/home/do */
-:root { --hue: #f59e0b; --hue2: #38bdf8; }
+
 .sumbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
 .sumbar .big { font-size: 15px; color: var(--mute); } .sumbar .big b { color: var(--ink); font-size: 22px; font-weight: 700; margin-right: 4px; }
 .plan { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); align-items: start; }
@@ -35,7 +35,7 @@
 .lt.busy { opacity: .6; }
 .media { margin-top: 10px; display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 14px; background: rgba(244,114,182,.1); font-size: 13px; }
 .media b { font-weight: 650; }
-.hint { color: var(--faint); font-size: 12px; margin-top: 16px; text-align: center; }
+.hint { color: var(--dim); font-size: 12px; margin-top: 16px; text-align: center; }
 </style>
 <link rel="stylesheet" href="/wall.css">
 </head>

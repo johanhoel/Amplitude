@@ -6,17 +6,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#101418">
+<meta name="theme-color" content="#12151d">
 <title>Lab</title>
 <style>
 /* Lab panel: one live view of the cluster. No backdrop-filter, no animated wallpaper: every tap paints
    in one frame. Data arrives pushed (server-sent events) and is patched into existing elements. */
-:root {
-  --bg: #101418; --ink: #f2f3f9; --mute: rgba(242,243,249,.55); --faint: rgba(242,243,249,.14);
-  --line: rgba(255,255,255,.08); --accent: #38bdf8; --ok: #34d399; --warn: #fbbf24; --bad: #f87171;
-  --turbo: #6f8fe0; --edvin: #7dd3fc; --prippen: #4fb3a8;
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif;
-}
+/* page-local only; the palette comes from wall.css */
+:root { --turbo: #6f8fe0; --edvin: #7dd3fc; --prippen: #4fb3a8; }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--font);
   -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }

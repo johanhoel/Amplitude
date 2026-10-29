@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#101418">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#12151d">
 <meta name="apple-mobile-web-app-title" content="Cameras">
 <link rel="apple-touch-icon" href="/familyinfo-icon.png">
 <title>Cameras</title>
@@ -13,9 +13,8 @@
    Live: a snapshot every 4 s (light on mobile data); tap ▶ Live for video (MJPEG, stops by itself after 2 min).
    Recordings: /api/sec/days + /api/sec/visits?day= (camwatch-feed), thumbnails /api/sec/thumb, video /api/sec/video (Range).
    Player: full screen, swipe or ‹ › for the previous / next recording, the phone's Back closes it. */
-:root { --bg: #101418; --ink: #eef2f6; --mute: #8b98a8; --faint: #6e7f92; --line: #2a333d; --card: #1a2027; --card-hi: #222a33;
-  --accent: #38bdf8; --ok: #22c55e; --warn: #f59e0b; --bad: #ef4444; --live: #e11d48;
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif; }
+/* page-local only; the palette comes from wall.css */
+:root { --live: #e11d48; }
 * { box-sizing: border-box; }
 html { background: var(--bg); -webkit-text-size-adjust: 100%; }
 body { margin: 0; color: var(--ink); font: 15px/1.4 var(--font); -webkit-tap-highlight-color: transparent; overscroll-behavior-y: contain;
@@ -50,7 +49,7 @@ header a, header select { min-height: 40px; padding: 0 14px; border-radius: 999p
 .v .meta { padding: 7px 9px 9px; } .v b { font-size: 14.5px; font-variant-numeric: tabular-nums; } .v .w { display: block; font-size: 12.5px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .v .w.known { color: #86efac; } .v .star { position: absolute; top: 6px; right: 8px; font-size: 16px; text-shadow: 0 1px 3px #000; }
 .v .dur { position: absolute; top: 6px; left: 6px; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,.6); }
-.more { text-align: center; color: var(--mute); padding: 18px; } .empty { color: var(--faint); padding: 10px 2px 4px; font-size: 14px; }
+.more { text-align: center; color: var(--mute); padding: 18px; } .empty { color: var(--dim); padding: 10px 2px 4px; font-size: 14px; }
 /* player */
 #pl { position: fixed; inset: 0; z-index: 80; background: #000; display: none; flex-direction: column; touch-action: pan-y; }
 #pl.open { display: flex; }

@@ -25,7 +25,24 @@ MARK_END = "/* <<< end generated tokens */"
 #             its own idea of what --mute means, so text tokens are refused.
 #   extra:    names that exist only in this project. Aliases must point at a
 #             canonical token with var(), so they cannot drift from it.
-TEXT_TOKENS = {"ink", "mute", "dim", "ok", "warn", "bad", "accent-text"}
+# Fixed everywhere: these are the reading weights and the status colours, and
+# a project having its own idea of them is the sprawl this file exists to end.
+# The accent trio is deliberately NOT in here - a project may have its own
+# brand colour - but design/check-contrast.py verifies every generated sheet,
+# so an override still has to clear AA.
+FIXED = {"ink", "mute", "dim", "ok", "warn", "bad"}
+
+# The friend edition is violet, not cyan. All three accent tokens move
+# together: a violet readable AS text on a dark card is too pale to sit under
+# black type, so this accent takes white type where the owner's cyan takes
+# black. --status-ink stays dark in both, because green, amber and red are
+# light colours whoever is looking at them.
+FRIEND_ACCENT = {
+    "accent": "#7958ff",
+    "accent-text": "#a075ff",   # 4.50:1, the brand violet lightened until it reads
+    "accent-ink": "#ffffff",    # 4.51:1 on the accent; black would be 4.43 and fail
+    "r": "24px",                # the friend pages were drawn with a softer corner
+}
 
 TARGETS = {
     "panels/server/www/wall.css": {},
@@ -34,7 +51,17 @@ TARGETS = {
         # much larger radius than a dashboard panel.
         "override": {"r": "22px"},
     },
-    "panels/friend/src/www/wall.css": {},
+    # The friend edition ships its own sheet twice on purpose: extra/ is the
+    # source build_www.py copies into every build (it copies that whole folder,
+    # so this needs no change to the generator), and src/www/ is the build
+    # output that is checked in and served today. Both come from here, so they
+    # cannot disagree.
+    "panels/friend/extra/wall.css": {
+        "override": dict(FRIEND_ACCENT),
+    },
+    "panels/friend/src/www/wall.css": {
+        "override": dict(FRIEND_ACCENT),
+    },
     "CamWatch/app/static/tokens.css": {
         "extra": {
             # webui.py and the phone pages grew up with different names for
@@ -65,9 +92,9 @@ def block():
 
 def apply_overrides(css, overrides):
     for name, value in overrides.items():
-        if name in TEXT_TOKENS:
-            sys.exit(f"--{name} is a text token: its value is fixed by the "
-                     "contrast check and cannot be overridden per project")
+        if name in FIXED:
+            sys.exit(f"--{name} is a shared reading weight: it is the same in "
+                     "every project by design and cannot be overridden")
         css, n = re.subn(rf"(--{name}:\s*)[^;]+;", rf"\g<1>{value};", css, count=1)
         if not n:
             sys.exit(f"override --{name} does not exist in tokens.css")

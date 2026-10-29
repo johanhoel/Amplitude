@@ -6,16 +6,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a0810">
+<meta name="theme-color" content="#12151d">
 <title>Home</title>
 <style>
 /* Home panel: the things you reach for every day, as objects instead of tiles - a dial for the speakers,
    bulbs per room, a slider for the door. Every tap updates the screen first, then tells the server. */
-:root {
-  --bg: #0a0810; --ink: #f6f3fb; --mute: rgba(246,243,251,.56); --faint: rgba(246,243,251,.13); --line: rgba(255,255,255,.08);
-  --accent: #7c5cff; --warm: #ffb547; --ok: #34d399; --warn: #fbbf24; --bad: #f87171;
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif;
-}
+
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font-family: var(--font);
   -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
@@ -143,6 +139,7 @@ nav a.on { background: rgba(255,255,255,.12); color: var(--ink); }
 /* JS fills these in; without this they paint a broken-image icon on first load. */
 img:not([src]), img[src=""] { visibility: hidden; }
 </style>
+<link rel="stylesheet" href="/wall.css">
 </head>
 <body>
 <div class="app">
