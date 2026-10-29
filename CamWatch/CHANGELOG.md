@@ -7,6 +7,9 @@ Newest changes first.
 - New: Studio. Every camera and every device Home Deck knows about, in one list, with the ones a network
   scan finds. Adding a camera is a slot, a name and a stream address collected as a draft and applied
   together, instead of four separate forms on the Settings page. The apply before this one can be undone.
+- New: the camera scan searches several networks at once, for houses that keep cameras on their own VLAN. The
+  networks are suggested from the addresses already known - the one you reach CamWatch on, the ones the cameras
+  are on, and the ones Home Deck's devices are on - and the list is remembered for the next scan.
 - New: CamWatch links with the Studio in Home Deck. Settings → Home Deck makes the link key.
 - The Studio lists CamWatch's cameras. A watched camera sends a notice when it goes offline.
 - The Studio's People page shows when a camera last saw each person.

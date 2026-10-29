@@ -21,6 +21,7 @@ os.environ.update(RECORDINGS_DIR=str(root / "recordings"), PHOTOS_DIR=str(root /
                   RTSP_URL="rtsp://admin:pw@192.168.1.50:554/stream1", DB_SOCKET=str(root / "nosock"))
 sys.path.insert(0, str(REPO / "app"))
 import homedeck  # noqa: E402
+import onvif  # noqa: E402
 import settings  # noqa: E402
 import studio  # noqa: E402
 import webui  # noqa: E402
@@ -147,6 +148,58 @@ report(isinstance(state.get("items"), list) and "free" in state, "/api/studio re
 bad = client.post("/api/studio/draft", headers=login,
                   json={"kind": "add", "slot": 2, "name": "x", "rtsp_url": "http://x"})
 report(bad.status_code == 400 and "rtsp" in bad.get_json()["error"], "a refused change answers 400")
+
+# ---- scanning more than one VLAN ------------------------------------
+nets = onvif.check_subnets("192.168.1.0/24, 10.0.20.0/24 192.168.1.0/24")
+report([str(n) for n in nets] == ["192.168.1.0/24", "10.0.20.0/24"],
+       "networks split on commas and spaces, and a repeat is dropped")
+for bad, why in [("", "enter at least one network"),
+                 ("8.8.8.0/24", "only private"),
+                 ("10.0.0.0/8", "at most")]:
+    try:
+        onvif.check_subnets(bad)
+        report(False, f"{bad or 'an empty list'} is refused")
+    except ValueError as exc:
+        report(why in str(exc), f"{bad or 'an empty list'} is refused ({exc})")
+try:
+    onvif.check_subnets(" ".join(f"192.168.{n}.0/24" for n in range(onvif.MAX_NETS + 1)))
+    report(False, "too many networks is refused")
+except ValueError as exc:
+    report("at most" in str(exc), f"too many networks is refused ({exc})")
+try:
+    onvif.check_subnets(" ".join(f"10.0.{n * 4}.0/22" for n in range(5)))
+    report(False, "too many addresses in total is refused")
+except ValueError as exc:
+    report("in one scan" in str(exc), f"too many addresses in total is refused ({exc})")
+
+calls = []
+real_scan = onvif.scan
+def fake_scan(subnet, timeout=0.5):
+    calls.append(subnet)
+    ip = "10.0.20.9" if subnet == "10.0.20.0/24" else "192.168.1.9"
+    return [{"ip": ip, "rtsp_port": 554, "maker": "Axis", "model": ""}]
+
+
+onvif.scan = fake_scan
+rows = onvif.scan_many(nets)
+report(calls == ["192.168.1.0/24", "10.0.20.0/24"], "every network is scanned")
+report({r["ip"] for r in rows} == {"192.168.1.9", "10.0.20.9"}, "the results of both are merged")
+report({r.get("subnet") for r in rows} == {"192.168.1.0/24", "10.0.20.0/24"},
+       "each result says which network it came from")
+onvif.scan = real_scan
+
+# the networks worth scanning come from the addresses already known
+reset()
+homedeck.save_sync({"devices": [{"ip": "10.0.20.40", "name": "cam-shed", "vendor": "Reolink", "mac": "e"}],
+                    "people": []})
+settings.update(cameras=[{"slot": 2, "name": "yard", "rtsp_url": "rtsp://u:p@172.16.5.11:554/s",
+                          "detect_url": "", "enabled": True}])
+with webui.app.test_request_context("/", base_url="http://192.168.1.52"):
+    suggested = webui.scan_networks()
+report("192.168.1.0/24" in suggested, "the network camwatch is reached on is suggested")
+report("172.16.5.0/24" in suggested, "the VLAN a configured camera is on is suggested")
+report("10.0.20.0/24" in suggested, "the VLAN a Home Deck device is on is suggested")
+report(len(suggested) <= onvif.MAX_NETS, "no more networks are suggested than can be scanned")
 
 print("ok" if ok else "FAILED")
 sys.exit(0 if ok else 1)
