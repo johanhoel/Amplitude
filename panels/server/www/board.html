@@ -26,7 +26,7 @@ header a, header button { display: inline-flex; align-items: center; min-height:
   background: var(--card); color: var(--ink); text-decoration: none; font-weight: 650; font-size: 14px; }
 #grid { display: grid; gap: var(--gap); grid-template-columns: repeat(var(--cols, 2), 1fr); grid-auto-rows: var(--row, 150px); grid-auto-flow: row dense;
   max-width: var(--maxw, 1600px); margin: 0 auto; }
-.mod { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 14px 16px; overflow: hidden; min-width: 0;
+.mod { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; overflow: hidden; min-width: 0;
   display: flex; flex-direction: column; }
 .mod[data-sz="m"] { grid-column: span 2; } .mod[data-sz="t"] { grid-row: span 2; } .mod[data-sz="l"] { grid-column: span 2; grid-row: span 2; }
 .mod[data-sz="w"] { grid-column: 1 / -1; } .mod[data-sz="W"] { grid-column: 1 / -1; grid-row: span 2; }
@@ -42,19 +42,19 @@ header a, header button { display: inline-flex; align-items: center; min-height:
 .mod:has(.mclock) .mbody { justify-content: center; }
 .me { color: var(--dim); font-size: 14px; margin: auto 0; }
 .mrow { display: flex; gap: 6px; margin-top: auto; overflow: hidden; }
-.mhour { flex: 1; min-width: 0; background: var(--card-hi); border-radius: 10px; padding: 4px 2px; display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 13px; white-space: nowrap; }
+.mhour { flex: 1 1 0; min-width: 44px; background: var(--card-hi); border-radius: var(--r-sm); padding: 4px 2px; display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 13px; white-space: nowrap; }
 .mhour small { color: var(--mute); font-size: 11px; }
 .mpeople { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
 .mp { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 999px; background: var(--card-hi); color: var(--mute); font-weight: 600; }
 .mp i { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); } .mp.on { color: var(--ink); } .mp.on i { background: var(--ok); }
 .mlights { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; overflow-y: auto; align-content: start; }
-.ml { min-height: 52px; border-radius: 14px; border: 1px solid var(--line); background: var(--card-hi); text-align: left; padding: 8px 12px; font-weight: 600; font-size: 14px; }
+.ml { min-height: 52px; border-radius: var(--r); border: 1px solid var(--line); background: var(--card-hi); text-align: left; padding: 8px 12px; font-weight: 600; font-size: 14px; }
 .ml.on { background: #f59e0b; border-color: #f59e0b; color: #1f1300; }
-.mbtn { min-height: 46px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--card-hi); font-weight: 650; margin-top: auto; }
+.mbtn { min-height: 46px; padding: 0 16px; border-radius: var(--r); border: 1px solid var(--line); background: var(--card-hi); font-weight: 650; margin-top: auto; }
 .mctl { display: flex; gap: 8px; margin-top: auto; } .mctl .mbtn { flex: 1; margin: 0; font-size: 18px; }
 .mbtn.karmed, .mbig-btn.karmed { background: var(--bad) !important; border-color: var(--bad) !important; color: #fff; }
 .kdown { transform: scale(.97); }
-.mbig-btn { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 16px;
+.mbig-btn { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: var(--r);
   background: transparent; color: var(--ink); text-decoration: none; font-weight: 650; font-size: 15px; text-align: center; }
 .mbi { font-size: clamp(28px, calc(var(--row) * .26), 54px); line-height: 1; }
 .mod:has(.mbig-btn) { padding: 6px; } .mod:has(.mbig-btn):active { background: var(--card-hi); }
@@ -65,7 +65,7 @@ header a, header button { display: inline-flex; align-items: center; min-height:
 .mline { min-width: 40px; text-align: center; padding: 3px 6px; border-radius: 8px; font-weight: 800; font-size: 13px; }
 .mdot { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); flex: none; } .mdot.ok { background: var(--ok); } .mdot.bad { background: var(--bad); }
 .mmedia { display: flex; gap: 12px; align-items: center; min-height: 0; } .mmedia b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mart { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; flex: none; }
+.mart { width: 56px; height: 56px; border-radius: var(--r-sm); object-fit: cover; flex: none; }
 .mod:has(.mcam) { padding: 0; } .mcam { width: 100%; height: 100%; object-fit: cover; display: block; }
 .mcamcap { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; padding: 10px 14px; background: linear-gradient(transparent, rgba(0,0,0,.75)); font-size: 14px; }
 .mnews a { display: block; text-decoration: none; font-size: 15px; line-height: 1.35; padding: 2px 0; border-bottom: 1px solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -75,8 +75,8 @@ header a, header button { display: inline-flex; align-items: center; min-height:
 body.editing .medit { display: flex; } body.editing .mod { outline: 1.5px dashed rgba(56,189,248,.7); outline-offset: 2px; }
 .medit b { font-size: 14px; text-align: center; } .medit small { color: var(--mute); font-size: 12px; }
 .medit .eb { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
-.medit button { min-width: 44px; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--card-hi); font-size: 17px; }
-.addmod { display: none; grid-column: span 1; border: 1.5px dashed rgba(56,189,248,.6); background: rgba(56,189,248,.08); color: #bae6fd; border-radius: 22px; font-weight: 650; }
+.medit button { min-width: 44px; min-height: 44px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--card-hi); font-size: 17px; }
+.addmod { display: none; grid-column: span 1; border: 1.5px dashed rgba(56,189,248,.6); background: rgba(56,189,248,.08); color: #bae6fd; border-radius: var(--r); font-weight: 650; }
 body.editing .addmod { display: block; }
 .emptyb { grid-column: 1 / -1; text-align: center; color: var(--mute); padding: 40px 10px; }
 .mod[hidden] { display: none !important; }
@@ -98,7 +98,7 @@ body.editing .addmod { display: block; }
 .mhomeline { display: flex; gap: 18px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line); font-size: 14px; color: var(--mute); }
 .mhomeline b { color: var(--ink); font-weight: 500; } .mhomeline b.warn { color: var(--warn); }
 .mcamrow { display: grid; grid-template-columns: 42% 1fr; gap: 14px; align-items: center; }
-.mcamrow img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 12px; display: block; background: rgba(255,255,255,.05); }
+.mcamrow img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: var(--r-sm); display: block; background: rgba(255,255,255,.05); }
 .mwhat { font-size: 19px; font-weight: 500; line-height: 1.2; }
 .mlabhead { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 300; }
 .mstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 11.5px; color: var(--mute); }
@@ -136,14 +136,14 @@ body.editing .mod.bare { border-color: var(--line) !important; }
 .mhead { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; padding: 0 4px 6px; }
 .mhead b { font-size: clamp(22px, calc(var(--row) * .2), 44px); font-weight: 700; letter-spacing: -.01em; } .mhead span { color: var(--mute); font-size: 15px; }
 .mpt { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-.mimg { width: 100%; height: 100%; display: block; border-radius: 20px; }
+.mimg { width: 100%; height: 100%; display: block; border-radius: var(--r); }
 /* designer: drag a card to move it, drag the corner to resize (mouse; touch keeps the arrows and the resize grip) */
 .rz { display: none; position: absolute; right: 6px; bottom: 6px; z-index: 5; width: 22px; height: 22px; cursor: nwse-resize; border-radius: 6px;
   background: linear-gradient(135deg, transparent 50%, var(--accent) 50%); }
 body.editing .rz { display: block; } body.editing .medit { cursor: grab; } body.dragging, body.dragging * { cursor: grabbing !important; user-select: none; }
 .mod.drag { opacity: .6; outline: 2px solid var(--accent) !important; z-index: 6; }
 /* placed grid (edit mode): every free cell shows as a dotted square; click one to put a new card there */
-.cell { border: 1.5px dashed rgba(56,189,248,.22); border-radius: 18px; display: grid; place-items: center; color: transparent; font-size: 26px; cursor: pointer; min-width: 0; }
+.cell { border: 1.5px dashed rgba(56,189,248,.22); border-radius: var(--r); display: grid; place-items: center; color: transparent; font-size: 26px; cursor: pointer; min-width: 0; }
 @media (hover: hover) and (pointer: fine) { .cell:hover { border-color: rgba(56,189,248,.7); color: #7dd3fc; background: rgba(56,189,248,.06); } }
 .cell.drop { border-color: var(--accent); background: rgba(56,189,248,.16); }
 /* free canvas: every card at its own position on a fixed-size page, scaled to fit the screen */
