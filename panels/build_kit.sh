@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# Build homedeck-kit.tar.gz (friend edition) from: src/ (backend + settings template), the owner's current pages
-# (converted by build_www.py), the editor (patched for home-network access) and kit/ (installer, services, commands).
+# Build homedeck-kit.tar.gz from server/ (backend, pages and settings template), the editor (patched for
+# home-network access) and kit/ (installer, services, commands).
+# There is one edition now. There used to be two - the owner's pages and a stripped copy built by
+# build_www.py - and the stripped one was what every fresh install actually got. What that generator
+# removed is becoming configuration instead, so the same pages serve any house.
 #   ./build_kit.sh [version]      -> dist/homedeck-kit.tar.gz + .sha256 + homedeck.sh
 set -euo pipefail
 H="$(cd "$(dirname "$0")" && pwd)"
-V="${1:-friend-$(date +%Y.%m.%d-%H%M)}"
+V="${1:-$(date +%Y.%m.%d-%H%M)}"
 OUT="$H/dist"; STAGE="$OUT/homedeck-kit"
 rm -rf "$OUT"; mkdir -p "$STAGE/app" "$STAGE/editor" "$STAGE/bin" "$STAGE/systemd"
-# pages from the owner's live panels -> friend versions
-rm -rf "$H/src/www"; python3 "$H/build_www.py" "$H/../homedeck-src/live/www" "$H/src/www" >/dev/null
-cp -r "$H/src/server.py" "$H/src/homedeck" "$H/src/www" "$H/src/homedeck.toml" "$STAGE/app/"
+cp -r "$H/server/server.py" "$H/server/homedeck" "$H/server/www" "$H/server/homedeck.toml" "$STAGE/app/"
 find "$STAGE/app" -name __pycache__ -prune -exec rm -rf {} +
 echo "$V" > "$STAGE/app/VERSION"
 cp "$H/editor/editor.py" "$H/editor/editor.html" "$STAGE/editor/"
@@ -29,7 +30,7 @@ chmod +x "$STAGE/install-homedeck.sh" "$STAGE/bin/"*
 ( cd "$STAGE/app" && sed 's#__HA_URL__#http://127.0.0.1:8123#' homedeck.toml > /tmp/hd-check.toml && \
   HOMEDECK_ROOT="$STAGE/app" HOMEDECK_CONFIG=/tmp/hd-check.toml STATE_DIRECTORY="$(mktemp -d)" HOMEDECK_READONLY=1 python3 -m homedeck.check )
 if grep -rIl -i -E "claude|anthropic|\bllm\b|chatgpt" "$STAGE" "$H/kit/homedeck.sh"; then echo "AI mention found - not publishing"; exit 1; fi
-# personal words (names, street, entity ids) live in friend/private-words.txt: one per line, kept out of git
+# personal words (names, street, entity ids) live in private-words.txt: one per line, kept out of git
 if [ -s "$H/private-words.txt" ]; then
   if grep -rIl -i -F -f "$H/private-words.txt" "$STAGE/app" "$STAGE/editor"; then echo "personal data found"; exit 1; fi
 else

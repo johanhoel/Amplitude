@@ -12,7 +12,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 WWW = ROOT / "panels" / "server" / "www"
-FRIEND = ROOT / "panels" / "friend" / "src" / "www"
 
 # Pages that keep their own palette on purpose, and the reason. Anything else
 # with a page-level :root is a fork.
@@ -37,8 +36,6 @@ def tokens_of(path):
 sheets = {
     "panels/server/www/wall.css": WWW / "wall.css",
     "panels/server/www/deck.css": WWW / "deck.css",
-    "panels/friend/src/www/wall.css": FRIEND / "wall.css",
-    "panels/friend/extra/wall.css": ROOT / "panels" / "friend" / "extra" / "wall.css",
 }
 for label, path in sheets.items():
     check(f"{label} exists", path.exists(), "run design/sync-tokens.py")
@@ -48,19 +45,18 @@ for label, path in sheets.items():
               "it should carry the header naming where to edit it")
 
 wall, deck = tokens_of(WWW / "wall.css"), tokens_of(WWW / "deck.css")
-fwall = tokens_of(FRIEND / "wall.css")
 
-# The friend edition is allowed its own accent. It is not allowed its own idea
-# of what the reading weights mean.
+# There used to be a second edition here, and these checks made sure the two
+# agreed about what --mute meant. There is one set of pages now, so the
+# question is only whether the reading weights come from the shared source at
+# all - which is what the "generated from" check above already asserts.
 for name in ("ink", "mute", "dim", "ok", "warn", "bad"):
-    a = re.search(rf"--{name}:\s*([^;]+);", (WWW / "wall.css").read_text())
-    b = re.search(rf"--{name}:\s*([^;]+);", (FRIEND / "wall.css").read_text())
-    check(f"--{name} is the same in both editions",
-          a and b and a.group(1).strip() == b.group(1).strip(),
-          f"owner {a.group(1).strip() if a else '?'} vs friend {b.group(1).strip() if b else '?'}")
+    m = re.search(rf"--{name}:\s*([^;]+);", (WWW / "wall.css").read_text())
+    check(f"--{name} is defined in wall.css", m is not None,
+          "it comes from design/tokens.css; a missing one means sync-tokens did not run")
 
 # A page may only keep tokens that are its own; the palette comes from a sheet.
-pages = [p for p in sorted(list(WWW.rglob("*.html")) + list(FRIEND.glob("*.html")))
+pages = [p for p in sorted(WWW.rglob("*.html"))
          if p.name not in EXEMPT and not any(d in p.parts for d in EXEMPT_DIRS)]
 check("there are pages to check", len(pages) > 20, f"found {len(pages)}")
 
@@ -69,7 +65,7 @@ for p in pages:
     rel = str(p.relative_to(ROOT))
     linked = set()
     if 'href="/wall.css"' in text:
-        linked |= fwall if "friend" in rel else wall
+        linked |= wall
     if 'href="/deck.css"' in text:
         linked |= deck
     check(f"{rel} links a shared stylesheet", bool(linked),

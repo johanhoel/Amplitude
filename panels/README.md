@@ -1,7 +1,7 @@
 # Home Deck
 
 The home's dashboard system: the panels and backend (Home Deck), the configuration UI (Studio), boards, the camera panel,
-the Android app, the camera feed service, the edge proxy config and the friend edition.
+the Android app, the camera feed service and the edge proxy config.
 
 | Folder | What | Lives on |
 |---|---|---|
@@ -10,7 +10,8 @@ the Android app, the camera feed service, the edge proxy config and the friend e
 | `infra/` | edge nginx site (`:8126`), `homedeck-apply`, `homedeck-onboard`, the systemd units | `.40`, `.52` |
 | `onboard/` | setup wizard for fresh installs: network scan, suggestions, writes `homedeck.toml` (`install.sh` installs it with the generic edition) | `/opt/homedeck-onboard` |
 | `app/` | Android app + Docker builder (`build.sh`, `publish.sh`) | builds here, APK to `.52` `www/app/` |
-| `friend/` | friend edition kit (`homedeck.sh` one-liner) | published on winrepo `.41` |
+| `kit/` | installer, services and the `homedeck.sh` one-liner | published on winrepo `.41` |
+| `editor/` | the panel editor | port 8088 |
 | `docs/` | Studio handbook | |
 | `tools/`, `tests/` | pull-live, deploy, staging, check; Playwright smoke test | |
 
@@ -30,8 +31,10 @@ the Android app, the camera feed service, the edge proxy config and the friend e
 
 ## Fresh install and setup wizard
 
-A fresh install knows nothing about any house: it installs the generic edition (`friend/src`, the same as the
-friend kit) and a setup wizard. On a new Debian or Ubuntu machine, from a checkout of this folder:
+A fresh install knows nothing about any house: it installs the panels from `server/` and a setup wizard.
+There is one edition. There used to be two, and the second - a copy with the owner's hardware stripped out
+by a generator - was what every fresh install actually received. The stripping is becoming configuration,
+so the same pages serve any house. On a new Debian or Ubuntu machine, from a checkout of this folder:
 
 ```bash
 sudo ./install.sh

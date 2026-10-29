@@ -1,4 +1,4 @@
-"""Tiny fake Home Assistant for testing Home Deck (friend edition)."""
+"""Tiny fake Home Assistant for testing Home Deck."""
 import json, sys, time, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 TOKEN = "testtoken"

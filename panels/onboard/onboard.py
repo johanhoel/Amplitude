@@ -10,7 +10,7 @@ settings or scan as root). It is protected by a one-time setup code: install.sh 
   GET  /api/plan          every setting the wizard covers: current value, what was found, the suggestion
   POST /api/preview       {choices} -> {diff, problems} for homedeck.toml (nothing written)
   POST /api/finish        {choices} -> backup, write homedeck.toml + the token, homedeck-apply, then this service stops
-Works on the friend edition's homedeck.toml (only the Home Assistant address is required; the rest is automatic).
+Works on the shipped homedeck.toml (only the Home Assistant address is required; the rest is automatic).
 Only values you confirm change. Comments in the file stay.
 """
 import difflib, hmac, json, os, re, secrets as pysecrets, shutil, ssl, subprocess, sys, threading, time, tomllib, urllib.request
@@ -116,7 +116,7 @@ def _link_options(found):
 
 
 def plan():
-    """The friend-edition settings (homedeck.toml): only the Home Assistant address is required, the rest is
+    """The shipped settings (homedeck.toml): only the Home Assistant address is required, the rest is
     automatic unless set. Each field: what is set now, what was found, and the suggestion."""
     tree, scan, ha = current(), S['scan']['result'] or {'found': {}, 'devices': []}, S['ha']
     found, states = scan['found'], ha['states'] or []

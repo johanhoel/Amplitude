@@ -2,7 +2,7 @@
 # install.sh - install Home Deck on any Debian/Ubuntu machine, straight from this repo, and start the setup wizard.
 #   sudo ./install.sh              install, or update the code (settings, token and layouts are kept)
 #   sudo ./install.sh --onboard    also start the setup wizard again
-# A fresh install knows nothing about any house: it installs the generic edition (friend/src), and the setup wizard
+# A fresh install knows nothing about any house: it installs the panels from server/, and the setup wizard
 # (http://<machine>:8089) scans the network, connects Home Assistant and suggests the settings for you to confirm.
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")" && pwd)"
@@ -21,14 +21,14 @@ apt-get install -y -qq --no-install-recommends python3 python3-venv curl ca-cert
 # the kit layout the edition's own installer expects: app/ editor/ bin/ systemd/
 KIT=$(mktemp -d); trap 'rm -rf "$KIT"' EXIT
 mkdir -p "$KIT/app" "$KIT/editor" "$KIT/bin" "$KIT/systemd"
-cp -r "$REPO/friend/src/server.py" "$REPO/friend/src/homedeck" "$REPO/friend/src/www" "$REPO/friend/src/homedeck.toml" "$KIT/app/"
+cp -r "$REPO/server/server.py" "$REPO/server/homedeck" "$REPO/server/www" "$REPO/server/homedeck.toml" "$KIT/app/"
 find "$KIT/app" -name __pycache__ -prune -exec rm -rf {} +
 echo "repo-$(cd "$REPO" && git rev-parse --short HEAD 2>/dev/null || date +%Y.%m.%d)" > "$KIT/app/VERSION"
-cp "$REPO/friend/editor/editor.py" "$REPO/friend/editor/editor.html" "$KIT/editor/"
-python3 "$REPO/friend/kit/patch_editor.py" "$KIT/editor/editor.py" >/dev/null
-cp "$REPO/friend/kit/homedeck-apply" "$REPO/friend/kit/homedeck-update" "$KIT/bin/"
-cp "$REPO/friend/kit/panel-wrapper.service" "$REPO/friend/kit/deck-editor.service" "$KIT/systemd/"
-cp "$REPO/friend/kit/install-homedeck.sh" "$KIT/"; chmod +x "$KIT/install-homedeck.sh" "$KIT/bin/"*
+cp "$REPO/editor/editor.py" "$REPO/editor/editor.html" "$KIT/editor/"
+python3 "$REPO/kit/patch_editor.py" "$KIT/editor/editor.py" >/dev/null
+cp "$REPO/kit/homedeck-apply" "$REPO/kit/homedeck-update" "$KIT/bin/"
+cp "$REPO/kit/panel-wrapper.service" "$REPO/kit/deck-editor.service" "$KIT/systemd/"
+cp "$REPO/kit/install-homedeck.sh" "$KIT/"; chmod +x "$KIT/install-homedeck.sh" "$KIT/bin/"*
 
 # the address is a placeholder: the wizard finds Home Assistant on the network and sets it
 HOMEDECK_HA_URL="${HOMEDECK_HA_URL:-http://homeassistant.local:8123}" "$KIT/install-homedeck.sh" $([ "$FIRST" -eq 0 ] && echo --update)
