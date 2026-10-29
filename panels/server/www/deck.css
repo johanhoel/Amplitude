@@ -2,8 +2,7 @@
    Dark glass on a deep background; tokens on :root; safe areas for iPhone/iPad home-screen apps. */
 /* >>> generated from design/tokens.css - edit there, run design/sync-tokens.py */
 /* --r overridden for this project */
-:root, :root body {
-  /* ---- surfaces, darkest to lightest ---------------------------------- */
+:root, :root body { /* ---- surfaces, darkest to lightest ---------------------------------- */
   --bg:      #12151d;  /* page */
   --card:    #1b2029;  /* a panel on the page */
   --card-hi: #232935;  /* that panel, raised or hovered */
@@ -103,16 +102,15 @@ a.card:active, button.card:active { transform: scale(.985); }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px; background: var(--card-hi); border: 1px solid var(--line);
   font-size: 12.5px; font-weight: 600; white-space: nowrap; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; display: inline-block; }
-.dot.ok { background: var(--ok); box-shadow: 0 0 8px color-mix(in srgb, var(--ok) 70%, transparent); }
-.dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); box-shadow: 0 0 8px color-mix(in srgb, var(--bad) 70%, transparent); }
+.dot.ok { background: var(--ok); }
+.dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); }
 .mute { color: var(--mute); } .faint { color: var(--dim); }
 .empty { color: var(--mute); font-size: 14px; padding: 6px 2px; }
 .toast { position: fixed; left: 50%; bottom: calc(var(--sb) + 92px); transform: translateX(-50%); z-index: 70; padding: 11px 18px; border-radius: 999px;
   background: #1b1830; border: 1px solid var(--line); font-size: 14px; font-weight: 600; opacity: 0; transition: opacity .2s var(--ease-out); pointer-events: none; max-width: calc(100% - 32px); }
 .toast.show { opacity: 1; }
 /* Reduced motion removes movement, not the opacity and colour changes that explain a state change. */
-@media (prefers-reduced-motion: reduce) {
-  *, ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { *, ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
   * { transition-property: opacity, color, background-color, border-color, fill, stroke !important; transition-duration: .15s !important; }
   a.card:active, button.card:active { transform: none !important; }
 }

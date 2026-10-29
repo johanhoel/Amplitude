@@ -119,6 +119,9 @@ ICONS = {
     "square":    "M4 4h16v16H4z",
     "toggle":    "M8 7h8a5 5 0 0 1 0 10H8A5 5 0 0 1 8 7M8 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5",
     "refresh":   "M20 7a9 9 0 1 0 1 7M20 3v5h-5",
+    "download":  "M12 3v12M7.5 10.5 12 15l4.5-4.5M4 20h16",
+    "upload":    "M12 21V9M7.5 13.5 12 9l4.5 4.5M4 4h16",
+    "check-box": "M4 4h16v16H4zM8 12l3 3 5-6",
     # --- transport controls. These look like plain glyphs but U+23F8/23EE/23ED
     # carry the Emoji property, and iOS draws them in colour - and these pages
     # run on iPads. Drawn here instead so every platform agrees. ---
@@ -173,6 +176,7 @@ EMOJI = {
     "🚌": "bus", "🚗": "car",
     "🟢": "dot", "⚪": "dot", "🟦": "square", "⭐": "star", "🔘": "toggle",
     "⏩": "refresh",
+    "⬇": "download", "⬆": "upload", "☑": "check-box", "✳": "sparkle",
 
     # Dingbats that were sitting in icon slots. They are not emoji by default,
     # but a page that mixes drawn icons with font glyphs looks like two sets,

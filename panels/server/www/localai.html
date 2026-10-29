@@ -31,7 +31,7 @@ select.sel { min-height: 40px; border-radius: 12px; border: 1px solid var(--line
 .top { grid-column: 1 / -1; display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; }
 @media (max-width: 700px) { .top { grid-template-columns: 1fr; } }
 .pcst { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 650; }
-.dot { width: 11px; height: 11px; border-radius: 50%; background: var(--faint, #555); } .dot.ok { background: #34d399; box-shadow: 0 0 10px #34d399; } .dot.bad { background: #f87171; }
+.dot { width: 11px; height: 11px; border-radius: 50%; background: var(--faint, #555); } .dot.ok { background: #34d399; } .dot.bad { background: #f87171; }
 .gbar { height: 10px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; } .gbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--hue2), var(--hue)); }
 .note { border-radius: 14px; padding: 10px 12px; font-size: 13.5px; background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.3); }
 .job { font-size: 13.5px; color: var(--mute); } .job.busy::before { content: ''; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%;
@@ -72,8 +72,7 @@ const $ = s => document.querySelector(s);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const toast = t => { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 3200); };
 const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b || {}) });
-const MODELS = {
-  qwen38: { name: 'Qwen3.8 27B', tag: 'general · images · tools · thinking',
+const MODELS = { qwen38: { name: 'Qwen3.8 27B', tag: 'general · images · tools · thinking',
     text: 'The general model: questions, planning, agent work in OpenCode and video-use. Reads images, uses tools and can think step by step. The best pick when unsure.' },
   gemma4: { name: 'Gemma 4 26B', tag: 'documents · images · tools · thinking',
     text: 'Reads documents well: it fills product data from datasheets in av-diagram-builder (its first test, a JBL Control 68HP, was right on every field). Reads images and uses tools.' },
@@ -92,16 +91,13 @@ const gb = mb => (mb / 1024).toFixed(1) + ' GB';
 const hhmm = iso => { try { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } };
 const opts = sel => Object.entries(MODELS).map(([id, m]) => `<option value="${id}" ${id === sel ? 'selected' : ''}>${esc(m.name)}</option>`).join('');
 
-async function load() {
-  try {
-    const r = await fetch('/api/llm/status', { cache: 'no-store' });
+async function load() { try { const r = await fetch('/api/llm/status', { cache: 'no-store' });
     if (r.status === 401) { location.href = '/pin?next=/localai'; return; }
     S = await r.json();
   } catch (e) { S = { awake: false, error: 'Home Deck did not answer' }; }
   if (!touching && !document.activeElement?.matches('select')) { render(); if (document.activeElement?.id !== 'ctext' && typeof chatRender === 'function' && !running(OPEN)) chatRender(); }
 }
-function render() {
-  const s = S || {}, models = s.models || [], busy = s.busy || (s.job && !s.job.done), g = s.gpu || {};
+function render() { const s = S || {}, models = s.models || [], busy = s.busy || (s.job && !s.job.done), g = s.gpu || {};
   const loaded = models.filter(m => m.loaded);
   const job = s.job && s.job.label ? (s.job.done ? (s.job.ok ? '✓ ' + (s.job.result || s.job.label) : '✕ ' + s.job.label + ': ' + s.job.result) : s.job.label + '… ' + Math.round(Date.now() / 1000 - s.job.started) + ' s') : '';
   const top = `<div class="cd top"><div class="pcst"><i class="dot ${s.awake ? 'ok' : 'bad'}"></i>${s.awake ? (s.ollama === false ? 'PC awake · Ollama not running' : 'PC awake') : (Date.now() - wakeAt < 120000 ? 'Waking the PC…' : 'PC asleep')}</div>
@@ -111,8 +107,7 @@ function render() {
       ${s.game ? `<div class="note" style="grid-column:1/-1">A game is running on the PC (Steam app ${s.game}). Loading a model now takes GPU memory from the game.</div>` : ''}
       ${loaded.some(m => m.by === 'other') ? `<div class="note" style="grid-column:1/-1">${loaded.filter(m => m.by === 'other').map(m => esc(MODELS[m.id]?.name || m.model)).join(', ')} was loaded outside this panel, most likely by the AI coordinator for a job. Unloading it can cut that job off.</div>` : ''}
       ${s.error ? `<div class="note" style="grid-column:1/-1">${esc(s.error)}</div>` : ''}</div>`;
-  const cards = Object.entries(MODELS).map(([id, info]) => {
-    const m = models.find(x => x.id === id) || {};
+  const cards = Object.entries(MODELS).map(([id, info]) => { const m = models.find(x => x.id === id) || {};
     const state = !s.awake ? 'PC asleep' : m.installed === false ? 'not installed' : m.loaded ? `on the GPU · <b>${gb(m.vram_mb)}</b>${m.until ? ' · until ' + hhmm(m.until) : ''}${m.by === 'other' ? ' · coordinator?' : ''}` : 'not loaded';
     return `<div class="cd ${m.loaded ? 'on' : ''}"><div><h3>${esc(info.name)}</h3><div class="tag">${esc(m.model || '')} · ${esc(info.tag)}</div></div><p>${esc(info.text)}</p>
       <div class="st">${state}</div>
@@ -128,24 +123,19 @@ function render() {
   $('#main').innerHTML = top + '<div class="grp">Models</div>' + cards + '<div class="grp">Agents on the PC</div>' + setups;
   bind();
 }
-async function act(url, msg) {
-  const r = await post(url); const j = await r.json().catch(() => ({}));
+async function act(url, msg) { const r = await post(url); const j = await r.json().catch(() => ({}));
   if (r.status === 401) { location.href = '/pin?next=/localai'; return; }
   toast(r.ok ? msg : (j.error || 'did not work')); setTimeout(load, 400);
 }
-function bind() {
-  const s = S || {}, models = s.models || [];
+function bind() { const s = S || {}, models = s.models || [];
   $('#wake') && ($('#wake').onclick = async () => { wakeAt = Date.now(); await post('/api/home/do', { do: 'wake_pc' }); toast('Wake-on-LAN sent. The PC takes about a minute.'); render(); });
-  $('#sleep') && ($('#sleep').onclick = async () => {
-    if (!confirm('Put the PC to sleep? Anything running on it pauses, including jobs of the AI coordinator.')) return;
+  $('#sleep') && ($('#sleep').onclick = async () => { if (!confirm('Put the PC to sleep? Anything running on it pauses, including jobs of the AI coordinator.')) return;
     const r = await post('/api/pc/do', { action: 'sleep' }); toast(r.ok ? 'The PC is going to sleep' : 'The PC did not answer'); setTimeout(load, 3000);
   });
-  document.querySelectorAll('[data-load]').forEach(b => b.onclick = () => {
-    if (s.game && !confirm('A game is running. Load the model anyway? It takes GPU memory from the game.')) return;
+  document.querySelectorAll('[data-load]').forEach(b => b.onclick = () => { if (s.game && !confirm('A game is running. Load the model anyway? It takes GPU memory from the game.')) return;
     act('/api/llm/load/' + b.dataset.load, 'Loading ' + MODELS[b.dataset.load].name + '. A first load takes up to a minute.');
   });
-  document.querySelectorAll('[data-unload]').forEach(b => b.onclick = () => {
-    const m = models.find(x => x.id === b.dataset.unload);
+  document.querySelectorAll('[data-unload]').forEach(b => b.onclick = () => { const m = models.find(x => x.id === b.dataset.unload);
     if (m && m.by === 'other' && !confirm('The AI coordinator is probably using this model right now. Unloading it can cut its job off. Unload anyway?')) return;
     act('/api/llm/unload/' + b.dataset.unload, 'Unloading ' + MODELS[b.dataset.unload].name);
   });
@@ -156,22 +146,19 @@ function bind() {
 // ---------- saved chats: answers run on Home Deck and keep going when this page closes ----------
 // Code in an answer: ``` blocks (an unclosed one while it is still answering), or an answer that is only a web page.
 let CODES = [];
-function richText(t) {
-  const parts = [], re = /```([\w+-]*)[^\n]*\n([\s\S]*?)(```|$)/g; let at = 0, m;
+function richText(t) { const parts = [], re = /```([\w+-]*)[^\n]*\n([\s\S]*?)(```|$)/g; let at = 0, m;
   if (!t.includes('```') && /^\s*(<!doctype html|<html)/i.test(t)) return codeBox('html', t.trim());
-  while ((m = re.exec(t))) {
-    if (m.index > at) parts.push(`<span class="tx">${esc(t.slice(at, m.index).trim())}</span>`);
+  while ((m = re.exec(t))) { if (m.index > at) parts.push(`<span class="tx">${esc(t.slice(at, m.index).trim())}</span>`);
     parts.push(codeBox(m[1], m[2].replace(/\n$/, ''))); at = re.lastIndex;
     if (!m[3]) break;
   }
   if (at < t.length) parts.push(`<span class="tx">${esc(t.slice(at).trim())}</span>`);
   return parts.join('');
 }
-function codeBox(lang, code) {
-  CODES.push(code);
+function codeBox(lang, code) { CODES.push(code);
   return `<div class="code"><div class="cl"><span>${esc(lang || 'code')}</span><button data-copy="${CODES.length - 1}">Copy</button></div><pre>${esc(code)}</pre></div>`;
 }
-async function copyText(t) {             // the Clipboard API needs https; Home Deck on the LAN is http, so fall back
+async function copyText(t) { // the Clipboard API needs https; Home Deck on the LAN is http, so fall back
   try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(t); return true; } } catch (e) { }
   const ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
   document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, t.length);
@@ -182,19 +169,15 @@ const ago = t => { const d = Math.round(Date.now() / 1000 - t); return d < 60 ? 
 const chipOf = st => st === 'answering' ? '<span class="chip answering">answering…</span>' : st === 'waiting' ? '<span class="chip waiting">waiting for the GPU</span>'
   : st === 'cut off' ? '<span class="chip cut">cut off</span>' : st === 'stopped' ? '<span class="chip">stopped</span>' : '';
 const running = c => c && ['answering', 'waiting'].includes(c.status);
-async function chatList() {
-  const r = await fetch('/api/llm/chats', { cache: 'no-store' }); if (r.status === 401) return;
+async function chatList() { const r = await fetch('/api/llm/chats', { cache: 'no-store' }); if (r.status === 401) return;
   CL = (await r.json()).chats || [];
 }
-async function chatOpen(id) {
-  if (!id) { OPEN = null; return chatRender(); }
+async function chatOpen(id) { if (!id) { OPEN = null; return chatRender(); }
   const r = await fetch('/api/llm/chats/' + id, { cache: 'no-store' }); OPEN = r.ok ? await r.json() : null; chatRender();
 }
-function chatRender() {
-  const box = $('#chat'), keep = $('#ctext')?.value || '', focused = document.activeElement?.id === 'ctext';
+function chatRender() { const box = $('#chat'), keep = $('#ctext')?.value || '', focused = document.activeElement?.id === 'ctext';
   CODES = [];
-  const msgs = OPEN ? OPEN.messages.map((m, i) => {
-    const last = i === OPEN.messages.length - 1 && m.role === 'assistant';
+  const msgs = OPEN ? OPEN.messages.map((m, i) => { const last = i === OPEN.messages.length - 1 && m.role === 'assistant';
     const body = m.content || (last && running(OPEN) ? (OPEN.status === 'waiting' ? 'waiting for the GPU…' : 'thinking…') : '');
     return `<div class="msg ${m.role}">${m.role === 'assistant' && m.content ? richText(body) : esc(body)}${last && OPEN.note ? `<span class="cut">${esc(OPEN.note)}</span>` : ''}</div>`;
   }).join('') : '<div class="tag">A new chat. Answers keep going on Home Deck if you close this page, and every chat is saved here.</div>';
@@ -219,8 +202,7 @@ function chatRender() {
   $('#cdel') && ($('#cdel').onclick = async () => { if (!confirm('Delete this chat? It cannot be brought back.')) return;
     await post(`/api/llm/chats/${OPEN.id}/delete`); OPEN = null; await chatList(); chatRender(); });
 }
-async function send() {
-  const t = $('#ctext').value.trim(); if (!t) return;
+async function send() { const t = $('#ctext').value.trim(); if (!t) return;
   const r = await post('/api/llm/chats', { id: OPEN?.id, model: OPEN ? undefined : chatModel, text: t });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) return toast(j.error || 'did not work');

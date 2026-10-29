@@ -93,7 +93,7 @@ body.editing .addmod { display: block; }
 .mav { display: flex; gap: 10px; }
 .mav > div { flex: 1; text-align: center; min-width: 0; } .mav span { width: 50px; height: 50px; margin: 0 auto 6px; border-radius: 50%; display: grid; place-items: center;
   font-size: 20px; font-weight: 600; color: var(--dim); border: 2px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
-.mav .on span { color: var(--ink); border-color: var(--ok); box-shadow: 0 0 16px rgba(52,211,153,.3); background: rgba(52,211,153,.12); }
+.mav .on span { color: var(--ink); border-color: var(--ok); background: rgba(52,211,153,.12); }
 .mav b { display: block; font-size: 14px; font-weight: 500; } .mav small { color: var(--mute); font-size: 12px; white-space: nowrap; }
 .mhomeline { display: flex; gap: 18px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line); font-size: 14px; color: var(--mute); }
 .mhomeline b { color: var(--ink); font-weight: 500; } .mhomeline b.warn { color: var(--warn); }
@@ -178,8 +178,7 @@ const grid = document.getElementById('grid');
 // ---- grid size: whole columns that fit; phone >= 2 columns ----
 const CELL = { compact: 150, normal: 190, large: 250 };
 const cvW = () => +L.canvas_w || 1920, cvH = () => +L.canvas_h || 1080;
-function fit() {
-  const R = document.documentElement.style;
+function fit() { const R = document.documentElement.style;
   R.setProperty('--z', (Math.min(2.2, Math.max(.6, innerHeight / 1000)) * (+L.scale || 1)).toFixed(3));
   R.setProperty('--clear-left', (+L.clear_left || 10) + 'px'); R.setProperty('--clear-bottom', (L.clear_bottom ?? 64) + 'px');
   if (document.body.classList.contains('col')) { R.setProperty('--row', '150px'); return; }
@@ -199,32 +198,29 @@ addEventListener('resize', () => { if (placedMode() !== wasPlaced) build(); else
 // cards in reading order (row by row) instead, each card at most the screen's width.
 const flowCols = w => Math.max(2, Math.round((w + 12) / ((CELL[L.density] || 190) + 12)));
 const designCols = () => Math.max(2, Math.min(16, +L.cols || 4));
-function placedMode() {
-  if (L.layout && L.layout !== 'grid' || !L.cols) return false;
+function placedMode() { if (L.layout && L.layout !== 'grid' || !L.cols) return false;
   const w = grid.clientWidth || innerWidth - 28;
   return (w - 12 * (designCols() - 1)) / designCols() >= 105;          // columns at least ~105 px wide, else flow
 }
-function spanOf(m, cols = designCols()) {
-  const p = { s: [1, 1], m: [2, 1], t: [1, 2], l: [2, 2], c: [2, 2], w: [cols, 1], W: [cols, 2] }[m.size] || [m.cw || 2, m.rh || 1];
+function spanOf(m, cols = designCols()) { const p = { s: [1, 1], m: [2, 1], t: [1, 2], l: [2, 2], c: [2, 2], w: [cols, 1], W: [cols, 2] }[m.size] || [m.cw || 2, m.rh || 1];
   return { cw: Math.max(1, Math.min(cols, p[0])), rh: Math.max(1, p[1]) };
 }
 const hits = (a, b) => { const A = spanOf(a), B = spanOf(b);
   return a.g.c < b.g.c + B.cw && b.g.c < a.g.c + A.cw && a.g.r < b.g.r + B.rh && b.g.r < a.g.r + A.rh; };
-function freeSpot(m, list) {                                            // first place (row by row) where m fits
+function freeSpot(m, list) { // first place (row by row) where m fits
   const cols = designCols(), { cw } = spanOf(m);
   for (let r = 1; r < 400; r++) for (let c = 1; c + cw - 1 <= cols; c++) { const t = { ...m, g: { c, r } }; if (!list.some(o => o !== m && o.g && hits(t, o))) return { c, r }; }
   return { c: 1, r: 1 };
 }
-function pack() {                                                       // cards without a place get the first free spot, in list order
+function pack() { // cards without a place get the first free spot, in list order
   const placed = [];
   L.modules.forEach(m => { const { cw } = spanOf(m);
     if (!m.g || m.g.c + cw - 1 > designCols()) m.g = freeSpot(m, placed);
     placed.push(m); });
 }
-function settle(fixed) {                                                // cards overlapping the one just placed move down
+function settle(fixed) { // cards overlapping the one just placed move down
   const order = [fixed, ...L.modules.filter(m => m !== fixed).sort((a, b) => a.g.r - b.g.r || a.g.c - b.g.c)], done = [];
-  for (const m of order) {
-    const { cw } = spanOf(m); m.g.c = Math.max(1, Math.min(designCols() - cw + 1, m.g.c)); m.g.r = Math.max(1, m.g.r);
+  for (const m of order) { const { cw } = spanOf(m); m.g.c = Math.max(1, Math.min(designCols() - cw + 1, m.g.c)); m.g.r = Math.max(1, m.g.r);
     let o; while ((o = done.find(d => hits(m, d)))) m.g.r = o.g.r + spanOf(o).rh;
     done.push(m);
   }
@@ -232,8 +228,7 @@ function settle(fixed) {                                                // cards
 const lastRow = () => L.modules.reduce((a, m) => Math.max(a, m.g ? m.g.r + spanOf(m).rh - 1 : 0), 0);
 
 // ---- drawing ----
-function build() {
-  document.getElementById('title').textContent = L.title || NAME; document.title = L.title || NAME;
+function build() { document.getElementById('title').textContent = L.title || NAME; document.title = L.title || NAME;
   const extra = new Set(); L.modules.forEach(m => (MODULES[m.type]?.need || []).forEach(k => extra.add(k))); Deck.need([...extra]);
   const col = L.layout === 'left' || L.layout === 'right';
   document.body.classList.toggle('col', col); document.body.classList.toggle('left', L.layout === 'left'); document.body.classList.toggle('right', L.layout === 'right');
@@ -266,9 +261,7 @@ function build() {
   document.getElementById('corner').innerHTML = L.modules.map((m, i) => inCorner(m) ? card(m, i) : '').join('');
   fit(); draw(Deck.D);
 }
-function draw(D) {
-  document.querySelectorAll('.mod').forEach(sec => {
-    const m = L.modules[+sec.dataset.i], def = MODULES[m.type], body = sec.querySelector('.mbody');
+function draw(D) { document.querySelectorAll('.mod').forEach(sec => { const m = L.modules[+sec.dataset.i], def = MODULES[m.type], body = sec.querySelector('.mbody');
     if (!def) { body.innerHTML = `<div class="me">Unknown module "${esc(m.type)}"</div>`; return; }
     try { def.render(body, D, m.cfg || {}, m.size); } catch (e) { body.innerHTML = `<div class="me">Waiting for data…</div>`; }
   });
@@ -277,8 +270,7 @@ Deck.data(draw);
 
 // ---- editing ----
 const uid = () => 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-async function settings(i) {
-  const m = L.modules[i], def = MODULES[m.type];
+async function settings(i) { const m = L.modules[i], def = MODULES[m.type];
   const fields = (def.cfg ? def.cfg(Deck.D) : []).map(f => ({ ...f, value: m.cfg?.[f.key] ?? f.value ?? '' }));
   fields.push({ key: '_size', label: 'Size', type: 'select', options: Object.entries(SIZES).map(([k, s]) => [k, s[0]]), value: m.size });
   const r = await Edit.sheet({ title: def.name, fields, buttons: [{ id: 'remove', label: 'Remove', tone: 'bad' }, { id: 'ok', label: 'OK' }] });
@@ -286,8 +278,7 @@ async function settings(i) {
   if (r.action === 'remove') { L.modules.splice(i, 1); return build(); }
   const { _size, ...cfg } = r.values; m.size = _size || m.size; m.cfg = cfg; if (L.cols && m.g) settle(m); build();
 }
-async function addModule(at) {
-  const r = await Edit.sheet({ title: 'Add module', fields: [{ key: 'type', label: 'Module', type: 'select',
+async function addModule(at) { const r = await Edit.sheet({ title: 'Add module', fields: [{ key: 'type', label: 'Module', type: 'select',
     options: Object.entries(MODULES).map(([k, d]) => [k, `${d.icon} ${d.name} — ${d.desc}`]) }], buttons: [{ id: 'ok', label: 'Add' }] });
   if (!r) return;
   const def = MODULES[r.values.type], cfg = {};
@@ -299,8 +290,7 @@ async function addModule(at) {
   if (def.cfg) settings(L.modules.length - 1);
 }
 document.getElementById('corner').addEventListener('click', e => grid.onclick?.(e));
-grid.onclick = e => {
-  if (!editing) return;
+grid.onclick = e => { if (!editing) return;
   if (e.target.closest('#add')) return addModule();
   const cell = e.target.closest('.cell'); if (cell) return addModule({ c: +cell.dataset.c, r: +cell.dataset.r });
   const b = e.target.closest('[data-e]'); if (!b) return;
@@ -312,8 +302,7 @@ grid.onclick = e => {
   else if (b.dataset.e === 'set') return settings(i);
   build();
 };
-async function boardSettings() {
-  const r = await Edit.sheet({ title: 'Board settings', fields: [
+async function boardSettings() { const r = await Edit.sheet({ title: 'Board settings', fields: [
     { key: 'title', label: 'Title', type: 'text', value: L.title || NAME },
     { key: 'layout', label: 'Layout', type: 'select', value: L.layout || 'grid', options: [['grid', 'Grid over the whole screen (phone, tablet, wall panel)'],
       ['left', 'Wallpaper: one column on the left'], ['right', 'Wallpaper: one column on the right'], ['canvas', 'Free canvas: place every box exactly (scaled to fit the screen)']] },
@@ -337,14 +326,12 @@ async function boardSettings() {
 }
 // grid card -> a sensible size and place on the free canvas (flowed left to right)
 function canvasSize(sz) { return { s: { w: 220, h: 200 }, m: { w: 460, h: 200 }, t: { w: 220, h: 420 }, l: { w: 460, h: 420 }, w: { w: 940, h: 200 }, W: { w: 940, h: 420 }, c: { w: 640, h: 360 } }[sz] || { w: 460, h: 200 }; }
-function toCanvas() {
-  let x = 20, y = 20, rowH = 0;
+function toCanvas() { let x = 20, y = 20, rowH = 0;
   L.modules.forEach(m => { if (m.pos) return; const s = canvasSize(m.size);
     if (x + s.w > cvW() - 20) { x = 20; y += rowH + 20; rowH = 0; }
     m.pos = { x, y, ...s }; x += s.w + 20; rowH = Math.max(rowH, s.h); });
 }
-async function uploadImage() {
-  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/jpeg,image/png,image/webp,image/gif';
+async function uploadImage() { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/jpeg,image/png,image/webp,image/gif';
   inp.onchange = async () => { const f = inp.files[0]; if (!f) return;
     const r = await fetch('/api/wallpaper', { method: 'POST', headers: { 'Content-Type': f.type }, body: f }).then(x => x.json()).catch(() => ({}));
     if (!r.name) return Edit.toast('Upload failed: ' + (r.error || 'jpg, png, webp or gif under 15 MB'));
@@ -355,8 +342,7 @@ async function loadWalls() { const s = await fetch('/api/settings', { cache: 'no
 
 // drag to move / resize (mouse). Grid: moving reorders, the corner sets column/row spans. Canvas: free x/y/w/h on a 10 px snap.
 let drag = null;
-document.addEventListener('pointerdown', e => {
-  if (!editing || e.button !== 0 || e.target.closest('button')) return;
+document.addEventListener('pointerdown', e => { if (!editing || e.button !== 0 || e.target.closest('button')) return;
   const sec = e.target.closest('.mod'); if (!sec || !(e.target.closest('.medit') || e.target.classList.contains('rz'))) return;
   const i = +sec.dataset.i, m = L.modules[i], resize = e.target.classList.contains('rz');
   const cols = +getComputedStyle(document.documentElement).getPropertyValue('--cols') || 2, gap = 12;
@@ -368,23 +354,20 @@ document.addEventListener('pointerdown', e => {
   if (placedMode() && m.g) { drag.grabC = Math.floor((e.clientX - r.left) / drag.colStep); drag.grabR = Math.floor((e.clientY - r.top) / drag.rowStep); }
   sec.classList.add('drag'); document.body.classList.add('dragging'); e.preventDefault();
 });
-document.addEventListener('pointermove', e => {
-  if (!drag) return;
+document.addEventListener('pointermove', e => { if (!drag) return;
   const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0, snap = v => Math.round(v / 10) * 10;
-  if (L.layout === 'canvas') {
-    const p = drag.m.pos = { ...drag.pos0 };
+  if (L.layout === 'canvas') { const p = drag.m.pos = { ...drag.pos0 };
     if (drag.resize) { p.w = Math.max(60, snap(drag.pos0.w + dx / drag.sc)); p.h = Math.max(40, snap(drag.pos0.h + dy / drag.sc)); }
     else { p.x = Math.min(cvW() - 40, Math.max(0, snap(drag.pos0.x + dx / drag.sc))); p.y = Math.min(cvH() - 40, Math.max(0, snap(drag.pos0.y + dy / drag.sc))); }
     Object.assign(drag.sec.style, { left: p.x + 'px', top: p.y + 'px', width: p.w + 'px', height: p.h + 'px' });
     return;
   }
-  if (drag.resize) {
-    const cw = Math.min(drag.cols - ((drag.m.g?.c || 1) - 1), Math.max(1, drag.cw0 + Math.round(dx / drag.colStep))), rh = Math.min(8, Math.max(1, drag.rh0 + Math.round(dy / drag.rowStep)));
+  if (drag.resize) { const cw = Math.min(drag.cols - ((drag.m.g?.c || 1) - 1), Math.max(1, drag.cw0 + Math.round(dx / drag.colStep))), rh = Math.min(8, Math.max(1, drag.rh0 + Math.round(dy / drag.rowStep)));
     Object.assign(drag.m, { size: 'x', cw, rh });
     drag.sec.style.gridColumn = drag.m.g && placedMode() ? `${drag.m.g.c} / span ${cw}` : `span ${cw}`; drag.sec.style.gridRow = drag.m.g && placedMode() ? `${drag.m.g.r} / span ${rh}` : `span ${rh}`;
     return;
   }
-  if (placedMode() && drag.m.g) {                                       // to any cell, empty or not; others move down on release
+  if (placedMode() && drag.m.g) { // to any cell, empty or not; others move down on release
     const gr = grid.getBoundingClientRect(), { cw, rh } = spanOf(drag.m);
     const c = Math.max(1, Math.min(designCols() - cw + 1, Math.floor((e.clientX - gr.left) / drag.colStep) + 1 - drag.grabC));
     const r = Math.max(1, Math.floor((e.clientY - gr.top) / drag.rowStep) + 1 - drag.grabR);
@@ -392,8 +375,7 @@ document.addEventListener('pointermove', e => {
     return;
   }
   const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.mod');
-  if (over && over !== drag.sec && over.parentElement === drag.sec.parentElement) {
-    const j = +over.dataset.i; L.modules.splice(j, 0, L.modules.splice(drag.i, 1)[0]); build();
+  if (over && over !== drag.sec && over.parentElement === drag.sec.parentElement) { const j = +over.dataset.i; L.modules.splice(j, 0, L.modules.splice(drag.i, 1)[0]); build();
     drag.i = j; drag.sec = document.querySelector(`.mod[data-i="${j}"]`); drag.sec.classList.add('drag');
   }
 });
@@ -402,13 +384,11 @@ addEventListener('pointerup', () => { if (!drag) return;
   if (placedMode() && drag.m.g && (drag.target || drag.resize)) settle(drag.m);
   drag = null; document.body.classList.remove('dragging'); build(); });
 
-async function deleteBoard() {
-  if (!confirm(`Delete the board "${L.title || NAME}"? It is kept as a backup on the server.`)) return;
+async function deleteBoard() { if (!confirm(`Delete the board "${L.title || NAME}"? It is kept as a backup on the server.`)) return;
   const res = await fetch('/api/boards/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: NAME }) });
   if (res.ok) location.replace('/boards'); else Edit.toast('Could not delete');
 }
-function begin() {
-  editing = true;
+function begin() { editing = true;
   if ((!L.layout || L.layout === 'grid') && !L.cols) { L.cols = flowCols(grid.clientWidth || innerWidth - 28); pack(); }
   Edit.start({ page: PAGE, title: L.title || NAME,
     get: () => L, set: v => { L = v && v.modules ? v : { title: NAME, density: 'normal', modules: [] }; editing = false; build(); }, render: build,
@@ -417,14 +397,12 @@ function begin() {
   loadWalls();
 }
 document.getElementById('fab').addEventListener('click', () => document.getElementById('edit').click());
-document.getElementById('edit').addEventListener('click', async () => {
-  if (document.getElementById('ebar')) return;
+document.getElementById('edit').addEventListener('click', async () => { if (document.getElementById('ebar')) return;
   const s = await fetch('/api/pin/status', { cache: 'no-store' }).then(r => r.json()).catch(() => ({}));
   if (s.admin) begin(); else deckPin.open({ onOk: begin });
 });
 
-(async () => {
-  const saved = await Edit.load(PAGE);
+(async () => { const saved = await Edit.load(PAGE);
   if (saved && saved.modules) L = saved;
   build();
   if (/[?&]edit\b/.test(location.search)) document.getElementById('edit').click();

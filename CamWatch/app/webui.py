@@ -2107,12 +2107,18 @@ ol li,ul li{margin:4px 0}
 .tag.dir-arrived{color:var(--known)}.tag.dir-left{color:var(--accent)}.tag.dir-visited{color:var(--unknown)}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+/* Release notes under "New version": what actually changed in this folder
+   since the running commit, newest first. */
+.relnotes{list-style:none;margin:8px 0 2px;padding:0;display:grid;gap:7px;max-height:260px;overflow:auto}
+.relnotes li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:baseline;font-size:13.5px;line-height:1.45}
+.relnotes time{color:var(--dim);font-variant-numeric:tabular-nums;font-size:12.5px}
+.relnotes code{color:var(--dim);font-size:11.5px}
 </style><link rel="stylesheet" href="/static/icons.css">
 </head><body>
 <header><a class="brand" href="{{ url_for('dashboard') }}"><img src="/static/mark.svg" alt="" width="29" height="29">camwatch</a>
 <nav aria-label="Pages">{% for ep, ic, label in [('dashboard', 'home', 'Home'), ('wall_view', 'phone', 'View'), ('index', 'film', 'Clips'), ('search_page', 'search', 'Search'), ('live', 'antenna', 'Live'), ('log_page', 'list', 'Log'), ('report_page', 'chart', 'Report'), ('timelapse_page', 'refresh', 'Timelapse'), ('people_page', 'person', 'People'), ('strangers_page', 'question', 'Strangers'), ('plates_page', 'car', 'Plates'), ('zones_page', 'map', 'Zones'), ('settings_page', 'gear', 'Settings'), ('ha_page', 'home', 'Home Assistant')] %}
 <a href="{{ url_for(ep) }}" class="{{ 'on' if request.endpoint == ep }}"><i class="icon icon-{{ ic }}" aria-hidden="true"></i> {{ label }}</a>{% endfor %}</nav>
-<div class="tools">{% if update_ready %}<a class="upd-pill" href="{{ url_for('settings_page') }}#updates" title="Version {{ update_ready }} is ready">⬆ Update</a>{% endif %}
+<div class="tools">{% if update_ready %}<a class="upd-pill" href="{{ url_for('settings_page') }}#updates" title="Version {{ update_ready }} is ready"><i class="icon icon-upload" aria-hidden="true"></i> Update</a>{% endif %}
 {% if people %}<form method="get" action="{{ url_for('index') }}"><select name="person" onchange="this.form.submit()" aria-label="Filter by person">
 <option value="">Person…</option>{% for p in people %}<option {{ 'selected' if p == person }}>{{ p }}</option>{% endfor %}</select></form>{% endif %}
 <form method="post" action="{{ url_for('quick_arm') }}" title="Mode: {{ arm_mode }}"><button class="{{ 'armed' if armed }}">{% if armed %}<i class="icon icon-shield" aria-hidden="true"></i> Armed{% else %}<i class="icon icon-bell-off" aria-hidden="true"></i> Disarmed{% endif %}</button></form></div>
@@ -2165,7 +2171,7 @@ filled in, and you press Submit there.{% endif %}</p>
 <nav class="days"><a class="pill {{ 'on' if starred }}" href="{{ url_for('index', starred=1) }}">★ Starred</a>
 {% for d in days %}<a class="pill {{ 'on' if d == day and not person and not starred }}" href="{{ url_for('index', day=d) }}">{{ d }}</a>{% endfor %}</nav>
 <div class="row"><h1>{{ heading }} <span class="muted">· {{ clips|length }} clip{{ '' if clips|length == 1 else 's' }}</span></h1>
-{% if clips %}<span style="margin-left:auto"></span><button type="button" id="pick-start" onclick="picking(true)">☑ Select</button>{% endif %}</div>
+{% if clips %}<span style="margin-left:auto"></span><button type="button" id="pick-start" onclick="picking(true)"><i class="icon icon-check-box" aria-hidden="true"></i> Select</button>{% endif %}</div>
 {% if timeline %}
 <svg class="timeline" viewBox="0 0 1440 56" preserveAspectRatio="none" role="img" aria-label="Events over the day">
 <rect class="bg" x="0" y="0" width="1440" height="38" rx="6"/>
@@ -2210,7 +2216,7 @@ body.picking main{padding-bottom:110px}
 <form id="pickbar" method="post">
 <b id="pick-count">0 selected</b>
 <button type="button" onclick="pickAll()">Select all</button>
-<button type="submit" class="primary" formaction="{{ url_for('download_clips') }}" id="pick-dl" disabled>⬇ Download</button>
+<button type="submit" class="primary" formaction="{{ url_for('download_clips') }}" id="pick-dl" disabled><i class="icon icon-download" aria-hidden="true"></i> Download</button>
 <button type="submit" class="danger" formaction="{{ url_for('delete_clips') }}" id="pick-del" disabled><i class="icon icon-trash" aria-hidden="true"></i> Delete</button>
 <button type="button" onclick="picking(false)">Cancel</button>
 <input type="hidden" name="back" value="{{ request.full_path }}">
@@ -2355,7 +2361,7 @@ sound removed, 1280 px wide. Takes about a minute; the copy is kept for 7 days.<
 {% if share %}<script>
 (async function poll() {
   const r = await fetch('/api/share/{{ share.id }}', { cache: 'no-store' }); const s = await r.json(), el = document.getElementById('sharestatus');
-  if (s.state === 'done') { el.innerHTML = '<a class="pill on" href="' + s.url + '">⬇ Download the blurred copy</a>'; return; }
+  if (s.state === 'done') { el.innerHTML = '<a class="pill on" href="' + s.url + '"><i class="icon icon-download" aria-hidden="true"></i> Download the blurred copy</a>'; return; }
   if (s.state === 'error') { el.textContent = 'Could not make the copy: ' + s.error; return; }
   el.textContent = (s.state === 'queued' ? 'Waiting for another copy to finish…' : 'Blurring… ' + Math.round(s.progress * 100) + '%');
   setTimeout(poll, 1500);
@@ -2623,7 +2629,7 @@ yesterday becomes a timelapse and a highlights reel (4 s of every recording with
 <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))">
 {% for kind, label in [('timelapse', 'The whole day'), ('highlights', 'Highlights')] %}{% if it[kind] %}
 <div class="box" style="padding:10px"><div class="row" style="margin-bottom:6px"><b>{{ label }}</b>
-<a class="pill" style="margin-left:auto" href="{{ url_for('timelapse_file', name=it[kind]) }}" download>⬇</a></div>
+<a class="pill" style="margin-left:auto" href="{{ url_for('timelapse_file', name=it[kind]) }}" download><i class="icon icon-download" aria-hidden="true"></i></a></div>
 <video controls playsinline preload="metadata" src="{{ url_for('timelapse_file', name=it[kind]) }}"></video></div>
 {% endif %}{% endfor %}</div>{% endfor %}
 {% endblock %}""",
@@ -3056,7 +3062,7 @@ Alarms (strangers, unusual activity) go up right away, the rest every night.</p>
 {% else %}No upload yet{% if not off.enabled %} (switched off){% endif %}.{% endif %}
 {% if off_queue %} · {{ off_queue }} alarm{{ 's' if off_queue > 1 }} waiting{% endif %}</div>
 {% if off_status.error %}<div class="bad" style="font-size:14px">⚠ {{ off_status.error }} <span class="muted">({{ off_status.error_at|replace('T', ' ') }})</span></div>{% endif %}
-<div class="row"><form class="inline" method="post" action="{{ url_for('offsite_run') }}"><button>⬆ Upload now</button></form>
+<div class="row"><form class="inline" method="post" action="{{ url_for('offsite_run') }}"><button><i class="icon icon-upload" aria-hidden="true"></i> Upload now</button></form>
 <button type="button" onclick="offTest(this)">Test connection</button><span class="muted" id="off-test"></span>
 <span style="margin-left:auto"></span>
 <button type="button" onclick="offReconnect()"><i class="icon icon-key" aria-hidden="true"></i> Sign in again</button>
@@ -3177,9 +3183,11 @@ async function offTest(btn) {
 <div class="muted">Missing something? <a href="{{ url_for('requests_page') }}"><i class="icon icon-bulb" aria-hidden="true"></i> Request a feature</a></div>
 <div id="upd-new" hidden>
 <div style="margin-bottom:8px"><span class="state on">● New version</span> <b id="upd-version"></b> <span class="muted" id="upd-detail"></span></div>
+<details id="upd-notes" hidden open><summary style="cursor:pointer" id="upd-notes-sum">What changed</summary>
+<ul class="relnotes" id="upd-notes-list"></ul></details>
 <form method="post" action="{{ url_for('run_update') }}" onsubmit="return confirm('Install the new version now? camwatch stops for a few minutes. When the new version fails, the old version comes back by itself.')">
 <input type="hidden" name="sha" id="upd-sha">
-<button class="primary" id="upd-button" {{ 'disabled' if not upd_status.helper }}>⬆ Update now</button></form></div>
+<button class="primary" id="upd-button" {{ 'disabled' if not upd_status.helper }}><i class="icon icon-upload" aria-hidden="true"></i> Update now</button></form></div>
 {% if not upd_status.helper %}<div class="warn" style="font-size:14px">The update helper is not installed on the server yet. Run <code>sudo ./deploy.sh</code> once.</div>{% endif %}
 <div id="upd-status" class="muted" {{ 'hidden' if upd_status.state == 'idle' }}>
 {% if upd_status.state == 'waiting' %}Waiting for the server to start the update…
@@ -3224,6 +3232,20 @@ async function updates(force) {
     $('upd-banner').hidden = false;
     $('upd-detail').textContent = `from ${r.latest.date}: ${r.latest.message}`;
     $('upd-sha').value = r.latest.sha;
+    const notes = r.latest.notes || [], list = $('upd-notes-list');
+    list.textContent = '';
+    for (const n of notes) {
+      const li = document.createElement('li');
+      const t = document.createElement('time'); t.textContent = n.date;
+      const b = document.createElement('span');
+      // A commit message is text from a repository, so it is written as text.
+      b.textContent = n.text;
+      const c = document.createElement('code'); c.textContent = ' ' + n.short;
+      b.append(c); li.append(t, b); list.append(li);
+    }
+    $('upd-notes').hidden = !notes.length;
+    $('upd-notes-sum').textContent = notes.length === 1
+      ? 'What changed · 1 change' : `What changed · ${notes.length} changes`;
   } catch (e) { $('upd-check').textContent = 'The check for a new version failed: ' + e; $('upd-again').hidden = false; }
 }
 updates(false);
@@ -3432,6 +3454,6 @@ app.jinja_env.globals["timedelta"] = dt.timedelta
 
 
 if __name__ == "__main__":
-    updates.start_background_check()      # the ⬆ Update button in the top bar
+    updates.start_background_check()      # the <i class="icon icon-upload" aria-hidden="true"></i> Update button in the top bar
     log.info("web UI on :8080%s", " (password protected)" if WEB_PASSWORD else "")
     serve(app, host="0.0.0.0", port=8080, threads=8)

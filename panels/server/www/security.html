@@ -31,9 +31,9 @@ h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 
 .verdict { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; padding: 6px 0 18px; }
 .shield { width: 82px; height: 82px; border-radius: 50%; display: grid; place-items: center;
-  background: radial-gradient(circle at 40% 30%, #6ee7b7, #10b981 60%, #065f46); box-shadow: 0 0 40px rgba(52,211,153,.35); }
+  background: radial-gradient(circle at 40% 30%, #6ee7b7, #10b981 60%, #065f46); }
 .shield svg { width: 38px; height: 38px; fill: none; stroke: #052e1f; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-.verdict.warn .shield { background: radial-gradient(circle at 40% 30%, #fde68a, #f59e0b 60%, #92400e); box-shadow: 0 0 40px rgba(251,191,36,.35); }
+.verdict.warn .shield { background: radial-gradient(circle at 40% 30%, #fde68a, #f59e0b 60%, #92400e); }
 .verdict.warn .shield svg { stroke: #3b2300; }
 .verdict b { font-size: 26px; font-weight: 700; letter-spacing: -.01em; display: block; }
 .verdict span { color: var(--mute); font-size: 14px; }
@@ -142,8 +142,7 @@ function setDoor(state) { const d = $('#door'); d.classList.toggle('locked', sta
 })();
 tap($('#detect'), () => { $('#detect').classList.toggle('on'); post('/api/home/do', { do: 'detect' }).then(() => setTimeout(loadHome, 600)).catch(e => hint('✗ ' + e.message)); });
 
-function verdict() {
-  if (!H) return;
+function verdict() { if (!H) return;
   const home = (H.people || []).filter(p => p.home), locked = H.door && H.door.state === 'locked', issues = [];
   if (!locked) issues.push(H.door && H.door.state === 'unlocked' ? 'front door is unlocked' : 'door lock is offline');
   if (!home.length && !H.detect) issues.push('nobody home and camera alerts are off');
@@ -151,8 +150,7 @@ function verdict() {
   $('#vt').textContent = issues.length ? 'Needs a look' : 'House secure';
   $('#vs').textContent = issues.length ? issues.join(' · ') : `${locked ? 'Door locked' : ''} · alerts ${H.detect ? 'on' : 'off'} · ${home.length ? home.length + ' home' : 'nobody home'}`;
 }
-async function loadHome() {
-  try { H = await (await fetch('/api/home/state')).json(); } catch { return; }
+async function loadHome() { try { H = await (await fetch('/api/home/state')).json(); } catch { return; }
   if (!H.configured || H.error) return;
   if (holdDoor < Date.now()) setDoor(H.door.state);
   $('#detect').classList.toggle('on', !!H.detect);
@@ -160,15 +158,13 @@ async function loadHome() {
   verdict();
 }
 const fmt = s => new Date(s).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-async function loadVisits() {
-  let v; try { v = await (await fetch(`/api/sec/visits?days=${days}&limit=${days * 80}`)).json(); } catch { return; }
+async function loadVisits() { let v; try { v = await (await fetch(`/api/sec/visits?days=${days}&limit=${days * 80}`)).json(); } catch { return; }
   if (!Array.isArray(v)) return;
   const today = new Date().toLocaleDateString('sv-SE'), td = v.filter(x => x.day === today || days > 1);
   const known = td.filter(x => x.people.length), unknown = td.reduce((a, x) => a + x.unknown, 0), cars = td.filter(x => x.labels.some(l => /car|truck|bus|motorcycle/.test(l)));
   $('#stats').innerHTML = [[td.length, days > 1 ? 'visits, 2 days' : 'visits today'], [new Set(known.flatMap(x => x.people.map(p => p.name))).size, 'people recognised'],
     [unknown, 'unknown faces'], [cars.length, 'with a vehicle']].map(([n, l]) => `<div class="stat"><b class="num">${n}</b><span>${l}</span></div>`).join('');
-  $('#visits').innerHTML = td.length ? td.map(x => {
-    const names = x.people.map(p => p.name), car = x.labels.some(l => /car|truck|bus|motorcycle/.test(l));
+  $('#visits').innerHTML = td.length ? td.map(x => { const names = x.people.map(p => p.name), car = x.labels.some(l => /car|truck|bus|motorcycle/.test(l));
     const title = names.length ? names.join(' & ') : x.unknown ? 'Someone not recognised' : car ? 'Vehicle' : x.labels.includes('person') ? 'Person (face not visible)' : (x.labels[0] || 'Movement');
     const secs = Math.max(1, Math.round((new Date(x.end) - new Date(x.start)) / 1000));
     return `<div class="v ${names.length ? 'known' : car ? 'car' : x.unknown ? 'unknown' : ''}"><img loading="lazy" src="/api/sec/thumb/${x.day}/${x.stem}.jpg?w=360" data-full="/api/sec/thumb/${x.day}/${x.stem}.jpg?w=1280" alt="">

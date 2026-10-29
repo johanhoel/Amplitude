@@ -49,8 +49,7 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
        calc(env(safe-area-inset-bottom) + 20px) calc(env(safe-area-inset-left) + 16px);
        display: grid; gap: 14px; max-width: 1500px; margin: 0 auto;
        grid-template-columns: 1fr; grid-template-areas: "top" "deck" "widgets"; }
-@media (min-width: 900px) {
-  .app { grid-template-columns: minmax(0, 1.25fr) minmax(340px, 1fr); grid-template-areas: "top top" "deck widgets";
+@media (min-width: 900px) { .app { grid-template-columns: minmax(0, 1.25fr) minmax(340px, 1fr); grid-template-areas: "top top" "deck widgets";
          align-items: start; padding-top: calc(env(safe-area-inset-top) + 22px); gap: 18px; }
 }
 .glass { background: var(--glass); border: 1px solid var(--line); border-radius: var(--r);
@@ -68,7 +67,7 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
   background: var(--glass-hi); border: 1px solid var(--line); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   white-space: nowrap; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mute); box-shadow: 0 0 0 3px rgba(255,255,255,.06); }
-.dot.ok { background: var(--ok); box-shadow: 0 0 10px var(--ok); } .dot.bad { background: var(--bad); box-shadow: 0 0 10px var(--bad); }
+.dot.ok { background: var(--ok); } .dot.bad { background: var(--bad); }
 .dot.warn { background: var(--warn); }
 .gear { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--glass-hi);
   border: 1px solid var(--line); }
@@ -102,8 +101,8 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 .pill { padding: 9px 14px; border-radius: 999px; background: var(--glass-hi); border: 1px solid var(--line); font-size: 13px;
   font-weight: 600; transition: transform .12s, background .2s; }
 .pill:active { transform: scale(.95); }
-.pill.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 45%, transparent); }
-.pill.red.on { background: #e5484d; box-shadow: 0 6px 20px rgba(229,72,77,.4); }
+.pill.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; box-shadow: 0 6px 20px rgba(0, 0, 0, .45); }
+.pill.red.on { background: #e5484d; box-shadow: 0 6px 20px rgba(0, 0, 0, .45); }
 .seg { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(0,0,0,.3); border: 1px solid var(--line); }
 .seg button { padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--mute); }
 .seg button.on { background: rgba(255,255,255,.14); color: var(--text); }
@@ -183,8 +182,7 @@ input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border: 0; bord
 body.lab .widgets { display: none; }
 body.lab .app { grid-template-columns: 1fr; grid-template-areas: "top" "deck"; max-width: none; align-content: start; }
 body.lab .deck { justify-self: center; }
-@media (min-width: 1400px) {
-  body.lab .app { grid-template-columns: auto 320px; grid-template-areas: "top top" "deck side"; justify-content: center; }
+@media (min-width: 1400px) { body.lab .app { grid-template-columns: auto 320px; grid-template-areas: "top top" "deck side"; justify-content: center; }
   body.lab .labside { display: flex; }
 }
 @media (min-width: 900px) { body.lab { overflow: hidden; height: 100vh; } }
@@ -336,8 +334,7 @@ let settings = {}, last = {}, cams = [], snapBusy = false, snapFails = 0;
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('show'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('show'), 2200); }
-async function api(path, body) {
-  const r = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+async function api(path, body) { const r = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || r.status); return j;
 }
 
@@ -357,14 +354,12 @@ frame.style.width = (PW + 24) + 'px'; frame.style.height = (PH + 24) + 'px';
    no way to style inside the frame. So ask first, and only attach the frame once the panel
    answers; otherwise say so in the page's own colours. The frame fades in to avoid a flash of
    black while it paints. */
-function deckFailed(why) {
-  frame.removeAttribute('src');
+function deckFailed(why) { frame.removeAttribute('src');
   frame.hidden = true;
   $('#deck-err').hidden = false;
   $('#deck-err-why').textContent = why;
 }
-function loadDeck() {
-  $('#deck-err').hidden = true;
+function loadDeck() { $('#deck-err').hidden = true;
   frame.hidden = false;
   frame.style.opacity = '0';
   fetch(PANEL, { method: 'HEAD', cache: 'no-store' })
@@ -378,32 +373,27 @@ let view = /^\/lab\/?$/.test(location.pathname) || Q.get('view') === 'lab' ? 'la
 /* Each view's geometry is computed once (load, resize, settings change) and cached, so a view switch only
    applies stored numbers in the same frame instead of measuring + rescaling the page afterwards. */
 const geo = {};
-function measure(v) {
-  const lab = v === 'lab', fav = !lab && settings.deck_mode === 'fav';
+function measure(v) { const lab = v === 'lab', fav = !lab && settings.deck_mode === 'fav';
   const vw = fav ? PW / 2 : PW, vh = fav ? PH / 3 : PH;                  // favourites = 3 of 6 columns, 2 of 6 rows
   const card = $('.deck'), top = card.getBoundingClientRect().top + scrollY;
   let w, maxH;
-  if (lab) {
-    const side = innerWidth >= 1400 ? 320 + 18 : 0;
+  if (lab) { const side = innerWidth >= 1400 ? 320 + 18 : 0;
     w = Math.min(innerWidth - 32 - side, 2000) - 24;
     maxH = innerHeight - top - 24 - 48;
-  } else {
-    w = card.clientWidth - 24;
+  } else { w = card.clientWidth - 24;
     maxH = innerWidth >= 900 ? innerHeight - top - 70 : Infinity;
   }
   const s = Math.max(.2, Math.min(w / vw, maxH / vh));
   return { cw: vw * s, ch: vh * s, s, card: lab ? vw * s + 24 + 'px' : '' };
 }
-function apply(g) {
-  clip.style.width = g.cw + 'px'; clip.style.height = g.ch + 'px'; frame.style.transform = `scale(${g.s})`;
+function apply(g) { clip.style.width = g.cw + 'px'; clip.style.height = g.ch + 'px'; frame.style.transform = `scale(${g.s})`;
   $('.deck').style.width = g.card;
 }
-function fit() {                    // (re)measure the current view; the other view is measured on its first use
+function fit() { // (re)measure the current view; the other view is measured on its first use
   for (const k in geo) delete geo[k];
   geo[view] = measure(view); apply(geo[view]);
 }
-function setView(v, push) {
-  if (v === view && geo[v]) return;
+function setView(v, push) { if (v === view && geo[v]) return;
   document.body.classList.add('switching');                 // pause the wallpaper animation for this render
   view = v; document.body.classList.toggle('lab', v === 'lab');
   $$('#view button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
@@ -414,16 +404,13 @@ function setView(v, push) {
   if (v === 'home') snap();
 }
 /* react on touch-down, not on click (~100-150 ms later on touch screens); click still works for keyboard */
-function fast(el, fn) {
-  el.addEventListener('pointerdown', e => { if (e.button > 0) return; e.preventDefault(); fn(e); });
+function fast(el, fn) { el.addEventListener('pointerdown', e => { if (e.button > 0) return; e.preventDefault(); fn(e); });
   el.addEventListener('click', e => { if (e.detail === 0) fn(e); });
 }
 /* a tap that may sit in a scrolling page: act on lift, only if the finger did not move */
-function tap(el, fn) {
-  let d = null;
+function tap(el, fn) { let d = null;
   el.addEventListener('pointerdown', e => { d = { x: e.clientX, y: e.clientY, t: Date.now() }; });
-  el.addEventListener('pointerup', e => {
-    if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 10 && Date.now() - d.t < 600) { e.preventDefault(); fn(e); }
+  el.addEventListener('pointerup', e => { if (d && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 10 && Date.now() - d.t < 600) { e.preventDefault(); fn(e); }
     d = null; });
   el.addEventListener('click', e => { if (e.detail === 0) fn(e); });
 }
@@ -433,8 +420,7 @@ addEventListener('resize', onResize); window.visualViewport && visualViewport.ad
 document.body.classList.toggle('lab', view === 'lab'); setView(view);
 
 /* wallpaper + accent */
-function applyLook() {
-  const w = settings.wallpaper || 'aurora', wall = $('#wall');
+function applyLook() { const w = settings.wallpaper || 'aurora', wall = $('#wall');
   wall.className = ''; wall.style.backgroundImage = '';
   if (w.startsWith('img:')) wall.style.backgroundImage = `url(/wall/${w.slice(4)})`; else wall.classList.add('w-' + w);
   $('#shade').style.background = `radial-gradient(120% 80% at 50% 0%, rgba(0,0,0,${(settings.dim ?? 25) / 200}), rgba(0,0,0,${.35 + (settings.dim ?? 25) / 160}))`;
@@ -445,8 +431,7 @@ function applyLook() {
     || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));      // iPadOS reports "Macintosh"
   wall.classList.toggle('still', mo === 'off' || (mo === 'auto' && lowPower));
 }
-function renderPickers() {
-  const cur = settings.wallpaper || 'aurora';
+function renderPickers() { const cur = settings.wallpaper || 'aurora';
   $('#walls').innerHTML = THEMES.map(t => `<button class="sw w-${t} ${cur === t ? 'on' : ''}" data-w="${t}"><small>${t}</small></button>`).join('')
     + (settings.walls || []).map(n => `<button class="sw ${cur === 'img:' + n ? 'on' : ''}" data-w="img:${n}" style="background-image:url(/wall/${n})"><span class="x" data-del="${n}">✕</span></button>`).join('')
     + `<button class="sw add" id="add" aria-label="Upload wallpaper">＋</button>`;
@@ -468,25 +453,22 @@ $('#motion').onclick = e => { const b = e.target.closest('[data-mo]'); if (!b) r
   settings.motion = b.dataset.mo; applyLook(); renderPickers(); api('/api/settings', { motion: settings.motion }); };
 $('#campick').onclick = e => { const b = e.target.closest('[data-cam]'); if (!b) return; setCam(b.dataset.cam, true); renderPickers(); };
 $('#gear').onclick = () => { renderPickers(); $('#sheet').classList.add('open'); };
-document.addEventListener('click', e => {
-  if (e.target.closest('[data-close]')) $('#sheet').classList.remove('open');
+document.addEventListener('click', e => { if (e.target.closest('[data-close]')) $('#sheet').classList.remove('open');
   if (e.target.closest('[data-open]')) { renderPickers(); $('#sheet').classList.add('open'); }
 });
-$('#walls').onclick = async e => {
-  const del = e.target.closest('[data-del]');
+$('#walls').onclick = async e => { const del = e.target.closest('[data-del]');
   if (del) { e.stopPropagation(); await api('/api/settings', { delete_wall: del.dataset.del, wallpaper: settings.wallpaper === 'img:' + del.dataset.del ? 'aurora' : settings.wallpaper }); return loadSettings(); }
   if (e.target.closest('#add')) return $('#upload').click();
   const b = e.target.closest('[data-w]'); if (!b) return;
   settings.wallpaper = b.dataset.w; applyLook(); renderPickers(); api('/api/settings', { wallpaper: settings.wallpaper });
 };
-$('#upload').onchange = async e => {
-  const f = e.target.files[0]; if (!f) return; toast('Uploading…');
+$('#upload').onchange = async e => { const f = e.target.files[0]; if (!f) return; toast('Uploading…');
   const blob = await shrink(f);
   const r = await fetch('/api/wallpaper', { method: 'POST', headers: { 'Content-Type': blob.type }, body: blob }).then(r => r.json());
   if (r.error) return toast(r.error);
   await api('/api/settings', { wallpaper: 'img:' + r.name }); await loadSettings(); toast('Wallpaper set');
 };
-async function shrink(file) {  // phone photos are huge: resize to max 2560 px as JPEG
+async function shrink(file) { // phone photos are huge: resize to max 2560 px as JPEG
   try { const img = await createImageBitmap(file), s = Math.min(1, 2560 / Math.max(img.width, img.height));
     const c = Object.assign(document.createElement('canvas'), { width: img.width * s, height: img.height * s });
     c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
@@ -496,8 +478,7 @@ $('#accents').onclick = e => { const b = e.target.closest('[data-a]'); if (!b) r
   settings.accent = b.dataset.a; applyLook(); renderPickers(); api('/api/settings', { accent: settings.accent }); };
 $('#dim').oninput = e => { settings.dim = +e.target.value; e.target.style.setProperty('--p', settings.dim / .8 + '%'); applyLook(); };
 $('#dim').onchange = e => api('/api/settings', { dim: +e.target.value });
-$('#save').onclick = async () => {
-  const body = { temps: $$('#temp-pick input:checked').map(i => i.value) };
+$('#save').onclick = async () => { const body = { temps: $$('#temp-pick input:checked').map(i => i.value) };
   if ($('#ha').value) body.ha_token = $('#ha').value;
   if ($('#gen').value) body.genelec_password = $('#gen').value;
   try { await api('/api/settings', body); $('#ha').value = $('#gen').value = ''; await loadSettings();
@@ -506,8 +487,7 @@ $('#save').onclick = async () => {
 
 /* speakers */
 const vol = $('#vol');
-function setVolUI(level) {
-  if (level == null) return; vol.value = Math.max(-60, level);
+function setVolUI(level) { if (level == null) return; vol.value = Math.max(-60, level);
   const p = (vol.value - -60) / 60; vol.style.setProperty('--p', p * 100 + '%');
   $('#arc').setAttribute('stroke-dasharray', `${(197.9 * p).toFixed(1)} 263.9`); $('#db').textContent = Math.round(level);
 }
@@ -524,8 +504,7 @@ $('#src').onclick = async e => { const b = e.target.closest('[data-s]'); if (!b)
 $$('[data-m]').forEach(b => b.onclick = () => api('/api/media', { action: b.dataset.m }).then(() => setTimeout(poll, 800)).catch(e => toast(e.message)));
 
 /* live data */
-async function poll() {
-  let s; try { s = await api('/api/status'); } catch { return; } last = s;
+async function poll() { let s; try { s = await api('/api/status'); } catch { return; } last = s;
   const net = $('#c-net'); net.querySelector('.dot').className = 'dot ' + (s.internet_ms != null ? 'ok' : 'bad');
   net.lastElementChild.textContent = s.internet_ms != null ? s.internet_ms + ' ms' : 'Offline';
   const pc = $('#c-pc'); pc.querySelector('.dot').className = 'dot ' + (s.pc_online ? 'ok' : '');
@@ -546,10 +525,8 @@ async function poll() {
     $('#dante').textContent = d.front_total ? `${d.source === 'pc' ? 'PC' : d.source === 'bt' ? 'Bluetooth' : d.source} · ${d.front_live}/${d.front_total}` : '—'; }
 
   const h = s.ha || {};
-  if (h.configured) {
-    $('#lights').innerHTML = `${h.lights_on}<small>on</small>`;
-    if (h.door === 'locked' || h.door === 'unlocked') {
-    const shut = h.door === 'locked';
+  if (h.configured) { $('#lights').innerHTML = `${h.lights_on}<small>on</small>`;
+    if (h.door === 'locked' || h.door === 'unlocked') { const shut = h.door === 'locked';
     $('#door').innerHTML = `<i class="icon icon-${shut ? 'lock' : 'unlock'}" aria-hidden="true"></i> ${shut ? 'Locked' : 'Open'}`;
   } else { $('#door').textContent = h.door || '—'; }   // server text: never innerHTML
     $('#door').style.color = h.door === 'unlocked' ? 'var(--warn)' : '';
@@ -564,8 +541,7 @@ async function poll() {
   $('#np-pp').firstElementChild.className = (m.state === 'playing' ? 'icon icon-pause' : 'icon icon-play');
     const art = m.art ? `url(/api/art?k=${encodeURIComponent(m.art_key)})` : '';
     if ($('#art').style.backgroundImage !== art) { $('#art').style.backgroundImage = art; $('#np-bg').style.backgroundImage = art; }
-  } else {
-    $('#temps').innerHTML = $('#np-a').innerHTML = '';
+  } else { $('#temps').innerHTML = $('#np-a').innerHTML = '';
     $('#temps').innerHTML = '<div class="connect">Connect Home Assistant for live data. <button data-open>Connect</button></div>';
   }
 }
@@ -573,8 +549,7 @@ async function poll() {
    The overlay has two owners: the lab panel popup (camSource 'lab') and the Home camera card ('home');
    labPoll() only opens/closes it for the lab popup and never closes one the card opened. */
 let camKey = null, camDismissed = null, camSource = null, camTimer;
-async function labPoll() {
-  if (document.visibilityState !== 'visible') return;
+async function labPoll() { if (document.visibilityState !== 'visible') return;
   let st; try { st = await api('/api/lab/state'); } catch { return; }
   $('#crumbs').innerHTML = (st.crumbs || ['Overview']).map((c, i, a) => i === a.length - 1 ? `<b>${esc(c)}</b>` : `<span>${esc(c)}</span><i>›</i>`).join('');
   const l = st.last;
@@ -582,27 +557,24 @@ async function labPoll() {
     <div class="sub">${esc(l.where || '')} · ${new Date(l.at * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div></div>`;
   const key = st.entity ? st.entity + '|' + st.stream : null;
   if (!st.entity) { camDismissed = null; }
-  if (key !== camKey) {                                   // popup opened, switched camera, or closed
+  if (key !== camKey) { // popup opened, switched camera, or closed
     camKey = key;
-    if (st.entity && camDismissed !== st.entity) {          // a lab popup takes over the overlay
+    if (st.entity && camDismissed !== st.entity) { // a lab popup takes over the overlay
       openOverlay('Camera · ' + st.camera, st.stream, 'lab');
     } else if (camSource === 'lab') hideOverlay();
     $('#camside').hidden = !st.entity; $('#camside-name').textContent = st.camera || '';
   }
   if (camSource === 'lab') $('#cam-left').textContent = st.entity ? `closes in ${st.closes_in} s` : '';
 }
-function openOverlay(name, src, source) {
-  clearTimeout(camTimer); camSource = source;
+function openOverlay(name, src, source) { clearTimeout(camTimer); camSource = source;
   $('#cam-name').textContent = name; $('#cam-left').textContent = source === 'home' ? 'live' : '';
   $('#cam-img').src = src; $('#cam').classList.add('open');
   if (source === 'home') camTimer = setTimeout(hideOverlay, 590 * 1000);   // the server ends streams after 10 min
 }
-function hideOverlay() {
-  clearTimeout(camTimer); camSource = null;
+function hideOverlay() { clearTimeout(camTimer); camSource = null;
   $('#cam').classList.remove('open'); $('#cam-img').src = '';            // dropping src stops the MJPEG stream
 }
-async function closeCam() {
-  const src = camSource; hideOverlay();
+async function closeCam() { const src = camSource; hideOverlay();
   if (src !== 'lab') return snap();
   camDismissed = camKey && camKey.split('|')[0];
   try { await api('/api/lab/close', {}); } catch (e) { toast('Lab panel: ' + e.message); }
@@ -614,13 +586,11 @@ document.addEventListener('click', e => { if (e.detail === 0 && e.target.closest
 /* Home camera card: light snapshots every 2.5 s (only while Home is visible and the overlay is closed);
    tap = live MJPEG in the overlay, ‹ › cycle cameras. */
 function curCam() { return (cams.find(c => c.entity === settings.camera) || cams.find(c => c.name === 'Front') || cams[0] || {}).entity; }
-function setCam(entity, save) {
-  settings.camera = entity; const c = cams.find(x => x.entity === entity) || {};
+function setCam(entity, save) { settings.camera = entity; const c = cams.find(x => x.entity === entity) || {};
   $('#cp-name').textContent = c.name || '—'; snapBusy = false; snap();
   if (save) api('/api/settings', { camera: entity }).catch(() => {});
 }
-function snap() {
-  const e = curCam();
+function snap() { const e = curCam();
   if (!e || snapBusy || view !== 'home' || document.visibilityState !== 'visible' || $('#cam').classList.contains('open')) return;
   snapBusy = true;
   const img = new Image();                               // load off-screen, swap when complete (no flicker)
@@ -628,13 +598,11 @@ function snap() {
   img.onerror = () => { snapBusy = false; if (++snapFails >= 3) { $('#cp-err').hidden = false; $('#cp-err').textContent = 'Camera not answering'; } };
   img.src = `/api/cam/${e}/snap?w=${Math.min(1280, Math.round($('#cp-img').clientWidth * (devicePixelRatio || 1)) || 640)}&t=${Date.now()}`;
 }
-async function loadCams() {
-  try { cams = await api('/api/cams'); } catch { cams = []; }
+async function loadCams() { try { cams = await api('/api/cams'); } catch { cams = []; }
   $('#cp-nav').hidden = cams.length < 2; $('#campreview').hidden = !cams.length;
   if (cams.length) setCam(curCam());
 }
-tap($('#campreview'), e => {
-  const step = e.target.closest('[data-cp]');
+tap($('#campreview'), e => { const step = e.target.closest('[data-cp]');
   if (step) { const i = cams.findIndex(c => c.entity === curCam()); setCam(cams[(i + +step.dataset.cp + cams.length) % cams.length].entity, true); return; }
   const c = cams.find(x => x.entity === curCam()); if (!c) return;
   openOverlay('Camera · ' + c.name, `/api/cam/${c.entity}/stream?t=${Date.now()}`, 'home');

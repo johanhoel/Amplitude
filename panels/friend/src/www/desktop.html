@@ -47,7 +47,7 @@ body { margin: 0; height: 100%; overflow: hidden; color: var(--text); font-famil
 .row { display: flex; align-items: center; gap: calc(1.2 * var(--u)); }
 .sub { color: var(--mute); font-size: calc(1.45 * var(--u)); }
 .dot { width: calc(.9 * var(--u)); height: calc(.9 * var(--u)); border-radius: 50%; background: var(--faint); flex: none; }
-.dot.ok { background: var(--ok); box-shadow: 0 0 10px var(--ok); } .dot.bad { background: var(--bad); box-shadow: 0 0 10px var(--bad); }
+.dot.ok { background: var(--ok); } .dot.bad { background: var(--bad); }
 .dot.warn { background: var(--warn); }
 
 /* people */
@@ -149,8 +149,7 @@ const COND = { 'clear-night': 'Clear', cloudy: 'Cloudy', fog: 'Fog', hail: 'Hail
   pouring: 'Heavy rain', rainy: 'Rain', snowy: 'Snow', 'snowy-rainy': 'Sleet', sunny: 'Sunny', windy: 'Windy', 'windy-variant': 'Windy', exceptional: 'Unusual' };
 let lastOk = Date.now();
 
-function clock() {
-  const d = new Date();
+function clock() { const d = new Date();
   $('#clock').textContent = hhmm(d);
   $('#date').textContent = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
   const s = (Date.now() - lastOk) / 1000;
@@ -158,12 +157,10 @@ function clock() {
   setTimeout(clock, 60000 - d.getSeconds() * 1000 - d.getMilliseconds() + 50);     // wake once per minute, on the minute
 }
 
-async function home() {
-  const [h, pr, st] = await Promise.all([get('/api/home/state'), get('/api/presence').catch(() => ({})), get('/api/status').catch(() => ({}))]);
+async function home() { const [h, pr, st] = await Promise.all([get('/api/home/state'), get('/api/presence').catch(() => ({})), get('/api/status').catch(() => ({}))]);
   lastOk = Date.now();
   const nHome = h.people.filter(p => p.home).length;
-  $('#people').innerHTML = h.people.map(p => {
-    const k = p.name.toLowerCase(), q = pr[k] || {};
+  $('#people').innerHTML = h.people.map(p => { const k = p.name.toLowerCase(), q = pr[k] || {};
     const sub = p.home ? 'home' : q.silent_s != null ? 'away · ' + ago(q.silent_s).replace(' ago', '') : 'away';
     return `<div class="p ${p.home ? 'home' : ''}"><div class="av">${esc(p.name[0])}</div><div class="n">${esc(p.name)}</div><div class="s">${esc(sub)}</div></div>`;
   }).join('');
@@ -185,8 +182,7 @@ async function home() {
     $('#art').classList.toggle('hide', !art); }
 }
 
-async function camera() {
-  const v = (await get('/api/sec/visits?limit=1'))[0];
+async function camera() { const v = (await get('/api/sec/visits?limit=1'))[0];
   if (!v) return;
   const t = new Date(v.start), names = v.people.map(p => p.name);
   const what = names.length ? names.join(', ') : v.plates.length ? 'Car ' + v.plates.map(p => p.plate || p).join(', ')
@@ -198,8 +194,7 @@ async function camera() {
   if ($('#camimg').getAttribute('src') !== src) $('#camimg').setAttribute('src', src);
 }
 
-async function lab() {
-  const s = await get('/api/ops/snapshot');
+async function lab() { const s = await get('/api/ops/snapshot');
   const probs = s.problems || [];
   $('#labdot').className = 'dot ' + (probs.length ? 'bad' : 'ok');
   $('#labhead').textContent = probs.length ? `${probs.length} problem${probs.length > 1 ? 's' : ''}: ${probs.slice(0, 3).join(', ')}` : 'All good';
@@ -210,30 +205,26 @@ async function lab() {
   $('#backup').textContent = b.newest ? ago(Date.now() / 1000 - b.newest).replace(' ago', '') : '–';
   const running = (s.guests || []).filter(g => g.status === 'running').length;
   $('#labat').textContent = `${running}/${(s.guests || []).length} guests running`;
-  $('#nodes').innerHTML = (s.nodes || []).map(x => {
-    const cpu = 100 * (x.cpu || 0), mem = x.maxmem ? 100 * x.mem / x.maxmem : 0;
+  $('#nodes').innerHTML = (s.nodes || []).map(x => { const cpu = 100 * (x.cpu || 0), mem = x.maxmem ? 100 * x.mem / x.maxmem : 0;
     const col = mem > 90 ? 'var(--bad)' : mem > 80 ? 'var(--warn)' : x.color || 'var(--accent)';
     return `<div class="node"><span>${esc(x.node)}</span><div class="bar"><i style="width:${Math.min(100, mem).toFixed(0)}%;background:${col}"></i></div>`
       + `<span style="text-align:right;white-space:nowrap">${x.status === 'online' ? `CPU ${cpu.toFixed(0)}% · RAM ${mem.toFixed(0)}%` : 'OFFLINE'}</span></div>`;
   }).join('');
 }
 
-async function bus() {
-  const b = await get('/api/bus');
+async function bus() { const b = await get('/api/bus');
   if (b.configured === false) return $('#buscard').classList.add('hide');
   const deps = (b.departures || []).slice(0, 2);
   $('#buscard').classList.toggle('hide', !deps.length);
   $('#busstop').textContent = b.stop || '';
-  $('#bus').innerHTML = deps.map(x => {
-    const mins = t => t ? Math.max(0, Math.round((new Date(t.time) - Date.now()) / 60000)) : null;
+  $('#bus').innerHTML = deps.map(x => { const mins = t => t ? Math.max(0, Math.round((new Date(t.time) - Date.now()) / 60000)) : null;
     const m1 = mins(x.next), m2 = mins(x.then);
     return `<div class="b"><span class="line" style="background:${esc(x.line.backgroundColor)};color:${esc(x.line.textColor)}">${esc(x.line.shortName)}</span>`
       + `<span>${esc(x.to)}</span><span class="min">${m1 == null ? '–' : m1 ? m1 + ' min' : 'now'}${m2 != null ? `<small>then ${m2}</small>` : ''}</span></div>`;
   }).join('');
 }
 
-async function weather() {
-  const w = await get('/api/weather');
+async function weather() { const w = await get('/api/weather');
   const now = Date.now();
   $('#hours').innerHTML = (w.hourly || []).filter(h => new Date(h.datetime) > now).filter((_, i) => i % 3 === 0).slice(0, 5).map(h =>
     `<div>${new Date(h.datetime).getHours()}:00<b>${Math.round(h.temperature)}°</b><i>${h.precipitation >= .2 ? h.precipitation.toFixed(1) + ' mm' : ''}</i></div>`).join('');

@@ -120,7 +120,7 @@ img:not([src]), img[src=""] { visibility: hidden; }
     <button class="x" id="px" aria-label="Close">✕</button></div>
   <div class="faces" id="pf"></div>
   <video id="pv" controls playsinline preload="metadata"></video>
-  <div class="pbot"><button id="pprev" aria-label="Newer recording">‹ Newer</button><span class="sp" id="pn"></span><a id="pdl" download aria-label="Download">⬇</a><button id="pnext" aria-label="Older recording">Older ›</button></div>
+  <div class="pbot"><button id="pprev" aria-label="Newer recording">‹ Newer</button><span class="sp" id="pn"></span><a id="pdl" download aria-label="Download"><i class="icon icon-download" aria-hidden="true"></i></a><button id="pnext" aria-label="Older recording">Older ›</button></div>
 </div>
 
 <div id="sheet" role="dialog" aria-label="Tag this recording" hidden></div>
@@ -288,7 +288,7 @@ async function openSheet() {
       await new Promise(r => setTimeout(r, 1500));
       s = await get(`/api/share/${s.id}`).catch(() => null);
     }
-    $('#smsg').innerHTML = s && s.state === 'done' ? `<a class="nm on" style="display:inline-flex;align-items:center" href="${s.url}">⬇ Download the blurred copy</a>`
+    $('#smsg').innerHTML = s && s.state === 'done' ? `<a class="nm on" style="display:inline-flex;align-items:center" href="${s.url}"><i class="icon icon-download" aria-hidden="true"></i> Download the blurred copy</a>`
       : 'Could not make the copy' + (s && s.error ? ': ' + esc(s.error) : '.');
   });
   $('#sstar').onclick = () => post(`${base}/star`, {}).then(() => done('Saved.'), fail);

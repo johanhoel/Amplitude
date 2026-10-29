@@ -70,7 +70,7 @@ a.row:active { background: rgba(255,255,255,.06); }
 .row .t small { display: block; font-size: 12.5px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
 .row .r { display: flex; align-items: center; gap: 8px; color: var(--mute); font-size: 12px; }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,.2); flex: none; }
-.dot.up { background: var(--ok); box-shadow: 0 0 8px rgba(52,211,153,.6); } .dot.down { background: var(--bad); box-shadow: 0 0 8px rgba(251,113,133,.6); }
+.dot.up { background: var(--ok); } .dot.down { background: var(--bad); }
 .chev { opacity: .35; font-size: 18px; }
 .grow { display: grid; grid-template-columns: minmax(0, 1fr) 52px; border-top: 1px solid var(--line); } .grow:first-child { border-top: 0; } .grow .row { border-top: 0; }
 .con { display: grid; place-items: center; font: 600 13px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--mute); border-left: 1px solid var(--line); }
@@ -95,8 +95,7 @@ body.searching [data-sec].shut .list { display: block; }
 header { order: 0; } .health { order: 1; } .problems { order: 2; } #main > .search { order: 3; } #main > [data-sec="tasks"] { order: 4; }
 #links { order: 5; } #side .grid2 { order: 6; } .foot { order: 7; }
 /* Mac / PC: services in columns, health + nodes + guests in a sticky sidebar */
-@media (min-width: 1100px) {
-  .wrap { display: grid; max-width: 1680px; grid-template-columns: minmax(0, 1fr) 400px; grid-template-areas: "head head" "main side" "foot foot"; gap: 0 28px; align-items: start; }
+@media (min-width: 1100px) { .wrap { display: grid; max-width: 1680px; grid-template-columns: minmax(0, 1fr) 400px; grid-template-areas: "head head" "main side" "foot foot"; gap: 0 28px; align-items: start; }
   header { grid-area: head; } #main { grid-area: main; display: block; } .foot { grid-area: foot; }
   #side { grid-area: side; display: block; position: sticky; top: 14px; max-height: calc(100vh - 28px); overflow-y: auto; scrollbar-width: thin; padding-bottom: 10px; }
   #side .health { grid-template-columns: repeat(4, minmax(0, 1fr)); } #side .grid2 { grid-template-columns: minmax(0, 1fr); }
@@ -226,8 +225,7 @@ document.addEventListener('click', e => { const c = e.target.closest('.cap.fold'
 // name is still shown as the text it is, escaped - this value is user input.
 const iconHTML = v => /^[a-z][a-z0-9-]{1,19}$/.test(v || '')
   ? `<i class="icon icon-${v}" aria-hidden="true"></i>` : esc(v || '');
-function renderLinks() {
-  const ed = editing();
+function renderLinks() { const ed = editing();
   $('#links').innerHTML = model.groups.map(({ name: g, icon: ic, items }, gi) => `<div data-sec="g${gi}" class="${shut.includes(g) && !ed ? 'shut' : ''}"><div class="cap fold" data-g="${esc(g)}" data-edit="group" data-gi="${gi}">${iconHTML(ic)} ${esc(g)}</div><section class="list">${items.map(({ label: l, url: u, note: n, id }, ii) =>
     `<a class="row" href="${esc(u)}" target="_blank" rel="noopener" data-edit="item" data-gi="${gi}" data-ii="${ii}" data-q="${esc((l + ' ' + n + ' ' + u + ' ' + g).toLowerCase())}">
       <span class="ic">${iconHTML(ic)}</span><span class="t"><b>${esc(l)}</b><small>${esc(n)}</small></span>
@@ -238,8 +236,7 @@ function renderLinks() {
 }
 function paintDots() { document.querySelectorAll('.dot[data-id]').forEach(d => { const s = links[d.dataset.id]; d.className = 'dot ' + (s ? (s.up ? 'up' : 'down') : ''); }); }
 
-function renderTasks() {
-  const lab = (snap?.lab_commands || []).map(c => ({ label: c.label, hint: c.two ? 'Pi-holes · hold' : 'Pi-holes', tone: c.tone, two: c.two,
+function renderTasks() { const lab = (snap?.lab_commands || []).map(c => ({ label: c.label, hint: c.two ? 'Pi-holes · hold' : 'Pi-holes', tone: c.tone, two: c.two,
     run: () => post('/api/ops/act', { key: c.key }) }));
   const lab2 = lab.map((t, i) => ({ ...t, id: snap.lab_commands[i].key }));
   const T = model.tasks, order = T.order || [], text = T.text || {}, hidden = T.hidden || {};
@@ -250,8 +247,7 @@ function renderTasks() {
     <i class="fill"></i><b>${esc(t.label)}</b><small>${esc(t.hint || '')}</small></button>`).join('');
   filter();
 }
-async function runTask(el) {
-  const t = tasks[+el.dataset.i]; if (!t || el.classList.contains('busy')) return;
+async function runTask(el) { const t = tasks[+el.dataset.i]; if (!t || el.classList.contains('busy')) return;
   el.classList.add('busy'); el.classList.remove('done', 'fail');
   try { const r = await t.run(); el.classList.add('done'); toast(`${t.label}: ${r?.msg || r?.result || 'done'}`); }
   catch (e) { el.classList.add('fail'); toast(`${t.label}: ${e.message}`); }
@@ -260,8 +256,7 @@ async function runTask(el) {
 // tap runs; "two" tasks need a 1.2 s hold (the fill shows progress)
 let hold = null;
 const HOLD_MS = 1200;
-$('#tasks').addEventListener('pointerdown', e => {
-  const el = e.target.closest('.task'); if (!el || editing()) return;
+$('#tasks').addEventListener('pointerdown', e => { const el = e.target.closest('.task'); if (!el || editing()) return;
   const t = tasks[+el.dataset.i]; if (!t?.two) return;
   const fill = el.querySelector('.fill'); fill.style.transition = `width ${HOLD_MS}ms linear`; fill.style.width = '100%';
   hold = { el, timer: setTimeout(() => { hold = null; fill.style.transition = 'none'; fill.style.width = 0; navigator.vibrate?.(30); runTask(el); }, HOLD_MS) };
@@ -273,8 +268,7 @@ $('#tasks').addEventListener('contextmenu', e => e.preventDefault());
 
 const gb = b => (b / 1073741824).toFixed(b > 1e11 ? 0 : 1);
 const ago = t => { const s = Date.now() / 1000 - t; return s < 3600 ? Math.round(s / 60) + ' min' : s < 172800 ? Math.round(s / 3600) + ' h' : Math.round(s / 86400) + ' d'; };
-function renderSnap() {
-  const d = snap; if (!d) return;
+function renderSnap() { const d = snap; if (!d) return;
   const run = (d.guests || []).filter(g => g.status === 'running').length, all = (d.guests || []).length;
   const svcDown = (d.services || []).filter(s => !s.up), cert = Math.min(...(d.certs || []).map(c => c.days), 999);
   const card = (label, val, tone, href) => `<${href ? `a href="${href}" target="_blank"` : 'div'} class="hc ${tone || ''}"><span>${label}</span><b class="num">${val}</b></${href ? 'a' : 'div'}>`;
@@ -304,16 +298,14 @@ function renderSnap() {
 }
 
 const norm = t => t.toLowerCase().replace(/[-_·]/g, '').replace(/\s+/g, ' ').trim();
-function filter() {
-  const q = norm($('#q').value);
+function filter() { const q = norm($('#q').value);
   document.querySelectorAll('[data-q]').forEach(el => el.classList.toggle('hidden', !!q && !q.split(' ').every(w => norm(el.dataset.q).replace(/ /g, '').includes(w))));
   document.body.classList.toggle('searching', !!q);
   document.querySelectorAll('[data-sec]').forEach(s => s.classList.toggle('hidden', !!q && !s.querySelector('[data-q]:not(.hidden)')));
 }
 $('#q').addEventListener('input', filter);
 // keyboard (Mac / PC): / or Cmd/Ctrl+K focuses search, Esc clears it
-document.addEventListener('keydown', e => {
-  const typing = document.activeElement === $('#q');
+document.addEventListener('keydown', e => { const typing = document.activeElement === $('#q');
   if ((e.key === '/' && !typing) || (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey))) { e.preventDefault(); $('#q').focus(); $('#q').select(); }
   else if (e.key === 'Escape' && typing) { $('#q').value = ''; filter(); $('#q').blur(); }
 });
@@ -326,8 +318,7 @@ async function loadLinks() { if (document.visibilityState !== 'visible') return;
 const tick = () => { $('#clock').textContent = new Date().toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }); };
 // ---------- edit mode ----------
 const groupOpts = () => model.groups.map((g, i) => [i, g.icon + ' ' + g.name]);
-async function editItem(gi, ii, isNew) {
-  const g = model.groups[gi], it = isNew ? { label: '', url: 'https://', note: '' } : g.items[ii];
+async function editItem(gi, ii, isNew) { const g = model.groups[gi], it = isNew ? { label: '', url: 'https://', note: '' } : g.items[ii];
   const r = await Edit.sheet({ title: isNew ? 'New link' : 'Edit link', fields: [
       { key: 'label', label: 'Name', value: it.label }, { key: 'note', label: 'Description', value: it.note },
       { key: 'url', label: 'Address', type: 'url', value: it.url, hint: 'Full address, e.g. https://192.168.1.70:8123/config/logs' },
@@ -343,8 +334,7 @@ async function editItem(gi, ii, isNew) {
   else if (r.action === 'up' || r.action === 'down') Edit.move(g.items, at, r.action === 'up' ? -1 : 1);
   renderLinks();
 }
-async function editGroup(gi, isNew) {
-  const g = isNew ? { name: '', icon: 'star', items: [] } : model.groups[gi];
+async function editGroup(gi, isNew) { const g = isNew ? { name: '', icon: 'star', items: [] } : model.groups[gi];
   const r = await Edit.sheet({ title: isNew ? 'New group' : 'Edit group', fields: [{ key: 'name', label: 'Group name', value: g.name },
       { key: 'icon', label: 'Icon (an emoji)', value: g.icon }],
     buttons: isNew ? [{ id: 'save', label: 'Add' }] : [{ id: 'del', label: 'Delete group', tone: 'bad' }, { id: 'up', label: '↑', side: true }, { id: 'down', label: '↓', side: true }, { id: 'save', label: 'Save' }] });
@@ -355,8 +345,7 @@ async function editGroup(gi, isNew) {
   if (isNew) model.groups.push(g); else if (r.action !== 'save') Edit.move(model.groups, gi, r.action === 'up' ? -1 : 1);
   renderLinks();
 }
-async function editTask(i) {
-  const t = tasks[i], T = model.tasks;
+async function editTask(i) { const t = tasks[i], T = model.tasks;
   const r = await Edit.sheet({ title: 'Edit quick task', fields: [{ key: 'label', label: 'Name', value: t.label }, { key: 'hint', label: 'Description', value: t.hint },
       { key: 'show', label: 'Show this task', type: 'toggle', value: !t.hide }],
     buttons: [{ id: 'up', label: '←', side: true }, { id: 'down', label: '→', side: true }, { id: 'save', label: 'Save' }] });
@@ -367,11 +356,10 @@ async function editTask(i) {
   if (r.action !== 'save') { const ids = tasks.map(x => x.id); Edit.move(ids, i, r.action === 'up' ? -1 : 1); T.order = ids; }
   renderTasks();
 }
-async function editText(key, label, multi) {
-  const r = await Edit.sheet({ title: 'Edit ' + label.toLowerCase(), fields: [{ key: 'v', label, type: multi ? 'textarea' : 'text', value: model[key] }], buttons: [{ id: 'save', label: 'Save' }] });
+async function editText(key, label, multi) { const r = await Edit.sheet({ title: 'Edit ' + label.toLowerCase(), fields: [{ key: 'v', label, type: multi ? 'textarea' : 'text', value: model[key] }], buttons: [{ id: 'save', label: 'Save' }] });
   if (r) { model[key] = r.values.v; renderAll(); }
 }
-document.addEventListener('click', e => {                     // in edit mode a tap edits instead of opening or running
+document.addEventListener('click', e => { // in edit mode a tap edits instead of opening or running
   if (!editing() || e.target.closest('#ebar, #eback')) return;
   const add = e.target.closest('[data-add]'), el = e.target.closest('[data-edit]');
   if (!add && !el) return;

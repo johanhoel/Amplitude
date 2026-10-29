@@ -27,7 +27,7 @@
     { p: '/desktop', t: 'Desktop', d: 'Wide-screen overview', g: 'Everyday', i: '▭', k: 'desktop wide' },
     { p: '/ambient', t: 'Ambient', d: 'Night clock', g: 'Everyday', i: '<i class="icon icon-moon" aria-hidden="true"></i>', k: 'clock night bedside' },
     { p: '/admin', t: 'Admin', d: 'Health, tasks, every console', g: 'Lab & network', i: '<i class="icon icon-gear" aria-hidden="true"></i>', k: 'admin consoles tasks' },
-    { p: '/localai', t: 'Local AI', d: 'Models on the PC: load, open, chat', g: 'Lab & network', i: '✳', k: 'llm ollama ai models chat gpu opencode video' },
+    { p: '/localai', t: 'Local AI', d: 'Models on the PC: load, open, chat', g: 'Lab & network', i: 'sparkle', k: 'llm ollama ai models chat gpu opencode video' },
     { p: '/ops', t: 'Lab', d: 'Nodes, guests, commands', g: 'Lab & network', i: '<i class="icon icon-database" aria-hidden="true"></i>', k: 'proxmox guests lab' },
     { p: '/net', t: 'Network', d: 'Internet, DNS, devices', g: 'Lab & network', i: '<i class="icon icon-hexagon" aria-hidden="true"></i>', k: 'network dns devices internet' },
     { p: '/network.html', t: 'Network map', d: 'Document: map and flows', g: 'Lab & network', i: '<i class="icon icon-frame" aria-hidden="true"></i>', k: 'map document' },
