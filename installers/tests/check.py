@@ -1,22 +1,21 @@
-"""The installer's checks, verified without Windows: python3 installers/tests/check.py
+"""The installers' checks: python3 installers/tests/check.py
 
-Nothing here can run PowerShell, so the Windows installer is only ever
-exercised by someone double-clicking the .exe. That is how its version gate
-shipped broken: it asked [Environment]::OSVersion, which since Windows 8.1
-reports version 6.2 (build 9200) to any program whose manifest does not claim
-Windows 10 - and the ps2exe wrapper did not claim it. Every machine looked
-like Windows 8, so the installer refused to run, on Windows 11 included.
+Nothing here can run AppleScript or a shell installer end to end, so these
+are the things that can be checked by reading - and they are the things that
+have actually broken.
 
-These are static checks over the script and over the workflow that wraps it.
+There is no Windows installer any more. There was, and its version gate
+rejected every machine for a week because it asked [Environment]::OSVersion,
+which reports Windows 8 inside a ps2exe wrapper. It was fixed, and then
+removed entirely: DStreamer needs the host's network for the PTP clock, and
+Windows puts WSL behind a virtual one, so the audio had gaps no setting could
+close. The other two gained nothing from a path nobody could support.
 """
 import re
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-PS1 = ROOT / "installers" / "windows" / "Install.ps1"
-WORKFLOW = ROOT / ".github" / "workflows" / "installers.yml"
-
 results = []
 
 
@@ -25,77 +24,63 @@ def check(name, ok, detail=""):
     results.append(bool(ok))
 
 
-ps1 = PS1.read_text(encoding="utf-8")
-wf = WORKFLOW.read_text(encoding="utf-8")
+# --- the Windows installer is gone and should stay gone -----------------
+check("there is no Windows installer", not (ROOT / "installers" / "windows").exists(),
+      "it was removed on purpose; DStreamer cannot get the host network there")
 
-# The gate has to read the build from somewhere that does not lie.
-check("the version gate reads CurrentBuildNumber from the registry",
-      "CurrentBuildNumber" in ps1,
-      "an API that depends on the manifest cannot be trusted inside the .exe")
+wf = (ROOT / ".github" / "workflows" / "installers.yml").read_text(encoding="utf-8")
+check("the workflow does not build a .exe", "ps2exe" not in wf and "Setup.exe" not in wf)
+check("the workflow has no windows runner", "windows-latest" not in wf)
+check("the release does not wait on a windows job", "needs: [macos]" in wf,
+      "a job that no longer exists would block every release")
 
-gate = re.search(r"if \(\$build -lt (\d+)\)", ps1)
-check("the gate compares a $build variable to a build number", gate is not None,
-      "expected: if ($build -lt 19041)")
+# --- what the workflow does still build ---------------------------------
+check("the workflow still builds the Mac installers", "macos-latest" in wf)
+check("the release publishes what it downloads", "files: dist/*" in wf)
+check("the release says where DStreamer should actually run",
+      "Raspberry Pi" in wf or "Linux" in wf,
+      "the release notes are the only place most people will read this")
 
-# OSVersion may stay, but only as the fallback inside the catch. The comment
-# above it names the API too, so count code lines only.
-code = "\n".join("" if ln.lstrip().startswith("#") else ln for ln in ps1.split("\n"))
-uses = [m.start() for m in re.finditer(r"\[Environment\]::OSVersion", code)]
-check("OSVersion appears at most once in code", len(uses) <= 1,
-      f"{len(uses)} uses; it must never be the primary source")
-if uses:
-    # The fallback sits on its own line directly under "} catch {".
-    lines = code.split("\n")
-    at = next(i for i, ln in enumerate(lines) if "[Environment]::OSVersion" in ln)
-    prev = next((lines[j] for j in range(at - 1, -1, -1) if lines[j].strip()), "")
-    check("that one use is the fallback inside the catch block",
-          "catch" in prev,
-          f"the line above it is {prev.strip()!r}; outside a catch it is the lying value again")
+# --- the installers that remain -----------------------------------------
+mac_cmd = ROOT / "installers" / "macos" / "install.command"
+linux_sh = ROOT / "installers" / "linux" / "setup.sh"
+for p in (mac_cmd, linux_sh, ROOT / "installers" / "macos" / "build.sh"):
+    check(f"{p.relative_to(ROOT)} is present", p.exists())
+    if p.exists():
+        check(f"{p.relative_to(ROOT)} is LF", b"\r\n" not in p.read_bytes(),
+              "a CRLF shell script fails with a confusing error on the first line")
 
-if gate:
-    build = gate.group(1)
-    check("the gate requires build 19041 (Windows 10 2004)", build == "19041", build)
-    # The message must name the number the code tests, or whoever reads it
-    # goes looking for the wrong Windows version.
-    after = ps1.split("if ($build -lt", 1)[1][:400]
-    check("the message names the build number it tests", build in after,
-          "say the build number, not only the marketing version")
+for p in (mac_cmd, linux_sh):
+    if not p.exists():
+        continue
+    text = p.read_text(encoding="utf-8")
+    # Not "set -e": install.command is interactive and handles its own
+    # failures so the Terminal window stays open with the error in it.
+    # Unset variables and a broken pipe are the silent ones.
+    # Read the flags out of the set line rather than matching a substring:
+    # "set -euo pipefail" does not contain "set -u", which is how the first
+    # version of this check failed a script that was perfectly correct.
+    flags = "".join(re.findall(r"^set -([a-z]+)", text, re.M))
+    check(f"{p.relative_to(ROOT)} catches unset variables and broken pipes",
+          "u" in flags and "pipefail" in text,
+          f"set flags are {flags!r}; an unset variable expands to empty and the installer goes quietly wrong")
 
-check("a failed check prints the build it saw",
-      re.search(r"reports build \$build", ps1) is not None,
-      "without it, a wrong answer here is a dead end for whoever hits it")
+# --- the rename, which is easy to half-finish ----------------------------
+for name, path in (("installers.yml", ROOT / ".github/workflows/installers.yml"),
+                   ("installers/README.md", ROOT / "installers/README.md"),
+                   ("linux/setup.sh", linux_sh)):
+    if path.exists():
+        check(f"{name} says DStreamer, not DanteStreamer",
+              "DanteStreamer" not in path.read_text(encoding="utf-8"))
 
-# And the cause, so everything else in the script sees the real Windows too.
-check("ps2exe writes the Windows 10 compatibility manifest", "-supportOS" in wf,
-      "without -supportOS the .exe reports Windows 8 to every version API")
-check("the exe is still built with -requireAdmin", "-requireAdmin" in wf)
+# --- the README should not promise Windows -------------------------------
+readme = ROOT / "installers" / "README.md"
+if readme.exists():
+    text = readme.read_text(encoding="utf-8")
+    bad = [l for l in text.splitlines()
+           if re.search(r"\.exe|WSL|Windows (10|11|protected)", l)]
+    check("installers/README.md does not describe a Windows install", not bad,
+          f"{len(bad)} line(s) still do, e.g. {bad[0][:60] if bad else ''}")
 
-# The rename landed in 937bc0b. An installer still calling itself DanteStreamer
-# would mean the script and the workflow had drifted apart again.
-for name, text in (("Install.ps1", ps1), ("installers.yml", wf)):
-    check(f"{name} says DStreamer, not DanteStreamer", "DanteStreamer" not in text)
-
-PS1 = (ROOT / "installers" / "windows" / "Install.ps1").read_text(encoding="utf-8")
-
-# Opening the browser the instant the install finishes lands on "can't reach
-# this page" - the service is still starting. The wait is what makes the
-# shortcut useful rather than alarming.
-wait_at, open_at = PS1.find("Waiting for it to start"), PS1.find("Start-Process $P.Url")
-check("the installer waits for the port before opening the browser", wait_at != -1)
-check("the wait comes before the browser opens", -1 < wait_at < open_at)
-check("the wait gives up rather than hanging", "AddSeconds(60)" in PS1)
-
-# Stopping it used to mean removing it, recordings and all.
-check("the installer can stop without uninstalling", "if ($Stop) {" in PS1)
-check("and start again", "if ($Start) {" in PS1)
-check("-Stop and -Start are accepted on the command line",
-      "[switch]$Stop" in PS1 and "[switch]$Start" in PS1)
-check("stopping leaves the distro registered",
-      "--terminate" in PS1.split("if ($Stop) {")[1].split("if ($Uninstall)")[0]
-      and "--unregister" not in PS1.split("if ($Stop) {")[1].split("if ($Uninstall)")[0],
-      "terminate stops it; unregister would delete it")
-check("there are Start-menu shortcuts for both", "foreach ($verb in 'Stop', 'Start')" in PS1)
-check("the installer says how to stop it", "Stop or start it:" in PS1)
-
-print(f"\n{sum(results)}/{len(results)} passed")
+print(f"{sum(results)}/{len(results)} passed")
 sys.exit(0 if all(results) else 1)

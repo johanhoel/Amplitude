@@ -60,8 +60,9 @@ without assembling the same stack.
   access is an SSH tunnel on the same port.
 - The desktop clients find engines over Bonjour, advertised as
   `DStreamer._raop._tcp.local`.
-- Installation is from GitHub releases: a self-contained Windows `.exe` and a
-  signed macOS app. Virgil is bundled inside both.
+- Installation is from GitHub releases: a signed, notarized Mac `.dmg`, and a
+  shell script for Linux and the Raspberry Pi. No Windows build - DStreamer
+  cannot reach the wire for its PTP clock there.
 
 ## Capabilities and Constraints
 

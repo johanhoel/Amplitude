@@ -1,40 +1,35 @@
-# Installers for Windows and Mac
+# Installers for Mac, and the Linux script behind them
 
 CamWatch, Home Deck and DStreamer run on Linux.
-These installers set up a small Linux system on a Windows PC or a Mac and install the project in it.
+The Mac installer sets up a small Linux machine and installs the project in it.
 You download one file and double-click it.
 
-| Project | Windows | Mac |
-|---|---|---|
-| CamWatch | `CamWatch-Setup.exe` | `CamWatch.dmg` |
-| Home Deck | `HomeDeck-Setup.exe` | `HomeDeck.dmg` |
-| DStreamer | `DStreamer-Setup.exe` | `DStreamer.dmg` |
+| Project | Mac |
+|---|---|
+| CamWatch | `CamWatch.dmg` |
+| Home Deck | `HomeDeck.dmg` |
+| DStreamer | `DStreamer.dmg` |
 
 The files are on the [Releases page](https://github.com/johanhoel/amplitude/releases).
+On a Linux machine or a Raspberry Pi, skip all of this and run
+[`linux/setup.sh`](linux/setup.sh) directly.
 
-> ⚠️ DStreamer needs direct access to the network for its clock (PTP) and its audio.
-> In WSL and in a Mac virtual machine, audio can drop out or stay silent. A Linux computer or a Raspberry Pi works better.
+## There is no Windows installer
 
-## Windows 10 (version 2004 or newer) and Windows 11
+There was one, and it is gone on purpose.
 
-1. Run `<Project>-Setup.exe`.
-2. Windows shows **Windows protected your PC**, because the file is not signed.
-   Click **More info**, then **Run anyway**.
-3. Windows asks for administrator rights. Click **Yes**.
-4. Without WSL on the PC, the installer adds it, and Windows restarts once.
-   After the restart, the installer goes on by itself.
-5. The installer downloads Ubuntu and installs the project. The first time takes 5 to 20 minutes.
-6. At the end, the browser opens the project. A shortcut is on the desktop.
-   CamWatch also shows its login. The installer keeps it in `/root/camwatch-login.txt` in the Linux system.
+DStreamer needs direct access to the network for its PTP clock and its audio.
+and the audio arrives with gaps - measured at roughly 2 ms, several times a
+minute, which is audible. No setting closes that, because the clock cannot
+see the wire.
 
-What the installer sets up:
-- A Linux system in WSL with the project's name, e.g. `CamWatch`. Its files are in `%LOCALAPPDATA%\Amplitude\CamWatch`.
-- A hidden task that starts it when you log in.
-- `networkingMode=mirrored` in `%USERPROFILE%\.wslconfig`, so phones reach the project through the PC's address.
-  This needs Windows 11 22H2 or newer. On Windows 10, only the PC itself reaches the project.
-- An entry in **Settings → Apps**. **Uninstall** removes everything, recordings included.
+CamWatch and Home Deck would have worked, but keeping a Windows path alive
+for two of three projects meant maintaining an installer nobody could test
+without a Windows machine - and the one bug it did ship, a version check that
+that reason.
 
-Run the installer again to update the project. The settings stay.
+> DStreamer in a Mac virtual machine has the same problem in a milder form.
+> For anything you actually listen to, use a Linux box or a Raspberry Pi.
 
 ## macOS (Intel and Apple Silicon)
 
@@ -57,7 +52,7 @@ The workflow `.github/workflows/installers.yml` builds all six files:
 - **Run it by hand:** Actions → installers → Run workflow. The files are under the run's **Artifacts**.
 - **Publish a release:** push a tag like `installers-v1`. The files then appear on the Releases page.
 
-The Windows files are not signed. The Mac files are signed and notarized when these repository secrets exist
+The Mac files are signed and notarized when these repository secrets exist
 (Settings → Secrets and variables → Actions):
 
 | Secret | What it is |

@@ -10,11 +10,13 @@ its own README, changelog and setup.
 | [panels](panels/) | Home Deck: wall panels, phone pages, Studio, boards, cameras and the Android app for the home lab. [Latest changes](panels/CHANGELOG.md) |
 | [CamWatch](CamWatch/) | Self-hosted camera recorder: up to 4 RTSP cameras, person/vehicle detection, face recognition, ntfy pushes, Home Assistant, off-site copies and a web UI with phone pages. [Latest changes](CamWatch/CHANGELOG.md) |
 
-## Windows and Mac
+## Mac, Linux and Raspberry Pi
 
-Each project has an installer for Windows (`.exe`) and for Mac (`.dmg`) on the
+Each project has an installer for Mac (`.dmg`) on the
 [Releases page](https://github.com/johanhoel/amplitude/releases). It sets up a small
-Linux system on the computer and installs the project in it. How it works: [installers/README.md](installers/README.md).
+Linux machine on the Mac and installs the project in it. On Linux or a Raspberry Pi,
+run [installers/linux/setup.sh](installers/linux/setup.sh) directly.
+There is no Windows installer, and [installers/README.md](installers/README.md) says why.
 
 ## Layout
 

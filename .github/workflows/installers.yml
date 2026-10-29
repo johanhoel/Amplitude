@@ -1,6 +1,8 @@
 # Builds the Windows (.exe) and Mac (.dmg) installers for CamWatch, Home Deck and DStreamer.
 # It runs on every change to installers/ (the files are then under the run's Artifacts), by hand
 # (Actions -> installers -> Run workflow), and on a tag like installers-v1, which also publishes a release.
+# macOS and Linux only. DStreamer needs the host's network for the PTP clock, which Windows
+# does not give it, and the other two gained nothing from a Windows path nobody could support.
 # The Mac files are signed and notarized when the MACOS_* and APPLE_* secrets exist (see installers/README.md).
 name: installers
 
@@ -15,31 +17,6 @@ permissions:
   contents: write
 
 jobs:
-  windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build the .exe files
-        shell: powershell
-        run: |
-          Install-Module ps2exe -Scope CurrentUser -Force
-          New-Item -ItemType Directory -Force dist | Out-Null
-          $projects = [ordered]@{ camwatch = 'CamWatch'; homedeck = 'HomeDeck'; dstreamer = 'DStreamer' }
-          foreach ($p in $projects.GetEnumerator()) {
-            $script = (Get-Content installers/windows/Install.ps1 -Raw) -replace '__PROJECT__', $p.Key
-            Set-Content -Path "build-$($p.Key).ps1" -Value $script -Encoding UTF8
-            # -supportOS writes the compatibility manifest that tells Windows this
-            # program understands Windows 10. Without it GetVersionEx answers 6.2
-            # (build 9200) and anything in the script that asks the OS its version
-            # gets 2012's answer.
-            Invoke-ps2exe -inputFile "build-$($p.Key).ps1" -outputFile "dist/$($p.Value)-Setup.exe" -requireAdmin -supportOS `
-              -title "$($p.Value) Setup" -product $p.Value -company 'johanhoel/amplitude' -version '1.0.0.0'
-          }
-          Get-ChildItem dist
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows
-          path: dist/*.exe
 
   macos:
     runs-on: macos-latest
@@ -60,7 +37,7 @@ jobs:
 
   release:
     if: startsWith(github.ref, 'refs/tags/installers-v')
-    needs: [windows, macos]
+    needs: [macos]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -71,6 +48,8 @@ jobs:
         with:
           name: Installers ${{ github.ref_name }}
           body: |
-            Windows: download <Project>-Setup.exe and run it. Mac: open <Project>.dmg and drag the app to Applications.
+            Mac: open <Project>.dmg and drag the app to Applications.
+            Linux and Raspberry Pi: installers/linux. That is the way to run DStreamer - it needs the
+            host's network for the PTP clock, which a Mac VM and Windows both sit behind.
             How it works and what to expect: installers/README.md in the repository.
           files: dist/*
