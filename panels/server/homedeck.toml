@@ -175,6 +175,9 @@ atlas = "http://127.0.0.1/atlas"
 
 [links.extra]                                       # name = "http://ADDRESS/" for the router, the NVR, a Pi-hole...
 
+[network]
+home_subnet = ""                                   # the home network, e.g. "192.168.1.0/24"; empty = the first Pi-hole's /24
+
 # Network panel: names by the last number of the IP address = [group, name]
 [network.names]                                     # "30" = ["Servers", "Pi-hole"]
 

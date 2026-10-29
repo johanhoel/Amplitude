@@ -2,7 +2,7 @@
 camwatch-feed (camera visits) and the Pi-holes' device tables. Names: [network] in homedeck.toml."""
 import datetime, json, time, urllib.parse, urllib.request
 
-from .config import C
+from .config import C, at_home, home_ip
 from .presence import presence
 from .store import phones, tcp_ms
 
@@ -99,7 +99,7 @@ def net_state():
                     x['first'] = min(x['first'] or 9e12, d.get('firstSeen') or 9e12)
                     for i in d.get('ips', []):
                         if i.get('name') and not x['name']: x['name'] = i['name'].replace('.lan', '')
-                        if i.get('ip', '').startswith('192.168.1.') and (i.get('lastSeen') or 0) >= x.get('ip_seen', 0):
+                        if at_home(i.get('ip', '')) and (i.get('lastSeen') or 0) >= x.get('ip_seen', 0):
                             x['ip'], x['ip_seen'] = i['ip'], i.get('lastSeen') or 0     # the address it used most recently
         except Exception:
             pass
@@ -134,7 +134,7 @@ def net_state():
     have = {x['ip'].rsplit('.', 1)[-1] for x in lst if x['ip']}
     for octet, (kind, label) in C.NET_NAMES.items():                                     # infrastructure Pi-hole never sees
         if octet not in have and kind in ('Servers', 'Network'):
-            lst.append({'mac': '', 'ip': f'192.168.1.{octet}', 'label': label, 'kind': kind, 'last': 0, 'first': 0, 'name': label,
+            lst.append({'mac': '', 'ip': home_ip(octet), 'label': label, 'kind': kind, 'last': 0, 'first': 0, 'name': label,
                         'vendor': '', 'online': up_by_label.get(label, False), 'new': False, 'owner': None})
     lst.sort(key=lambda x: -x['last'])
     blocking = {}

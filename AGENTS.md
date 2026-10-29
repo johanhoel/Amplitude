@@ -29,7 +29,8 @@ and `home.example.net` for the outside address.
   template is empty, and a page that needs to know something about the house asks the settings for it
   (`[links.extra]` for the consoles, `[services] buttons_panel` for the Deck, `[entities]` for the players).
   `panels/tests/install.py` fails on an address from any private network in the template or in `server/www`.
-  Three places still assume one subnet in code - `presence.py`, `insights.py` - and lean on `private.map`.
+  The home network comes from the settings too: `[network] home_subnet`, else the first Pi-hole's /24.
+  Test addresses with `config.at_home()`, never with a written-out prefix (`panels/tests/subnet.py` checks).
 - Panels: the live Home Deck (`192.168.100.52`) keeps its real values in two files that are never in git.
   `/opt/panel-wrapper/homedeck.toml` holds the settings. `/opt/panel-wrapper/private.map` lists
   `placeholder==>real value` pairs.

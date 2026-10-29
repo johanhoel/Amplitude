@@ -171,7 +171,31 @@ SPEC = {
     'links': _links,
     'network.names': _map(_pair, key=lambda k: None if re.fullmatch(r'\d{1,3}', k) else 'must be the last number of an IP address, e.g. "30"'),
     'network.mac_names': _map(_str, key=_mac),
+    'network.home_subnet': _opt(lambda v: None if isinstance(v, str) and re.fullmatch(r'\d{1,3}(\.\d{1,3}){3}/24', v)
+                                and _ok_net(v) else 'must be the home network with /24, e.g. "192.168.1.0/24"'),
 }
+
+
+def _ok_net(v):
+    try:
+        return ipaddress.ip_network(v, strict=True).is_private
+    except ValueError:
+        return False
+
+
+def _home_net(t):
+    """The home network (a /24): [network] home_subnet, else the first Pi-hole's /24, else Home Assistant's.
+    Presence and the device list keep only addresses in it, and [network.names] counts on its last number."""
+    if t.get('network', {}).get('home_subnet'):
+        return ipaddress.ip_network(t['network']['home_subnet'])
+    for host in list(t['services']['piholes']) + [re.sub(r'^\w+://|[:/].*$', '', t['homeassistant']['url'])]:
+        try:
+            ip = ipaddress.ip_address(host)
+        except ValueError:
+            continue
+        if ip.version == 4 and ip.is_private:
+            return ipaddress.ip_network(f'{ip}/24', strict=False)
+    return None
 
 
 def _get(tree, dotted):
@@ -248,7 +272,22 @@ def _derive(t):
         LINK_EXTRA=set(t['links'].get('extra') or {}),
         NET_NAMES={k: tuple(v) for k, v in t['network']['names'].items()},
         MAC_NAMES={k.lower(): v for k, v in t['network']['mac_names'].items()},
+        HOME_NET=_home_net(t),
     )
+
+
+def at_home(ip):
+    """True for an address in the home network (HOME_NET). Without a known home network, any private IPv4 address."""
+    try:
+        a = ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    return a in C.HOME_NET if C.HOME_NET else (a.version == 4 and a.is_private)
+
+
+def home_ip(last):
+    """'30' -> the full address in the home network ('' without one), for [network.names]."""
+    return str(C.HOME_NET.network_address + int(last)) if C.HOME_NET else ''
 
 
 def load():

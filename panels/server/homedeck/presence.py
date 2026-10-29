@@ -8,7 +8,7 @@ A front-camera event (camwatch) starts a burst of fast scans, so arrivals/depart
 """
 import datetime, json, subprocess, socket, threading, time, urllib.request
 
-from .config import C
+from .config import C, at_home
 from .store import NOCHECK, phones, secret
 
 
@@ -68,7 +68,7 @@ def presence_loop():
                             m = d['hwaddr'].lower()
                             seen[m] = max(seen.get(m, 0), d.get('lastQuery') or 0)
                             for i in d.get('ips', []):
-                                if i.get('ip', '').startswith('192.168.1.'):
+                                if at_home(i.get('ip', '')):
                                     ips.setdefault(m, {})[i['ip']] = max(ips.get(m, {}).get(i['ip'], 0), i.get('lastSeen') or 0)
                 except Exception:
                     pass
