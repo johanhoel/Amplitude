@@ -119,8 +119,35 @@ nav.tabs a.on { color: var(--accent); }
       transition-duration: .15s !important; }
 }
 </style>
+<link rel="stylesheet" href="/static/splash.css">
 </head>
 <body>
+<div class="cw-splash" id="cwSplash" hidden>
+  <svg class="cw-mark is-splash" viewBox="0 0 128 128" width="96" height="96" role="img" aria-label="camwatch">
+    <g fill="none" stroke="#38bdf8" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+      <path class="cw-b cw-b1" d="M20 40 L20 20 L40 20"/><path class="cw-b cw-b2" d="M88 20 L108 20 L108 40"/>
+      <path class="cw-b cw-b3" d="M108 88 L108 108 L88 108"/><path class="cw-b cw-b4" d="M40 108 L20 108 L20 88"/>
+    </g>
+    <circle class="cw-ring" cx="64" cy="64" r="21" fill="none" stroke="#38bdf8" stroke-width="8"/>
+    <circle class="cw-rec" cx="64" cy="64" r="7.5" fill="#ef4444"/>
+  </svg>
+  <div class="cw-word">camwatch</div>
+</div>
+<script>
+// A splash earns its place on an app launch, not on every page view. Standalone only, once per session.
+(function () {
+  var el = document.getElementById('cwSplash');
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  var seen; try { seen = sessionStorage.getItem('cw-splash'); } catch (e) { seen = null; }
+  if (!standalone || seen) { el.remove(); return; }
+  try { sessionStorage.setItem('cw-splash', '1'); } catch (e) {}
+  el.hidden = false;
+  setTimeout(function () {
+    el.classList.add('is-done');
+    el.addEventListener('transitionend', function () { el.remove(); }, { once: true });
+  }, 1100);
+})();
+</script>
 <div class="top" id="top"><div class="wrap">
   <h1><img src="/static/logo-mark.svg" alt="" width="34" height="27" style="vertical-align:-4px;margin-right:7px">camwatch<small id="sub">loading…</small></h1>
   <button class="arm" id="arm" onclick="toggleArm()" aria-label="Arm or disarm">…</button>

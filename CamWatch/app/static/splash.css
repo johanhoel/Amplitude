@@ -1,0 +1,86 @@
+/* camwatch mark animation: splash (first paint) and loading (work in progress).
+   The SVG must be inlined in the document - CSS cannot reach into an <img src="mark.svg">.
+   Sequence follows what the product does: brackets acquire, lens opens, recording starts. */
+
+.cw-mark { --cw-ease: cubic-bezier(0.23, 1, 0.32, 1); display: block; }
+.cw-mark .cw-b, .cw-mark .cw-ring, .cw-mark .cw-rec { transform-origin: 64px 64px; }
+
+/* Splash: one authored moment, ~840ms, then it rests. Plays while the app boots,
+   so it is a CSS animation (off the main thread) rather than JS. */
+.cw-mark.is-splash .cw-b   { opacity: 0; animation: cw-acquire 420ms var(--cw-ease) forwards; }
+.cw-mark.is-splash .cw-b1  { animation-delay:   0ms; }
+.cw-mark.is-splash .cw-b2  { animation-delay:  60ms; }
+.cw-mark.is-splash .cw-b3  { animation-delay: 120ms; }
+.cw-mark.is-splash .cw-b4  { animation-delay: 180ms; }
+.cw-mark.is-splash .cw-ring { opacity: 0; animation: cw-open 380ms var(--cw-ease) 300ms forwards; }
+.cw-mark.is-splash .cw-rec  { opacity: 0; animation: cw-rec-in 300ms var(--cw-ease) 540ms forwards; }
+
+/* Brackets arrive from outside the frame: they close in on the subject. */
+@keyframes cw-acquire {
+  from { opacity: 0; transform: scale(1.18); }
+  to   { opacity: 1; transform: scale(1); }
+}
+/* 0.92, never 0 - nothing in the real world appears from nothing. */
+@keyframes cw-open {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes cw-rec-in {
+  from { opacity: 0; transform: scale(0.6); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Loading: the brackets scan. Constant motion, so it does not use an entrance curve.
+   The record dot holds steady - it reports state, and state should not wobble. */
+.cw-mark.is-loading .cw-b { animation: cw-scan 1600ms ease-in-out infinite alternate; }
+.cw-mark.is-loading .cw-b2 { animation-delay: 80ms; }
+.cw-mark.is-loading .cw-b3 { animation-delay: 160ms; }
+.cw-mark.is-loading .cw-b4 { animation-delay: 240ms; }
+@keyframes cw-scan {
+  from { transform: scale(1); }
+  to   { transform: scale(1.055); }
+}
+
+/* Recording: the dot breathes only while a clip is being written. */
+.cw-mark.is-recording .cw-rec { animation: cw-pulse 1400ms ease-in-out infinite; }
+@keyframes cw-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .45; }
+}
+
+/* Fewer and gentler, not zero: the mark still resolves, nothing moves. */
+@media (prefers-reduced-motion: reduce) {
+  .cw-mark.is-splash .cw-b,
+  .cw-mark.is-splash .cw-ring,
+  .cw-mark.is-splash .cw-rec {
+    animation-name: cw-fade; animation-duration: 260ms; transform: none;
+  }
+  .cw-mark.is-loading .cw-b { animation: none; }
+  .cw-mark.is-loading .cw-ring { animation: cw-pulse 1600ms ease-in-out infinite; }
+  .cw-mark.is-recording .cw-rec { animation: cw-pulse 2000ms ease-in-out infinite; }
+  @keyframes cw-fade { from { opacity: 0; } to { opacity: 1; } }
+}
+
+/* Splash screen shell. Fixed to the viewport edges, so it adds the safe-area insets itself. */
+.cw-splash {
+  position: fixed; inset: 0; z-index: 100;
+  display: grid; place-items: center; gap: 18px;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  background: var(--bg, #101418);
+  transition: opacity 240ms var(--cw-ease, cubic-bezier(0.23, 1, 0.32, 1));
+}
+.cw-splash .cw-mark { width: 96px; height: 96px; }
+.cw-splash .cw-word {
+  font: 600 15px/1 -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Inter, Roboto, sans-serif;
+  letter-spacing: .14em; text-transform: lowercase; color: var(--mute, #8b98a8);
+  opacity: 0; animation: cw-fade-up 320ms var(--cw-ease) 700ms forwards;
+}
+@keyframes cw-fade-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cw-splash .cw-word { animation-name: cw-fade; animation-duration: 260ms; transform: none; }
+}
+/* Dismiss by adding .is-done; it leaves the way it came, faster than it arrived. */
+.cw-splash.is-done { opacity: 0; pointer-events: none; }

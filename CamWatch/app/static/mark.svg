@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="camwatch">
+  <!-- The three things camwatch does, in one mark:
+       corner brackets = the detection box it draws on every frame
+       ring            = the lens watching
+       red centre      = recording -->
+  <g fill="none" stroke="#38bdf8" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    <path class="cw-b cw-b1" d="M20 40 L20 20 L40 20"/>
+    <path class="cw-b cw-b2" d="M88 20 L108 20 L108 40"/>
+    <path class="cw-b cw-b3" d="M108 88 L108 108 L88 108"/>
+    <path class="cw-b cw-b4" d="M40 108 L20 108 L20 88"/>
+  </g>
+  <circle class="cw-ring" cx="64" cy="64" r="21" fill="none" stroke="#38bdf8" stroke-width="8"/>
+  <circle class="cw-rec" cx="64" cy="64" r="7.5" fill="#ef4444"/>
+</svg>
