@@ -105,7 +105,7 @@ img:not([src]), img[src=""] { visibility: hidden; }
   <section class="live" id="live">
     <img id="snap" alt="Live camera">
     <div class="top"><span class="badge" id="badge">SNAPSHOT</span><span class="when" id="when"></span></div>
-    <div class="bot"><button class="pill" id="golive"><i class="icon icon-play" aria-hidden="true"></i> Live</button><button class="pill" id="full" aria-label="Full screen">⤢</button></div>
+    <div class="bot"><button class="pill" id="golive"><i class="icon icon-play" aria-hidden="true"></i> Live</button><button class="pill" id="full" aria-label="Full screen"><i class="icon icon-frame" aria-hidden="true"></i> Full</button></div>
   </section>
 
   <div class="chips" id="chips"></div>
@@ -116,8 +116,8 @@ img:not([src]), img[src=""] { visibility: hidden; }
 <div id="pl" role="dialog" aria-label="Recording">
   <div class="ptop"><div class="t"><b id="pt"></b><span id="ps"></span></div>
     <button class="info" id="ptag" aria-label="Tag people, plates, star" title="Tag"><i class="icon icon-tag" aria-hidden="true"></i></button>
-    <a class="info" id="pi" aria-label="Clip details" title="Details">ⓘ</a>
-    <button class="x" id="px" aria-label="Close">✕</button></div>
+    <a class="info" id="pi" aria-label="Clip details" title="Details"><i class="icon icon-info" aria-hidden="true"></i></a>
+    <button class="x" id="px" aria-label="Close"><i class="icon icon-close" aria-hidden="true"></i></button></div>
   <div class="faces" id="pf"></div>
   <video id="pv" controls playsinline preload="metadata"></video>
   <div class="pbot"><button id="pprev" aria-label="Newer recording">‹ Newer</button><span class="sp" id="pn"></span><a id="pdl" download aria-label="Download"><i class="icon icon-download" aria-hidden="true"></i></a><button id="pnext" aria-label="Older recording">Older ›</button></div>
@@ -164,7 +164,8 @@ function setLive(on) {
   else { $('#snap').src = 'data:,'; snapshot(); }
 }
 $('#golive').onclick = () => setLive(!streaming);
-$('#full').onclick = () => { const l = $('#live'); l.classList.toggle('full'); $('#full').textContent = l.classList.contains('full') ? '✕' : '⤢'; };
+$('#full').onclick = () => { const l = $('#live'); l.classList.toggle('full'); $('#full').innerHTML = l.classList.contains('full')
+    ? '<i class="icon icon-close" aria-hidden="true"></i> Close' : '<i class="icon icon-frame" aria-hidden="true"></i> Full'; };
 $('#snap').onclick = () => { if ($('#live').classList.contains('full')) $('#full').click(); else setLive(!streaming); };
 document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible' && streaming) setLive(false); else snapshot(); });
 
@@ -272,7 +273,7 @@ async function openSheet() {
     ? `<span class="nm on">${esc(p.name)}</span>`
     : `<input placeholder="Name, e.g. Family car" data-plate="${esc(p.plate)}"><button class="nm" data-saveplate="${esc(p.plate)}">Save</button>`) + '</div>').join('') : '';
   sh.innerHTML = `<h3><span>Tag this recording</span><button class="close" id="sclose">Done</button></h3>
-    <div class="names" style="margin-bottom:12px"><button class="nm ${c.star ? 'on' : ''}" id="sstar">${c.star ? '<i class="icon icon-star" aria-hidden="true"></i> Starred (kept forever)' : '☆ Star (keep forever)'}</button></div>
+    <div class="names" style="margin-bottom:12px"><button class="nm ${c.star ? 'on' : ''}" id="sstar">${c.star ? '<i class="icon icon-star" aria-hidden="true"></i> Starred (kept forever)' : '<i class="icon icon-star-outline" aria-hidden="true"></i> Star (keep forever)'}</button></div>
     <h3>Faces</h3>${faces}<h3>Someone else was here</h3><div class="names">${chips('', null)}</div>${plates}
     <h3>Share a blurred copy</h3><div class="names"><button class="nm" data-share="strangers">Blur strangers + plates</button>
     <button class="nm" data-share="all">Blur every face + plates</button></div><div class="msg" id="smsg"></div>`;

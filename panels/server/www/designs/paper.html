@@ -69,7 +69,7 @@ function render() {
   document.querySelectorAll('#rooms .row').forEach(b => Kit.press(b, () => Kit.flip(S.rooms.flatMap(r => r.lights).find(l => l.id === b.dataset.id), render)));
   $('#media').innerHTML = `<div class="grp"><div class="list">${(S.H.players || []).concat(S.H.appletv ? [S.H.appletv] : []).map(p => row(esc(p.label), `<b>${esc(p.title || p.state)}</b>`)).join('')}</div></div>`;
 }
-$('#acts').innerHTML = [['<i class="icon icon-vacuum" aria-hidden="true"></i>', 'Start the vacuum', 'Roborock'], ['⏻', 'Wake the PC', 'Wake-on-LAN'], ['<i class="icon icon-target" aria-hidden="true"></i>', 'Switch camera alerts', 'On or off']].map(([i, t, s]) =>
+$('#acts').innerHTML = [['<i class="icon icon-vacuum" aria-hidden="true"></i>', 'Start the vacuum', 'Roborock'], ['<i class="icon icon-power" aria-hidden="true"></i>', 'Wake the PC', 'Wake-on-LAN'], ['<i class="icon icon-target" aria-hidden="true"></i>', 'Switch camera alerts', 'On or off']].map(([i, t, s]) =>
   `<button class="row" data-t="${t}"><span style="font-size:20px">${i}</span><span class="lbl">${t}<small>${s}</small></span><span class="val">›</span></button>`).join('');
 document.querySelectorAll('#acts .row').forEach(b => Kit.press(b, () => Kit.toast('Demo: would ' + b.dataset.t.toLowerCase())));
 $('#slides').innerHTML = ['Lock the front door', 'Turn off every light', 'Put the PC to sleep'].map(t => `<div class="kslide" data-t="${t}" role="button" aria-label="Slide to ${t.toLowerCase()}"><span>Slide to ${t.toLowerCase()}</span><div class="knob">›</div></div>`).join('');

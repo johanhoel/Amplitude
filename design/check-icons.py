@@ -181,5 +181,37 @@ for p in files:
     check(f"{rel} icon fields name an icon that exists", not unknown,
           f"{unknown[:3]} - add it to design/icons.py or use an existing name")
 
+# A glyph sitting among drawn icons. This is the form both the emoji pass and
+# the markup rule step over: U+23FB is not emoji, so the first missed it, and
+# it is not markup, so the second passed it - yet "Wake the PC" rendered a
+# bare power symbol beside five drawn icons, and every weather condition was
+# drawn except "exceptional". Flagged only where a drawn icon is already
+# present, so a close button or an arrow used on its own stays allowed.
+def _symbol(ch):
+    o = ord(ch)
+    return (0x2190 <= o <= 0x2BFF) or (0x1F000 <= o <= 0x1FAFF) or (0x2300 <= o <= 0x23FF)
+
+LONE = re.compile(r"[:\[,]\s*'([^'\\]{1,2})'")
+mixed = []
+for p in files:
+    if p.name == "qrcode.js":          # generated QR blocks, not interface text
+        continue
+    lines = p.read_text(encoding="utf-8").split("\n")
+    block, start = [], 0
+    for i, line in enumerate(lines + [""], 1):
+        if line.strip():
+            if not block:
+                start = i
+            block.append(line)
+            continue
+        text = "\n".join(block)
+        if '<i class="icon' in text:
+            for m in LONE.finditer(text):
+                if any(_symbol(c) for c in m.group(1)):
+                    mixed.append(f"{p.relative_to(ROOT)}:{start} {m.group(1)!r}")
+        block = []
+check("no bare glyph sits among drawn icons", not mixed,
+      "; ".join(mixed[:5]) + "  - give it an icon from design/icons.py")
+
 print(f"\n{sum(results)}/{len(results)} passed")
 sys.exit(0 if all(results) else 1)
