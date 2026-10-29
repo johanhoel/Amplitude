@@ -112,5 +112,32 @@ a:focus-visible, button:focus-visible, [role=button]:focus-visible { outline: 3p
 #dkcam, #dkreload, .start-link, #dklogout:not(.innav), #sw, #orb, .orb { background: var(--card) !important; border-color: var(--line) !important; box-shadow: 0 6px 20px rgba(0, 0, 0, .45) !important; }
 #dkptr.ready { background: #0284c7; }
 
+/* Addons: a part of a page this house does not have.
+   data-addon="bus" disappears where no stop is set; several names means any
+   of them. addons.js puts the enabled list on <html>, cached, so a panel
+   that has shown the page before does not flash what it is about to hide.
+
+   These rules only ever HIDE. The obvious shape - hide every [data-addon],
+   then revert the enabled ones - looks tidier and is wrong: display:revert
+   goes back to the browser's value for the tag, so a flex row would come
+   back as a block. Hiding only leaves the page's own display untouched.
+
+   Before any answer arrives data-addons is absent and nothing is hidden,
+   which is the safe direction: showing too much beats an empty page. */
+html[data-addons]:not([data-addons~="speakers"]) [data-addon~="speakers"] { display: none !important; }
+html[data-addons]:not([data-addons~="pc"]) [data-addon~="pc"] { display: none !important; }
+html[data-addons]:not([data-addons~="cameras"]) [data-addon~="cameras"] { display: none !important; }
+html[data-addons]:not([data-addons~="charger"]) [data-addon~="charger"] { display: none !important; }
+html[data-addons]:not([data-addons~="tv"]) [data-addon~="tv"] { display: none !important; }
+html[data-addons]:not([data-addons~="spotify"]) [data-addon~="spotify"] { display: none !important; }
+html[data-addons]:not([data-addons~="vacuum"]) [data-addon~="vacuum"] { display: none !important; }
+html[data-addons]:not([data-addons~="lock"]) [data-addon~="lock"] { display: none !important; }
+html[data-addons]:not([data-addons~="bus"]) [data-addon~="bus"] { display: none !important; }
+html[data-addons]:not([data-addons~="lab"]) [data-addon~="lab"] { display: none !important; }
+
+/* build_www.py used to inject this, because some page CSS overrides the
+   browser default for [hidden]. The generator is gone; the rule is not. */
+[hidden] { display: none !important; }
+
 /* JS fills these in; without this they paint a broken-image icon on first load. */
 img:not([src]), img[src=""] { visibility: hidden; }

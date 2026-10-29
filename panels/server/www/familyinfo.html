@@ -123,6 +123,7 @@ body:not(.editing) .hidden { display: none; }
   .day { grid-template-columns: 78px 30px 38px 1fr 38px 48px; gap: 8px; font-size: 15px; } }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<script src="/addons.js"></script>
 <link rel="stylesheet" href="/icons.css">
 </head>
 <body>
@@ -132,7 +133,7 @@ body:not(.editing) .hidden { display: none; }
   <section class="sits" id="sits"></section>
   <div class="cols">
     <div id="col1">
-      <div class="blk" data-blk="deps"><div class="cap" data-edit="blk"><span id="depcap">Next buses</span><span class="stale" id="stale"></span></div>
+      <div class="blk" data-blk="deps" data-addon="bus"><div class="cap" data-edit="blk"><span id="depcap">Next buses</span><span class="stale" id="stale"></span></div>
         <section class="deps" id="deps"><span class="empty">Loading departures…</span></section></div>
       <div class="blk" data-blk="wx"><div class="cap" data-edit="blk"><span class="ct">Weather</span></div>
         <section class="wx" id="wxnow"><span class="empty">Loading the forecast…</span></section></div>
@@ -288,13 +289,28 @@ async function editBlock(id) {
   applyLayout(); render();
 }
 async function editPage() {
+  // Which weather entity to read. Home Assistant usually has a couple (met.no,
+  // SMHI, a personal station), so it is a list, not a free-text field. If the
+  // list cannot be fetched the field drops to text so the id is still editable.
+  const wxList = await fetch('/api/ha/entities?domain=weather').then(r => r.ok ? r.json() : []).catch(() => []);
+  const wxNow = model.weather?.id || wx?.entity || '';
+  if (wxNow && !wxList.some(e => e.id === wxNow)) wxList.unshift({ id: wxNow, name: wxNow });
+  const wxField = wxList.length
+    ? { key: 'weather', label: 'Weather', type: 'select', value: wxNow, options: wxList.map(e => [e.id, e.name]) }
+    : { key: 'weather', label: 'Weather', value: wxNow, hint: 'Home Assistant entity id, for example weather.forecast_home' };
   const r = await Edit.sheet({ title: 'Page settings', fields: [{ key: 'title', label: 'Page title', value: model.title },
       { key: 'stop', label: 'Bus stop', type: 'search', value: bus?.stop || '', picked: model.stop, hint: 'Type a stop name and pick it from the list',
         search: async q => q.length < 2 ? [] : (await (await fetch('/api/bus/stops?q=' + encodeURIComponent(q))).json()).map(x => ({ value: { gid: x.gid, name: x.name }, label: `${x.name} · ${x.municipality}` })) },
+      wxField,
       { key: 'leave', label: 'Show the "last one home" reminder', type: 'toggle', value: model.leave !== false }],
     buttons: [{ id: 'save', label: 'Save' }] });
   if (!r) return;
   model.title = r.values.title || 'Family info'; model.leave = r.values.leave; if (r.values.stop) model.stop = r.values.stop;
+  const wxPick = (r.values.weather || '').trim();
+  if (wxPick !== wxNow) {
+    model.weather = wxPick ? { id: wxPick, name: (wxList.find(e => e.id === wxPick) || {}).name || wxPick } : null;
+    wxAt = 0;   // the forecast on screen is for the old place
+  }
   applyLayout(); renderLeave();
 }
 document.addEventListener('click', async e => {
