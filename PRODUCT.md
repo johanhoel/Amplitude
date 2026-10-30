@@ -60,9 +60,10 @@ without assembling the same stack.
   access is an SSH tunnel on the same port.
 - The desktop clients find engines over Bonjour, advertised as
   `DStreamer._raop._tcp.local`.
-- Installation is from GitHub releases: a signed, notarized Mac `.dmg`, and a
-  shell script for Linux and the Raspberry Pi. No Windows build - DStreamer
-  cannot reach the wire for its PTP clock there.
+- Installation is a shell script for Linux and the Raspberry Pi
+  (`installers/linux/setup.sh`). No Mac or Windows build - DStreamer cannot
+  reach the wire for its PTP clock from behind either one's virtual adapter.
+  The Mac and Windows desktop clients control an engine installed elsewhere.
 
 ## Capabilities and Constraints
 

@@ -4,12 +4,15 @@ Newest first.
 
 ## 2026-10-30
 
+- The Mac installer is gone, and with it the one install path that was known to drop audio.
+  DStreamer installs on Debian, Ubuntu or a Raspberry Pi with installers/linux/setup.sh. A Mac
+  virtual machine still works, with a bridged adapter and the dropouts that come with it.
 - The README follows the shape every project in this repository now uses: Screenshots,
   Features, Install, Use, How it is built, Troubleshooting, Notes.
 - The macOS chapter is gone. It repeated the install steps, the control panel and the
   requirements in a second voice, with VM prices and a ping test. What it knew that the rest
-  of the page did not - that a Mac needs either a Linux box or the DMG, with a bridged
-  adapter either way - is now a few lines under Install, and sending audio from a Mac is
+  of the page did not - that a Mac needs a Linux machine, with a bridged adapter if it
+  is a virtual one - is now a few lines under Install, and sending audio from a Mac is
   under Use.
 
 ## 2026-10-28

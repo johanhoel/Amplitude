@@ -4,6 +4,8 @@ Newest changes first.
 
 ## 2026-10-30
 
+- The Mac installer is gone. CamWatch installs on Debian, Ubuntu or a Raspberry Pi with
+  installers/linux/setup.sh, or in a Linux machine on a Mac - see docs/install-windows-mac.md.
 - The README follows the shape every project in this repository now uses: Screenshots,
   Features, Install, Use, How it is built, Notes. Screenshots come before the feature list,
   the camera, update, storage, GPU and Home Deck sections sit under Use, and the container
