@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# homedeck-apply, for the container. The systemd one checks the settings, restarts
+# the service, waits for the panels to answer and rolls back to a snapshot if they
+# do not. Here only the settings can be wrong - the code comes from the image and
+# cannot drift - so the check is the whole safety net: bad settings never reach a
+# restart, and there is nothing to roll back to.
+set -u
+STATE=${STATE_DIRECTORY:-/state}
+
+echo "1/2  Checking the settings ..."
+if ! HOMEDECK_READONLY=1 python3 -m homedeck.check; then
+  echo "     Not restarting: the settings above would stop the panels." >&2
+  exit 1
+fi
+
+touch "$STATE/.onboard-done"          # the wizard has had its turn
+
+# Stopping PID 1 ends the container and the restart policy starts it again with
+# the new settings. Outside a container PID 1 is the machine's init, so this
+# refuses rather than taking the host down with it.
+if [ ! -f /.dockerenv ] && [ ! -f /run/.containerenv ]; then
+  echo "     Settings are fine. Not in a container, so nothing was restarted:" >&2
+  echo "     this is the container's homedeck-apply. On a systemd install use" >&2
+  echo "     /usr/local/sbin/homedeck-apply instead." >&2
+  exit 0
+fi
+
+echo "2/2  Restarting the container ..."
+kill -TERM 1 2>/dev/null || true

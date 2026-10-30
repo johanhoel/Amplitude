@@ -1,6 +1,7 @@
-# Quick checks for the parts without a test suite: the Linux installer parses, and Home Deck compiles and its
-# settings template validates (the same check build_kit.sh runs). Home Deck's page test (panels/tests/smoke.py)
-# needs a running Home Deck and Home Assistant, so it runs on the developer's machine (panels/tools/check.sh).
+# Quick checks for the parts without a test suite: the Linux installer parses, Home Deck compiles, its settings
+# template validates (the same check build_kit.sh runs) and its own tests run. Home Deck's page test
+# (panels/tests/smoke.py) needs a running Home Deck and Home Assistant, so it stays on the developer's machine
+# (panels/tools/check.sh). The image job builds the container and actually starts it.
 name: checks
 on:
   push:
@@ -35,3 +36,51 @@ jobs:
           sed 's#__HA_URL__#http://127.0.0.1:8123#' homedeck.toml > /tmp/hd-check.toml
           HOMEDECK_ROOT="$PWD" HOMEDECK_CONFIG=/tmp/hd-check.toml STATE_DIRECTORY="$(mktemp -d)" HOMEDECK_READONLY=1 \
             python -m homedeck.check
+      # Every tests/*.py but smoke.py, which needs a running Home Deck. Globbed rather
+      # than listed, so a new test file is run without anyone remembering to add it here.
+      - name: The panels' own checks
+        run: |
+          fail=0
+          for t in panels/tests/*.py; do
+            [ "$(basename "$t")" = "smoke.py" ] && continue
+            echo "=== $(basename "$t")"
+            python3 "$t" || fail=1
+          done
+          exit $fail
+
+  homedeck-image:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image
+        run: docker build -t homedeck:ci --build-arg "VERSION=ci-${GITHUB_SHA::7}" panels
+      # Building proves it compiles; only running it proves the entrypoint seeds the
+      # settings, the panels answer and the wizard takes the code it printed. Host
+      # networking is what the compose file uses, on a spare port so nothing collides.
+      - name: It starts, serves the panels and opens the wizard
+        run: |
+          mkdir -p /tmp/hd/data /tmp/hd/state
+          docker run -d --name homedeck --network host \
+            -e HOMEDECK_PORT=8090 -e ONBOARD_PORT=8091 -e TZ=Europe/Stockholm \
+            -v /tmp/hd/data:/data -v /tmp/hd/state:/state homedeck:ci
+          for _ in $(seq 1 30); do
+            curl -fs -o /dev/null http://127.0.0.1:8090/api/health && break
+            sleep 1
+          done
+          echo "--- the panels"
+          curl -fs -o /dev/null http://127.0.0.1:8090/api/health && echo "ok /api/health"
+          curl -fs -o /dev/null http://127.0.0.1:8090/start      && echo "ok /start"
+          curl -fs -o /dev/null http://127.0.0.1:8090/control    && echo "ok /control"
+          echo "--- the setup wizard"
+          curl -fs -o /dev/null http://127.0.0.1:8091/ && echo "ok /"
+          code=$(sudo cat /tmp/hd/state/onboard.code)
+          curl -fs -X POST -d "{\"code\":\"$code\"}" http://127.0.0.1:8091/api/login | grep -q '"ok": true'
+          echo "ok the code the container printed is the code it accepts"
+          echo "--- the house is in the volume, not the image"
+          sudo test -s /tmp/hd/data/homedeck.toml && echo "ok homedeck.toml was seeded"
+          sudo grep -q 'timezone = "Europe/Stockholm"' /tmp/hd/data/homedeck.toml && echo "ok the timezone was applied"
+          docker run --rm --entrypoint sh homedeck:ci -c '! test -e /data/homedeck.toml' \
+            && echo "ok the image itself holds no settings"
+      - name: What the container said
+        if: always()
+        run: docker logs homedeck || true

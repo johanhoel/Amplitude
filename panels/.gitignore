@@ -24,3 +24,7 @@ private-words.txt
 private.map
 .work-*/
 .deploy-host
+# the container's house: the same two things /opt/panel-wrapper and
+# /var/lib/panel-wrapper hold on a systemd install (settings, token, layouts)
+data/
+state/
