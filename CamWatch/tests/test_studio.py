@@ -201,5 +201,63 @@ report("172.16.5.0/24" in suggested, "the VLAN a configured camera is on is sugg
 report("10.0.20.0/24" in suggested, "the VLAN a Home Deck device is on is suggested")
 report(len(suggested) <= onvif.MAX_NETS, "no more networks are suggested than can be scanned")
 
+# ---- the dashboard you design ---------------------------------------
+# The dashboard was a fixed page: the same cards in the same order for every
+# house. Studio composes it now, so these are the rules that keep a saved
+# choice from breaking the page it draws.
+reset()
+report(studio.layout() == studio.DEFAULT_LAYOUT, "a house that has chosen nothing gets the default dashboard")
+report(all(c in studio.card_ids() for c in studio.DEFAULT_LAYOUT), "every card in the default is a real card")
+report(studio.set_layout(["stats", "now"]) is None, "a shorter dashboard can be chosen")
+report(studio.layout() == ["stats", "now"], "and it is what comes back, in that order")
+report(studio.set_layout(["now", "stats"]) is None and studio.layout() == ["now", "stats"],
+       "the order is the order given, not the catalogue's")
+report(studio.set_layout(["stats", "nope"]) == "unknown card: nope", "a card that does not exist is refused")
+report(studio.set_layout(["stats", "stats"]) == "a card can only be on the dashboard once", "a card cannot be on it twice")
+report(studio.set_layout("stats") == "that is not a list of cards", "and the whole thing has to be a list")
+report(studio.layout() == ["now", "stats"], "none of the refused choices were saved")
+
+settings.update(dashboard_cards=["stats", "gone_in_a_later_version", "now"])
+report(studio.layout() == ["stats", "now"],
+       "a card removed from a later version leaves no hole in a saved dashboard")
+
+report(studio.landing() == "/m", "the app opens on the phone home until told otherwise")
+report(studio.set_landing("/dashboard") is None and studio.landing() == "/dashboard", "and can be told otherwise")
+report(studio.set_landing("/nowhere") == "that is not a page camwatch can open on", "but not to a page that is not there")
+report(studio.landing() == "/dashboard", "the refused one did not take")
+settings.update(landing_page="/a-page-that-went-away")
+report(studio.landing() == "/m",
+       "a landing page that no longer exists falls back, instead of opening on nothing")
+settings.update(landing_page="/dashboard")
+
+homedeck.save_sync({"devices": [{"ip": "10.0.0.9", "name": "x", "vendor": "v", "mac": "f"}], "people": []})
+report(studio.cards()[5]["ready"] is True, "the weather card can be chosen once Home Deck is linked")
+homedeck.save_sync({"devices": [], "people": []})
+homedeck.remove()
+cards = {c["id"]: c for c in studio.cards()}
+report(cards["weather"]["ready"] is False and cards["weather"]["needs"] == "homedeck",
+       "and without the link it says what it is waiting for, rather than being missing")
+report(cards["stats"]["ready"] is True, "a card that needs nothing is ready")
+settings.update(dashboard_cards=["stats"])
+report(cards["stats"]["on"] is not None and studio.cards()[1]["on"] is True,
+       "the catalogue says which cards are on")
+
+# ---- what the page and the manifest do with it -----------------------
+settings.update(dashboard_cards=["now", "stats"], landing_page="/dashboard")
+page = client.get("/dashboard", headers=login).get_data(as_text=True)
+report(page.index("Now") < page.index("ui-stats"), "the dashboard draws the cards in the chosen order")
+report("ui-tiles" not in page, "and leaves out the ones that are off")
+man = client.get("/manifest.webmanifest").get_json()
+report(man["start_url"] == "/dashboard", "the phone's home-screen icon opens the chosen page")
+
+state = client.get("/api/studio", headers=login).get_json()
+report(len(state["cards"]) == len(studio.CARDS) and state["landing"] == "/dashboard",
+       "the Studio is told the whole catalogue and the chosen page")
+bad = client.post("/api/studio/layout", headers=login, json={"cards": ["nope"]})
+report(bad.status_code == 400 and "unknown card" in bad.get_json()["error"], "a bad layout answers 400")
+good = client.post("/api/studio/layout", headers=login, json={"cards": ["stats"], "landing": "/m"})
+report(good.status_code == 200 and studio.layout() == ["stats"] and studio.landing() == "/m",
+       "a good one saves both at once")
+
 print("ok" if ok else "FAILED")
 sys.exit(0 if ok else 1)

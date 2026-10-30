@@ -12,7 +12,7 @@ import time
 import zipfile
 from pathlib import Path
 
-from flask import Flask, Response, abort, redirect, render_template, request, send_from_directory, url_for
+from flask import render_template_string, Flask, Response, abort, redirect, render_template, request, send_from_directory, url_for
 from jinja2 import DictLoader
 from waitress import serve
 
@@ -1128,7 +1128,7 @@ def onvif_max_nets():
 
 @app.get("/studio")
 def studio_page():
-    """One list of every camera and every device, with a draft of the changes not applied yet."""
+    """The console: compose the dashboard, set the cameras up, apply the changes together."""
     return render_template("studio.html", people=people())
 
 
@@ -1141,7 +1141,25 @@ def studio_state():
                     "described": [studio.describe(c) for c in d],
                     "free": studio.free_slots(), "max": settings.MAX_CAMERAS,
                     "networks": scan_networks(),
+                    "cards": studio.cards(), "landing": studio.landing(),
+                    "landings": studio.LANDINGS,
                     "history": studio.history()[:5], "linked": bool(homedeck.key())})
+
+
+@app.post("/api/studio/layout")
+def studio_layout():
+    """The dashboard this house wants: which cards, in what order, and the page
+    camwatch opens on. Saved as it is switched - nothing restarts for it."""
+    body = request.get_json(silent=True) or {}
+    if "cards" in body:
+        error = studio.set_layout(body["cards"])
+        if error:
+            return as_json({"error": error}), 400
+    if "landing" in body:
+        error = studio.set_landing(body["landing"])
+        if error:
+            return as_json({"error": error}), 400
+    return studio_state()
 
 
 @app.post("/api/studio/draft")
@@ -1925,7 +1943,8 @@ DASHBOARD_HTML = Path(__file__).with_name("dashboard.html")
 
 @app.get("/manifest.webmanifest")
 def manifest():
-    data = {"name": "camwatch", "short_name": "camwatch", "start_url": "/m", "scope": "/", "display": "standalone",
+    # The page the icon on a phone opens: whatever the Studio says (Dashboard).
+    data = {"name": "camwatch", "short_name": "camwatch", "start_url": studio.landing(), "scope": "/", "display": "standalone",
             "background_color": "#101418", "theme_color": "#101418",
             "icons": [{"src": "/static/icon-192.png", "sizes": "192x192", "type": "image/png"},
                       {"src": "/static/icon-512.png", "sizes": "512x512", "type": "image/png"},
@@ -1966,7 +1985,9 @@ def mobile():
 
 @app.get("/dashboard")
 def dashboard():
-    return Response(DASHBOARD_HTML.read_text(encoding="utf-8"), mimetype="text/html")
+    """The cards this house chose, in its order (Studio). The file is a Jinja
+    template now rather than a fixed page, so it is rendered, not served."""
+    return render_template_string(DASHBOARD_HTML.read_text(encoding="utf-8"), cards=studio.layout())
 
 
 def packages_waiting():
@@ -2192,6 +2213,7 @@ header .brand{font-weight:750;font-size:20px;color:var(--fg);flex:none;display:i
    nothing to say they existed. The wrapper fades whichever edge has more
    behind it - set by the script below, so a bar with nothing hidden is not
    dimmed for show. */
+.ui-empty.first img{display:block;margin:0 auto 14px;opacity:.5}
 header .navwrap{position:relative;flex:1;min-width:0;display:flex}
 header .navwrap::before,header .navwrap::after{content:'';position:absolute;top:0;bottom:0;width:38px;pointer-events:none;opacity:0;
   transition:opacity 160ms cubic-bezier(0.23,1,0.32,1);z-index:1}
@@ -2379,7 +2401,8 @@ filled in, and you press Submit there.{% endif %}</p>
 {% if labels %}<span style="margin-left:auto"></span><a class="pill {{ 'on' if not label }}" href="{{ url_for('index', day=day) }}">All</a>
 {% for l in labels %}<a class="pill {{ 'on' if l == label }}" href="{{ url_for('index', day=day, label=l) }}">{{ l }}</a>{% endfor %}{% endif %}</div>
 {% endif %}
-{% if not clips %}<p class="muted">Nothing here yet. Clips appear when the camera sees motion.</p>{% endif %}
+{% if not clips %}<div class="ui-empty first"><img src="/static/mark.svg" alt="" width="52" height="52">
+<b>Nothing here yet</b><p>Clips appear as soon as a camera sees something move. The mark goes red while one is recording.</p></div>{% endif %}
 <div class="grid">
 {% for c in clips %}<a class="card" href="{{ url_for('clip_page', day=c.day, stem=c.stem) }}" data-clip="{{ c.day }}/{{ c.stem }}"{% if c.starred %} data-starred="1"{% endif %}>
 <span class="pick" aria-hidden="true"></span>
@@ -2876,41 +2899,144 @@ yesterday becomes a timelapse and a highlights reel (4 s of every recording with
     "studio.html": """{% extends "base.html" %}
 {% block title %}Studio{% endblock %}
 {% block body %}
-<h1>Studio <span class="muted">every camera and every device, in one list</span></h1>
-<div id="att"></div>
-<nav class="days" style="margin:10px 0">
-  <button class="pill on" data-tab="discover">Discover</button>
-  <button class="pill" data-tab="added">Added</button>
-  <button class="pill" id="scan" style="margin-left:auto"><i class="icon icon-search" aria-hidden="true"></i> Scan the network</button>
-</nav>
-<div class="nets"><label for="subnets">Networks to scan <i>cameras often sit on a VLAN of their own</i></label>
-  <input id="subnets" spellcheck="false" placeholder="192.168.1.0/24, 10.0.20.0/24">
-  <span class="muted" id="scan-msg"></span></div>
-<div id="list" class="muted">Loading...</div>
-<div id="draft"></div>
-<div id="hist"></div>
+{# Studio: where the dashboard is composed and the cameras are set up. The same shape as Home
+   Deck's Studio - a column of sections on the left, one section at a time on the right - so the
+   two apps are the same room. Data: /api/studio. Camera changes go into a draft and are applied
+   together; the dashboard saves as you switch a card, because nothing has to restart for it. #}
+<div class="st">
+  <nav class="st-nav">
+    <div class="st-brand"><img src="/static/mark.svg" alt="" width="26" height="26">
+      <span>Studio<small>set up camwatch</small></span></div>
+    <a href="#dashboard" data-sec="dashboard" class="on"><i class="icon icon-grid" aria-hidden="true"></i> Dashboard</a>
+    <a href="#cameras" data-sec="cameras"><i class="icon icon-camera" aria-hidden="true"></i> Cameras <span class="n" id="n-cameras" hidden></span></a>
+    <a href="#discover" data-sec="discover"><i class="icon icon-search" aria-hidden="true"></i> Discover <span class="n" id="n-found" hidden></span></a>
+    <a href="#changes" data-sec="changes"><i class="icon icon-list" aria-hidden="true"></i> Changes <span class="n" id="n-changes" hidden></span></a>
+    <div class="st-sp"></div>
+    <div class="st-ext">
+      <a href="/dashboard">Dashboard &#8599;</a>
+      <a href="/settings#cameras">Camera settings &#8599;</a>
+      <a href="/settings#homedeck">Home Deck &#8599;</a>
+    </div>
+  </nav>
+  <main class="st-main">
+    <section data-sec="dashboard">
+      <h1>Dashboard</h1>
+      <p class="lead">What camwatch shows you, in the order you want it, and the page it opens on.</p>
+      <h2>Cards</h2>
+      <div class="st-cards" id="cards"></div>
+      <h2>Opens on</h2>
+      <div class="st-land" id="landing"></div>
+    </section>
+    <section data-sec="cameras" hidden>
+      <h1>Cameras</h1>
+      <p class="lead">The cameras camwatch records. A rename or a switch-off is collected as a change and applied with the rest.</p>
+      <div id="att"></div>
+      <div id="added"></div>
+    </section>
+    <section data-sec="discover" hidden>
+      <h1>Discover</h1>
+      <p class="lead">What answers on the network. Cameras often sit on a VLAN of their own, so more than one network can be scanned.</p>
+      <div class="nets"><label for="subnets">Networks to scan</label>
+        <input id="subnets" spellcheck="false" placeholder="192.168.1.0/24, 10.0.20.0/24">
+        <button class="pill" id="scan"><i class="icon icon-search" aria-hidden="true"></i> Scan</button>
+        <span class="muted" id="scan-msg"></span></div>
+      <div id="list" class="muted">Loading…</div>
+    </section>
+    <section data-sec="changes" hidden>
+      <h1>Changes</h1>
+      <p class="lead">Nothing here has happened yet. Applying writes them together and restarts the recorder once.</p>
+      <div id="draft"></div>
+      <h2>Applied before</h2>
+      <div id="history"></div>
+    </section>
+  </main>
+</div>
 <style>
-.srow{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:8px}
-.srow .who{min-width:0;flex:1}
-.srow b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dot{width:9px;height:9px;border-radius:999px;flex:none;background:var(--faint)}
-.dot.up{background:var(--ok,#34d399)}.dot.down{background:var(--bad,#f87171)}
-.att{display:grid;gap:6px;margin:10px 0}
-.att div{border-radius:var(--r-sm);padding:9px 12px;border:1px solid var(--line);background:var(--card)}
-.att .bad{border-color:var(--bad,#f87171)}.att .warn{border-color:var(--warn,#fbbf24)}
-.addf{display:grid;gap:8px;margin:8px 0 14px;padding:12px;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
-.addf label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
-.addf input,.addf select{min-height:38px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:0 10px;font:inherit}
-.chg{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line)}
-.chg:last-child{border-bottom:0}
-.nets{display:grid;gap:5px;margin:0 0 12px}
-.nets label{font-size:13px;color:var(--muted)}
-.nets input{min-height:38px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--card);color:var(--fg);padding:0 10px;font:inherit}
+/* Studio is a console, not a page of the app: a column of sections on the left,
+   one of them at a time on the right. Home Deck's Studio is the same room. */
+.st { display: grid; grid-template-columns: 220px 1fr; gap: 26px; align-items: start; }
+.st-nav { position: sticky; top: 66px; display: flex; flex-direction: column; gap: 2px; min-height: 60vh; }
+.st-brand { display: flex; gap: 10px; align-items: center; font-size: 18px; font-weight: 750; padding: 2px 12px 14px; }
+.st-brand small { display: block; font-size: 12px; color: var(--mute); font-weight: 500; }
+.st-nav > a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r-sm);
+  color: var(--fg); text-decoration: none; font-weight: 600; }
+.st-nav > a.on { background: var(--card-hi); box-shadow: inset 3px 0 0 var(--accent); }
+.st-nav .n { margin-left: auto; min-width: 22px; height: 22px; border-radius: var(--r-sm); background: var(--warn);
+  color: var(--status-ink); font-size: 12px; display: grid; place-items: center; padding: 0 6px; font-weight: 700; }
+.st-sp { flex: 1; min-height: 20px; }
+.st-ext { display: grid; gap: 2px; padding-top: 10px; border-top: 1px solid var(--line); }
+.st-ext a { color: var(--mute); text-decoration: none; font-size: 13.5px; padding: 6px 12px; }
+.st-main h1 { margin: 0 0 4px; font-size: 28px; }
+.st-main .lead { color: var(--mute); margin: 0 0 18px; }
+.st-main h2 { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); margin: 26px 0 10px; }
+@media (hover: hover) and (pointer: fine) { .st-nav > a:hover { background: var(--card); } .st-ext a:hover { color: var(--fg); } }
+@media (max-width: 820px) { .st { grid-template-columns: 1fr; gap: 14px; }
+  .st-nav { position: static; min-height: 0; flex-direction: row; flex-wrap: wrap; }
+  .st-brand, .st-sp, .st-ext { display: none; } }
+
+/* A card the dashboard can have. The switch is the whole row, so the hand has
+   a target the size of the thing it is choosing. */
+.st-cards { display: grid; gap: 8px; }
+.st-card { display: flex; gap: 14px; align-items: center; padding: 13px 16px; background: var(--card);
+  border: 1px solid var(--line); border-radius: var(--r); }
+.st-card.off { opacity: .62; }
+.st-card.waiting { opacity: .62; }
+.st-card .tx { flex: 1; min-width: 0; }
+.st-card b { display: block; font-weight: 650; }
+.st-card small { color: var(--mute); font-size: 13px; }
+.st-card .ord { display: flex; gap: 4px; }
+.st-card .ord button { width: 34px; min-height: 34px; border-radius: var(--r-sm); border: 1px solid var(--line);
+  background: var(--card-hi); color: var(--fg); }
+.st-card .ord button:disabled { opacity: .35; }
+.sw { position: relative; width: 48px; height: 28px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--bg); flex: none; cursor: pointer; transition: background 160ms cubic-bezier(0.23,1,0.32,1),
+  border-color 160ms cubic-bezier(0.23,1,0.32,1); }
+.sw::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 999px;
+  background: var(--mute); transition: transform 160ms cubic-bezier(0.23,1,0.32,1), background 160ms cubic-bezier(0.23,1,0.32,1); }
+.sw[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); }
+.sw[aria-pressed="true"]::after { transform: translateX(20px); background: var(--accent-ink); }
+.sw:active::after { width: 24px; }
+.sw:disabled { cursor: default; }
+@media (prefers-reduced-motion: reduce) { .sw, .sw::after { transition: none; } }
+
+.st-land { display: grid; gap: 8px; max-width: 520px; }
+.st-land label { display: flex; gap: 12px; align-items: center; padding: 12px 16px; background: var(--card);
+  border: 1px solid var(--line); border-radius: var(--r); cursor: pointer; }
+.st-land input { width: 20px; height: 20px; accent-color: var(--accent); }
+.st-land span { color: var(--mute); font-size: 13px; margin-left: auto; }
+
+.srow { display: flex; gap: 12px; align-items: center; padding: 12px 16px; background: var(--card);
+  border: 1px solid var(--line); border-radius: var(--r); margin-bottom: 8px; }
+.srow .who { flex: 1; min-width: 0; } .srow b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dot { width: 9px; height: 9px; border-radius: 999px; flex: none; background: var(--faint); }
+.dot.up { background: var(--ok); } .dot.down { background: var(--bad); }
+.att { display: grid; gap: 6px; margin: 0 0 18px; }
+.att div { border-radius: var(--r-sm); padding: 9px 12px; border: 1px solid var(--line); background: var(--card); }
+.att .bad { border-color: var(--bad); } .att .warn { border-color: var(--warn); }
+.addf { display: grid; gap: 8px; margin: 0 0 10px; padding: 14px 16px; border: 1px solid var(--line);
+  border-radius: var(--r); background: var(--card); }
+.addf label { display: grid; gap: 4px; font-size: 13px; color: var(--mute); }
+.addf input, .addf select { min-height: 38px; border-radius: var(--r-sm); border: 1px solid var(--line);
+  background: var(--bg); color: var(--fg); padding: 0 10px; font: inherit; }
+.chg { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.chg:last-child { border-bottom: 0; }
+.nets { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin: 0 0 14px; }
+.nets label { grid-column: 1 / -1; font-size: 13px; color: var(--mute); }
+.nets input { min-height: 38px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--card);
+  color: var(--fg); padding: 0 12px; font: inherit; }
+.nets .muted { grid-column: 1 / -1; font-size: 13px; }
 </style>
 <script>
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let S = null, tab = 'discover', adding = null, found = [];
 const $ = q => document.querySelector(q);
+let S = null, adding = null;
+
+// ---- which section is showing -----------------------------------------
+function show(sec) {
+  document.querySelectorAll('.st-nav > a').forEach(a => a.classList.toggle('on', a.dataset.sec === sec));
+  document.querySelectorAll('.st-main section').forEach(s => { s.hidden = s.dataset.sec !== sec; });
+}
+addEventListener('hashchange', () => show(location.hash.slice(1) || 'dashboard'));
 
 async function load() {
   S = await (await fetch('/api/studio')).json();
@@ -2921,25 +3047,60 @@ async function load() {
 
 function render() {
   $('#att').innerHTML = S.attention.length
-    ? '<div class="att">' + S.attention.map(a => `<div class="${esc(a.level)}">${esc(a.text)}</div>`).join('') + '</div>'
-    : '';
-  const want = tab === 'added' ? i => i.added : i => !i.added;
-  const rows = S.items.filter(want);
-  $('#list').innerHTML = rows.length ? rows.map(row).join('')
-    : `<p class="muted">${tab === 'added' ? 'No cameras yet.' : 'Nothing found. Try Scan the network.'}</p>`;
-  rows.forEach(i => {
-    const b = document.getElementById('a-' + i.key);
-    if (b) b.onclick = () => { adding = adding === i.key ? null : i.key; render(); };
-  });
-  if (adding) {
-    const el = document.getElementById('f-' + adding);
-    if (el) el.innerHTML = addForm(S.items.find(i => i.key === adding));
-    wireAdd();
-  }
-  drafts();
-  hist();
+    ? '<div class="att">' + S.attention.map(a => `<div class="${esc(a.level)}">${esc(a.text)}</div>`).join('') + '</div>' : '';
+  cards(); landing(); added(); discover(); drafts(); hist();
+  const n = (id, v) => { const e = $('#' + id); if (e) { e.textContent = v; e.hidden = !v; } };
+  n('n-changes', S.described.length);
+  n('n-found', S.items.filter(i => !i.added && i.camera_like).length);
+  n('n-cameras', S.attention.filter(a => a.level === 'bad').length);
+  show(location.hash.slice(1) || 'dashboard');
 }
 
+// ---- the dashboard you design -----------------------------------------
+function cards() {
+  const on = S.cards.filter(c => c.on), off = S.cards.filter(c => !c.on);
+  $('#cards').innerHTML = [...on, ...off].map(c => {
+    const pos = on.indexOf(c);
+    return `<div class="st-card ${c.on ? '' : 'off'} ${c.ready ? '' : 'waiting'}">
+      <button class="sw" aria-pressed="${c.on}" data-card="${esc(c.id)}" ${c.ready ? '' : 'disabled'}
+        aria-label="${c.on ? 'Remove' : 'Add'} ${esc(c.name)}"></button>
+      <span class="tx"><b>${esc(c.name)}</b><small>${esc(c.ready ? c.what : c.what + ' — link Home Deck first')}</small></span>
+      <span class="ord">
+        <button data-move="${esc(c.id)}" data-dir="-1" ${c.on && pos > 0 ? '' : 'disabled'} aria-label="Move up">&uarr;</button>
+        <button data-move="${esc(c.id)}" data-dir="1" ${c.on && pos < on.length - 1 ? '' : 'disabled'} aria-label="Move down">&darr;</button>
+      </span></div>`;
+  }).join('');
+  $('#cards').querySelectorAll('[data-card]').forEach(b => b.onclick = () => {
+    const ids = S.cards.filter(c => c.on).map(c => c.id);
+    const id = b.dataset.card;
+    save(ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id]);
+  });
+  $('#cards').querySelectorAll('[data-move]').forEach(b => b.onclick = () => {
+    const ids = S.cards.filter(c => c.on).map(c => c.id), i = ids.indexOf(b.dataset.move), j = i + Number(b.dataset.dir);
+    if (i < 0 || j < 0 || j >= ids.length) return;
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    save(ids);
+  });
+}
+
+async function save(ids) {
+  const d = await (await fetch('/api/studio/layout', {method: 'POST', headers: {'Content-Type': 'application/json'},
+                                                      body: JSON.stringify({cards: ids})})).json();
+  if (!d.error) { S = d; render(); }
+}
+
+function landing() {
+  $('#landing').innerHTML = S.landings.map(([path, name]) =>
+    `<label><input type="radio" name="land" value="${esc(path)}" ${path === S.landing ? 'checked' : ''}>
+      <b>${esc(name)}</b><span>${esc(path)}</span></label>`).join('');
+  $('#landing').querySelectorAll('input').forEach(r => r.onchange = async () => {
+    const d = await (await fetch('/api/studio/layout', {method: 'POST', headers: {'Content-Type': 'application/json'},
+                                                        body: JSON.stringify({landing: r.value})})).json();
+    if (!d.error) { S = d; render(); }
+  });
+}
+
+// ---- cameras, and what is on the network ------------------------------
 function row(i) {
   const dot = i.online === null ? '' : `<span class="dot ${i.online ? 'up' : 'down'}"></span>`;
   const sub = i.added ? `camera ${i.slot}${i.enabled ? '' : ' · off'}${i.ip ? ' · ' + esc(i.ip) : ''}`
@@ -2952,15 +3113,40 @@ function row(i) {
           <div id="f-${esc(i.key)}">${adding === i.key ? addForm(i) : ''}</div>`;
 }
 
+function added() {
+  const rows = S.items.filter(i => i.added);
+  $('#added').innerHTML = rows.length ? rows.map(row).join('')
+    : '<div class="ui-empty"><b>No cameras yet</b><p>Find one under Discover, or add its address by hand in <a href="/settings#cameras">camera settings</a>.</p></div>';
+}
+
+function discover() {
+  // Cameras first: a Pi-hole and a laptop answer a scan too, and offering
+  // "Add" on them as if they were cameras is how this page confused people.
+  const all = S.items.filter(i => !i.added), cams = all.filter(i => i.camera_like), rest = all.filter(i => !i.camera_like);
+  $('#list').innerHTML = (cams.length ? cams.map(row).join('')
+      : '<div class="ui-empty is-aside"><p>No cameras found yet. Check the networks above and scan again.</p></div>')
+    + (rest.length ? `<h2>Not cameras</h2>` + rest.map(i =>
+        `<div class="srow"><span class="who"><b>${esc(i.name)}</b><span class="muted" style="font-size:13px">${esc(i.ip)}${i.maker ? ' · ' + esc(i.maker) : ''}</span></span>
+          <button class="pill" id="a-${esc(i.key)}">Add anyway</button></div><div id="f-${esc(i.key)}">${adding === i.key ? addForm(i) : ''}</div>`).join('') : '');
+  S.items.filter(i => !i.added).forEach(i => {
+    const b = document.getElementById('a-' + i.key);
+    if (b) b.onclick = () => { adding = adding === i.key ? null : i.key; render(); };
+  });
+  if (adding) {
+    const el = document.getElementById('f-' + adding);
+    if (el) el.innerHTML = addForm(S.items.find(i => i.key === adding));
+    wireAdd();
+  }
+}
+
 function addForm(i) {
   if (!i) return '';
-  const slots = S.free.length ? S.free : [];
   return `<div class="addf">
-    <label>Camera slot<select id="n-slot">${slots.map(s => `<option value="${s}">Camera ${s}</option>`).join('')}</select></label>
+    <label>Camera slot<select id="n-slot">${(S.free || []).map(s => `<option value="${s}">Camera ${s}</option>`).join('')}</select></label>
     <label>Name <i>lowercase letters, digits or _</i><input id="n-name" maxlength="24" value="${esc((i.name || '').toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 24))}"></label>
     <label>Stream address<input id="n-rtsp" placeholder="rtsp://user:password@${esc(i.ip)}:554/stream" value=""></label>
     <label>Detection stream <i>optional, a smaller one</i><input id="n-detect" placeholder="rtsp://..." value=""></label>
-    <div class="row"><button class="primary" id="n-go">Add to the draft</button> <span class="muted" id="n-err"></span></div>
+    <div class="row"><button class="primary" id="n-go">Add to the changes</button> <span class="muted" id="n-err"></span></div>
   </div>`;
 }
 
@@ -2970,20 +3156,22 @@ function wireAdd() {
   go.onclick = async () => {
     const body = {kind: 'add', slot: $('#n-slot') && $('#n-slot').value, name: $('#n-name').value,
                   rtsp_url: $('#n-rtsp').value, detect_url: $('#n-detect').value};
-    const r = await fetch('/api/studio/draft', {method: 'POST', headers: {'Content-Type': 'application/json'},
-                                                body: JSON.stringify(body)});
+    const r = await fetch('/api/studio/draft', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
     const d = await r.json();
     if (d.error) { $('#n-err').textContent = d.error; return; }
     S = d; adding = null; render();
   };
 }
 
+// ---- changes ----------------------------------------------------------
 function drafts() {
-  if (!S.described.length) { $('#draft').innerHTML = ''; return; }
-  $('#draft').innerHTML = `<h2>Waiting to be applied</h2>
-    <div class="card">${S.described.map((t, n) => `<div class="chg"><span style="flex:1">${esc(t)}</span>
+  if (!S.described.length) {
+    $('#draft').innerHTML = '<div class="ui-empty is-aside"><p>Nothing waiting. Changes to cameras collect here until you apply them.</p></div>';
+    return;
+  }
+  $('#draft').innerHTML = `<div class="card">${S.described.map((t, n) => `<div class="chg"><span style="flex:1">${esc(t)}</span>
       <button class="pill" data-drop="${n}">Drop</button></div>`).join('')}</div>
-    <div class="row" style="margin-top:10px"><button class="primary" id="apply">Apply ${S.described.length} change${S.described.length > 1 ? 's' : ''}</button>
+    <div class="row" style="margin-top:12px"><button class="primary" id="apply">Apply ${S.described.length} change${S.described.length > 1 ? 's' : ''}</button>
       <span class="muted" id="ap-err"></span></div>`;
   $('#apply').onclick = async () => {
     const d = await (await fetch('/api/studio/apply', {method: 'POST'})).json();
@@ -2993,56 +3181,48 @@ function drafts() {
 }
 
 function hist() {
-  if (!S.history.length) { $('#hist').innerHTML = ''; return; }
-  $('#hist').innerHTML = `<h2>Applied before</h2><div class="card">${S.history.map((h, n) => `<div class="chg">
-    <span style="flex:1">${esc(new Date(h.at * 1000).toLocaleString())} · ${esc(h.changes.join('; '))}</span>
-    ${n === 0 ? '<button class="pill" id="undo">Undo this</button>' : ''}</div>`).join('')}</div>`;
+  const h = S.history || [];
+  $('#history').innerHTML = h.length
+    ? `<div class="card">${h.map((x, n) => `<div class="chg"><span style="flex:1">${esc((x.changes || []).join(', '))}</span>
+        ${n === 0 ? '<button class="pill" id="undo">Undo</button>' : ''}</div>`).join('')}</div>`
+    : '<div class="ui-empty is-aside"><p>Nothing has been applied yet.</p></div>';
   const u = $('#undo');
   if (u) u.onclick = async () => { await fetch('/api/studio/undo', {method: 'POST'}); load(); };
 }
 
 document.addEventListener('click', async e => {
-  const t = e.target.closest('[data-tab]');
-  if (t) { tab = t.dataset.tab; adding = null;
-           document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b === t)); render(); return; }
-  const a = e.target.closest('[data-act]');
-  if (a) {
+  const act = e.target.closest('[data-act]'), drop = e.target.closest('[data-drop]');
+  if (act) {
     const d = await (await fetch('/api/studio/draft', {method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({kind: a.dataset.act, slot: a.dataset.slot})})).json();
-    if (!d.error) { S = d; render(); }
-    return;
+      body: JSON.stringify({kind: act.dataset.act, slot: act.dataset.slot})})).json();
+    if (d.error) { alert(d.error); return; }
+    S = d; render();
   }
-  const dr = e.target.closest('[data-drop]');
-  if (dr) {
+  if (drop) {
     const d = await (await fetch('/api/studio/draft/drop', {method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({index: Number(dr.dataset.drop)})})).json();
+      body: JSON.stringify({index: Number(drop.dataset.drop)})})).json();
     if (!d.error) { S = d; render(); }
   }
 });
 
 $('#scan').onclick = async () => {
   const label = $('#scan').innerHTML;
-  $('#scan').textContent = 'Scanning...';
-  $('#scan-msg').textContent = '';
+  $('#scan').innerHTML = 'Scanning…'; $('#scan-msg').textContent = '';
   try {
-    const r = await fetch('/settings/cameras/scan', {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                          body: 'subnet=' + encodeURIComponent($('#subnets').value)});
+    const r = await fetch('/settings/cameras/scan', {method: 'POST', headers: {'Content-Type': 'application/json'},
+                                                     body: JSON.stringify({subnets: $('#subnets').value})});
     const d = await r.json();
     if (d.error) { $('#scan-msg').textContent = d.error; return; }
-    found = d.found || [];
-    $('#scan-msg').textContent = `${found.length} found on ${(d.subnets || []).join(', ')}`;
-    // A scan finds addresses the Home Deck list does not have; show them in the same list.
-    const have = new Set(S.items.map(i => i.ip));
-    found.filter(f => !have.has(f.ip)).forEach(f => S.items.push({
-      kind: 'device', key: 'ip' + f.ip, name: f.name || f.maker || f.ip, ip: f.ip, slot: null,
-      enabled: false, added: false, online: null, maker: f.maker || '', mac: '', camera_like: true}));
-    render();
-  } finally { $('#scan').innerHTML = label; }
+    $('#scan-msg').textContent = `${d.found.length} answered on ${(d.subnets || []).join(', ')}`;
+    await load();
+  } catch (err) { $('#scan-msg').textContent = String(err.message || err); }
+  finally { $('#scan').innerHTML = label; }
 };
 
 load();
 </script>
 {% endblock %}""",
+
 
     "settings.html": """{% extends "base.html" %}
 {% block title %}Settings{% endblock %}

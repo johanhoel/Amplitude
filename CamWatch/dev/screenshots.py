@@ -40,6 +40,7 @@ PAGES = [
     ("settings-offsite", "/settings#offsite", 1280, 900, False),
     ("settings-updates", "/settings#updates", 1280, 760, False),
     ("settings-storage", "/settings#storage", 1280, 900, False),
+    ("studio", "/studio", 1280, 1180, False),
     ("requests", "/requests", 1280, 720, False),
     ("phone-home", "/m", PHONE_W, PHONE_H, True),
     ("phone-wall", "/view", PHONE_W, PHONE_H, True),
