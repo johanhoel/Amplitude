@@ -45,6 +45,7 @@
 .hidden { display: none !important; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/shell.css">
 <script src="/addons.js"></script>
 <link rel="stylesheet" href="/icons.css">
 </head>
@@ -203,7 +204,7 @@ function render() {
       <div class="more"><div class="row">${src.map(x => `<span class="chip">⇠ ${esc(x)}</span>`).join('')}</div>
       <div class="row">${used.map(x => `<span class="chip">${/^[a-z]+$/.test(x) ? `<a href="/${x === 'deck' ? '' : x}">${esc(x)}</a>` : esc(x)}</span>`).join('')}</div>
       ${body ? `<pre>${esc(body)}</pre>` : ''}</div></div>`;
-  }).join('') || '<div class="empty">No endpoint matches.</div>';
+  }).join('') || '<div class="ui-empty is-aside">No endpoint matches.</div>';
   graph();
   $('#svc').innerHTML = Object.entries(LINKS).sort((a, b) => a[1].up - b[1].up || a[0].localeCompare(b[0])).map(([k, v]) => `<div><i class="dot ${v.up ? 'ok' : 'bad'}"></i>${esc(k)}<span>${v.ms} ms</span></div>`).join('');
   $('#svcsum').textContent = lall ? `${lup} of ${lall} answering` : '';

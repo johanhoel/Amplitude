@@ -43,18 +43,19 @@
 .hidden { display: none !important; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/shell.css">
 <script src="/addons.js"></script>
 <link rel="stylesheet" href="/icons.css">
 </head>
 <body>
 <div class="wrap">
-  <header class="head"><div><h1>Today</h1><div class="sub" id="date">–</div></div><div class="right"><div class="clock num" id="clock">–</div></div></header>
-  <section class="card ribbon" id="ribbon"><div class="empty">Loading the day…</div></section>
+  <header class="head"><div><h1>Today</h1><div class="sub" id="date"></div></div><div class="right"><div class="clock num" id="clock"></div></div></header>
+  <section class="card ribbon" id="ribbon"><div class="ui-empty is-aside">Loading the day…</div></section>
   <div class="filters" id="filters"></div>
   <div class="cols">
     <div><div class="cap">Coming up</div><section class="card feed" id="ahead"></section>
       <div id="hours-block" hidden><div class="cap">Next hours</div><div class="hours" id="hours"></div></div></div>
-    <div><div class="cap">Earlier today <small id="count"></small></div><section class="card feed" id="past"><div class="empty">Loading…</div></section></div>
+    <div><div class="cap">Earlier today <small id="count"></small></div><section class="card feed" id="past"><div class="ui-empty is-aside">Loading…</div></section></div>
   </div>
 </div>
 <script>
@@ -134,8 +135,8 @@ function render() {
   const counts = {}; past.forEach(e => counts[e.k] = (counts[e.k] || 0) + 1); fut.forEach(e => counts[e.k] = (counts[e.k] || 0) + 1);
   $('#filters').innerHTML = [['all', 'All', past.length + fut.length], ...Object.entries(KIND).map(([k, [n]]) => [k, n, counts[k] || 0]).filter(x => x[2])]
     .map(([k, n, c]) => `<button data-f="${k}" class="${filter === k ? 'on' : ''}">${esc(n)} <span class="faint">${c}</span></button>`).join('');
-  $('#ahead').innerHTML = fut.map(e => evRow(e, true)).join('') || '<div class="empty">Nothing scheduled in the next hours.</div>';
-  $('#past').innerHTML = past.map(e => evRow(e, false)).join('') || '<div class="empty">A quiet day so far.</div>';
+  $('#ahead').innerHTML = fut.map(e => evRow(e, true)).join('') || '<div class="ui-empty is-aside">Nothing scheduled in the next hours.</div>';
+  $('#past').innerHTML = past.map(e => evRow(e, false)).join('') || '<div class="ui-empty is-aside">A quiet day so far.</div>';
   $('#count').textContent = past.length ? past.length + ' events' : '';
   const hrs = (D.weather?.hourly || []).filter(h => new Date(h.datetime) > Date.now() - 3600000).slice(0, 12);
   $('#hours-block').hidden = !hrs.length;

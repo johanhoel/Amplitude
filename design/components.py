@@ -230,6 +230,11 @@ CSS = """
    needs the same sentence, but as an aside under the card, not centred in
    the hole where the other cards would be. */
 .ui-empty.is-aside { text-align: left; padding: 4px 2px 0; }
+
+/* A heading whose list came back empty is a heading over nothing, and reads
+   as something that failed to load. The pages fill these containers from
+   JavaScript, so an empty one really is empty and :empty is exact. */
+.ui-cap:has(+ :empty), .cap:has(+ :empty) { display: none; }
 .ui-empty.is-aside p { margin: 0; }
 @media (hover: hover) and (pointer: fine) { .ui-empty a:hover { text-decoration: underline; } }
 

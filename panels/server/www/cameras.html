@@ -49,7 +49,7 @@ header a, header select { min-height: 40px; padding: 0 14px; border-radius: 999p
 .v .meta { padding: 7px 9px 9px; } .v b { font-size: 14.5px; font-variant-numeric: tabular-nums; } .v .w { display: block; font-size: 12.5px; color: var(--mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .v .w.known { color: #86efac; } .v .star { position: absolute; top: 6px; right: 8px; font-size: 16px; text-shadow: 0 1px 3px #000; }
 .v .dur { position: absolute; top: 6px; left: 6px; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,.6); }
-.more { text-align: center; color: var(--mute); padding: 18px; } .empty { color: var(--dim); padding: 10px 2px 4px; font-size: 14px; }
+.more { text-align: center; color: var(--mute); padding: 18px; }
 /* player */
 #pl { position: fixed; inset: 0; z-index: 80; background: #000; display: none; flex-direction: column; touch-action: pan-y; }
 #pl.open { display: flex; }
@@ -64,6 +64,7 @@ header a, header select { min-height: 40px; padding: 0 14px; border-radius: 999p
 [hidden] { display: none !important; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/shell.css">
 <script src="/addons.js"></script>
 <link rel="stylesheet" href="/icons.css">
 </head>
@@ -145,7 +146,7 @@ async function loadDay(d) {
         return `<button class="v" data-i="${i}"><img loading="lazy" src="/api/sec/thumb/${esc(v.day)}/${esc(v.stem)}.jpg?w=480" alt="">
           <span class="dur">${secs(v)} s</span>${v.star ? '<span class="star"><i class="icon icon-star" aria-hidden="true"></i></span>' : ''}
           <div class="meta"><b>${hm(v.start)}</b><span class="w ${v.people?.length ? 'known' : ''}">${esc(who(v))}</span></div></button>`; }).join('')}</div>`
-      : `<div class="empty">Nothing ${filter === 'all' ? '' : 'matching '}this day.</div>`);
+      : `<div class="ui-empty is-aside">Nothing ${filter === 'all' ? '' : 'matching '}this day.</div>`);
   $('#days').appendChild(sec);
 }
 async function more() {

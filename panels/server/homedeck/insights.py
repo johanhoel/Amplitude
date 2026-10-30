@@ -2,6 +2,7 @@
 camwatch-feed (camera visits) and the Pi-holes' device tables. Names: [network] in homedeck.toml."""
 import datetime, json, time, urllib.parse, urllib.request
 
+from . import services
 from .config import C, at_home, home_ip
 from .presence import presence
 from .store import phones, tcp_ms
@@ -9,18 +10,18 @@ from .store import phones, tcp_ms
 
 def prom(q, t=None):
     qs = {'query': q} if t is None else {'query': q, 'time': t}
-    with urllib.request.urlopen(f'{C.PROM}/api/v1/query?' + urllib.parse.urlencode(qs), timeout=15) as r:
+    with urllib.request.urlopen(f'{(services.url("prometheus") or C.PROM)}/api/v1/query?' + urllib.parse.urlencode(qs), timeout=15) as r:
         return json.load(r)['data']['result']
 
 
 def prom_range(q, start, end, step):
     qs = {'query': q, 'start': start, 'end': end, 'step': step}
-    with urllib.request.urlopen(f'{C.PROM}/api/v1/query_range?' + urllib.parse.urlencode(qs), timeout=20) as r:
+    with urllib.request.urlopen(f'{(services.url("prometheus") or C.PROM)}/api/v1/query_range?' + urllib.parse.urlencode(qs), timeout=20) as r:
         return json.load(r)['data']['result']
 
 
 def camfeed(path, raw=False):
-    with urllib.request.urlopen(C.CAMFEED + path, timeout=8) as r:
+    with urllib.request.urlopen((services.url("camwatch") or C.CAMFEED) + path, timeout=8) as r:
         return r.read() if raw else json.load(r)
 
 

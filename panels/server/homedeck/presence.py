@@ -8,6 +8,7 @@ A front-camera event (camwatch) starts a burst of fast scans, so arrivals/depart
 """
 import datetime, json, subprocess, socket, threading, time, urllib.request
 
+from . import services
 from .config import C, at_home
 from .store import NOCHECK, phones, secret
 
@@ -171,7 +172,7 @@ def camera_trigger_loop():
     last = None
     while True:
         try:
-            with urllib.request.urlopen(f'{C.CAMFEED}/latest', timeout=4) as r:
+            with urllib.request.urlopen(f'{(services.url("camwatch") or C.CAMFEED)}/latest', timeout=4) as r:
                 ev = json.load(r)
             stem = ev.get('stem')
             key = f"{ev.get('day', '')}/{stem}" if stem else ''   # day/stem sorts in time order

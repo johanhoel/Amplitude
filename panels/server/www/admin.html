@@ -77,7 +77,6 @@ a.row:active { background: rgba(255,255,255,.06); }
 [data-sec].shut .cap.fold::after { transform: rotate(-90deg); }
 [data-sec].shut .list { display: none; }
 body.searching [data-sec].shut .list { display: block; }
-.empty { color: var(--mute); font-size: 14px; padding: 14px; }
 #toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 18px); transform: translateX(-50%) translateY(120px); transition: transform .25s;
   padding: 12px 18px; border-radius: 999px; background: #1d1a2b; opacity: 0; border: 1px solid var(--line); font-size: 14px; font-weight: 600; z-index: 50; max-width: calc(100% - 32px); }
 #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
@@ -287,7 +286,7 @@ function renderSnap() { const d = snap; if (!d) return;
       href="https://${g.node}:8006/#v1:0:=${g.type === 'qemu' ? 'qemu' : 'lxc'}%2F${g.vmid}:4:::::::">
     <span class="ic num" style="font-size:12px;color:var(--mute)">${g.vmid}</span><span class="ui-list-text"><b>${esc(g.name)}</b>
       <small>${esc(g.ip || '')}${g.ip ? ' · ' : ''}${esc(g.node)}${g.status === 'running' ? ` · CPU ${Math.round(g.cpu * 100)}% · ${gb(g.mem)}/${gb(g.maxmem)} GB` : ' · ' + esc(g.status)}${g.backup ? ' · backup ' + ago(g.backup) + ' ago' : ''}</small></span>
-    <span class="ui-list-meta"><i class="dot ${g.status === 'running' ? 'up' : 'down'}"></i></span></a>${g.status === 'running' ? `<a class="con" href="${con(g)}" target="_blank" title="Console">&gt;_</a>` : '<span class="con off"></span>'}</div>`).join('') || '<div class="empty">No guests reported.</div>';
+    <span class="ui-list-meta"><i class="dot ${g.status === 'running' ? 'up' : 'down'}"></i></span></a>${g.status === 'running' ? `<a class="con" href="${con(g)}" target="_blank" title="Console">&gt;_</a>` : '<span class="con off"></span>'}</div>`).join('') || '<div class="ui-empty is-aside">No guests reported.</div>';
   filter();
 }
 

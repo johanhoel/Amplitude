@@ -30,6 +30,13 @@ def link_status():
             except Exception:
                 up = False
             return key, {'up': up, 'ms': round((time.time() - t) * 1000), 'url': url, 'extra': key in C.LINK_EXTRA}
+        from . import services
+        # What the settings file was installed with, plus what has been connected
+        # in the Studio since (services.py). The second needs no restart.
+        checks = dict(C.LINK_CHECKS)
+        for s in services.state():
+            if s["on"] and s["saved_here"]:
+                checks[s["id"]] = s["url"] + "/"
         with concurrent.futures.ThreadPoolExecutor(max_workers=24) as ex:
-            _links.update(at=time.time(), data=dict(ex.map(probe, C.LINK_CHECKS.items())))
+            _links.update(at=time.time(), data=dict(ex.map(probe, checks.items())))
         return _links['data']
