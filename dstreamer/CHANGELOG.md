@@ -2,6 +2,16 @@
 
 Newest first.
 
+## 2026-10-30
+
+- The README follows the shape every project in this repository now uses: Screenshots,
+  Features, Install, Use, How it is built, Troubleshooting, Notes.
+- The macOS chapter is gone. It repeated the install steps, the control panel and the
+  requirements in a second voice, with VM prices and a ping test. What it knew that the rest
+  of the page did not - that a Mac needs either a Linux box or the DMG, with a bridged
+  adapter either way - is now a few lines under Install, and sending audio from a Mac is
+  under Use.
+
 ## 2026-10-28
 
 - `REMOTE_PASSWORD` in `.env` turns on remote access for the panel and API

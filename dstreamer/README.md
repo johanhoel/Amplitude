@@ -46,7 +46,9 @@ The control panel (Virgil Control) runs on the DStreamer host at
 Google Cast is not supported yet. The image includes Snapcast, but Snapcast
 is not a Cast receiver, so it is switched off (`CHROMECAST_ENABLED=false`).
 
-## Requirements
+## Install
+
+What you need:
 
 - A Linux host on the same wired network as your Dante devices: a VM with a
   bridged network card, a mini PC or a Raspberry Pi. Docker Desktop on Mac
@@ -58,7 +60,7 @@ is not a Cast receiver, so it is switched off (`CHROMECAST_ENABLED=false`).
 
 Tested on Debian 13 in a Proxmox VM with Docker 29.
 
-## Install
+Then:
 
 ```bash
 git clone https://github.com/johanhoel/amplitude.git
@@ -74,7 +76,27 @@ The first build compiles Virgil from source and takes a few minutes. Then:
 2. In Dante Controller, subscribe your speaker's receive channels to
    DStreamer's transmit 1 and 2 (`AirPlay L` and `AirPlay R`).
 
-## Names
+### On a Mac or a Windows PC
+
+Dante needs the host's own network card for its PTP clock and its multicast
+audio, so Docker Desktop on a Mac or a Windows PC cannot run DStreamer. Two ways
+round it:
+
+- **A separate Linux machine on the Dante network**: a Raspberry Pi 4 or 5, a
+  mini PC, or an old laptop with Ubuntu. Use this for anything you listen to.
+- **A Linux machine on the Mac**: `DStreamer.dmg` on the
+  [Releases page](https://github.com/johanhoel/amplitude/releases) sets one up and
+  installs DStreamer in it. The clock cannot see the wire from inside a virtual
+  machine, so expect the odd dropout; [installers/README.md](../installers/README.md)
+  measures it. There is no Windows installer, and that file says why.
+
+A virtual machine you set up yourself needs a **bridged** network card, not NAT.
+Parallels, UTM and VMware Fusion all do this; point the adapter at the Mac's
+Ethernet, not its Wi-Fi.
+
+## Use
+
+### Names
 
 Give each DStreamer its own name so it's easy to find in Dante
 Controller and on your phone. The names are in `.env` next to
@@ -97,7 +119,7 @@ docker compose up -d      # applies the new names (a few seconds of silence)
 A name that breaks Dante's rules stops the container with a message in
 `docker compose logs` instead of starting with a bad name.
 
-## Other settings
+### Other settings
 
 Virgil's live config is `data/virgil.conf`, created from
 `config/dstreamer.conf` on first start. Change settings in the panel's
@@ -115,7 +137,7 @@ Settings section, or edit the file and run
 
 The full reference is `config/virgil.conf.example` in the Virgil repo.
 
-## Control panel and API
+### Control panel and API
 
 The panel and API listen only on the host itself, at `127.0.0.1:8480`.
 To open them to other computers, for example for the
@@ -150,119 +172,36 @@ API endpoints, all under `http://127.0.0.1:8480`:
 curl -s http://127.0.0.1:8480/api/status | python3 -m json.tool
 ```
 
-## macOS Usage
+### From another computer
 
-### Running DStreamer on macOS
+Everything is reachable from a Mac or PC once DStreamer runs on a Linux host.
 
-**Docker Desktop on Mac does not work for Dante** because Dante requires direct access to the host's network for PTP (clock sync) and UDP multicast. Docker Desktop on Mac runs a lightweight Linux VM that cannot expose the host's Ethernet interface properly.
+- **Send sound**: in Music on a Mac, click the AirPlay icon (⌘⌥A) and pick
+  DStreamer. On an iPhone, use Control Center as in the install steps.
+- **Route it**: [Dante Controller](https://www.audinate.com/product/dante-controller)
+  is free and runs on macOS and Windows. In *Routing*, find your speakers down the
+  left and DStreamer along the top, and click the squares where the speakers' inputs
+  meet transmit 1 and 2.
+- **Watch it**: the control panel, over remote access or an SSH tunnel as above, or
+  the [desktop apps](../dstreamer-desktop/).
 
-### Options for macOS Users
+Wire both the computer and the Linux host into the Dante switch. Dante over Wi-Fi
+drops out.
 
-#### Option 1: Linux VM on Mac (Recommended)
+## How it is built
 
-Run DStreamer in a Linux virtual machine with **bridged networking**:
+| File | What |
+|---|---|
+| `docker-compose.yml` | The container, its capabilities, volumes and settings |
+| `Dockerfile` | Builds Virgil from source, then the runtime image with Shairport Sync |
+| `docker-entrypoint.sh` | Applies names, then starts D-Bus, Avahi, Virgil and Shairport Sync |
+| `.env.example` | Names template; copy to `.env` |
+| `config/` | Templates for Virgil, Shairport Sync, ALSA and Snapcast |
+| `data/`, `logs/` | Created at runtime: live Virgil config and logs (not in git) |
+| `tools/screenshots.py` | Captures the panel screenshots in `docs/screenshots/` |
+| [`BUILD_AND_TEST.md`](BUILD_AND_TEST.md) | How the image is built, and how to check a change works |
 
-**Using Parallels Desktop:**
-1. Create Ubuntu 24.04 LTS VM
-2. Network adapter → Bridged (connect to host's Ethernet)
-3. Inside VM: `sudo apt install docker.io docker-compose-plugin`
-4. Clone and run DStreamer
-
-**Using UTM (free):**
-1. Download Ubuntu Server 24.04 LTS ISO
-2. Create VM: 4GB RAM, 20GB disk minimum
-3. Network → Bridged mode to macOS Ethernet interface
-4. Install Docker: `sudo apt install docker.io docker-compose-plugin`
-
-**Using VMware Fusion:**
-```bash
-# Inside Linux VM on Mac
-git clone https://github.com/johanhoel/amplitude.git
-cd amplitude/dstreamer
-cp .env.example .env
-docker compose up -d --build
-```
-
-#### Option 2: Separate Linux Device
-
-Deploy on a dedicated device on your Dante network:
-- Raspberry Pi 4/5 (~$70)
-- Intel NUC or mini PC (~$300–500)
-- Used laptop/workstation with Ubuntu
-
-Same setup as above, runs 24/7 if needed.
-
-### Using DStreamer from macOS
-
-Once running on any Linux host, control it **entirely from your Mac**:
-
-#### Send AirPlay from Mac
-
-1. **iTunes or Music app** → Now Playing
-2. Click **AirPlay icon** (⌘⌥A)
-3. Select **DStreamer**
-4. Play music → routes to Dante network
-
-#### Access the Control Panel
-
-If `REMOTE_PASSWORD` is set in `.env`:
-```bash
-# Direct access (HTTP only, trusted network only)
-http://<linux-host-ip>:8480/
-```
-
-Or use an SSH tunnel (secure, works anywhere):
-```bash
-ssh -L 8480:127.0.0.1:8480 user@<linux-host-ip>
-# Then open http://localhost:8480/ on your Mac
-```
-
-#### Query the API from Terminal
-
-```bash
-# Check status
-curl -s http://<linux-host-ip>:8480/api/status | python3 -m json.tool
-
-# Read current config
-curl -s http://<linux-host-ip>:8480/api/config | python3 -m json.tool
-
-# Or with SSH tunnel
-ssh -L 8480:127.0.0.1:8480 user@<host> "sleep 999" &
-curl -s http://localhost:8480/api/status | python3 -m json.tool
-```
-
-#### Dante Controller on macOS
-
-Download **Dante Controller** (free, Dante Virtual Soundcard Edition):
-1. Install from [Dante Distributor](https://www.audinate.com/product/dante-controller)
-2. Network: should auto-discover DStreamer device
-3. Drag to subscribe to DStreamer TX 1–2 on your speakers/mixers
-
-### macOS Network Setup
-
-**Requirements:**
-- Ethernet cable from Mac to Dante network (wired strongly recommended)
-- Linux host also on same wired Dante network
-- Same network subnet
-
-**Verify connectivity:**
-```bash
-# From Mac terminal, ping the Linux host
-ping <linux-host-ip>
-
-# Should respond in < 5ms if on same network
-```
-
-### Typical macOS Workflow
-
-1. **Deploy:** Set up Linux VM or Raspberry Pi with DStreamer
-2. **Dante network:** Ethernet from both Mac and Linux host to switch
-3. **Control:** SSH tunnel or direct access to `http://<host>:8480/`
-4. **Send audio:** AirPlay from iTunes, Music, or Spotify on Mac
-5. **Route:** Dante Controller on Mac to subscribe speakers/mixers to TX 1–2
-6. **Monitor:** Panel shows clock lock, levels, dropouts
-
-## Network ports
+### Network ports
 
 The container uses the host's network (`network_mode: host`), so these ports
 are open on the host itself:
@@ -302,20 +241,9 @@ docker compose logs -f dstreamer  # startup, clock and AirPlay messages
   lose clock timing under load; wired Ethernet and a quiet host help, and
   bare metal is more reliable than a VM.
 
-## Files
+## Notes
 
-| File | What |
-|---|---|
-| `docker-compose.yml` | The container, its capabilities, volumes and settings |
-| `Dockerfile` | Builds Virgil from source, then the runtime image with Shairport Sync |
-| `docker-entrypoint.sh` | Applies names, then starts D-Bus, Avahi, Virgil and Shairport Sync |
-| `.env.example` | Names template; copy to `.env` |
-| `config/` | Templates for Virgil, Shairport Sync, ALSA and Snapcast |
-| `data/`, `logs/` | Created at runtime: live Virgil config and logs (not in git) |
-| `tools/screenshots.py` | Captures the panel screenshots in `docs/screenshots/` |
-| [`BUILD_AND_TEST.md`](BUILD_AND_TEST.md) | How the image is built, and how to check a change works |
-
-## Roadmap
+### Roadmap
 
 - [x] AirPlay to Dante
 - [x] Docker deployment
@@ -325,7 +253,7 @@ docker compose logs -f dstreamer  # startup, clock and AirPlay messages
 - [ ] Output to Dante and analog at the same time
 - [ ] iOS companion app
 
-## License
+### Licence
 
 Virgil and Inferno are GPLv3, and DStreamer is GPLv3 too. A `LICENSE`
 file has not been added to this folder yet.

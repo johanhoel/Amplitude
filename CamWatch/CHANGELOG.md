@@ -4,6 +4,11 @@ Newest changes first.
 
 ## 2026-10-30
 
+- The README follows the shape every project in this repository now uses: Screenshots,
+  Features, Install, Use, How it is built, Notes. Screenshots come before the feature list,
+  the camera, update, storage, GPU and Home Deck sections sit under Use, and the container
+  table under How it is built. Nothing was dropped; the opening paragraph is four lines
+  instead of one sentence.
 - The page bar says there is more of it. Fifteen pages, about ten of which fit: the bar scrolled sideways with
   its scrollbar hidden, so Plates, Zones, Studio, Settings and Home Assistant were not merely off the edge,
   nothing said they existed. The edge with more behind it now fades, and the page you are on is brought into
