@@ -1,0 +1,7 @@
+[Unit]
+Description=Home Deck - install the update the web page asked for
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/homedeck-update --request
+TimeoutStartSec=30min

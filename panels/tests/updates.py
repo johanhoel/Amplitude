@@ -75,8 +75,27 @@ check("GET /api/update/status exists", "'/api/update/status'" in WEB)
 check("POST /api/update/run exists", "'/api/update/run'" in WEB)
 check("installing needs the admin PIN", "'/api/update/run'" in AUTH,
       "it must be in ADMIN_POSTS or anyone on the network can reinstall the panels")
-check("the updater is started detached", "start_new_session=True" in WEB,
-      "homedeck-apply restarts this server; a child process would be killed mid-copy")
+KIT = ROOT / "kit"
+PATH_UNIT = (KIT / "homedeck-update.path").read_text(encoding="utf-8")
+check("the updater runs outside Home Deck, as root",
+      "updates.request(" in WEB and "subprocess.Popen(['/usr/local/sbin/homedeck-update'" not in WEB
+      and "update-request.json" in PATH_UNIT and "--request" in (KIT / "homedeck-update.service").read_text(encoding="utf-8"),
+      "Home Deck runs as a plain user and cannot install; and homedeck-apply restarts it, "
+      "so a child process would be killed mid-copy")
+check("the request file is where the path unit looks",
+      "update-request.json" in (ROOT / "server" / "homedeck" / "updates.py").read_text(encoding="utf-8")
+      and "/var/lib/private/panel-wrapper/update-request.json" in PATH_UNIT)
+UPD_TEXT = (KIT / "homedeck-update").read_text(encoding="utf-8")
+TREE = (KIT / "homedeck-install-tree").read_text(encoding="utf-8")
+check("a house without the kit record takes the deploy road, not the kit installer",
+      'if [ ! -f "$ROOT/.release" ]' in UPD_TEXT and "homedeck-install-tree" in UPD_TEXT
+      and UPD_TEXT.index("homedeck-install-tree") < UPD_TEXT.index("install-homedeck.sh\" --update"),
+      "the kit installer keeps every file of such a house as 'edited' and replaces nothing")
+check("the install tries the new version before it touches live",
+      TREE.index("8099") < TREE.index("predeploy-") < TREE.index("homedeck-apply"))
+check("the install never touches the settings file", "homedeck.toml\" >" not in TREE
+      and "FILES=\"homedeck www server.py VERSION\"" in TREE)
+check("deploy.sh uses the same install", "homedeck-install-tree" in (ROOT / "tools" / "deploy.sh").read_text(encoding="utf-8"))
 check("it refuses to install when nothing is newer", "already up to date" in WEB)
 
 # ---- the worker ------------------------------------------------------

@@ -1,0 +1,10 @@
+# Starts homedeck-update.service when the update card asks for an update (Settings, Update).
+# Home Deck runs as a plain user and cannot install; it writes the request, and this runs the install as root.
+[Unit]
+Description=Home Deck - wait for an update request from the web page
+
+[Path]
+PathExists=/var/lib/private/panel-wrapper/update-request.json
+
+[Install]
+WantedBy=multi-user.target

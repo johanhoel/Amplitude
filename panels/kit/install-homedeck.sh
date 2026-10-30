@@ -80,10 +80,13 @@ mkdir -p /opt/deck-editor
 cp "$KIT/editor/editor.py" "$KIT/editor/editor.html" /opt/deck-editor/
 install -m 755 "$KIT/bin/homedeck-apply" /usr/local/sbin/homedeck-apply
 install -m 755 "$KIT/bin/homedeck-update" /usr/local/sbin/homedeck-update
+install -m 755 "$KIT/bin/homedeck-install-tree" /usr/local/sbin/homedeck-install-tree
 install -m 644 "$KIT/systemd/panel-wrapper.service" /etc/systemd/system/panel-wrapper.service
 install -m 644 "$KIT/systemd/deck-editor.service" /etc/systemd/system/deck-editor.service
+install -m 644 "$KIT/systemd/homedeck-update.path" "$KIT/systemd/homedeck-update.service" /etc/systemd/system/   # the update card
 systemctl daemon-reload
 systemctl enable panel-wrapper deck-editor >/dev/null 2>&1
+systemctl enable --now homedeck-update.path >/dev/null 2>&1
 
 # ---- first start (creates the private state folder), then the notice topic
 if [ "$UPDATE" -eq 0 ] || ! systemctl is-active -q panel-wrapper; then systemctl restart panel-wrapper; sleep 2; fi

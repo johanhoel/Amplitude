@@ -8,6 +8,10 @@ What makes this safe is not this file. It is homedeck-apply, which already
 checks every module and setting before restarting, waits for the panels to
 answer, and puts the previous snapshot back if they do not. The updater only
 has to put new files in place and call it.
+
+Home Deck runs as a plain user and cannot install anything. request() writes
+update-request.json into the state folder; homedeck-update.path (root) sees it
+and runs homedeck-update, which reports in .update-status.json.
 """
 import datetime as dt
 import json
@@ -15,6 +19,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent          # /opt/panel-wrapper
@@ -26,6 +31,7 @@ STATUS = ROOT / '.update-status.json'
 # Written at install time so the panels know which commit they are running.
 # Without it the version number alone decides, which is coarser but still works.
 STAMP = ROOT / '.commit'
+REQUEST = Path(os.environ.get('STATE_DIRECTORY', '/var/lib/panel-wrapper')) / 'update-request.json'   # like config.STATE, without loading the settings
 
 _lock = threading.Lock()
 _cache = {'at': 0, 'result': None}
@@ -113,8 +119,17 @@ def check(force=False):
     return result
 
 
+def request(sha):
+    """Ask the root updater (homedeck-update.path) to install this commit."""
+    tmp = REQUEST.with_suffix('.tmp')
+    tmp.write_text(json.dumps({'sha': sha, 'asked': dt.datetime.now().isoformat(timespec='seconds')}), encoding='utf-8')
+    tmp.replace(REQUEST)
+
+
 def status():
-    """What the updater is doing: idle | running | done | failed."""
+    """What the updater is doing: waiting | running | done | failed | idle."""
+    if REQUEST.exists():
+        return {'state': 'waiting', 'message': 'waiting for the server to start the update'}
     try:
         return json.loads(STATUS.read_text(encoding='utf-8'))
     except (OSError, ValueError):

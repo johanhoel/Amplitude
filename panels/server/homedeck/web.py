@@ -336,15 +336,15 @@ class Handler(SimpleHTTPRequestHandler):
                     return self.send_json({'error': r['error']}, 502)
                 if not r.get('newer'):
                     return self.send_json({'error': 'already up to date'}, 409)
-                # Detached on purpose: the last thing the updater does is
-                # homedeck-apply, which restarts this very server. A child of
-                # this request would be killed half way through the copy.
+                # Home Deck cannot install (it runs as a plain user). The request
+                # file starts homedeck-update as root (homedeck-update.path), which
+                # also outlives the restart at its end.
+                if not os.path.exists('/etc/systemd/system/homedeck-update.path'):
+                    return self.send_json({'error': 'the updater is not installed on this server'}, 501)
                 try:
-                    subprocess.Popen(['/usr/local/sbin/homedeck-update', r['latest']['sha']],
-                                     start_new_session=True,
-                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    updates.request(r['latest']['sha'])
                 except OSError as e:
-                    return self.send_json({'error': f'could not start the updater: {e}'}, 500)
+                    return self.send_json({'error': f'could not ask the updater: {e}'}, 500)
                 return self.send_json({'ok': True, 'sha': r['latest']['short']})
             if self.path.startswith('/api/llm/'):                         # Local AI (admin, auth.ADMIN_POSTS)
                 if self.path == '/api/llm/chats':                         # ask (new chat, or more in one): a job, not tied to the page

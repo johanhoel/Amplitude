@@ -30,7 +30,16 @@ ROOT=/opt/panel-wrapper
 ST="$ROOT/.update-status.json"
 LOG="$ROOT/.update.log"
 REF="main"; FORCE=0
-case "${1:-}" in --force) FORCE=1 ;; "") ;; *) REF="$1" ;; esac
+REQUEST=/var/lib/private/panel-wrapper/update-request.json   # the update card writes it; homedeck-update.path starts us
+case "${1:-}" in
+  --force) FORCE=1 ;;
+  --request)   # from homedeck-update.service: the commit the card asked for, then the request is gone
+    REF=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("sha", ""))' "$REQUEST" 2>/dev/null || true)
+    rm -f "$REQUEST"
+    [[ $REF =~ ^[0-9a-f]{7,40}$ ]] || { echo "no valid update request"; exit 0; } ;;
+  "") ;;
+  *) REF="$1" ;;
+esac
 
 say() {  # state message
   printf '{"state":"%s","message":"%s","at":"%s","sha":"%s"}\n' \
@@ -74,6 +83,19 @@ fi
 if [ -f "$ROOT/private.map" ]; then
   say running "putting this house's own values in"
   python3 "$SRC/tools/private.py" apply "$ROOT/private.map" "$SRC/server" || fail "private.map could not be applied"
+fi
+
+# A house that was not installed from the kit (no .release: it was set up by hand and gets deploy.sh) takes the
+# same road as deploy.sh: only the code and the pages, a trial on port 8099 first, then homedeck-apply.
+# The kit installer would keep every file there as "edited by you" and replace nothing.
+if [ ! -f "$ROOT/.release" ]; then
+  if [ "$REF" = "main" ]; then
+    REF=$(curl -fsS --max-time 20 -H 'Accept: application/vnd.github+json' \
+      "https://api.github.com/repos/$REPO/commits?sha=main&path=panels&per_page=1" \
+      | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["sha"])') || fail "GitHub did not say which commit is newest"
+  fi
+  HOMEDECK_STATUS="$ST" bash "$SRC/kit/homedeck-install-tree" "$SRC/server" "$REF"
+  exit $?
 fi
 
 say running "building $V"

@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# homedeck-install-tree - install a prepared copy of Home Deck's code on this server, safely.
+#
+#   homedeck-install-tree DIR [COMMIT]
+#
+# DIR holds homedeck/, www/, server.py and VERSION, ready to run: the house's own values already in
+# (private.map). homedeck.toml is never part of it: the settings stay as they are.
+# deploy.sh (from a PC) and homedeck-update (the update card) both end here, so the steps exist once:
+#   1. trial: the settings check, then a read-only Home Deck on port 8099 with the real settings; every page must
+#      answer. A failed trial changes nothing.
+#   2. snapshot of what runs now (.snapshots/predeploy-<time>.tgz), then the new files over the old ones
+#   3. homedeck-apply: checks, restarts, and puts the snapshot back when the panels stop answering
+#   4. records what is installed: .deployed.md5 (deploy.sh refuses when live differs from it) and .commit
+#      (the update card compares it with GitHub)
+# Prints progress; with HOMEDECK_STATUS=<file> it also writes {"state", "message"} there for the update card.
+set -uo pipefail
+NEW=${1:?usage: homedeck-install-tree DIR [COMMIT]}
+COMMIT=${2:-}
+R=/opt/panel-wrapper
+PY=$R/venv/bin/python3
+FILES="homedeck www server.py VERSION"
+say() {
+  echo "$2"
+  [ -n "${HOMEDECK_STATUS:-}" ] && printf '{"state":"%s","message":"%s","at":"%s","sha":"%s"}\n' \
+    "$1" "$2" "$(date -Is)" "$COMMIT" > "$HOMEDECK_STATUS.tmp" && mv "$HOMEDECK_STATUS.tmp" "$HOMEDECK_STATUS"
+  return 0
+}
+fail() { say failed "$1"; exit 1; }
+[ "$(id -u)" -eq 0 ] || { echo "run as root"; exit 1; }
+for f in homedeck www server.py; do [ -e "$NEW/$f" ] || fail "the new version is incomplete: $f is missing"; done
+
+# ---- 1. trial
+say running "trying the new version on port 8099"
+try=$(mktemp -d /tmp/homedeck-try-XXXXXX); chmod 700 "$try"
+pid=
+cleanup() { [ -n "$pid" ] && kill "$pid" 2>/dev/null; rm -rf "$try"; }
+trap cleanup EXIT
+cp -r "$NEW"/. "$try/"; mkdir "$try/state"
+sed "s#^static_dir = .*#static_dir = \"$try/www\"#" "$R/homedeck.toml" > "$try/state/homedeck.toml"
+cp /var/lib/panel-wrapper/secrets.json "$try/state/" 2>/dev/null || true
+export HOMEDECK_ROOT=$try HOMEDECK_CONFIG=$try/state/homedeck.toml STATE_DIRECTORY=$try/state
+export HOMEDECK_READONLY=1 HOMEDECK_NO_BACKGROUND=1
+(cd "$try" && "$PY" -m homedeck.check) || fail "the settings check failed with the new version; nothing changed"
+(cd "$try" && HOMEDECK_PORT=8099 exec "$PY" server.py) > "$try/state/try.log" 2>&1 & pid=$!
+for _ in $(seq 1 25); do sleep 1; curl -fs -m 3 -o /dev/null http://127.0.0.1:8099/api/health && break; done
+bad=
+for page in health $(cd "$try/www" && ls *.html | sed 's/\.html$//' | grep -vE '^(index|offline|setup|board)$'); do
+  case $page in health) u=/api/health ;; *) u=/$page ;; esac
+  code=$(curl -s -m 10 -o /dev/null -w '%{http_code}' "http://127.0.0.1:8099$u")
+  case $code in 200|302|401) ;; *) bad="$bad $u($code)" ;; esac
+done
+if [ -n "$bad" ]; then tail -20 "$try/state/try.log"; fail "pages failed in the trial:$bad; nothing changed"; fi
+kill "$pid" 2>/dev/null; pid=
+unset HOMEDECK_ROOT HOMEDECK_CONFIG STATE_DIRECTORY HOMEDECK_READONLY HOMEDECK_NO_BACKGROUND
+echo "Every page answers."
+
+# ---- 2. snapshot and copy
+say running "installing"
+stamp=$(date +%Y%m%d-%H%M%S)
+mkdir -p "$R/.snapshots"
+(cd "$R" && tar czf ".snapshots/predeploy-$stamp.tgz" --ignore-failed-read $FILES homedeck.toml 2>/dev/null)
+(cd "$NEW" && tar cf - --exclude=__pycache__ $(for f in $FILES; do [ -e "$f" ] && echo "$f"; done)) \
+  | (cd "$R" && tar xf - --no-same-owner) || fail "copying the new files failed"
+chmod -R a+rX "$R/homedeck" "$R/www"
+
+# ---- 3. restart with rollback
+say running "restarting Home Deck"
+/usr/local/sbin/homedeck-apply || fail "the new version did not start; homedeck-apply put the old one back"
+
+# ---- 4. record it
+(cd "$NEW" && find homedeck www server.py -type f ! -path '*/__pycache__/*' -print0 | sort -z | xargs -0 md5sum) > "$R/.deployed.md5"
+[ -n "$COMMIT" ] && printf '%s' "$COMMIT" > "$R/.commit"
+say done "updated to $(cat "$R/VERSION" 2>/dev/null || echo 'the new version')${COMMIT:+ (${COMMIT:0:7})}"

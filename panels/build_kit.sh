@@ -15,8 +15,8 @@ find "$STAGE/app" -name __pycache__ -prune -exec rm -rf {} +
 echo "$V" > "$STAGE/app/VERSION"
 cp "$H/editor/editor.py" "$H/editor/editor.html" "$STAGE/editor/"
 python3 "$H/kit/patch_editor.py" "$STAGE/editor/editor.py" >/dev/null
-cp "$H/kit/homedeck-apply" "$H/kit/homedeck-update" "$STAGE/bin/"
-cp "$H/kit/panel-wrapper.service" "$H/kit/deck-editor.service" "$STAGE/systemd/"
+cp "$H/kit/homedeck-apply" "$H/kit/homedeck-update" "$H/kit/homedeck-install-tree" "$STAGE/bin/"
+cp "$H/kit/panel-wrapper.service" "$H/kit/deck-editor.service" "$H/kit/homedeck-update.path" "$H/kit/homedeck-update.service" "$STAGE/systemd/"
 cp "$H/kit/install-homedeck.sh" "$STAGE/"
 cat > "$STAGE/README.txt" <<TXT
 Home Deck $V - panels for Home Assistant (wall, tablet, phone, desktop wallpaper).
