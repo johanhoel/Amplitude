@@ -79,20 +79,17 @@ The first build compiles Virgil from source and takes a few minutes. Then:
 ### On a Mac or a Windows PC
 
 Dante needs the host's own network card for its PTP clock and its multicast
-audio, so Docker Desktop on a Mac or a Windows PC cannot run DStreamer. Two ways
-round it:
+audio, so Docker Desktop on a Mac or a Windows PC cannot run DStreamer.
 
-- **A separate Linux machine on the Dante network**: a Raspberry Pi 4 or 5, a
-  mini PC, or an old laptop with Ubuntu. Use this for anything you listen to.
-- **A Linux machine on the Mac**: `DStreamer.dmg` on the
-  [Releases page](https://github.com/johanhoel/amplitude/releases) sets one up and
-  installs DStreamer in it. The clock cannot see the wire from inside a virtual
-  machine, so expect the odd dropout; [installers/README.md](../installers/README.md)
-  measures it. There is no Windows installer, and that file says why.
+Use a separate Linux machine on the Dante network: a Raspberry Pi 4 or 5, a
+mini PC, or an old laptop with Ubuntu. [`installers/linux/setup.sh`](../installers/linux/setup.sh)
+installs DStreamer on any of them.
 
-A virtual machine you set up yourself needs a **bridged** network card, not NAT.
-Parallels, UTM and VMware Fusion all do this; point the adapter at the Mac's
-Ethernet, not its Wi-Fi.
+A virtual machine on the Mac will run it, with Multipass, UTM, Parallels or
+VMware Fusion, and needs a **bridged** network card pointed at the Mac's
+Ethernet, not NAT and not Wi-Fi. Expect the odd dropout even so: the clock
+cannot see the wire from inside a virtual machine.
+[installers/README.md](../installers/README.md) has the measurements.
 
 ## Use
 

@@ -192,7 +192,7 @@ variables, Actions):
 |---|---|
 | `DEVELOPER_ID_CERT_BASE64`, `DEVELOPER_ID_CERT_PASSWORD` | The Developer ID Application certificate (.p12, base64) and its password. Required. |
 | `DEVELOPER_ID_TEAM` or `APPLE_TEAM_ID` | Team ID, part of the certificate name. Required. |
-| `APPLE_ID`, `APPLE_APP_PASSWORD` | Notarization with an Apple ID and an app-specific password from appleid.apple.com. The same secrets `installers.yml` uses. |
+| `APPLE_ID`, `APPLE_APP_PASSWORD` | Notarization with an Apple ID and an app-specific password from appleid.apple.com. |
 | `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID`, `APPLE_API_KEY_BASE64` | Notarization with an App Store Connect API key instead (the .p8 file in base64). |
 
 Without one of the two notarization sets, the job signs the app, skips
