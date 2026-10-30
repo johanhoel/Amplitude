@@ -85,5 +85,28 @@ for p in pages:
         check(f"{p.relative_to(ROOT)}:{line} inline script parses", ok, err)
 check("there are inline scripts to check", blocks > 10, f"found {blocks}")
 
+# --- a key handler must not answer with a bare boolean --------------------
+# The setup wizard's code field could not be typed into. The handler was
+#     $('#code').onkeydown = e => e.key === 'Enter' && $('#go').click();
+# and for every other key that arrow returns false. An onkeydown property
+# handler that returns false cancels the default action, so the character was
+# never inserted: the field took a paste but not a keystroke, and a fresh
+# install could not get past the first screen. Nothing caught it because the
+# file parses, the page renders and the handler does fire.
+# A braced body returns undefined, which is why the other two handlers in the
+# repository are written that way.
+KEY_HANDLER = re.compile(r"on(?:keydown|keypress|keyup)\s*=\s*(?:[^=\n]*=\s*)*\(?[A-Za-z_$][\w$]*\)?\s*=>\s*(.)")
+bare = []
+for p_ in sorted(list(ROOT.glob("**/*.html")) + list(ROOT.glob("**/*.js"))):
+    if "node_modules" in p_.parts or "dist" in p_.parts:
+        continue
+    text = p_.read_text(encoding="utf-8", errors="replace")
+    for m in KEY_HANDLER.finditer(text):
+        if m.group(1) != "{":
+            bare.append(f"{p_.relative_to(ROOT)}:{text[:m.start()].count(chr(10)) + 1}")
+check("every key handler has a braced body, so typing is never cancelled",
+      not bare,
+      "; ".join(bare) + "  - a concise arrow returns its expression, and a false return eats the keystroke")
+
 print(f"{sum(results)}/{len(results)} passed")
 raise SystemExit(0 if all(results) else 1)

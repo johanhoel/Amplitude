@@ -136,7 +136,7 @@ const VIEWS = {
       const r = await api('/api/login', { code: $('#code').value });
       if (r.ok) go(1); else { $('#msg').className = 'msg bad'; $('#msg').textContent = r.error; }
     };
-    $('#code').onkeydown = e => e.key === 'Enter' && $('#go').click();
+    $('#code').onkeydown = e => { if (e.key === 'Enter') $('#go').click(); };
     // A code sent as a link (?code=916-644) fills the field, so it can be
     // pasted from a phone or a chat rather than typed off a terminal.
     const fromUrl = new URLSearchParams(location.search).get('code');
