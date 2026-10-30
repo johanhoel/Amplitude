@@ -31,8 +31,19 @@ amplitude/
 To add a project, create a new top-level folder, put everything it needs
 inside it, and add a row to the table above with a link to its `CHANGELOG.md`.
 
-Every project's README has a Screenshots section with one screenshot per
-feature, updated whenever a feature changes. 
+Every README has the same shape - Screenshots, Features, Install, Use,
+How it is built, Troubleshooting, Notes - so one project reads like the next.
+[AGENTS.md](AGENTS.md) has the template and the screenshot rules.
+
+## Planning
+
+Issues and pull requests are tracked on one GitHub Project board for the whole
+repository, not one board per folder. Each item carries an **Area** field
+(`Home Deck`, `CamWatch`, `DStreamer`, `Desktop`, `Installers`), so a single
+project's work is a filter rather than a separate board. Work that crosses two
+projects - the CamWatch feed behind the Home Deck camera panel, say - then has
+somewhere to live.
+
 ## Working on a project
 
 ```bash

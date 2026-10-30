@@ -1,10 +1,34 @@
 <p align="center"><img src="app/static/logo-wordmark.svg" alt="camwatch" width="460"></p>
 
-# camwatch
+# CamWatch
 
-Self-hosted camera service for one RTSP camera: motion and object detection (YOLOv8), push alerts with snapshots (ntfy), event recordings with pre/post-roll, offline face identification against your own photo library, number-plate reading, a "who came and when" presence log, a web UI and Home Assistant integration. Runs as a Docker Compose stack on a small Debian VM or Proxmox LXC; everything stays on your LAN.
+Self-hosted camera service for up to four RTSP cameras. It records events with
+pre-roll, finds people and vehicles with YOLOv8, pushes alerts with a snapshot,
+identifies faces offline against your own photos, reads number plates and keeps
+a "who came and when" log.
+
+It runs as a Docker Compose stack on a small Debian VM or Proxmox LXC, with a
+web UI and Home Assistant integration. Everything stays on your LAN.
 
 > **Maintainers / LLMs: read [HANDOVER.md](HANDOVER.md)**: architecture, data formats, every setting, operations and known issues.
+
+## Screenshots
+
+`python dev/screenshots.py` takes these screenshots from demo pictures. They show no real camera footage.
+
+| | |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.jpg)<br>**Dashboard**: shows a summary of today, the live cameras and a tile for every page. | ![Clips](docs/screenshots/clips.jpg)<br>**Clips**: lists the clips of each day on a timeline. You can filter and tag the clips. *Select* downloads or deletes several clips at once. |
+| ![Clip](docs/screenshots/clip.jpg)<br>**Clip**: plays one clip. *Play all* plays every camera in the same visit. You can name the faces. | ![Live](docs/screenshots/live.jpg)<br>**Live**: shows every camera live. A button tests the whole chain from camera to phone alert. |
+| ![Zones](docs/screenshots/zones.jpg)<br>**Zones**: you draw the areas that start, ignore or mark activity for each camera. | ![Report](docs/screenshots/report.jpg)<br>**Report**: counts visits per day and per hour. A map shows where people walk most often. |
+| ![Settings](docs/screenshots/settings.jpg)<br>**Settings**: shows the sections in pairs, side by side on a wide screen. | ![Request a feature](docs/screenshots/requests.jpg)<br>**Request a feature**: sends your idea to GitHub as an issue and shows whether it is done. |
+| ![Strangers](docs/screenshots/strangers.jpg)<br>**Strangers**: groups unknown faces that come back. You name each person once. | ![Cameras](docs/screenshots/settings-cameras.jpg)<br>**Settings, cameras**: holds up to 4 cameras. *Find* searches your network for cameras. |
+| ![Off-site](docs/screenshots/settings-offsite.jpg)<br>**Settings, off-site copies**: copies clips to iCloud, Google Drive or another place. Home Assistant settings follow below. | ![Updates](docs/screenshots/settings-updates.jpg)<br>**Settings, updates**: shows the running version. *Update now* installs a newer version from GitHub. |
+| ![Storage](docs/screenshots/settings-storage.jpg)<br>**Settings, storage**: sets how long clips stay, and moves the recordings to another disk or a network share. | ![Studio](docs/screenshots/studio.jpg)<br>**Studio**: every camera and every device on the network in one list. *Scan* searches several VLANs at once. You collect the changes and apply them together, and the last apply can be undone. |
+
+| Phone: home | Phone: cameras | Phone: settings |
+|---|---|---|
+| <img src="docs/screenshots/phone-home.jpg" width="300"> | <img src="docs/screenshots/phone-wall.jpg" width="300"> | <img src="docs/screenshots/phone-settings.jpg" width="300"> |
 
 ## Features
 
@@ -34,35 +58,6 @@ Self-hosted camera service for one RTSP camera: motion and object detection (YOL
 - **Off-site storage** (Settings): copies to iCloud Drive, Google Drive, OneDrive, Dropbox, Backblaze B2, S3 or a NAS (SFTP/SMB) via rclone; encrypted by default; alarms uploaded within a minute, the rest nightly; retention and speed limit.
 - **Optional extras**: read-only JSON feed for dashboard panels; copy starred clips to iCloud Drive via a Windows share.
 
-## Screenshots
-
-`python dev/screenshots.py` takes these screenshots from demo pictures. They show no real camera footage.
-
-| | |
-|---|---|
-| ![Dashboard](docs/screenshots/dashboard.jpg)<br>**Dashboard**: shows a summary of today, the live cameras and a tile for every page. | ![Clips](docs/screenshots/clips.jpg)<br>**Clips**: lists the clips of each day on a timeline. You can filter and tag the clips. *Select* downloads or deletes several clips at once. |
-| ![Clip](docs/screenshots/clip.jpg)<br>**Clip**: plays one clip. *Play all* plays every camera in the same visit. You can name the faces. | ![Live](docs/screenshots/live.jpg)<br>**Live**: shows every camera live. A button tests the whole chain from camera to phone alert. |
-| ![Zones](docs/screenshots/zones.jpg)<br>**Zones**: you draw the areas that start, ignore or mark activity for each camera. | ![Report](docs/screenshots/report.jpg)<br>**Report**: counts visits per day and per hour. A map shows where people walk most often. |
-| ![Settings](docs/screenshots/settings.jpg)<br>**Settings**: shows the sections in pairs, side by side on a wide screen. | ![Request a feature](docs/screenshots/requests.jpg)<br>**Request a feature**: sends your idea to GitHub as an issue and shows whether it is done. |
-| ![Strangers](docs/screenshots/strangers.jpg)<br>**Strangers**: groups unknown faces that come back. You name each person once. | ![Cameras](docs/screenshots/settings-cameras.jpg)<br>**Settings, cameras**: holds up to 4 cameras. *Find* searches your network for cameras. |
-| ![Off-site](docs/screenshots/settings-offsite.jpg)<br>**Settings, off-site copies**: copies clips to iCloud, Google Drive or another place. Home Assistant settings follow below. | ![Updates](docs/screenshots/settings-updates.jpg)<br>**Settings, updates**: shows the running version. *Update now* installs a newer version from GitHub. |
-| ![Storage](docs/screenshots/settings-storage.jpg)<br>**Settings, storage**: sets how long clips stay, and moves the recordings to another disk or a network share. | ![Studio](docs/screenshots/studio.jpg)<br>**Studio**: every camera and every device on the network in one list. *Scan* searches several VLANs at once. You collect the changes and apply them together, and the last apply can be undone. |
-
-| Phone: home | Phone: cameras | Phone: settings |
-|---|---|---|
-| <img src="docs/screenshots/phone-home.jpg" width="300"> | <img src="docs/screenshots/phone-wall.jpg" width="300"> | <img src="docs/screenshots/phone-settings.jpg" width="300"> |
-
-## Containers
-
-| Container | What it does |
-|---|---|
-| `camwatch-recorder` | Always on: RTSP → buffer, motion/objects, events, alerts, plates, parking, HA, retention |
-| `camwatch-facematch` | Offline face identification of finished clips |
-| `camwatch-presence` | Presence log in MariaDB, daily summary |
-| `camwatch-webui` | Web UI on port 8080 |
-| `camwatch-offsite` | Off-site uploads (idle until set up in Settings) |
-| `camwatch-recorder-2..4` | Camera slots 2-4; idle until a camera is added in Settings |
-
 ## Install
 
 Prerequisites: Debian 12/13 VM or LXC (Proxmox LXC: `pct set <CTID> --features nesting=1,keyctl=1`), a data disk for recordings, MariaDB on the host for the presence log:
@@ -83,6 +78,14 @@ sudo ./deploy.sh            # installs Docker if needed, copies to /opt/camwatch
 Open `http://<host>:8080`, subscribe to your `NTFY_TOPIC` in the ntfy app, then on the **Live** page press **Simulate motion** to test the whole chain (push → clip → clip page).
 
 On Windows or a Mac, CamWatch runs in a small Linux system on the same computer: [docs/install-windows-mac.md](docs/install-windows-mac.md).
+
+## Use
+
+- **People**: add 3–10 clear face photos per person; faces in clips can be assigned with "This is them".
+- **Zones**: draw ignore areas (trees, street) and optional trigger/house/street/parking zones on the live picture.
+- **Plates**: save known plates with a name; known cars get quiet pushes.
+- **Settings**: arm/disarm or schedule, loitering time. How long clips stay is under **Settings → Storage** (starred clips are kept forever, clips with identified people longer).
+- **Home Assistant**: follow the **Home Assistant** page in the web UI; the MQTT broker (IP, user, password) and webhook are entered under **Settings → Home Assistant**.
 
 ### More cameras
 
@@ -173,15 +176,20 @@ It then gets the labels `feature request` and `camwatch`.
 CamWatch keeps every request in `DATA_PATH/feature_requests.jsonl`.
 When GitHub refuses a request, **Send again** retries it.
 
-## Use
+## How it is built
 
-- **People**: add 3–10 clear face photos per person; faces in clips can be assigned with "This is them".
-- **Zones**: draw ignore areas (trees, street) and optional trigger/house/street/parking zones on the live picture.
-- **Plates**: save known plates with a name; known cars get quiet pushes.
-- **Settings**: arm/disarm or schedule, loitering time. How long clips stay is under **Settings → Storage** (starred clips are kept forever, clips with identified people longer).
-- **Home Assistant**: follow the **Home Assistant** page in the web UI; the MQTT broker (IP, user, password) and webhook are entered under **Settings → Home Assistant**.
+Six containers, one Compose stack:
 
-## Optional extras (host services)
+| Container | What it does |
+|---|---|
+| `camwatch-recorder` | Always on: RTSP → buffer, motion/objects, events, alerts, plates, parking, HA, retention |
+| `camwatch-facematch` | Offline face identification of finished clips |
+| `camwatch-presence` | Presence log in MariaDB, daily summary |
+| `camwatch-webui` | Web UI on port 8080 |
+| `camwatch-offsite` | Off-site uploads (idle until set up in Settings) |
+| `camwatch-recorder-2..4` | Camera slots 2-4; idle until a camera is added in Settings |
+
+### Optional extras (host services)
 
 ```bash
 # dashboard feed (needs python3-pil); edit FEED_ALLOW in the unit first
@@ -192,7 +200,7 @@ sudo cp extras/systemd/camwatch-db-backup.* /etc/systemd/system/ && sudo systemc
 sudo cp extras/systemd/icloud-sync.* /etc/systemd/system/ && sudo systemctl enable --now icloud-sync.timer
 ```
 
-## Operations
+### Operations
 
 ```bash
 cd /opt/camwatch
@@ -201,10 +209,12 @@ sudo docker compose logs -f recorder
 sudo docker compose up -d --build && sudo docker builder prune -af   # after code changes
 ```
 
-## Privacy
+## Notes
+
+### Privacy
 
 Face recognition and plate reading process other people's personal data. Point the camera at your own property, keep retention short, protect the web UI with `WEB_PASSWORD`, keep it off the internet (use a VPN), and never commit `.env`.
 
-## License notes
+### Licences
 
 Object detection uses Ultralytics YOLOv8 (AGPL-3.0); face models from the OpenCV model zoo (Apache-2.0); plate models from fast-alpr (MIT).

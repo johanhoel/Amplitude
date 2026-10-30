@@ -1,19 +1,12 @@
 # Home Deck
 
-The home's dashboard system: the panels and backend (Home Deck), the configuration UI (Studio), boards, the camera panel,
-the Android app, the camera feed service and the edge proxy config.
+The home's dashboard system, in `panels/`: wall panels and their backend,
+phone pages, the Studio configuration UI, your own boards, a camera panel,
+the Android app and the edge proxy config.
 
-| Folder | What | Lives on |
-|---|---|---|
-| `server/` | Home Deck backend (`homedeck/`), settings (`homedeck.toml`), every page (`www/`) | CT 106 `.52` `/opt/panel-wrapper` |
-| `services/camwatch-feed/` | read-only camera feed (visits, thumbnails, video) | CT 102 `.81` `/opt/camwatch-feed` |
-| `infra/` | edge nginx site (`:8126`), `homedeck-apply`, `homedeck-onboard`, the systemd units | `.40`, `.52` |
-| `onboard/` | setup wizard for fresh installs: network scan, suggestions, writes `homedeck.toml` (`install.sh` installs it with the generic edition) | `/opt/homedeck-onboard` |
-| `app/` | Android app + Docker builder (`build.sh`, `publish.sh`) | builds here, APK to `.52` `www/app/` |
-| `kit/` | installer, services and the `homedeck.sh` one-liner | published on winrepo `.41` |
-| `editor/` | the panel editor | port 8088 |
-| `docs/` | Studio handbook | |
-| `tools/`, `tests/` | pull-live, deploy, staging, check; Playwright smoke test | |
+A fresh install knows nothing about any house. It installs the panels and a
+setup wizard; the wizard asks the network what is there and writes the
+settings. Everything the pages show about a house comes from those settings.
 
 ## Screenshots
 
@@ -29,37 +22,7 @@ the Android app, the camera feed service and the edge proxy config.
 |---|---|---|---|
 | <img src="docs/screenshots/phone-remote.jpg" width="300"> | <img src="docs/screenshots/phone-familyinfo.jpg" width="300"> | <img src="docs/screenshots/phone-localai.jpg" width="300"> | <img src="docs/screenshots/phone-localai-chat.jpg" width="300"> |
 
-## Fresh install and setup wizard
-
-A fresh install knows nothing about any house: it installs the panels from `server/` and a setup wizard.
-There is one edition. There used to be two, and the second - a copy with the owner's hardware stripped out
-by a generator - was what every fresh install actually received. The stripping is becoming configuration,
-so the same pages serve any house. On a new Debian or Ubuntu machine, from a checkout of this folder:
-
-```bash
-sudo ./install.sh
-```
-
-It starts the panels and prints the **setup wizard** address (`http://<machine>:8089`) and a one-time setup code.
-The wizard:
-
-1. scans the network (Home Assistant, Pi-hole, Proxmox, cameras and recorders, Sonos, Google Cast, Apple TV,
-   Dante speakers, routers). It only asks devices what they are; nothing is changed.
-2. connects Home Assistant (paste a long-lived token). Rooms, lights, people, players, the lock and the weather then
-   come from Home Assistant by themselves.
-3. suggests the rest for you to confirm: which players and people to show, the door lock and weather, and status dots
-   on Start for the routers, servers and recorders it found.
-4. shows the exact lines of `homedeck.toml` that change, saves (old copy kept), restarts with automatic rollback,
-   and switches itself off.
-
-What the wizard does not set stays empty, and an empty setting keeps its part of the panels away: the volume
-dial appears because there are speakers in `homedeck.toml`, the bus card because there is a stop, the wake button
-because there is a PC. A fresh install ships no addresses of its own - it shows the rooms and lights, and the rest
-as you fill it in.
-
-Run it again any time with `sudo homedeck-onboard`, or `sudo homedeck-onboard --show` to see the setup code that is
-already set (running the plain command makes a new one). Running `install.sh` again updates the code and keeps
-settings, token and layouts.
+The setup wizard, which a fresh install opens first:
 
 | | |
 |---|---|
@@ -67,7 +30,58 @@ settings, token and layouts.
 | ![Home](docs/screenshots/onboard-home.jpg)<br>**Home**: door lock and weather, or automatic | ![Media](docs/screenshots/onboard-media.jpg)<br>**Media**: which players to show; speakers found on the network |
 | ![Network](docs/screenshots/onboard-network.jpg)<br>**Network**: status dots for routers, servers and recorders | ![Review](docs/screenshots/onboard-review.jpg)<br>**Review**: the exact settings lines that change |
 
-## Daily use
+## Features
+
+- **Wall panels**: Start, Control, Rooms, Media and a night-time Ambient
+  clock, on a tablet or a screen on the wall.
+- **Phone pages**: the remote, family info and Local AI, laid out for a phone.
+- **Boards**: your own dashboards, built from modules in the browser.
+- **Lab panel**: every server and service in the house at a glance.
+- **Local AI**: wake the PC, load and unload its language models, and keep a
+  chat going on Home Deck after the page closes.
+- **Studio**: the configuration UI for devices, people and cameras, with the
+  camera list and face library coming from CamWatch over a link key.
+- **Camera panel**: live pictures, visits and clips through a read-only feed,
+  so Home Deck never touches the recordings.
+- **Android app**: the panels as an app, built from `app/` and served from
+  the Home Deck machine.
+- **Setup wizard**: scans the network, connects Home Assistant and writes the
+  settings for a fresh install.
+
+## Install
+
+On a new Debian or Ubuntu machine, from a checkout of this folder:
+
+```bash
+sudo ./install.sh
+```
+
+It starts the panels and prints the **setup wizard** address
+(`http://<machine>:8089`) and a one-time setup code. The wizard:
+
+1. scans the network (Home Assistant, Pi-hole, Proxmox, cameras and recorders,
+   Sonos, Google Cast, Apple TV, Dante speakers, routers). It only asks devices
+   what they are; nothing is changed.
+2. connects Home Assistant (paste a long-lived token). Rooms, lights, people,
+   players, the lock and the weather then come from Home Assistant by themselves.
+3. suggests the rest for you to confirm: which players and people to show, the
+   door lock and weather, and status dots on Start for the routers, servers and
+   recorders it found.
+4. shows the exact lines of `homedeck.toml` that change, saves (old copy kept),
+   restarts with automatic rollback, and switches itself off.
+
+What the wizard does not set stays empty, and an empty setting keeps its part of
+the panels away: the volume dial appears because there are speakers in
+`homedeck.toml`, the bus card because there is a stop, the wake button because
+there is a PC. A fresh install ships no addresses of its own - it shows the rooms
+and lights, and the rest as you fill it in.
+
+Run the wizard again any time with `sudo homedeck-onboard`, or
+`sudo homedeck-onboard --show` to see the setup code that is already set (running
+the plain command makes a new one). Running `install.sh` again updates the code
+and keeps settings, token and layouts.
+
+## Use
 
 ```bash
 tools/pull-live.sh     # bring anything changed directly on the server into git (then commit it)
@@ -76,21 +90,47 @@ tools/check.sh         # compile + settings check (+ smoke test of every page wh
 tools/deploy.sh        # the only way to production: refuses if live was edited by hand, rolls back on failure
 ```
 
-The repository is public, so it holds no house: no addresses, no names, no entity ids. A page that needs to
-know something about this house asks the settings for it - the consoles on Start and Admin are `[links.extra]`,
-the Deck's Stream Deck page is `[services] buttons_panel`, the music player is `[entities] spotify`. The house's
-own values stay on the server, in two files that are never in git:
+`deploy.sh` tries the new version on the server before anything goes live: a
+trial Home Deck on port 8099 with the real settings, read-only, and every page
+must answer.
 
-- `/opt/panel-wrapper/homedeck.toml` holds the settings. `deploy.sh` never uploads it.
-  The copy in `server/` is the empty template that `check.sh`, `staging.sh` and the tests use.
-- `/opt/panel-wrapper/private.map` lists `placeholder==>real value`, one pair per line, for anything that still
-  has to differ. `deploy.sh` puts the real values into the copy it uploads, and `pull-live.sh` puts the
-  placeholders back before anything reaches git. See `tools/private.py`.
+## How it is built
 
-`tests/install.py` holds that line: it fails if an address from anyone's network appears in the settings template
-or in any page under `server/www`.
+| Folder | What | Lives on |
+|---|---|---|
+| `server/` | Home Deck backend (`homedeck/`), settings (`homedeck.toml`), every page (`www/`) | CT 106 `.52` `/opt/panel-wrapper` |
+| `services/camwatch-feed/` | read-only camera feed (visits, thumbnails, video) | CT 102 `.81` `/opt/camwatch-feed` |
+| `infra/` | edge nginx site (`:8126`), `homedeck-apply`, `homedeck-onboard`, the systemd units | `.40`, `.52` |
+| `onboard/` | setup wizard for fresh installs: network scan, suggestions, writes `homedeck.toml` (`install.sh` installs it with the generic edition) | `/opt/homedeck-onboard` |
+| `app/` | Android app + Docker builder (`build.sh`, `publish.sh`) | builds here, APK to `.52` `www/app/` |
+| `kit/` | installer, services and the `homedeck.sh` one-liner | published on winrepo `.41` |
+| `editor/` | the panel editor | port 8088 |
+| `docs/` | Studio handbook | |
+| `tools/`, `tests/` | pull-live, deploy, staging, check; Playwright smoke test | |
 
-`deploy.sh` also tries the new version on the server first. It runs a trial Home Deck on port 8099
-with the real settings, read-only, and every page must answer.
+There is one edition. There used to be two, and the second - a copy with the
+owner's hardware stripped out by a generator - was what every fresh install
+actually received. The stripping is becoming configuration, so the same pages
+serve any house.
 
-Never in git (see `.gitignore`): `secrets.json`, `private.map`, the app signing key (`app/signing`, kept in `~/homedeck-app/signing`), build output.
+## Notes
+
+The repository is public, so it holds no house: no addresses, no names, no entity
+ids. A page that needs to know something about this house asks the settings for
+it - the consoles on Start and Admin are `[links.extra]`, the Deck's Stream Deck
+page is `[services] buttons_panel`, the music player is `[entities] spotify`. The
+house's own values stay on the server, in two files that are never in git:
+
+- `/opt/panel-wrapper/homedeck.toml` holds the settings. `deploy.sh` never
+  uploads it. The copy in `server/` is the empty template that `check.sh`,
+  `staging.sh` and the tests use.
+- `/opt/panel-wrapper/private.map` lists `placeholder==>real value`, one pair per
+  line, for anything that still has to differ. `deploy.sh` puts the real values
+  into the copy it uploads, and `pull-live.sh` puts the placeholders back before
+  anything reaches git. See `tools/private.py`.
+
+`tests/install.py` holds that line: it fails if an address from anyone's network
+appears in the settings template or in any page under `server/www`.
+
+Never in git (see `.gitignore`): `secrets.json`, `private.map`, the app signing
+key (`app/signing`, kept in `~/homedeck-app/signing`), build output.
