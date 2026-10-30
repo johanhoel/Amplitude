@@ -26,7 +26,7 @@ echo "1/4  Private values from the server, and a copy built from git ..."
 ssh $H "cat $R/private.map" > "$work/private.map" \
   || { echo "No $R/private.map on the server: without it the panels would get the placeholders."; exit 1; }
 mkdir "$work/build"
-git -C "$TOP" archive HEAD:panels/server $FILES | tar xf - -C "$work/build"      # what is committed, with Linux line endings
+git -c core.autocrlf=false -C "$TOP" archive HEAD:panels/server $FILES | tar xf - -C "$work/build"      # what is committed, with Linux line endings
 "$PY" tools/private.py apply "$work/private.map" "$work/build"
 "$PY" -m py_compile "$work"/build/homedeck/*.py "$work/build/server.py"
 find "$work/build" -name __pycache__ -type d -prune -exec rm -rf {} +
@@ -51,7 +51,7 @@ elif [ "$accept" != --accept-live ]; then
 fi
 
 echo "2/4  The updater on the server ..."
-git -C "$TOP" archive HEAD:panels/kit homedeck-update homedeck-install-tree homedeck-update.path homedeck-update.service \
+git -c core.autocrlf=false -C "$TOP" archive HEAD:panels/kit homedeck-update homedeck-install-tree homedeck-update.path homedeck-update.service \
   | ssh $H "set -e; d=\$(mktemp -d); tar xf - -C \$d
             install -m 755 \$d/homedeck-update \$d/homedeck-install-tree /usr/local/sbin/
             install -m 644 \$d/homedeck-update.path \$d/homedeck-update.service /etc/systemd/system/

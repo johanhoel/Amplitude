@@ -5,3 +5,5 @@ Dockerfile   text eol=lf
 *.yml        text eol=lf
 *.conf       text eol=lf
 .env*        text eol=lf
+# Panels: scripts and systemd units without an extension run on Linux servers
+panels/kit/*  text eol=lf
