@@ -205,5 +205,27 @@ check("the hide list is wired into the people the panels show",
       "C.PEOPLE_HIDE" in (ROOT / "server" / "homedeck" / "home.py").read_text(encoding="utf-8"),
       "the wizard would be writing a setting nothing reads")
 
+# --- both ways of building the kit stage everything the installer opens ----
+# A fresh install from a clone failed at
+#   install: cannot stat '/tmp/tmp.XXXX/bin/homedeck-install-tree'
+# because install-homedeck.sh is handed a kit built by two different scripts.
+# build_kit.sh stages the published tarball; install.sh stages a kit straight
+# from a checkout. They listed the files separately, so install.sh was missing
+# homedeck-install-tree and both update units, and nothing noticed: the kit
+# build is the path that gets exercised, and the clone is the path a stranger
+# takes. Whatever install-homedeck.sh reads out of the kit, both have to put
+# there.
+BUILD_KIT = (ROOT / "build_kit.sh").read_text(encoding="utf-8")
+INSTALL_SH = (ROOT / "install.sh").read_text(encoding="utf-8")
+
+wanted = sorted({m for m in re.findall(r'"\$KIT/((?:app|bin|editor|systemd)/[A-Za-z0-9._-]+)"', INSTALL)})
+check("the installer names files inside the kit", len(wanted) >= 8, f"found {len(wanted)}")
+
+for stager, text in (("build_kit.sh", BUILD_KIT), ("install.sh", INSTALL_SH)):
+    missing = [w for w in wanted if os.path.basename(w) not in text]
+    check(f"{stager} stages every file install-homedeck.sh opens",
+          not missing,
+          f"never staged: {', '.join(missing)} - the install stops there, on a machine that is not yours")
+
 print(f"{sum(results)}/{len(results)} passed")
 raise SystemExit(0 if all(results) else 1)
