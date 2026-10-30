@@ -38,6 +38,7 @@
 .hint { color: var(--dim); font-size: 12px; margin-top: 16px; text-align: center; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/shell.css">
 <script src="/addons.js"></script>
 <link rel="stylesheet" href="/icons.css">
 </head>
@@ -45,7 +46,7 @@
 <div class="wrap">
   <header class="head"><div><h1>Rooms</h1><div class="sub" id="sub">–</div></div><div class="right"><div class="clock num" id="clock">–</div></div></header>
   <div class="sumbar" id="sum"></div>
-  <main class="plan" id="plan"><div class="empty">Loading rooms…</div></main>
+  <main class="plan" id="plan"><div class="ui-empty is-aside">Loading rooms…</div></main>
   <div class="hint">Tap a light to switch it · slide sideways on a dimmable light to set brightness</div>
 </div>
 <div class="toast" id="toast"></div>
@@ -70,7 +71,7 @@ function render() {
   $('#sum').innerHTML = `<span class="big"><b class="num">${on}</b>lights on</span><span class="chip">${lit} lit room${lit === 1 ? '' : 's'}</span>
     ${H.people ? `<span class="chip">${H.people.filter(p => p.home).length} people home</span>` : ''}`;
   const plan = $('#plan');
-  if (plan.querySelector('.empty')) plan.innerHTML = '';
+  if (plan.querySelector('.ui-empty')) plan.innerHTML = '';
   H.rooms.forEach(r => {
     const id = 'r-' + r.room.replace(/\W+/g, '_');
     let el = document.getElementById(id);

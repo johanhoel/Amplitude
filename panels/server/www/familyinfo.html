@@ -113,7 +113,6 @@ body:not(.editing) .hidden { display: none; }
 .day .rng { position: relative; height: 6px; border-radius: 6px; background: rgba(255,255,255,.07); }
 .day .rng i { position: absolute; top: 0; bottom: 0; border-radius: 6px; background: linear-gradient(90deg, #60a5fa, #34d399 45%, #fbbf24 80%, #fb923c); }
 .day .mm { color: var(--rain); font-size: 13px; font-weight: 650; text-align: right; }
-.empty { color: var(--mute); font-size: 14px; }
 .src { margin-top: 28px; color: var(--mute); font-size: 12px; }
 @media (max-width: 700px) {
   .wrap { padding: calc(env(safe-area-inset-top) + 16px) calc(var(--sr) + 16px) calc(env(safe-area-inset-bottom) + 34px) calc(var(--sl) + 16px); }
@@ -123,6 +122,7 @@ body:not(.editing) .hidden { display: none; }
   .day { grid-template-columns: 78px 30px 38px 1fr 38px 48px; gap: 8px; font-size: 15px; } }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/shell.css">
 <script src="/addons.js"></script>
 <link rel="stylesheet" href="/icons.css">
 </head>
@@ -134,9 +134,9 @@ body:not(.editing) .hidden { display: none; }
   <div class="cols">
     <div id="col1">
       <div class="blk" data-blk="deps" data-addon="bus"><div class="cap" data-edit="blk"><span id="depcap">Next buses</span><span class="stale" id="stale"></span></div>
-        <section class="deps" id="deps"><span class="empty">Loading departures…</span></section></div>
+        <section class="deps" id="deps"><span class="ui-empty is-aside">Loading departures…</span></section></div>
       <div class="blk" data-blk="wx"><div class="cap" data-edit="blk"><span class="ct">Weather</span></div>
-        <section class="wx" id="wxnow"><span class="empty">Loading the forecast…</span></section></div>
+        <section class="wx" id="wxnow"><span class="ui-empty is-aside">Loading the forecast…</span></section></div>
     </div>
     <div id="col2">
       <div class="blk" data-blk="days"><div class="cap" data-edit="blk"><span class="ct">Next days</span></div>
@@ -223,7 +223,7 @@ function renderBus(now) {
       <div class="when"><div class="mins num ${m < 1 && !d.cur.isCancelled ? 'now' : ''}">${mins}</div>
         <div class="at">leaves <b class="num">${hm(t)}</b>${d.after ? `<br>then <span class="num">${hm(new Date(d.after.time))}</span>` : ''}</div></div>
       <div class="bar"><i style="transform:scaleX(${Math.max(3, 100 - Math.min(100, m / 30 * 100)) / 100})"></i></div></div>`;
-  }).join('') : '<span class="empty">No departures in the coming hour.</span>';
+  }).join('') : '<span class="ui-empty is-aside">No departures in the coming hour.</span>';
   const arrs = (bus.arrivals || []).filter(a => ms(a.time) > now - 60000).slice(0, model.arrivals || 8);
   $('#arrs').innerHTML = arrs.length ? arrs.map(a => {
     const late = Math.round((ms(a.time) - ms(a.planned)) / 60000);
@@ -231,7 +231,7 @@ function renderBus(now) {
     const m = Math.max(0, Math.floor((ms(a.time) - now) / 60000));
     return `<div class="arr ${a.cancelled ? 'cancelled' : ''}">${badge(a.line, true)}<div class="from">from ${esc(a.from)}<small>${a.platform ? 'stop ' + esc(a.platform) : ''}</small></div>
       ${lateTag}<div class="t num">${hm(new Date(a.time))}<small>${a.cancelled ? 'cancelled' : m < 1 ? 'now' : 'in ' + m + ' min'}</small></div></div>`;
-  }).join('') : '<span class="empty">No arrivals in the coming hour.</span>';
+  }).join('') : '<span class="ui-empty is-aside">No arrivals in the coming hour.</span>';
 }
 
 function renderWx(now) {

@@ -50,11 +50,11 @@ button { font: inherit; cursor: pointer; border: 0; }
 .hold i { position: absolute; inset: 0; background: rgba(251,113,133,.45); transform-origin: left; transform: scaleX(0); }
 .hold span { position: relative; }
 .ren { min-height: 40px; padding: 0 12px; border-radius: 999px; background: rgba(255,255,255,.07); color: var(--ink); font-size: 13.5px; flex: none; }
-.empty { color: var(--mute); }
 .msg { min-height: 1.3em; margin-top: 8px; font-size: 14px; } .msg.bad { color: var(--bad); }
 .tip { color: var(--mute); font-size: 13.5px; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/shell.css">
 <script src="/addons.js"></script>
 <link rel="stylesheet" href="/icons.css">
 </head>
@@ -85,7 +85,7 @@ button { font: inherit; cursor: pointer; border: 0; }
   </section>
 
   <section class="card"><h2>Paired devices</h2>
-    <div class="list" id="list"><span class="empty">Loading…</span></div>
+    <div class="list" id="list"><span class="ui-empty is-aside">Loading…</span></div>
     <p class="tip" style="margin:12px 0 0">Lost phone or someone moved out: hold <b>Remove</b>. It stops working at once, at home and away.</p>
   </section>
 </main>
@@ -106,7 +106,7 @@ async function api(path, body) { const r = await fetch(path, body ? { method: 'P
   return j;
 }
 
-async function load() { let d; try { d = await api('/api/devices'); } catch (e) { $('#list').innerHTML = `<span class="empty">${esc(e.message)}</span>`; return; }
+async function load() { let d; try { d = await api('/api/devices'); } catch (e) { $('#list').innerHTML = `<span class="ui-empty is-aside">${esc(e.message)}</span>`; return; }
   const devs = d.devices;
   if (pairing) for (const x of devs) if (!known.has(x.id)) { // the phone just claimed the code
     clearInterval(timerT); pairing = null;
@@ -118,7 +118,7 @@ async function load() { let d; try { d = await api('/api/devices'); } catch (e) 
       <div class="t"><b>${esc(x.name)}</b><span><i class="dot ${Date.now() / 1000 - (x.last_seen || 0) < 600 ? 'ok' : ''}"></i>${x.person ? esc(x.person) + ' · ' : ''}${esc(x.model || x.platform || '')} · seen ${ago(x.last_seen)}</span></div>
       <button class="ren">Rename</button>
       <button class="hold"><i></i><span>Remove</span></button></div>`).join('')
-    : '<span class="empty">No devices yet.</span>';
+    : '<span class="ui-empty is-aside">No devices yet.</span>';
 }
 
 $('#list').addEventListener('click', async e => { const b = e.target.closest('.ren'); if (!b) return;

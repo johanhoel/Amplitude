@@ -22,7 +22,7 @@ h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 .top { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); gap: 30px; margin-top: 22px; align-items: start; }
 @media (max-width: 980px) { .top { grid-template-columns: 1fr; } }
 
-.cam { position: relative; border-radius: 30px; overflow: hidden; background: #000; aspect-ratio: 16/9; box-shadow: 0 20px 60px rgba(0,0,0,.5); cursor: pointer; }
+.cam { position: relative; border-radius: var(--r-lg); overflow: hidden; background: #000; aspect-ratio: 16/9; box-shadow: 0 20px 60px rgba(0,0,0,.5); cursor: pointer; }
 .cam img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .cam .live { position: absolute; top: 16px; left: 16px; display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border-radius: 999px; background: rgba(0,0,0,.55); font-size: 12.5px; font-weight: 700; letter-spacing: .08em; }
 .cam .live i { width: 9px; height: 9px; border-radius: 50%; background: #ef4444; animation: pulse 1.6s infinite; }
@@ -85,6 +85,7 @@ h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 #swp a small { display: block; color: var(--mute); font-weight: 400; font-size: 12px; } #swp a.on { background: #c2410c; border-color: transparent; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/shell.css">
 <script src="/addons.js"></script>
 <link rel="stylesheet" href="/icons.css">
 </head>
@@ -94,7 +95,8 @@ h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 <div class="wrap">
   <h1>Security</h1>
   <div class="top">
-    <section><div class="cam" id="cam"><img id="snap" alt="Front camera"><span class="live"><i></i>LIVE · FRONT</span><span class="tap">Tap for video</span></div></section>
+    <section><div class="cam" id="cam" data-addon="cameras"><img id="snap" alt="Front camera"><span class="live"><i></i>LIVE · FRONT</span><span class="tap">Tap for video</span></div>
+      <div class="ui-empty" id="nocam" data-addon-off="cameras" hidden><b>No camera yet</b><p>The live picture and the visits come from camwatch. Set its address in <a href="/studio">Studio</a>, under Home Deck.</p></div></section>
     <section>
       <div class="verdict" id="verdict"><div class="shield"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.4 8-8 9-4.6-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></div>
         <div><b id="vt">Checking…</b><span id="vs"></span></div></div>
@@ -110,6 +112,15 @@ h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 </div>
 <div id="ov"><img id="ov-img" alt=""><button class="x" id="ov-x" aria-label="Close">✕</button></div>
 <div class="hint" id="hint"></div>
+<script>
+// The stylesheet hides what this house has not got; it cannot show something
+// else in its place, so the note is turned on here from the same list.
+addEventListener('DOMContentLoaded', () => {
+  const on = (document.documentElement.getAttribute('data-addons') || '').split(' ');
+  const el = document.getElementById('nocam');
+  if (el && document.documentElement.hasAttribute('data-addons')) el.hidden = on.includes('cameras');
+});
+</script>
 <script>
 const $ = s => document.querySelector(s);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

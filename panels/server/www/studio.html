@@ -43,7 +43,6 @@ td .s { color: var(--mute); font-size: 13px; } .dot { display: inline-block; wid
 .dot.ok { background: var(--ok); } .dot.bad { background: var(--bad); }
 .tag { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; background: var(--card-hi); color: var(--mute); margin-right: 4px; }
 .tag.add { background: rgba(34,197,94,.16); color: #86efac; } .tag.pres { background: rgba(56,189,248,.16); color: #7dd3fc; } .tag.miss { background: rgba(239,68,68,.16); color: #fecaca; }
-.empty { color: var(--mute); padding: 20px 0; }
 .wz { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
 .wz button { text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; min-height: 130px; }
 .wz button:hover { border-color: var(--accent); } .wz b { display: block; font-size: 18px; margin: 6px 0 4px; } .wz .i { font-size: 30px; } .wz span { color: var(--mute); font-size: 14px; }
@@ -80,6 +79,7 @@ td .s { color: var(--mute); font-size: 13px; } .dot { display: inline-block; wid
   .guide details { color: #444; } .guide details[open] summary, .guide summary { color: #0369a1; } a { color: #0369a1; } }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/shell.css">
 <script src="/addons.js"></script>
 <link rel="stylesheet" href="/icons.css">
 </head>
@@ -193,7 +193,7 @@ const SECTIONS = {
         <td class="s">${SRC[i.source] || i.source}</td>
         <td><span class="dot ${i.online ? 'ok' : i.online === false ? 'bad' : ''}"></span> ${i.added ? '<span class="tag add">added</span>' : ''}${i.reg?.watch ? '<span class="tag">watched</span>' : ''}
           ${i.presence ? `<span class="tag pres">${esc(i.presence)}'s phone</span>` : ''}${i.missing ? '<span class="tag miss">not found</span>' : ''}</td></tr>`).join('')
-        || `<tr><td colspan="5" class="empty">Nothing matches.</td></tr>`;
+        || `<tr><td colspan="5" class="ui-empty is-aside">Nothing matches.</td></tr>`;
       $('#rows').querySelectorAll('tr.row').forEach(tr => tr.onclick = () => deviceSheet(S.inv.find(i => i.key === tr.dataset.k)));
     };
     rows();
@@ -372,7 +372,7 @@ function stepUI(w, steps) {
 }
 const val = (root, sel) => root.querySelector(sel)?.value?.trim() || '';
 const pickList = (items, name, label) => `<div class="pick">${items.map((i, k) => `<label><input type="radio" name="${name}" value="${k}"><span>${KIND_ICON[i.reg?.kind || i.kind] || '•'} <b>${esc(nameOf(i))}</b></span><span class="s">${label(i)}</span></label>`).join('')
-  || '<div class="empty" style="padding:14px">Nothing found yet. Check the step before, then press ↻ Look again.</div>'}</div>`;
+  || '<div class="ui-empty is-aside" style="padding:14px">Nothing found yet. Check the step before, then press ↻ Look again.</div>'}</div>`;
 async function pairBox(el, name, person) {
   const p = await api('/api/devices/pair', { name, person });
   const q = qrcode(0, 'M'); q.addData(p.url); q.make();

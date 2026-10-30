@@ -84,8 +84,25 @@ check("and the Next hours heading goes with its hours",
       and re.search(r'id="hours-block"', today) is not None,
       "the heading has to be inside the thing that gets hidden")
 
-# ---- one empty state, in the shared component layer -------------------
 shared = (ROOT.parent / "design" / "components.py").read_text(encoding="utf-8")
+
+# ---- a component needs its stylesheet on the page ---------------------
+# The empty state was moved onto ten pages that did not link shell.css, so the
+# class existed and reached nothing. A component used without its layer is a
+# class name and no rules.
+for page in sorted(WWW.glob("*.html")):
+    body = page.read_text(encoding="utf-8")
+    if re.search(r'class="[^"]*\bui-[a-z-]+', body):
+        check(f"www/{page.name} links the component layer it uses",
+              "/shell.css" in body, "the ui- classes on this page have no rules behind them")
+check("no page carries its own empty state any more",
+      not any(re.search(r"^\.empty \{", p.read_text(encoding="utf-8"), re.M) for p in WWW.glob("*.html")),
+      "that is the eight near-copies .ui-empty replaced")
+check("a heading hides with the list under it",
+      re.search(r"\.ui-cap:has\(\+ :empty\)", shared) is not None,
+      "a heading over nothing reads as something that failed to load")
+
+# ---- one empty state, in the shared component layer -------------------
 check("the empty state lives in design/components.py",
       re.search(r"^\.ui-empty \{", shared, re.M) is not None)
 for css in (WWW / "shell.css", ROOT.parent / "CamWatch" / "app" / "static" / "shell.css"):

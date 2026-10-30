@@ -109,7 +109,6 @@ main { display: grid; gap: 26px 34px; padding: 8px 28px calc(env(safe-area-inset
 .feed li::before { content: ""; position: absolute; left: -18px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--ok); }
 .feed li.bad::before { background: var(--bad); } .feed li.run::before { background: var(--warn); animation: blink 1s infinite; }
 .feed li small { display: block; color: var(--mute); font-size: 12px; }
-.empty { color: var(--mute); font-size: 13px; }
 
 /* hold-to-run round button */
 .hb { --t: var(--accent); width: 68px; height: 68px; border-radius: 50%; position: relative; display: grid; place-items: center;
@@ -146,6 +145,7 @@ body.open #scrim { opacity: 1; pointer-events: auto; } body.open #drawer { trans
 #drawer .cap { margin-top: 26px; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/shell.css">
 <script src="/addons.js"></script>
 <link rel="stylesheet" href="/icons.css">
 </head>
@@ -171,7 +171,7 @@ body.open #scrim { opacity: 1; pointer-events: auto; } body.open #drawer { trans
   <aside class="side">
     <div><div class="cap">Quick</div><div class="quick" id="quick"></div></div>
     <div><div class="cap" id="svc-cap">Services</div><div class="svc" id="svc"></div></div>
-    <div><div class="cap">Activity</div><ul class="feed" id="feed"><li class="empty" style="list-style:none">Nothing run yet.</li></ul></div>
+    <div><div class="cap">Activity</div><ul class="feed" id="feed"><li class="ui-empty is-aside" style="list-style:none">Nothing run yet.</li></ul></div>
   </aside>
 </main>
 

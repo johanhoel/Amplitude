@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#12151d">
 <title>Family</title>
 <style>
+#nobody { animation: nobody-wait 0s 500ms both; }
+@keyframes nobody-wait { from { visibility: hidden; } to { visibility: visible; } }
 /* Family: who is home, since when, and how the day went. Each person wears a 24-hour ring: coloured where
    they were home today, a dot at "now". Data: Wi-Fi presence (Home Deck), camera recognitions (camwatch). */
 
@@ -69,7 +71,6 @@ h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 .dv { display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 8px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid var(--line); }
 .dv img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #222; }
 .dv small { display: block; color: var(--mute); font-size: 12px; }
-.empty { color: var(--mute); font-size: 14px; }
 @media (max-width: 700px) { .wrap { padding: 18px 16px 40px; } h1 { font-size: 32px; } .ring { width: 150px; height: 150px; } .ring .face { inset: 21px; font-size: 44px; }
   .people { grid-template-columns: 1fr 1fr; gap: 10px; } .tl { padding-left: 82px; } .lane .who { left: -82px; width: 76px; font-size: 13px; } }
 /* panel switcher */
@@ -84,6 +85,7 @@ h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 #swp a.on { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
 </style>
 <link rel="stylesheet" href="/wall.css">
+<link rel="stylesheet" href="/shell.css">
 <script src="/addons.js"></script>
 <link rel="stylesheet" href="/icons.css">
 </head>
@@ -91,12 +93,15 @@ h1 { margin: 0; font-size: 40px; font-weight: 750; letter-spacing: -.03em; }
 <button id="sw" aria-label="All panels"><svg viewBox="0 0 24 24"><circle cx="5" cy="5" r="2.2"/><circle cx="12" cy="5" r="2.2"/><circle cx="19" cy="5" r="2.2"/><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="12" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/></svg></button>
 <div id="swp"><nav id="swnav"></nav></div>
 <div class="wrap">
-  <header><div><h1>Family</h1><div class="sub" id="sub">–</div></div></header>
+  <header><div><h1>Family</h1><div class="sub" id="sub"></div></div></header>
   <section class="people" id="people"></section>
-  <div class="cap">Today</div>
-  <section class="tl" id="tl"><div class="hours" id="hours"></div></section>
+  <div class="ui-empty" id="nobody"><b>Nobody to follow yet</b>
+    <p>Who is home comes from the phones on the Wi-Fi. Add a phone to a person in
+    <a href="/studio">Studio</a>, under People, and the day fills in from there.</p></div>
+  <div id="today-block" hidden><div class="cap">Today</div>
+  <section class="tl" id="tl"><div class="hours" id="hours"></div></section></div>
   <div class="cap">At the front door today</div>
-  <section class="door" id="door"><span class="empty">Nobody recognised by the camera yet today.</span></section>
+  <section class="door" id="door"><span class="ui-empty is-aside">Nobody recognised by the camera yet today.</span></section>
   <div class="cap">Online today</div>
   <section class="acts" id="acts"></section>
 </div>
@@ -146,6 +151,9 @@ function render(d) {
   const every = Math.max(1, Math.ceil((span / 3600) / Math.max(2, ($('#tl').clientWidth - 110) / 64)));   // ~64 px per label
   const hrs = []; for (let h = Math.ceil(t0 / 3600) * 3600; h <= t1 - 1800; h += 3600 * every) hrs.push(`<span style="left:${pct(h)}%">${hm(h)}</span>`);
   const cam = {}; d.camera.forEach(c => (cam[c.name] = cam[c.name] || []).push(c));
+  const anyone = (d.people || []).length;
+  $('#nobody').hidden = anyone;
+  $('#today-block').hidden = !anyone;                       // no people, no day to draw
   $('#tl').innerHTML = `<div class="hours">${hrs.join('')}</div>` + d.people.map(p => `<div class="lane" style="--c:${colourOf(p.name)}">
     <div class="who"><i></i>${esc(p.name)}</div><div class="track">${p.segments.filter(s => s.home).map(s => `<div class="seg" style="left:${pct(s.from)}%;width:${pct(s.to) - pct(s.from)}%"></div>`).join('')}</div>
     ${(cam[p.name] || []).map(c => { const t = new Date(c.at).getTime() / 1000; return t >= t0 ? `<div class="cam" style="left:${pct(t)}%" title="camera ${hm(t)}">${CAMI}</div>` : ''; }).join('')}
@@ -153,12 +161,12 @@ function render(d) {
   // door recognitions
   $('#door').innerHTML = d.camera.length ? d.camera.slice(0, 12).map(c => `<div class="dv" style="--c:${colourOf(c.name)}"><img src="/api/sec/thumb/${c.day}/${c.stem}.jpg?w=160" alt="">
     <div><b>${esc(c.name)}</b><small>${new Date(c.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })} · front door</small></div></div>`).join('')
-    : '<span class="empty">Nobody recognised by the camera yet today.</span>';
+    : '<span class="ui-empty is-aside">Nobody recognised by the camera yet today.</span>';
   // activity per hour
   const maxH = Math.max(1, ...d.people.flatMap(p => p.hourly));
   $('#acts').innerHTML = d.people.map(p => `<div class="act" style="--c:${colourOf(p.name)}"><header><b>${esc(p.name)}</b>
     <span class="big num">${p.lookups_today.toLocaleString()}<small>lookups</small></span></header>
-    <div class="bars">${p.hourly.map((v, i, a) => `<i class="${i === a.length - 1 ? 'now' : ''}" style="height:${Math.max(3, v / maxH * 100)}%" title="${v}"></i>`).join('') || '<span class="empty">quiet</span>'}</div>
+    <div class="bars">${p.hourly.map((v, i, a) => `<i class="${i === a.length - 1 ? 'now' : ''}" style="height:${Math.max(3, v / maxH * 100)}%" title="${v}"></i>`).join('') || '<span class="ui-empty is-aside">quiet</span>'}</div>
     <div class="fun"><span>Social · video · games</span><span class="meter"><i style="width:${p.lookups_today ? Math.min(100, p.fun_today / p.lookups_today * 100) : 0}%"></i></span><span class="num">${p.lookups_today ? Math.round(p.fun_today / p.lookups_today * 100) : 0}%</span></div></div>`).join('');
 }
 async function load() { if (document.visibilityState !== 'visible') return; try { const r = await fetch('/api/family'); const d = await r.json(); if (!d.error) render(d); } catch {} }
