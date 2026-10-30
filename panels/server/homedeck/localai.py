@@ -13,6 +13,7 @@ load is most likely in use by the coordinator: the panel warns before unloading 
 """
 import json, os, queue, re, threading, time, urllib.request
 
+from . import services
 from .config import C, STATE
 from .store import load, save
 
@@ -190,7 +191,7 @@ def _answer(cid):
     try:
         body = json.dumps({'model': c['model'], 'messages': msgs, 'stream': True, 'think': False,
                            'keep_alive': '30m'}).encode()             # same as the panel's Load, not Ollama's default
-        req = urllib.request.Request(C.OLLAMA + '/api/chat', data=body, headers={'Content-Type': 'application/json'})
+        req = urllib.request.Request((services.url("ollama") or C.OLLAMA) + '/api/chat', data=body, headers={'Content-Type': 'application/json'})
         with urllib.request.urlopen(req, timeout=300) as r:
             for line in r:
                 if cid in _stop:

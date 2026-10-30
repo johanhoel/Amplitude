@@ -26,7 +26,7 @@
 import json, os, re, subprocess, time, urllib.error, urllib.parse, urllib.request
 from http.server import SimpleHTTPRequestHandler
 
-from . import addons, audio, auth, devices, localai, studio, updates, home, insights, layouts, leave, links, news, presence, status, transit, weather
+from . import addons, audio, auth, devices, localai, services, studio, updates, home, insights, layouts, leave, links, news, presence, status, transit, weather
 from .config import C, REPORT
 from .ha import entities as entity_list, ha_call, ha_get
 from .store import SECRETS, SETTINGS, STATIC, WALLS, load, save
@@ -201,6 +201,10 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json({'chats': localai.chats()})
             c = localai.chat_get(p.rsplit('/', 1)[1])
             return self.send_json(c) if c else self.send_json({'error': 'unknown chat'}, 404)
+        if p == '/api/services':                                          # what this house is connected to
+            if not auth.is_admin(self.headers):
+                return self.send_json({'error': 'admin PIN needed', 'admin': True}, 401)
+            return self.send_json({'services': services.state()})
         if p.startswith('/api/studio/'):                                  # Home Deck Studio (admin only, reads too)
             if not auth.is_admin(self.headers):
                 return self.send_json({'error': 'admin PIN needed', 'admin': True}, 401)
@@ -376,6 +380,15 @@ class Handler(SimpleHTTPRequestHandler):
                     return self.send_json(addons.switch(str(req.get('name', '')), bool(req.get('on'))))
                 except ValueError as e:
                     return self.send_json({'error': str(e)}, 400)
+            if self.path == '/api/services':                              # admin (auth.ADMIN_POSTS): connect a machine
+                req = json.loads(self.body(8192) or b'{}')
+                sid = str(req.get('id', ''))
+                if req.get('test'):
+                    return self.send_json(services.test(sid, req.get('url')))
+                error = services.set_url(sid, req.get('url'), req.get('key'))
+                if error:
+                    return self.send_json({'error': error}, 400)
+                return self.send_json({'services': services.state()})
             if self.path.startswith('/api/studio/'):                      # admin (auth.ADMIN_POSTS)
                 req = json.loads(self.body(64 * 1024) or b'{}')
                 try:

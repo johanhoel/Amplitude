@@ -34,6 +34,16 @@ h2 { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: v
 .btn.go { background: var(--accent); border-color: var(--accent); color: #062033; } .btn.bad { color: #fecaca; border-color: rgba(239,68,68,.5); }
 .btn:disabled { opacity: .4; cursor: default; }
 .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.svc-list { grid-template-columns: 1fr; }
+.svc-h { display: flex; gap: 10px; align-items: center; }
+.svc-h b { font-size: 16px; } .svc-h .m { margin-left: 2px; }
+.svc-h button { margin-left: auto; }
+.svc-g { margin-top: 4px; }
+.svc-f { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 12px; }
+.svc-f ol { margin: 0; padding-left: 20px; color: var(--mute); display: grid; gap: 4px; }
+.svc-f label { display: grid; gap: 5px; } .svc-f label i { font-style: normal; color: var(--dim); }
+.svc-f .in { width: 100%; max-width: 460px; }
+.svc-f .bar { margin: 0; }
 .chip { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-weight: 600; font-size: 13.5px; }
 .chip.on { background: var(--accent); border-color: var(--accent); color: #062033; }
 input[type=search], .in { min-height: 40px; padding: 0 14px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--card); min-width: 220px; }
@@ -90,6 +100,7 @@ td .s { color: var(--mute); font-size: 13px; } .dot { display: inline-block; wid
   <a href="#devices" data-s="devices"><i class="icon icon-plug" aria-hidden="true"></i> Devices</a>
   <a href="#people" data-s="people"><i class="icon icon-people" aria-hidden="true"></i> People</a>
   <a href="#boards" data-s="boards"><i class="icon icon-puzzle" aria-hidden="true"></i> Boards</a>
+  <a href="#services" data-s="services"><i class="icon icon-plug" aria-hidden="true"></i> Services</a>
   <a href="#wizards" data-s="wizards"><i class="icon icon-wand" aria-hidden="true"></i> Wizards</a>
   <a href="#guide" data-s="guide"><i class="icon icon-book" aria-hidden="true"></i> Guide</a>
   <a href="#changes" data-s="changes"><i class="icon icon-note" aria-hidden="true"></i> Changes<span class="n" id="ndraft" hidden></span></a>
@@ -132,6 +143,61 @@ const nameOf = i => i.reg?.name || i.name;
 
 // ---------- sections ----------
 const SECTIONS = {
+  // Services: the machines in the house, each with what it gives you, where
+  // to find its address, and a test. Adding one is an entry in services.py -
+  // see docs/SERVICES.md; nothing here knows the names.
+  async services() {
+    const d = await api('/api/services');
+    S.services = d.services;
+    const card = v => {
+      const open = S.open === v.id, dot = v.on ? (S.tested && S.tested[v.id] === false ? 'bad' : 'ok') : '';
+      return `<div class="card svc">
+        <div class="svc-h"><span class="dot ${dot}"></span><b>${esc(v.name)}</b>
+          <span class="m">${esc(v.on ? v.url : 'not set up')}</span>
+          <button class="btn" data-open="${esc(v.id)}">${open ? 'Close' : v.on ? 'Change' : 'Set up'}</button></div>
+        <div class="m svc-g">${esc(v.gives)}</div>
+        ${open ? `<div class="svc-f">
+          <ol>${v.steps.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
+          <label class="m">Address <i>${esc(v.find)}</i>
+            <input class="in" id="svc-url" value="${esc(v.url)}" placeholder="http://" spellcheck="false"></label>
+          ${v.needs_key ? `<label class="m">${esc(v.key_where)}<input class="in" id="svc-key" type="password" placeholder="paste the key"></label>` : ''}
+          <div class="bar"><button class="btn" id="svc-test">Test</button>
+            <button class="btn go" id="svc-save">Save</button>
+            ${v.on ? '<button class="btn bad" id="svc-forget">Forget</button>' : ''}
+            <span class="m" id="svc-msg"></span></div></div>` : ''}</div>`;
+    };
+    main.innerHTML = `<h1>Services</h1>
+      <p class="lead">The machines Home Deck talks to. Connecting one here needs no restart, and the
+        dot on Start follows it from the next check.</p>
+      <div class="cards svc-list">${S.services.map(card).join('')}</div>
+      <p class="m" style="margin-top:18px">A service that is not here yet is one entry in
+        <code>server/homedeck/services.py</code> - the recipe is in <code>docs/SERVICES.md</code>.</p>`;
+    main.querySelectorAll('[data-open]').forEach(b => b.onclick = () => {
+      S.open = S.open === b.dataset.open ? null : b.dataset.open; SECTIONS.services();
+    });
+    const msg = t => { const e = document.getElementById('svc-msg'); if (e) e.textContent = t; };
+    const body = extra => ({id: S.open, url: (document.getElementById('svc-url') || {}).value || '',
+                            key: (document.getElementById('svc-key') || {}).value, ...extra});
+    const test = document.getElementById('svc-test');
+    if (test) test.onclick = async () => {
+      msg('Asking…');
+      const r = await api('/api/services', body({test: true}));
+      msg(r.ok ? `Answered in ${r.ms} ms` : `No answer: ${r.why}`);
+      S.tested = {...(S.tested || {}), [S.open]: !!r.ok};
+    };
+    const saveb = document.getElementById('svc-save');
+    if (saveb) saveb.onclick = async () => {
+      const r = await api('/api/services', body({}));
+      if (r.error) return msg(r.error);
+      S.open = null; SECTIONS.services();
+    };
+    const forget = document.getElementById('svc-forget');
+    if (forget) forget.onclick = async () => {
+      await api('/api/services', {id: S.open, url: '', key: ''});
+      S.open = null; SECTIONS.services();
+    };
+  },
+
   async overview() {
     S.sum = await api('/api/studio/summary'); await loadDraft();
     const c = S.sum.counts || {};

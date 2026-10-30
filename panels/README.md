@@ -16,7 +16,7 @@ settings. Everything the pages show about a house comes from those settings.
 | ![Rooms](docs/screenshots/rooms.jpg)<br>**Rooms**: all lights, room by room | ![Media](docs/screenshots/media.jpg)<br>**Media**: Sonos, Spotify and the Apple TV remote |
 | ![Ambient](docs/screenshots/ambient.jpg)<br>**Ambient**: night-time clock with door and camera-alert status | ![Boards](docs/screenshots/boards.jpg)<br>**Boards**: your own dashboards, built from modules |
 | ![Lab panel](docs/screenshots/labpanel.jpg)<br>**Lab panel**: every server and service at a glance | ![Local AI](docs/screenshots/localai.jpg)<br>**Local AI**: wake the PC, load and unload its language models, open OpenCode, Claude Code or video-use on the PC |
-| ![Local AI chats](docs/screenshots/localai-chat.jpg)<br>**Local AI chats**: saved chats; an answer keeps going on Home Deck when the page closes | |
+| ![Local AI chats](docs/screenshots/localai-chat.jpg)<br>**Local AI chats**: saved chats; an answer keeps going on Home Deck when the page closes | ![Services](docs/screenshots/studio-services.jpg)<br>**Studio, services**: the machines Home Deck talks to. Each one says what it gives you and where to find its address, tests before it saves, and needs no restart. |
 
 | Phone: Remote | Phone: Family info | Phone: Local AI | Phone: Local AI chat |
 |---|---|---|---|
