@@ -50,6 +50,12 @@ The setup wizard, which a fresh install opens first:
 
 ## Install
 
+Two ways, and they install the same code. `install.sh` puts Home Deck on the
+machine under systemd; Docker keeps it in a container. Both end at the same
+setup wizard.
+
+### On the machine, with systemd
+
 On a new Debian or Ubuntu machine, from a checkout of this folder:
 
 ```bash
@@ -80,6 +86,48 @@ Run the wizard again any time with `sudo homedeck-onboard`, or
 `sudo homedeck-onboard --show` to see the setup code that is already set (running
 the plain command makes a new one). Running `install.sh` again updates the code
 and keeps settings, token and layouts.
+
+### In Docker
+
+```bash
+docker compose up -d --build
+docker compose logs -f          # the setup wizard's address and one-time code
+```
+
+The server is pure standard library, so the image is a copy of `server/` on
+`python:3.12-slim` - nothing to build and no venv.
+
+It runs with **host networking**, which is not a convenience: presence sends
+ARP probes and reads the neighbour table to tell who is home, and the wizard
+scans the network for Home Assistant, speakers and cameras. Behind a bridge
+both see Docker's own network instead of the house. The panels would still
+show rooms, lights and media from Home Assistant; who-is-home and the scan
+would find nothing.
+
+Two folders stay outside the image, so a new image never touches the house:
+
+| Folder | What |
+|---|---|
+| `data/` | `homedeck.toml` - the house. Never in the image, never in git. |
+| `state/` | the Home Assistant token, layouts, boards, the setup code |
+
+What differs from the systemd install:
+
+- **A restart** is the container restarting. `homedeck-apply` checks the
+  settings and then stops the container, and the restart policy brings it
+  back. The code comes from the image and cannot drift, so the check is the
+  whole safety net: settings that would not load never reach a restart.
+- **An update** is a new image (`docker compose pull`, or `up -d --build`
+  from a checkout). The update card in Settings says the updater is not
+  installed, which is true here.
+- **The panel editor** (`:8088`) is not in the container.
+
+Run the wizard again later:
+
+```bash
+docker compose run --rm -e HOMEDECK_ONBOARD=1 homedeck
+```
+
 
 ## Use
 

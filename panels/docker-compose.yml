@@ -1,0 +1,27 @@
+# Home Deck in Docker, as an alternative to install.sh + systemd.
+#   docker compose up -d --build      then follow the setup code in: docker compose logs -f
+#
+# host networking is not a convenience here. Presence sends ARP probes and reads
+# the neighbour table to tell who is home, and the setup wizard scans the network
+# for Home Assistant, speakers and cameras. Behind a bridge it sees Docker's own
+# network instead of the house: the panels still show rooms, lights and media from
+# Home Assistant, but who-is-home and the scan find nothing.
+services:
+  homedeck:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VERSION: ${HOMEDECK_VERSION:-docker}
+    image: homedeck:latest
+    container_name: homedeck
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Europe/Stockholm}
+      # The panels answer on this port. 80 needs no extra rights with host
+      # networking as root; set 8080 here to stay off a privileged port.
+      HOMEDECK_PORT: ${HOMEDECK_PORT:-80}
+    volumes:
+      - ./data:/data        # homedeck.toml: the house. Never in the image, never in git.
+      - ./state:/state      # token, layouts, boards, the setup code
