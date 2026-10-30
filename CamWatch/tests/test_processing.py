@@ -160,5 +160,34 @@ report(code == 1 and "needs 6 GB free" in st["message"] and "pct resize" in st["
        and "CAMWATCH_GPU" not in (host_dir / ".env").read_text(),
        f"with a nearly full disk, the helper does not start the build: {st['message']}")
 
+# --- the tooltip when a GPU refuses a model -------------------------------
+# It showed str(exc)[:300] of an onnxruntime failure: one long line of
+# bracketed code, C++ file and line, and the signature of the function that
+# gave up - cut mid-symbol, ending "const onnxruntime::openv". Seen on a real
+# install on the plates model.
+RAW = ("[ONNXRuntimeError] : 1 : FAIL : Exception during initialization: "
+       "/onnxruntime/onnxruntime/core/providers/openvino/backends/basic_backend.cc:136 "
+       "onnxruntime::openvino_ep::BasicBackend::BasicBackend(std::unique_ptr<onnx::ModelProto>&, "
+       "onnxruntime::openvino_ep::SessionContext&, const onnxruntime::openvino_ep::SharedContext&) "
+       "Model is not supported by the device: operation NonMaxSuppression is not supported")
+clean = accel.clean_error(RAW)
+report(clean == "Model is not supported by the device: operation NonMaxSuppression is not supported",
+       f"the reason survives and the machinery goes: {clean!r}")
+report("::" not in clean and ".cc:" not in clean and "ONNXRuntimeError" not in clean,
+       f"no symbols, source paths or error codes reach the page: {clean!r}")
+report(len(clean) <= 200 and not clean.endswith(" ") and clean[-1].isalnum() or clean.endswith("..."),
+       f"it does not stop mid-word: {clean!r}")
+
+only_machinery = accel.clean_error("[ONNXRuntimeError] : 1 : FAIL : /x/basic_backend.cc:136 "
+                                   "onnxruntime::openvino_ep::BasicBackend::BasicBackend(std::unique_ptr<onnx::ModelProto>&)")
+report(only_machinery == "the GPU driver refused this model",
+       f"with no words worth keeping it says so plainly: {only_machinery!r}")
+report(accel.clean_error("") == "the GPU driver refused this model", "an empty error still reads as a sentence")
+report(accel.clean_error("Device GPU is not available") == "Device GPU is not available",
+       "a short readable error is left alone")
+long = accel.clean_error("the GPU said no " * 40)
+report(len(long) <= 203 and long.endswith("...") and " " not in long[-6:-3],
+       f"a very long reason is cut at a word: {long[-40:]!r}")
+
 print("ALL PASSED" if ok else "SOME FAILED")
 sys.exit(0 if ok else 1)

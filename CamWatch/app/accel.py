@@ -70,10 +70,35 @@ def session(model_path, threads=2, part=None):
         if len(wanted) == 1:
             raise
         s = ort.InferenceSession(str(model_path), session_options(threads), providers=[CPU])
-        error = str(exc).splitlines()[0][:300]
+        print(f"accel: {part or model_path} runs on the CPU: {exc}", flush=True)
+        error = clean_error(str(exc))
     if part:
         report(part, s.get_providers()[0], error)
     return s, wanted
+
+
+def clean_error(text):
+    """A provider's failure -> one short line a person can read.
+
+    onnxruntime puts the whole thing on one line: a bracketed code, the C++
+    file and line the provider gave up in, and the signature of the function
+    it was in. The table's tooltip showed the first 300 characters of that,
+    which cut mid-symbol and told nobody anything. Keep the words, drop the
+    machinery, and say plainly when there are no words worth keeping.
+    """
+    msg = " ".join((text or "").split())
+    msg = re.sub(r"^\[\w*Error\]\s*:\s*\d+\s*:\s*\w+\s*:\s*", "", msg)
+    msg = re.sub(r"(?i)\bexception during initialization\s*:?\s*", "", msg)
+    msg = re.sub(r"\S+\.(?:cc|cpp|cxx|h|hpp):\d+", "", msg)       # source locations
+    msg = " ".join(w for w in msg.split() if "::" not in w and not w.startswith("/"))
+    # What a dropped signature leaves behind: "const", "&", a stray comma.
+    msg = re.sub(r"^(?:const|struct|class|enum|unsigned|void|std)\b[\s,&*]*", "", msg, flags=re.I)
+    msg = msg.strip(" ,:;-&*")
+    if len(re.findall(r"[A-Za-z]{3,}", msg)) < 3:                 # nothing but machinery
+        return "the GPU driver refused this model"
+    if len(msg) > 200:                                            # never cut mid-word
+        msg = msg[:200].rsplit(" ", 1)[0] + "..."
+    return msg
 
 
 def report(part, provider, error=""):
