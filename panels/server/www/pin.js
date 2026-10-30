@@ -25,7 +25,23 @@
   #dkpin.locked .keys button { opacity: .3; pointer-events: none; }
   #dkpin .keys button.ok { background: #0c4a6e; border-color: #38bdf8; color: #e0f2fe; font-size: 19px; font-weight: 750; } #dkpin .keys button:disabled { opacity: .35; }
   #dkpin .rem { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 24px 0 6px; min-height: 48px; font-size: 15px; cursor: pointer; color: #cbd5e1; }
-  #dkpin .rem input { width: 22px; height: 22px; accent-color: #38bdf8; }
+  /* The browser's own checkbox is a white square: on this page it is the
+     brightest thing on screen, brighter than the OK key. Drawn here instead,
+     in the same shapes as the keypad, with the press feedback every other
+     control has. */
+  #dkpin .rem input { appearance: none; -webkit-appearance: none; margin: 0; position: relative;
+    width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid #2a333d; background: #141922;
+    cursor: pointer; transition: background 140ms cubic-bezier(0.23, 1, 0.32, 1),
+      border-color 140ms cubic-bezier(0.23, 1, 0.32, 1), transform 140ms cubic-bezier(0.23, 1, 0.32, 1); }
+  #dkpin .rem input:checked { background: #38bdf8; border-color: #38bdf8; }
+  #dkpin .rem input:checked::after { content: ''; position: absolute; left: 7px; top: 3px;
+    width: 5px; height: 10px; border: solid #07080f; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); }
+  #dkpin .rem input:active { transform: scale(0.94); }
+  #dkpin .rem input:focus-visible { outline: 3px solid #38bdf8; outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) {
+    #dkpin .rem input { transition-duration: .01ms; }
+    #dkpin .rem input:active { transform: none; }
+  }
   #dkpin .cancel { margin-top: 8px; min-height: 48px; padding: 0 24px; border-radius: 999px; border: 1px solid #2a333d; background: none; color: #8b98a8; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }`;
   document.head.appendChild(css);
   const el = document.createElement('div'); el.id = 'dkpin'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Admin PIN');

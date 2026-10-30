@@ -102,30 +102,30 @@ function render() {
       const pr = D.presence?.[p.name.toLowerCase()];
       return `<div class="pp ${p.home ? '' : 'away'}" style="--c:${colourOf(p.name)}"><div class="av">${esc(p.name[0])}</div>${esc(p.name)}<small>${p.home ? (pr?.silent_s > 1800 ? 'home · phone resting' : 'home') : 'away'}</small></div>`; }).join('')}</div>`));
     const door = H.door?.state;
-    tiles.push(tile('/control', door === 'locked' ? 'good' : 'alert', `<div class="k">Front door</div><div class="v">${door === 'locked' ? '<i class="icon icon-lock" aria-hidden="true"></i> Locked' : '<i class="icon icon-unlock" aria-hidden="true"></i> ' + esc(door || '–')}</div><div class="s">${door === 'locked' ? 'All good' : 'Tap to lock (lock only)'}</div>`));
+    if (hasAddon('lock')) tiles.push(tile('/control', door === 'locked' ? 'good' : 'alert', `<div class="k">Front door</div><div class="v">${door === 'locked' ? '<i class="icon icon-lock" aria-hidden="true"></i> Locked' : '<i class="icon icon-unlock" aria-hidden="true"></i> ' + esc(door || '–')}</div><div class="s">${door === 'locked' ? 'All good' : 'Tap to lock (lock only)'}</div>`));
     tiles.push(tile('/rooms', '', `<div class="k">Lights <i>${roomsOn.length} rooms</i></div><div class="v num">${lightsOn.length}<small>on</small></div><div class="lights">${roomsOn.slice(0, 5).map(r => `<span>${esc(r)}</span>`).join('')}${roomsOn.length > 5 ? `<span>+${roomsOn.length - 5}</span>` : ''}</div>`));
     const p = (H.players || []).find(x => x.state === 'playing') || (H.appletv?.state === 'playing' ? H.appletv : null);
     const art = p?.art ? `/api/art?e=${encodeURIComponent(p.id)}&k=${encodeURIComponent(p.art_key)}` : '';
-    tiles.push(tile('/media', 'w2', `<div class="k">Now playing <i>${p ? esc(p.label) : 'nothing'}</i></div><div class="np"><div class="art" style="${art ? `background-image:url('${art}')` : ''}">${art ? '' : '<i class="icon icon-music" aria-hidden="true"></i>'}</div>
+    if (hasAddon('spotify')) tiles.push(tile('/media', 'w2', `<div class="k">Now playing <i>${p ? esc(p.label) : 'nothing'}</i></div><div class="np"><div class="art" style="${art ? `background-image:url('${art}')` : ''}">${art ? '' : '<i class="icon icon-music" aria-hidden="true"></i>'}</div>
       <div style="min-width:0"><b>${esc(p?.title || 'Quiet house')}</b><span>${esc(p ? [p.artist, p.app].filter(Boolean).join(' · ') : 'Nothing is playing')}</span>
       ${p?.duration ? `<div class="bar" style="--c:#f472b6"><i style="width:${Math.min(100, ((p.position || 0) + (p.state === 'playing' && p.position_at ? (Date.now() - new Date(p.position_at)) / 1000 : 0)) / p.duration * 100)}%"></i></div>` : ''}</div></div>`));
     const wx = D.weather?.now || H.wx;
     const inside = (S?.ha?.temps || []).slice(0, 2);
-    tiles.push(tile('/today', '', `<div class="k">Outside <i>${esc(wx?.condition || '')}</i></div><div class="v num">${WX[wx?.condition] || ''} ${wx?.temperature != null ? Math.round(wx.temperature) + '°' : '–'}</div>
+    if (hasAddon('weather')) tiles.push(tile('/today', '', `<div class="k">Outside <i>${esc(wx?.condition || '')}</i></div><div class="v num">${WX[wx?.condition] || ''} ${wx?.temperature != null ? Math.round(wx.temperature) + '°' : '–'}</div>
       <div class="s">${inside.map(t => `${esc(t.name.replace(/[ _]temp(erature)?$/i, '').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()))} <b>${Math.round(t.value)}°</b>`).join(' · ') || 'Indoor sensors: none'}</div>`));
-    tiles.push(tile('/control', '', `<div class="k">Energy</div><div class="v num">${S?.ha?.charger_w != null ? Math.round(S.ha.charger_w) : '–'}<small>${esc(S?.ha?.charger_unit || 'W')}</small></div><div class="s">EV charger ${H.charger_on ? '<b>enabled</b>' : 'paused'}</div>`));
-    tiles.push(tile('/control', '', `<div class="k">Vacuum</div><div class="v" style="font-size:24px">${esc((H.vacuum?.state || '–').replace(/_/g, ' '))}</div><div class="s">Roborock${H.vacuum?.battery != null ? ` · ${H.vacuum.battery}%` : ''} · camera alerts ${H.detect ? '<b>on</b>' : 'off'}</div>`));
+    if (hasAddon('charger')) tiles.push(tile('/control', '', `<div class="k">Energy</div><div class="v num">${S?.ha?.charger_w != null ? Math.round(S.ha.charger_w) : '–'}<small>${esc(S?.ha?.charger_unit || 'W')}</small></div><div class="s">EV charger ${H.charger_on ? '<b>enabled</b>' : 'paused'}</div>`));
+    if (hasAddon('vacuum')) tiles.push(tile('/control', '', `<div class="k">Vacuum</div><div class="v" style="font-size:24px">${esc((H.vacuum?.state || '–').replace(/_/g, ' '))}</div><div class="s">Roborock${H.vacuum?.battery != null ? ` · ${H.vacuum.battery}%` : ''} · camera alerts ${H.detect ? '<b>on</b>' : 'off'}</div>`));
   }
   if (D.bus) {
     const dep = (D.bus.departures || []).map(d => ({ ...d, t: [d.next, d.then].find(x => x?.time && new Date(x.time) > Date.now() - 30000) })).filter(d => d.t).sort((a, b) => new Date(a.t.time) - new Date(b.t.time))[0];
     if (D.bus.situations?.length) attn.push(['', '/today', `<i class="icon icon-bus" aria-hidden="true"></i> ${D.bus.situations.length} traffic disruption${D.bus.situations.length > 1 ? 's' : ''}`]);
-    tiles.push(tile('/today', '', `<div class="k">Next bus <i>${esc(D.bus.stop || '')}</i></div>${dep ? `<div class="v num">${minsTo(dep.t.time) < 1 ? 'Now' : minsTo(dep.t.time) + '<small>min</small>'}</div>
+    if (hasAddon('bus')) tiles.push(tile('/today', '', `<div class="k">Next bus <i>${esc(D.bus.stop || '')}</i></div>${dep ? `<div class="v num">${minsTo(dep.t.time) < 1 ? 'Now' : minsTo(dep.t.time) + '<small>min</small>'}</div>
       <div class="s"><b>${esc(dep.line.shortName)}</b> to ${esc(dep.to)} · ${hm(dep.t.time)}</div>` : '<div class="v">–</div><div class="s">No departures soon</div>'}`));
   }
   if (S?.genelec) {
     const g = S.genelec, on = g.power === 'ACTIVE';
     if (g.auth_failed) attn.push(['bad', '/control', '<i class="icon icon-volume" aria-hidden="true"></i> Speakers refuse the saved password']);
-    tiles.push(tile('/control', '', `<div class="k">Speakers <i>${esc(S.dante?.source || '')}</i></div><div class="v">${on ? (g.mute ? 'Muted' : g.level != null ? Math.round(g.level) + '<small>dB</small>' : 'On') : 'Standby'}</div><div class="s">Genelec ×${(g.speakers || []).length} · Dante ${S.dante?.front_live ?? '–'}/${S.dante?.front_total ?? '–'} live</div>`));
+    if (hasAddon('speakers')) tiles.push(tile('/control', '', `<div class="k">Speakers <i>${esc(S.dante?.source || '')}</i></div><div class="v">${on ? (g.mute ? 'Muted' : g.level != null ? Math.round(g.level) + '<small>dB</small>' : 'On') : 'Standby'}</div><div class="s">Genelec ×${(g.speakers || []).length} · Dante ${S.dante?.front_live ?? '–'}/${S.dante?.front_total ?? '–'} live</div>`));
   }
   if (D.net) {
     const n = D.net;
@@ -136,7 +136,7 @@ function render() {
     const down = (snap.guests || []).filter(g => g.status !== 'running' && g.name !== 'gotify').length, probs = snap.problems || [];
     const PROB = { backups: 'Backups are older than expected', dns: 'A DNS server is not answering', certs: 'A certificate expires soon', ha: 'Home Assistant needs attention', pve: 'Proxmox API not answering' };
     probs.filter(p => p !== 'gotify').forEach(p => attn.push(['', '/ops', `<i class="icon icon-gear" aria-hidden="true"></i> Lab: ${PROB[p] || p}`]));
-    tiles.push(tile('/atlas', probs.filter(p => p !== 'gotify').length ? '' : 'good', `<div class="k">Lab <i>${(snap.nodes || []).length} nodes</i></div><div class="v num">${(snap.guests || []).filter(g => g.status === 'running').length}<small>/ ${(snap.guests || []).length} running</small></div>
+    if (hasAddon('lab')) tiles.push(tile('/atlas', probs.filter(p => p !== 'gotify').length ? '' : 'good', `<div class="k">Lab <i>${(snap.nodes || []).length} nodes</i></div><div class="v num">${(snap.guests || []).filter(g => g.status === 'running').length}<small>/ ${(snap.guests || []).length} running</small></div>
       <div class="s">${(snap.nodes || []).map(n => `${esc(n.node)} <b>${Math.round(n.cpu * 100)}%</b>`).join(' · ')}</div>`));
   }
   if (D.visits?.length) {

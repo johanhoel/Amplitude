@@ -2,6 +2,14 @@
 
 Newest changes first.
 
+## 2026-10-30
+
+- The page bar says there is more of it. Fifteen pages, about ten of which fit: the bar scrolled sideways with
+  its scrollbar hidden, so Plates, Zones, Studio, Settings and Home Assistant were not merely off the edge,
+  nothing said they existed. The edge with more behind it now fades, and the page you are on is brought into
+  view when it loads.
+- The phone home said "1 people seen". It says "1 person seen".
+
 ## 2026-10-29
 
 - New: Studio. Every camera and every device Home Deck knows about, in one list, with the ones a network

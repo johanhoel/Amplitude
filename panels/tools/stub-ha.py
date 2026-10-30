@@ -12,15 +12,28 @@ Start it through  HOMEDECK_STUB=1 tools/staging.sh.
 """
 import json, re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+# A small house, so that every page has something to draw: six lights in four
+# rooms, somebody home, weather, a player, and one of each thing the panels
+# have a card for. Named plainly - this is a stand-in, not a pretend family.
+ROOMS = ["Kitchen", "Living room", "Hall", "Workshop"]
 STATES = [
-    {"entity_id": f"light.l{i}", "state": "off",
-     "attributes": {"friendly_name": f"Light {i}", "supported_color_modes": ["brightness"]}}
+    {"entity_id": f"light.l{i}", "state": "on" if i < 2 else "off",
+     "attributes": {"friendly_name": f"{ROOMS[i % len(ROOMS)]} light {i // len(ROOMS) + 1}",
+                    "supported_color_modes": ["brightness"], "brightness": 180}}
     for i in range(6)
 ] + [
     {"entity_id": "person.a", "state": "home", "attributes": {"friendly_name": "A"}},
     {"entity_id": "weather.home", "state": "sunny",
      "attributes": {"temperature": 12, "forecast": []}},
-    {"entity_id": "media_player.m", "state": "idle", "attributes": {"friendly_name": "M"}},
+    {"entity_id": "media_player.m", "state": "idle", "attributes": {"friendly_name": "Living room"}},
+    {"entity_id": "lock.front", "state": "locked", "attributes": {"friendly_name": "Front door"}},
+    {"entity_id": "vacuum.robot", "state": "docked",
+     "attributes": {"friendly_name": "Vacuum", "battery_level": 96}},
+    {"entity_id": "switch.charger", "state": "on", "attributes": {"friendly_name": "Car charger"}},
+    {"entity_id": "sensor.charger_power", "state": "2300",
+     "attributes": {"friendly_name": "Charger power", "unit_of_measurement": "W"}},
+    {"entity_id": "input_boolean.cameras", "state": "on", "attributes": {"friendly_name": "Camera alerts"}},
+    {"entity_id": "media_player.tv", "state": "off", "attributes": {"friendly_name": "TV"}},
 ]
 class H(BaseHTTPRequestHandler):
     def _j(self, obj, code=200):

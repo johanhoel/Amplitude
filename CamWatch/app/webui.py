@@ -2187,15 +2187,27 @@ a{color:var(--accent);text-decoration:none}
 a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 header{position:sticky;top:0;z-index:20;display:flex;gap:10px;align-items:center;padding:10px 14px;background:rgba(16,20,24,.97);border-bottom:1px solid var(--line)}
 header .brand{font-weight:750;font-size:20px;color:var(--fg);flex:none;display:inline-flex;align-items:center;gap:8px}
-header nav{display:flex;gap:6px;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none;padding:2px 0}
+/* Fifteen pages, about ten of which fit: the bar scrolls sideways with its
+   scrollbar hidden, so the rest were not merely out of sight, there was
+   nothing to say they existed. The wrapper fades whichever edge has more
+   behind it - set by the script below, so a bar with nothing hidden is not
+   dimmed for show. */
+header .navwrap{position:relative;flex:1;min-width:0;display:flex}
+header .navwrap::before,header .navwrap::after{content:'';position:absolute;top:0;bottom:0;width:38px;pointer-events:none;opacity:0;
+  transition:opacity 160ms cubic-bezier(0.23,1,0.32,1);z-index:1}
+header .navwrap::before{left:0;background:linear-gradient(to right,rgba(16,20,24,.97),transparent)}
+header .navwrap::after{right:0;background:linear-gradient(to left,rgba(16,20,24,.97),transparent)}
+header .navwrap.more-l::before,header .navwrap.more-r::after{opacity:1}
+header nav{display:flex;gap:6px;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none;padding:2px 0;scroll-behavior:smooth}
 header nav::-webkit-scrollbar{display:none}
+@media (prefers-reduced-motion:reduce){header nav{scroll-behavior:auto}header .navwrap::before,header .navwrap::after{transition:none}}
 header nav a{flex:none;min-height:36px;padding:0 13px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);
   font-weight:650;font-size:13.5px;display:inline-flex;align-items:center;white-space:nowrap}
 header nav a:hover{border-color:var(--accent)}
 header nav a.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 header .tools{display:flex;gap:6px;align-items:center;flex:none}
 header .tools button.armed{border-color:var(--accent);color:var(--accent);background:var(--card)}
-@media (max-width:820px){header{flex-wrap:wrap;row-gap:8px}header nav{order:3;flex-basis:100%}header .tools{margin-left:auto}}
+@media (max-width:820px){header{flex-wrap:wrap;row-gap:8px}header .navwrap{order:3;flex-basis:100%}header .tools{margin-left:auto}}
 main{max-width:1100px;margin:0 auto;padding:12px 12px 24px}
 footer.ver{max-width:1100px;margin:0 auto;padding:0 12px 28px;color:var(--dim);font-size:12px;text-align:center}
 h1{font-size:26px;font-weight:750;margin:16px 0 12px;line-height:1.2}h1 .muted{font-size:15px;font-weight:600}
@@ -2270,15 +2282,42 @@ ol li,ul li{margin:4px 0}
 </style><link rel="stylesheet" href="/static/icons.css">
 </head><body>
 <header><a class="brand" href="{{ url_for('dashboard') }}"><img src="/static/mark.svg" alt="" width="29" height="29">camwatch</a>
-<nav aria-label="Pages">{% for ep, ic, label in [('dashboard', 'home', 'Home'), ('wall_view', 'phone', 'View'), ('index', 'film', 'Clips'), ('search_page', 'search', 'Search'), ('live', 'antenna', 'Live'), ('log_page', 'list', 'Log'), ('report_page', 'chart', 'Report'), ('timelapse_page', 'refresh', 'Timelapse'), ('people_page', 'person', 'People'), ('strangers_page', 'question', 'Strangers'), ('plates_page', 'car', 'Plates'), ('zones_page', 'map', 'Zones'), ('studio_page', 'grid', 'Studio'), ('settings_page', 'gear', 'Settings'), ('ha_page', 'home', 'Home Assistant')] %}
-<a href="{{ url_for(ep) }}" class="{{ 'on' if request.endpoint == ep }}"><i class="icon icon-{{ ic }}" aria-hidden="true"></i> {{ label }}</a>{% endfor %}</nav>
+<div class="navwrap"><nav aria-label="Pages">{% for ep, ic, label in [('dashboard', 'home', 'Home'), ('wall_view', 'phone', 'View'), ('index', 'film', 'Clips'), ('search_page', 'search', 'Search'), ('live', 'antenna', 'Live'), ('log_page', 'list', 'Log'), ('report_page', 'chart', 'Report'), ('timelapse_page', 'refresh', 'Timelapse'), ('people_page', 'person', 'People'), ('strangers_page', 'question', 'Strangers'), ('plates_page', 'car', 'Plates'), ('zones_page', 'map', 'Zones'), ('studio_page', 'grid', 'Studio'), ('settings_page', 'gear', 'Settings'), ('ha_page', 'home', 'Home Assistant')] %}
+<a href="{{ url_for(ep) }}" class="{{ 'on' if request.endpoint == ep }}"><i class="icon icon-{{ ic }}" aria-hidden="true"></i> {{ label }}</a>{% endfor %}</nav></div>
 <div class="tools">{% if update_ready %}<a class="upd-pill" href="{{ url_for('settings_page') }}#updates" title="Version {{ update_ready }} is ready"><i class="icon icon-upload" aria-hidden="true"></i> Update</a>{% endif %}
 {% if people %}<form method="get" action="{{ url_for('index') }}"><select name="person" onchange="this.form.submit()" aria-label="Filter by person">
 <option value="">Person…</option>{% for p in people %}<option {{ 'selected' if p == person }}>{{ p }}</option>{% endfor %}</select></form>{% endif %}
 <form method="post" action="{{ url_for('quick_arm') }}" title="Mode: {{ arm_mode }}"><button class="{{ 'armed' if armed }}">{% if armed %}<i class="icon icon-shield" aria-hidden="true"></i> Armed{% else %}<i class="icon icon-bell-off" aria-hidden="true"></i> Disarmed{% endif %}</button></form></div>
 </header>
 <main>{% block body %}{% endblock %}</main>
-<footer class="ver">camwatch {{ app_version.text }}{% if app_version.date %} · {{ app_version.date }}{% endif %} · <a href="{{ url_for('requests_page') }}"><i class="icon icon-bulb" aria-hidden="true"></i> Request a feature</a></footer></body></html>""",
+<footer class="ver">camwatch {{ app_version.text }}{% if app_version.date %} · {{ app_version.date }}{% endif %} · <a href="{{ url_for('requests_page') }}"><i class="icon icon-bulb" aria-hidden="true"></i> Request a feature</a></footer>
+<script>
+/* The page bar scrolls sideways. Fade whichever end has more behind it, and
+   bring the page you are on into view, so the bar says where you are and
+   that there is more of it. */
+(function () {
+  var wrap = document.querySelector('header .navwrap'), nav = wrap && wrap.querySelector('nav');
+  if (!nav) return;
+  function edges() {
+    var max = nav.scrollWidth - nav.clientWidth;
+    wrap.classList.toggle('more-l', nav.scrollLeft > 2);
+    wrap.classList.toggle('more-r', nav.scrollLeft < max - 2);
+  }
+  var here = nav.querySelector('a.on');
+  if (here) here.scrollIntoView({ block: 'nearest', inline: 'center' });
+  edges();
+  nav.addEventListener('scroll', edges, { passive: true });
+  addEventListener('resize', edges);
+  // The pills are as wide as their words, so they are not their final size
+  // until the icon font and the stylesheet have landed. Measured once at
+  // parse time the bar can conclude nothing is hidden and never look again -
+  // which is how this read as a bar with nothing behind its edge inside a
+  // slow frame. Re-measure when the page finishes and when the box changes.
+  addEventListener('load', edges);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(edges);
+  if (window.ResizeObserver) new ResizeObserver(edges).observe(nav);
+})();
+</script></body></html>""",
 
     "requests.html": """{% extends "base.html" %}
 {% block title %}Request a feature{% endblock %}

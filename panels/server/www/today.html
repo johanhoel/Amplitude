@@ -53,7 +53,7 @@
   <div class="filters" id="filters"></div>
   <div class="cols">
     <div><div class="cap">Coming up</div><section class="card feed" id="ahead"></section>
-      <div class="cap">Next hours</div><div class="hours" id="hours"></div></div>
+      <div id="hours-block" hidden><div class="cap">Next hours</div><div class="hours" id="hours"></div></div></div>
     <div><div class="cap">Earlier today <small id="count"></small></div><section class="card feed" id="past"><div class="empty">Loading…</div></section></div>
   </div>
 </div>
@@ -112,7 +112,12 @@ function evRow(e, future) {
     <${tag} class="tx"><b>${esc(e.title)}</b>${e.sub ? `<span>${esc(e.sub)}</span>` : ''}${e.img ? `<img src="${esc(e.img)}" alt="" loading="lazy">` : ''}</${close}></div>`;
 }
 function ribbon() {
-  const F = D.family; if (!F) return;
+  // Who was home, as a day-long track per person. Without Home Assistant
+  // people there is no day to draw, and a card that says "Loading the day…"
+  // for ever reads as broken - so the card goes instead.
+  const F = D.family;
+  if (!F || !(F.people || []).length) { $('#ribbon').hidden = true; return; }
+  $('#ribbon').hidden = false;
   const m0 = F.midnight * 1000, span = 86400000, pct = t => Math.max(0, Math.min(100, (t - m0) / span * 100));
   const hours = [0, 3, 6, 9, 12, 15, 18, 21, 24].map(h => `<span style="left:${h / 24 * 100}%">${String(h).padStart(2, '0')}</span>`).join('');
   const cams = {}; (F.camera || []).forEach(c => (cams[c.name] = cams[c.name] || []).push(new Date(c.at).getTime()));
@@ -133,6 +138,7 @@ function render() {
   $('#past').innerHTML = past.map(e => evRow(e, false)).join('') || '<div class="empty">A quiet day so far.</div>';
   $('#count').textContent = past.length ? past.length + ' events' : '';
   const hrs = (D.weather?.hourly || []).filter(h => new Date(h.datetime) > Date.now() - 3600000).slice(0, 12);
+  $('#hours-block').hidden = !hrs.length;
   $('#hours').innerHTML = hrs.map((h, i) => `<div class="hr">${i ? new Date(h.datetime).getHours().toString().padStart(2, '0') : 'Now'}<span class="e">${WX[h.condition] || '·'}</span><b class="num">${Math.round(h.temperature)}°</b><span class="p">${(h.precipitation || 0) >= .1 ? h.precipitation.toFixed(1) : ''}</span></div>`).join('');
 }
 $('#filters').addEventListener('click', e => { const b = e.target.closest('button[data-f]'); if (!b) return; filter = b.dataset.f; try { localStorage.setItem('todayFilter', filter); } catch {} render(); });

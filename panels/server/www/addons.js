@@ -19,6 +19,15 @@
     root.setAttribute('data-addons', list);
   }
 
+  /* For a page that builds its cards in JS rather than marking up every one.
+   * Same rule as the stylesheet, including the safe direction: before any
+   * answer has arrived nothing is hidden, because showing a card the house
+   * has no hardware for is a smaller fault than an empty page. */
+  window.hasAddon = function (name) {
+    var list = root.getAttribute('data-addons');
+    return list === null || list.split(' ').indexOf(name) !== -1;
+  };
+
   try { apply(localStorage.getItem(KEY)); } catch (e) { /* private window */ }
 
   fetch('/api/addons', { cache: 'no-store' })

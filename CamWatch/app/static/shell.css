@@ -206,6 +206,22 @@
 .ui-list-row:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
 @media (prefers-reduced-motion: reduce) { .ui-list-row { transition-duration: .01ms; } }
 
+
+/* ---- nothing here -----------------------------------------------------
+   A page whose cards all belong to hardware this house has not got ends up
+   blank, and blank reads as broken. This says what is missing and where to
+   say what the house has. Quiet on purpose: it is not an error. */
+.ui-empty { padding: 44px 24px; text-align: center; color: var(--mute); font-size: 14px; line-height: 1.55; }
+.ui-empty b { display: block; color: var(--ink); font-size: 16px; font-weight: 650; margin-bottom: 6px; }
+.ui-empty p { margin: 0 auto; max-width: 44ch; }
+.ui-empty a { color: var(--accent-text); text-decoration: none; }
+/* Beside something rather than instead of it: a page with one card on it
+   needs the same sentence, but as an aside under the card, not centred in
+   the hole where the other cards would be. */
+.ui-empty.is-aside { text-align: left; padding: 4px 2px 0; }
+.ui-empty.is-aside p { margin: 0; }
+@media (hover: hover) and (pointer: fine) { .ui-empty a:hover { text-decoration: underline; } }
+
 /* ---- search ---------------------------------------------------------- */
 .ui-search { margin-top: 12px; }
 .ui-search input {
