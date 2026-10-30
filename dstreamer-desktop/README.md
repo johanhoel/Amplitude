@@ -12,7 +12,12 @@ It works in two setups:
   computer, usually a small Linux box that phones play to with AirPlay. The
   app watches it from your PC or Mac.
 
-What the app shows and does:
+## Screenshots
+
+Not taken yet. They will go in `docs/screenshots/`: the start page, the
+Status tab and the Meters tab, on Windows and macOS.
+
+## Features
 
 - The device name, engine state, network address, clock state and leader,
   sample rate, channels, dropouts in the last hour and the apps playing.
@@ -23,12 +28,7 @@ What the app shows and does:
 - Find on network: lists DStreamer boxes, so you don't type addresses.
 - Several DStreamers in one list (add, edit, remove).
 
-## Screenshots
-
-Not taken yet. They will go in `docs/screenshots/`: the start page, the
-Status tab and the Meters tab, on Windows and macOS.
-
-## Download
+## Install
 
 Get the newest `desktop-v1.0.…` release from the
 [Releases page](https://github.com/johanhoel/Amplitude/releases).
@@ -43,12 +43,10 @@ Get the newest `desktop-v1.0.…` release from the
   *Open*, then *Open* again. The release notes say whether this build is
   notarized; a notarized build opens without that step.
 
-## Connect to your DStreamer
+### A. This computer plays to the Dante speakers
 
 The first time the app opens, it shows a start page with the two setups.
 Follow the one that matches yours.
-
-### A. This computer plays to the Dante speakers
 
 You need the computer, the Dante speakers or amplifier, and a network switch
 or router they are all plugged into. A wired network works best; Dante over
@@ -148,22 +146,19 @@ Without remote access, an SSH tunnel also works: run
 `ssh -L 8480:127.0.0.1:8480 <user>@<box>` on your computer, keep it open,
 and add host `localhost` without a password.
 
-### When it does not connect
+## Use
 
-The app shows a red line at the top. What it means:
+### Try the app without Dante equipment
 
-| The app says | Do this |
-|---|---|
-| Virgil is not running on this computer | Click **Install Virgil** on the start page. If it is installed, start *Virgil Control* from the Start menu or Applications. |
-| Installation cancelled | You clicked *No* or *Cancel* at the permission prompt. Click **Install Virgil** again. |
-| *Host* does not accept connections on port 8480 | Remote access is off on the box. Do setup B on the box, then try again. |
-| Wrong or missing password | Select the host, click **Edit** and type `REMOTE_PASSWORD` from the box's `.env` file. |
-| Too many wrong passwords | Wait a minute, then fix the password. |
-| Cannot reach *host* (timed out) | The box is off, on another network, or the IP address changed. Click **Find on network** again. |
-| No DStreamer found | The box is off or on another network segment. Type its IP address instead; your router's list of devices shows it. |
-| Clock stays `free-run` or `stopped` | Virgil does not hear a Dante clock. Check that the speakers are on and on the same network, and that the computer uses the wired adapter (Virgil's *Settings…*). |
+`tools/mock_virgil.py` answers like Virgil, with moving meters on transmit 1
+and 2. Run it on any computer with Python 3 and add that computer's IP:
 
-## Virgil inside the app
+```bash
+python3 dstreamer-desktop/tools/mock_virgil.py                    # port 8480, no password
+python3 dstreamer-desktop/tools/mock_virgil.py --password testtest
+```
+
+## How it is built
 
 Both apps carry [Virgil](https://github.com/Audbol/Virgil-Virtual-Soundcard)
 0.8.1, free software under the GNU GPL v3; its source is at that link.
@@ -176,23 +171,13 @@ Both apps carry [Virgil](https://github.com/Audbol/Virgil-Virtual-Soundcard)
 To move to a newer Virgil, change `VIRGIL_VERSION`, `VIRGIL_COMMIT` and
 `VIRGIL_WIN_SHA256` at the top of `.github/workflows/build-desktop.yml`.
 
-## Where the app keeps its settings
+### Where the app keeps its settings
 
 - Windows: `%APPDATA%\DStreamerController\instances.json`. Passwords in
   it are encrypted for your Windows user.
 - macOS: the app's user defaults; passwords are in the login keychain.
 
-## Try the app without Dante equipment
-
-`tools/mock_virgil.py` answers like Virgil, with moving meters on transmit 1
-and 2. Run it on any computer with Python 3 and add that computer's IP:
-
-```bash
-python3 dstreamer-desktop/tools/mock_virgil.py                    # port 8480, no password
-python3 dstreamer-desktop/tools/mock_virgil.py --password testtest
-```
-
-## Building
+### Building
 
 See [macos/README.md](macos/README.md) and
 [windows/README.md](windows/README.md). The CI workflow is
@@ -207,12 +192,29 @@ variables, Actions):
 |---|---|
 | `DEVELOPER_ID_CERT_BASE64`, `DEVELOPER_ID_CERT_PASSWORD` | The Developer ID Application certificate (.p12, base64) and its password. Required. |
 | `DEVELOPER_ID_TEAM` or `APPLE_TEAM_ID` | Team ID, part of the certificate name. Required. |
-| `APPLE_ID`, `APPLE_APP_PASSWORD` | Notarization with an Apple ID and an app-specific password from appleid.apple.com. The same secrets `installers.yml` uses. |
+| `APPLE_ID`, `APPLE_APP_PASSWORD` | Notarization with an Apple ID and an app-specific password from appleid.apple.com. |
 | `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID`, `APPLE_API_KEY_BASE64` | Notarization with an App Store Connect API key instead (the .p8 file in base64). |
 
 Without one of the two notarization sets, the job signs the app, skips
 notarization and shows a warning on the run page.
 
-## License
+## Troubleshooting
+
+The app shows a red line at the top. What it means:
+
+| The app says | Do this |
+|---|---|
+| Virgil is not running on this computer | Click **Install Virgil** on the start page. If it is installed, start *Virgil Control* from the Start menu or Applications. |
+| Installation cancelled | You clicked *No* or *Cancel* at the permission prompt. Click **Install Virgil** again. |
+| *Host* does not accept connections on port 8480 | Remote access is off on the box. Do setup B on the box, then try again. |
+| Wrong or missing password | Select the host, click **Edit** and type `REMOTE_PASSWORD` from the box's `.env` file. |
+| Too many wrong passwords | Wait a minute, then fix the password. |
+| Cannot reach *host* (timed out) | The box is off, on another network, or the IP address changed. Click **Find on network** again. |
+| No DStreamer found | The box is off or on another network segment. Type its IP address instead; your router's list of devices shows it. |
+| Clock stays `free-run` or `stopped` | Virgil does not hear a Dante clock. Check that the speakers are on and on the same network, and that the computer uses the wired adapter (Virgil's *Settings…*). |
+
+## Notes
+
+### Licence
 
 GPLv3, same as DStreamer.

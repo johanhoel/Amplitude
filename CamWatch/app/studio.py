@@ -112,6 +112,86 @@ def attention(items, conf=None):
     return out
 
 
+# ---- the dashboard you design ----------------------------------------
+# The dashboard used to be a fixed page: the same six stats, the same strip of
+# cameras, the same wall of links, in that order, for everyone. These are the
+# pieces it is made of. You choose which ones you want and in what order, and
+# which page CamWatch opens on - the phone's home screen icon follows it too.
+#
+# id, name, what it is, and whether a phone gets it (the phone home is narrow;
+# the page directory would be a mile of tiles on it).
+# id, name, what it is, and what it needs before it can be shown.
+CARDS = [
+    ("attention", "Needs attention", "Unusual visits, a package waiting, a stranger seen again", None),
+    ("stats", "Today's numbers", "Camera, events, who was seen, packages, storage", None),
+    ("search", "Search", "Find recordings by description", None),
+    ("now", "Now", "The live picture and the last event", None),
+    ("cameras", "Cameras", "Every camera, with its last picture", None),
+    ("weather", "Weather", "Outside, as Home Deck sees it", "homedeck"),
+    ("heatmap", "Where people walked", "The last seven days, drawn on the camera's view", None),
+    ("pages", "All pages", "The directory of every page in camwatch", None),
+]
+DEFAULT_LAYOUT = ["attention", "stats", "search", "now", "cameras", "heatmap", "pages"]
+# Where the app opens: the page the icon on a phone starts at, and where the
+# logo takes you. Anything else would need its own entry in the manifest.
+LANDINGS = [("/m", "Phone home"), ("/dashboard", "Dashboard"), ("/", "Clips"), ("/view", "Camera view")]
+
+
+def card_ids():
+    return [c[0] for c in CARDS]
+
+
+def cards(conf=None):
+    """The catalogue for the Studio: every card, whether it is on, and whether
+    this house can have it at all. A card whose source is missing is offered
+    but says what it is waiting for, rather than quietly not being there."""
+    import homedeck
+
+    on = layout(conf)
+    have = {"homedeck": bool(homedeck.synced().get("devices") or homedeck.key(conf))}
+    return [{"id": i, "name": n, "what": w, "needs": need,
+             "ready": not need or have.get(need, False), "on": i in on,
+             "at": on.index(i) if i in on else None} for i, n, w, need in CARDS]
+
+
+def layout(conf=None):
+    """The cards this house wants, in order. Unknown names are dropped, so a card
+    removed from a later version does not leave a hole in somebody's dashboard."""
+    conf = conf or settings.load()
+    saved = conf.get("dashboard_cards")
+    if not isinstance(saved, list):
+        return list(DEFAULT_LAYOUT)
+    known = card_ids()
+    return [c for c in saved if c in known]
+
+
+def set_layout(cards):
+    """-> error, or None. Order is the order given; anything not named is off."""
+    if not isinstance(cards, list) or any(not isinstance(c, str) for c in cards):
+        return "that is not a list of cards"
+    known = card_ids()
+    bad = [c for c in cards if c not in known]
+    if bad:
+        return f"unknown card: {bad[0]}"
+    if len(set(cards)) != len(cards):
+        return "a card can only be on the dashboard once"
+    settings.update(dashboard_cards=list(cards))
+    return None
+
+
+def landing(conf=None):
+    conf = conf or settings.load()
+    want = conf.get("landing_page")
+    return want if want in [p for p, _ in LANDINGS] else LANDINGS[0][0]
+
+
+def set_landing(path):
+    if path not in [p for p, _ in LANDINGS]:
+        return "that is not a page camwatch can open on"
+    settings.update(landing_page=path)
+    return None
+
+
 # ---- the draft -------------------------------------------------------
 
 def draft():

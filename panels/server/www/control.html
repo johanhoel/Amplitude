@@ -13,9 +13,12 @@
    progress). Speaker volume is a big drag slider. Data: /api/home/state, /api/status, /api/ops/snapshot;
    actions: /api/home/do, /api/genelec, /api/dante/source, /api/pc/do, /api/ops/act */
 
-.cc { display: grid; gap: 12px; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-auto-rows: auto; }
-@media (max-width: 1100px) { .cc { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
-@media (max-width: 700px) { .cc { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; } .ui-ctl { min-height: 86px; } }
+/* Tiles are as wide as their words need, and the row fills the width it has.
+   A fixed 8-column grid made every title wrap ("Front / door", "Source: / PC")
+   and left a quarter of a 1280 px panel empty when a group had 6 tiles. */
+.cc { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); grid-auto-rows: auto; }
+.cc > .ui-empty { grid-column: 1 / -1; padding-top: 28px; }
+@media (max-width: 700px) { .cc { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .ui-ctl { min-height: 86px; } }
 .vol { grid-column: span 2; grid-row: span 3; padding: 0; display: flex; flex-direction: column; min-height: 0; }
 .vol .sl { position: relative; flex: 1; margin: 10px; border-radius: var(--r); background: rgba(255,255,255,.07); overflow: hidden; touch-action: none; cursor: ns-resize; min-height: 200px; }
 .vol .sl i { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: linear-gradient(0deg, #f472b6, #7dd3fc); transition: height .2s; }
@@ -54,35 +57,43 @@ const toast = t => { const el = $('#toast'); el.textContent = t; el.classList.ad
 const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })
   .then(r => r.json().catch(() => ({})).then(j => { if (!r.ok || j.error || j.ok === false) throw new Error(j.error || j.msg || 'HTTP ' + r.status); return j; }));
 const home = (b) => post('/api/home/do', b);
-// tile definitions: id, group, icon, title, state(), action, hold?
+// tile definitions: id, group, icon, title, state(), action, hold?, need?
+// need: the addon this tile is for. A house with no speakers should not be
+// offered a mute button that talks to nothing, and a group whose tiles all
+// went away should not leave its heading behind. addons.js/hasAddon.
 function tiles() {
   const door = H?.door?.state, g = S?.genelec, gon = g?.power === 'ACTIVE';
   const T = [
     ['g-home', 'grp', 'House'],
-    { id: 'lock', ic: door === 'locked' ? 'lock' : 'unlock', t: 'Front door', s: door === 'locked' ? 'Locked' : (door || '–') + ' · hold to lock', on: door === 'locked', c: '#34d399', cls: door === 'locked' ? '' : 'bad', hold: true, run: () => home({ do: 'lock' }), ok: 'Locking…' },
-    { id: 'alloff', ic: 'bulb', t: 'All lights off', s: `${H ? H.rooms.reduce((a, r) => a + r.lights.filter(l => l.on).length, 0) : '–'} on now`, hold: true, run: () => home({ do: 'all_off' }), ok: 'All lights off' },
-    { id: 'detect', ic: 'target', t: 'Camera alerts', s: H?.detect ? 'On' : 'Off', on: !!H?.detect, c: '#fb7185', hold: true, run: () => home({ do: 'detect' }), ok: 'Camera alerts switched' },
-    { id: 'charger', ic: 'bolt', t: 'EV charger', s: H?.charger_on ? 'Enabled' : 'Paused', on: !!H?.charger_on, c: '#fbbf24', hold: true, run: () => home({ do: 'charger' }), ok: 'Charger switched' },
-    { id: 'vac', ic: 'vacuum', t: H?.vacuum?.state === 'cleaning' ? 'Vacuum: dock' : 'Vacuum: start', s: (H?.vacuum?.state || '–').replace(/_/g, ' '), on: H?.vacuum?.state === 'cleaning', c: '#22d3ee',
+    { id: 'lock', need: 'lock', ic: door === 'locked' ? 'lock' : 'unlock', t: 'Front door', s: door === 'locked' ? 'Locked' : (door || '–') + ' · hold to lock', on: door === 'locked', c: '#34d399', cls: door === 'locked' ? '' : 'bad', hold: true, run: () => home({ do: 'lock' }), ok: 'Locking…' },
+    { id: 'alloff', when: () => (H?.rooms || []).some(r => r.lights.length), ic: 'bulb', t: 'All lights off', s: `${H ? H.rooms.reduce((a, r) => a + r.lights.filter(l => l.on).length, 0) : '–'} on now`, hold: true, run: () => home({ do: 'all_off' }), ok: 'All lights off' },
+    { id: 'detect', need: 'cameras', ic: 'target', t: 'Camera alerts', s: H?.detect ? 'On' : 'Off', on: !!H?.detect, c: '#fb7185', hold: true, run: () => home({ do: 'detect' }), ok: 'Camera alerts switched' },
+    { id: 'charger', need: 'charger', ic: 'bolt', t: 'EV charger', s: H?.charger_on ? 'Enabled' : 'Paused', on: !!H?.charger_on, c: '#fbbf24', hold: true, run: () => home({ do: 'charger' }), ok: 'Charger switched' },
+    { id: 'vac', need: 'vacuum', ic: 'vacuum', t: H?.vacuum?.state === 'cleaning' ? 'Vacuum: dock' : 'Vacuum: start', s: (H?.vacuum?.state || '–').replace(/_/g, ' '), on: H?.vacuum?.state === 'cleaning', c: '#22d3ee',
       run: () => home({ do: 'vacuum', value: H?.vacuum?.state === 'cleaning' ? 'return_to_base' : 'start' }), ok: 'Vacuum told' },
-    { id: 'wake', ic: 'power', t: 'Wake PC', s: S?.pc_online ? 'PC is on' : 'PC is off', on: !!S?.pc_online, c: '#60a5fa', run: () => home({ do: 'wake_pc' }), ok: 'Wake-on-LAN sent' },
+    { id: 'wake', need: 'pc', ic: 'power', t: 'Wake PC', s: S?.pc_online ? 'PC is on' : 'PC is off', on: !!S?.pc_online, c: '#60a5fa', run: () => home({ do: 'wake_pc' }), ok: 'Wake-on-LAN sent' },
     ['g-audio', 'grp', 'Speakers & media'],
-    'VOL',
-    { id: 'spk', ic: 'volume', t: 'Speakers', s: gon ? 'Active' : g?.power ? 'Standby' : '–', on: gon, c: '#7dd3fc', run: () => post('/api/genelec', { action: 'power', value: !gon }), ok: gon ? 'Speakers to standby' : 'Waking speakers' },
-    { id: 'mute', ic: g?.mute ? 'mute' : 'speaker', t: g?.mute ? 'Unmute' : 'Mute', s: g?.mute ? 'Muted' : 'Sound on', on: !!g?.mute, c: '#fb7185', run: () => post('/api/genelec', { action: 'mute', value: !g?.mute }), ok: 'Mute switched' },
-    { id: 'srcpc', ic: 'desktop', t: 'Source: PC', s: S?.dante?.source === 'pc' ? 'Playing from PC' : 'Switch to PC', on: S?.dante?.source === 'pc', c: '#60a5fa', run: () => post('/api/dante/source', { source: 'pc' }), ok: 'Source: PC' },
-    { id: 'srcbt', ic: 'bluetooth', t: 'Source: Bluetooth', s: S?.dante?.source === 'bt' ? 'Playing from Bluetooth' : 'Switch to Bluetooth', on: S?.dante?.source === 'bt', c: '#22d3ee', run: () => post('/api/dante/source', { source: 'bt' }), ok: 'Source: Bluetooth' },
-    'MEDIA',
+    ...(hasAddon('speakers') ? ['VOL'] : []),
+    { id: 'spk', need: 'speakers', ic: 'volume', t: 'Speakers', s: gon ? 'Active' : g?.power ? 'Standby' : 'Not answering', on: gon, c: '#7dd3fc', run: () => post('/api/genelec', { action: 'power', value: !gon }), ok: gon ? 'Speakers to standby' : 'Waking speakers' },
+    { id: 'mute', need: 'speakers', ic: g?.mute ? 'mute' : 'speaker', t: g?.mute ? 'Unmute' : 'Mute', s: g?.mute ? 'Muted' : 'Sound on', on: !!g?.mute, c: '#fb7185', run: () => post('/api/genelec', { action: 'mute', value: !g?.mute }), ok: 'Mute switched' },
+    { id: 'srcpc', need: 'speakers', ic: 'desktop', t: 'Source: PC', s: S?.dante?.source === 'pc' ? 'Playing from PC' : 'Switch to PC', on: S?.dante?.source === 'pc', c: '#60a5fa', run: () => post('/api/dante/source', { source: 'pc' }), ok: 'Source: PC' },
+    { id: 'srcbt', need: 'speakers', ic: 'bluetooth', t: 'Source: Bluetooth', s: S?.dante?.source === 'bt' ? 'Playing from Bluetooth' : 'Switch to Bluetooth', on: S?.dante?.source === 'bt', c: '#22d3ee', run: () => post('/api/dante/source', { source: 'bt' }), ok: 'Source: Bluetooth' },
+    ...(hasAddon('spotify') || hasAddon('tv') ? ['MEDIA'] : []),
     ['g-pc', 'grp', 'Computer'],
-    { id: 'pclock', ic: 'lock', t: 'Lock PC', s: 'Windows lock screen', hold: true, run: () => post('/api/pc/do', { action: 'lock' }), ok: 'PC locked' },
-    { id: 'mic', ic: 'mic', t: 'Mic mute', s: 'Toggle default mic', run: () => post('/api/pc/do', { action: 'mic' }), ok: 'Mic toggled' },
-    { id: 'game', ic: 'gamepad', t: 'Game mode', s: 'Power plan', run: () => post('/api/pc/do', { action: 'gamemode' }), ok: 'Game mode toggled' },
-    { id: 'sleep', ic: 'moon', t: 'Sleep PC', s: 'Hold to sleep', hold: true, run: () => post('/api/pc/do', { action: 'sleep' }), ok: 'PC going to sleep' },
+    { id: 'pclock', need: 'pc', ic: 'lock', t: 'Lock PC', s: 'Windows lock screen', hold: true, run: () => post('/api/pc/do', { action: 'lock' }), ok: 'PC locked' },
+    { id: 'mic', need: 'pc', ic: 'mic', t: 'Mic mute', s: 'Toggle default mic', run: () => post('/api/pc/do', { action: 'mic' }), ok: 'Mic toggled' },
+    { id: 'game', need: 'pc', ic: 'gamepad', t: 'Game mode', s: 'Power plan', run: () => post('/api/pc/do', { action: 'gamemode' }), ok: 'Game mode toggled' },
+    { id: 'sleep', need: 'pc', ic: 'moon', t: 'Sleep PC', s: 'Hold to sleep', hold: true, run: () => post('/api/pc/do', { action: 'sleep' }), ok: 'PC going to sleep' },
     ['g-lab', 'grp', 'Network'],
     ...(SNAP?.lab_commands || []).filter(c => !c.two).map(c => ({ id: 'lab-' + c.key, ic: c.key.startsWith('speed') ? 'updown' : c.key.startsWith('resume') ? 'play' : 'pause', t: c.label, s: 'Pi-hole ×2',
       run: () => post('/api/ops/act', { key: c.key }), ok: c.label })),
   ];
-  return T;
+  return dropEmptyGroups(T.filter(x => !x?.need || hasAddon(x.need)));
+}
+// A heading with nothing under it reads as something that failed to load.
+function dropEmptyGroups(list) {
+  return list.filter((x, i) => !(Array.isArray(x) && x[1] === 'grp')
+    || list.slice(i + 1).some(y => !(Array.isArray(y) && y[1] === 'grp')));
 }
 function mediaTile(p, label) {
   if (!p) return '';
@@ -108,7 +119,14 @@ function render() {
   // in [[players]]. This used to look for one house's entity ids.
   const players = H.players || [], sp = players.find(p => p.id === H.music) || players[0],
         others = players.filter(p => p !== sp).slice(0, 1);
-  $('#cc').innerHTML = tiles().map(t => {
+  const T = tiles(), real = T.filter(t => t && !Array.isArray(t)).length;
+  // A page with one switch on it looks like the rest failed to load. Under
+  // three, say where the others come from; above that the page speaks for
+  // itself and a standing note would only be in the way.
+  const note = real >= 3 ? '' : `<div class="ui-empty${real ? ' is-aside' : ''}">${real ? '' : '<b>Nothing to control yet</b>'}
+    <p>The switches here follow what the settings say this house has.
+    Add more from <a href="/start">Start</a> &rarr; the gear &rarr; Plugins, or run the setup wizard again.</p></div>`;
+  $('#cc').innerHTML = T.map(t => {
     if (t === 'VOL') return volTile();
     if (t === 'MEDIA') return (sp ? mediaTile(sp, sp.label) : '') + (H.appletv ? mediaTile(H.appletv, 'Apple TV') : '')
       + others.map(p => mediaTile(p, p.label)).join('');
@@ -117,7 +135,7 @@ function render() {
     const state = [t.on && 'is-on', t.cls && 'is-' + t.cls, busy && 'is-' + busy].filter(Boolean).join(' ');
     return `<button class="ui-ctl ${state}" data-id="${t.id}" style="--c:${t.c || 'var(--ok)'}"><i class="ui-ctl-fill"></i>
       ${t.hold ? '<span class="ui-ctl-hold">hold</span>' : ''}<span class="ui-ctl-ic"><i class="icon icon-${t.ic}" aria-hidden="true"></i></span><span><b>${esc(t.t)}</b><small>${esc(t.s)}</small></span></button>`;
-  }).join('');
+  }).join('') + note;
 }
 const byId = id => tiles().find(t => t && t.id === id);
 async function run(id) {

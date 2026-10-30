@@ -37,6 +37,14 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .camgrid span { position: absolute; left: 8px; bottom: 8px; padding: 3px 10px; border-radius: 999px; background: rgba(0,0,0,.6); font-weight: 700; font-size: 13px; }
 .heat { display: block; border-radius: var(--r); overflow: hidden; border: 1px solid var(--line); background: #000; }
 .heat img { width: 100%; display: block; }
+.alerts { display: grid; gap: 8px; }
+.alert { display: flex; gap: 12px; align-items: center; padding: 14px 16px; background: var(--card); border: 1px solid var(--line);
+  border-left: 3px solid var(--accent); border-radius: var(--r); color: inherit; text-decoration: none; }
+.alert.warn { border-left-color: var(--warn); }
+.alert b { display: block; font-weight: 650; } .alert small { color: var(--mute); font-size: 13px; }
+.wx { display: flex; gap: 14px; align-items: baseline; padding: 16px 18px; background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--r); color: inherit; text-decoration: none; }
+.wx b { font-size: 30px; font-weight: 300; } .wx span { color: var(--mute); font-size: 13.5px; }
 /* JS fills these in; without this they paint a broken-image icon on first load. */
 img:not([src]), img[src=""] { visibility: hidden; }
 </style>
@@ -47,6 +55,9 @@ img:not([src]), img[src=""] { visibility: hidden; }
 <div class="ui-page">
   <header class="ui-head"><h1><img src="/static/mark.svg" alt="" width="34" height="34" style="vertical-align:-8px;margin-right:8px">camwatch <small id="cam"></small></h1><form method="post" action="/arm"><button class="arm" id="arm"></button></form></header>
 
+{# The dashboard is made of cards the house chose (Studio). Each one is a
+   macro so the order below is the only thing that decides what you see. #}
+{% macro card_stats() %}
   <div class="ui-stats">
     <div class="ui-stat"><span>Camera</span><b id="s-cam">…</b><span id="s-cam2"></span></div>
     <div class="ui-stat"><span>Events today</span><b id="s-today">…</b><span id="s-week"></span></div>
@@ -55,17 +66,21 @@ img:not([src]), img[src=""] { visibility: hidden; }
     <div class="ui-stat"><span>Packages</span><span class="small" id="s-pkg">…</span></div>
     <div class="ui-stat"><span>Storage</span><b id="s-disk">…</b><span id="s-disk2"></span></div>
   </div>
-
+{% endmacro %}
+{% macro card_search() %}
   <form class="ui-search" action="/search" method="get"><input name="q" placeholder="Search recordings: white van, person with a dog, red jacket…" aria-label="Search recordings"></form>
-
+{% endmacro %}
+{% macro card_now() %}
   <div class="ui-cap">Now</div>
   <div class="hero">
     <a class="live" href="/view"><img id="snap" alt="Live camera"><span class="lbl"><i class="icon icon-phone" aria-hidden="true"></i> Open the camera view</span></a>
     <a class="last" id="lastlink" href="/view"><img id="lastimg" alt=""><div class="m"><b id="lastwho">Latest recording</b><span id="lastwhen"></span></div></a>
   </div>
-
+{% endmacro %}
+{% macro card_cameras() %}
   <div id="camsection" hidden><div class="ui-cap">Cameras</div><div class="camgrid" id="camgrid"></div></div>
-
+{% endmacro %}
+{% macro card_pages() %}
   <div class="ui-cap">Pages</div>
   <div class="ui-tiles">
     <a class="ui-tile" href="/m"><i class="icon icon-phone" aria-hidden="true"></i><b>Phone home</b><span>Made for phones: what needs attention, cameras, recent visits</span></a>
@@ -85,9 +100,31 @@ img:not([src]), img[src=""] { visibility: hidden; }
     <a class="ui-tile" href="/?starred=1"><i class="icon icon-star" aria-hidden="true"></i><b>Starred</b><span>Clips kept forever</span></a>
     <a class="ui-tile" href="/homeassistant"><i class="icon icon-home" aria-hidden="true"></i><b>Home Assistant</b><span>Setup guide and automations</span></a>
   </div>
-
+{% endmacro %}
+{% macro card_heatmap() %}
   <div class="ui-cap" id="heat">Where people walked · last 7 days</div>
   <a class="heat" href="/report"><img loading="lazy" src="/api/heatmap.jpg?days=7&w=1280" alt="Heatmap of the last 7 days"></a>
+{% endmacro %}
+{% macro card_attention() %}
+  <div class="ui-cap">Needs attention</div>
+  <div class="alerts" id="alerts"><div class="ui-empty is-aside"><p>Checking…</p></div></div>
+{% endmacro %}
+{% macro card_weather() %}
+  <div class="ui-cap">Outside</div>
+  <a class="wx" id="wx" href="/settings#homedeck"><b id="wx-t">–</b><span id="wx-s">Home Deck has not sent the weather yet</span></a>
+{% endmacro %}
+
+{% for c in cards %}
+{% if c == 'stats' %}{{ card_stats() }}
+{% elif c == 'search' %}{{ card_search() }}
+{% elif c == 'now' %}{{ card_now() }}
+{% elif c == 'cameras' %}{{ card_cameras() }}
+{% elif c == 'pages' %}{{ card_pages() }}
+{% elif c == 'heatmap' %}{{ card_heatmap() }}
+{% elif c == 'attention' %}{{ card_attention() }}
+{% elif c == 'weather' %}{{ card_weather() }}
+{% endif %}
+{% endfor %}
 </div>
 
 <script>
@@ -137,6 +174,22 @@ async function status() {
     $('#lastwho').textContent = s.last.who; $('#lastwhen').textContent = `${hm(s.last.start)} · ${ago(s.last.start)}`;
     $('#lastimg').src = `/api/thumb/${s.last.day}/${s.last.stem}.jpg?w=640`; $('#lastlink').href = `/clip/${s.last.day}/${s.last.stem}`;
   } else { $('#s-last').textContent = 'none yet'; }
+  // Needs attention: the same three things the phone home leads with, for
+  // people who open the dashboard instead.
+  const box = $('#alerts');
+  if (box) {
+    const a = [];
+    if (s.unusual) a.push(['warn', 'alert', s.unusual.title || 'Something unusual', s.unusual.text || '', '/report']);
+    (s.packages_waiting || []).forEach(p => a.push(['', 'package', 'Package at ' + p.zone, 'delivered ' + hm(p.at), '/clips']));
+    if (s.strangers) a.push(['', 'person', s.strangers + (s.strangers === 1 ? ' recurring stranger' : ' recurring strangers'),
+                             'name them once, recognised from then on', '/strangers']);
+    box.innerHTML = a.length
+      ? a.map(([cls, ic, t, sub, href]) => `<a class="alert ${cls}" href="${href}"><i class="icon icon-${ic}" aria-hidden="true"></i>`
+          + `<span><b>${esc(t)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span></a>`).join('')
+      : '<div class="ui-empty is-aside"><p>Nothing needs you right now.</p></div>';
+  }
+  const wx = $('#wx-t');
+  if (wx && s.weather) { wx.textContent = Math.round(s.weather.temperature) + '°'; $('#wx-s').textContent = s.weather.text || 'Outside'; }
   $('#s-pkg').innerHTML = s.packages_waiting.length
     ? s.packages_waiting.map(p => `<span class="warn"><i class="icon icon-package" aria-hidden="true"></i> at ${esc(p.zone)}</span> <span>since ${hm(p.at)}</span>`).join('<br>') : '<span>None waiting</span>';
   if (s.version) $('#ver').textContent = `camwatch ${s.version.text}${s.version.date ? ' · ' + s.version.date : ''}`;

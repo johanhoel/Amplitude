@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Install or update one project on a fresh Debian/Ubuntu machine, without questions.
-# The Mac (.dmg) installer runs this inside its Linux machine; on a Linux box or a Pi, run it directly:
+# Run this on a Debian or Ubuntu machine, or a Raspberry Pi:
 #   curl -fsSL https://raw.githubusercontent.com/johanhoel/amplitude/main/installers/linux/setup.sh | sudo bash -s camwatch
 #   setup.sh camwatch | homedeck | dstreamer
 # It keeps a copy of the repository in /opt/amplitude (updated on every run), then runs the project's own installer.

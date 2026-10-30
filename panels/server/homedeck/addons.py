@@ -38,6 +38,7 @@ PLUGINS = {
     'vacuum': ('Vacuum', 'The vacuum button', 'a vacuum entity'),
     'lock': ('Door lock', 'The door lock', 'a lock entity'),
     'bus': ('Bus departures', 'The next buses', 'a bus stop (the Family info editor)'),
+    'weather': ('Weather', 'Outside temperature, the forecast and the next hours', 'a weather entity'),
     'lab': ('Lab', 'The Proxmox cluster and the lab panel', 'a lab panel service'),
 }
 _lock = threading.Lock()
@@ -91,6 +92,8 @@ def configured():
         'lock': _set('LOCK'),
         # Next departures. On when a stop is set, here or in the editor.
         'bus': bool(_bus_stop()),
+        # Outside temperature on Pulse, Start and Family info.
+        'weather': _set('WEATHER'),
         # The Buttons page the Deck card shows inside itself. A status dot for the
         # Buttons service is not enough: the card embeds one panel's own address.
         'deck': _set('BUTTONS_PANEL'),

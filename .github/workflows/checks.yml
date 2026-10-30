@@ -1,4 +1,4 @@
-# Quick checks for the parts without a test suite: the installers parse, and Home Deck compiles and its
+# Quick checks for the parts without a test suite: the Linux installer parses, and Home Deck compiles and its
 # settings template validates (the same check build_kit.sh runs). Home Deck's page test (panels/tests/smoke.py)
 # needs a running Home Deck and Home Assistant, so it runs on the developer's machine (panels/tools/check.sh).
 name: checks
@@ -13,20 +13,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Shell scripts parse
-        run: |
-          for f in installers/linux/setup.sh installers/macos/build.sh installers/macos/install.command; do
-            bash -n "$f" && echo "ok $f"
-          done
+      - name: The installer parses
+        run: bash -n installers/linux/setup.sh && echo "ok installers/linux/setup.sh"
       - name: shellcheck (errors only)
-        run: shellcheck --severity=error installers/linux/setup.sh installers/macos/build.sh installers/macos/install.command
-      - name: The Windows installer parses
-        shell: pwsh
-        run: |
-          $errors = $null
-          [void][System.Management.Automation.Language.Parser]::ParseFile("$PWD/installers/windows/Install.ps1", [ref]$null, [ref]$errors)
-          if ($errors) { $errors | ForEach-Object { "line $($_.Extent.StartLineNumber): $($_.Message)" }; exit 1 }
-          'ok installers/windows/Install.ps1'
+        run: shellcheck --severity=error installers/linux/setup.sh
+      - name: The installer's own checks
+        run: python3 installers/tests/check.py
 
   homedeck:
     runs-on: ubuntu-24.04
@@ -36,9 +28,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Python compiles
-        run: python -m compileall -q panels/server panels/friend panels/onboard panels/tools panels/tests
+        run: python -m compileall -q panels/server panels/onboard panels/tools panels/tests
       - name: The settings template validates
-        working-directory: panels/friend/src
+        working-directory: panels/server
         run: |
           sed 's#__HA_URL__#http://127.0.0.1:8123#' homedeck.toml > /tmp/hd-check.toml
           HOMEDECK_ROOT="$PWD" HOMEDECK_CONFIG=/tmp/hd-check.toml STATE_DIRECTORY="$(mktemp -d)" HOMEDECK_READONLY=1 \

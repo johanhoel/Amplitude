@@ -2,6 +2,13 @@
 
 Newest first.
 
+## 2026-10-30
+
+- The README follows the shape every project in this repository now uses: Screenshots,
+  Features, Install, Use, How it is built, Troubleshooting, Notes. Download and the two
+  setups are Install, the connection table is Troubleshooting, and what the app shows is a
+  Features list.
+
 ## 2026-10-28 (7)
 
 - Start, Stop and Restart audio show what happens: "Starting Virgil..."

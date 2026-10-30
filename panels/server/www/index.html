@@ -252,7 +252,7 @@ body.lab .deck { justify-self: center; }
   </aside>
 
   <section class="widgets">
-    <article class="card glass wide" id="audio">
+    <article class="card glass wide" id="audio" data-addon="speakers">
       <h3><span>Speakers · Genelec</span><span class="seg" id="src" data-addon="speakers"><button data-s="pc">PC</button><button data-s="bt">Bluetooth</button></span></h3>
       <div class="vol">
         <div class="dial"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="8" stroke-linecap="round" stroke-dasharray="197.9 263.9"/>
@@ -267,7 +267,7 @@ body.lab .deck { justify-self: center; }
       <div class="connect" id="gen-connect" hidden>Enter the Genelec password to show volume. <button data-open>Connect</button></div>
     </article>
 
-    <article class="card glass wide" id="np-card">
+    <article class="card glass wide" id="np-card" data-addon="spotify">
       <div class="np-bg" id="np-bg"></div>
       <div class="np"><div class="art" id="art"></div>
         <div style="min-width:0"><div class="label" style="margin-bottom:4px">Now playing · Spotify</div>
@@ -276,9 +276,9 @@ body.lab .deck { justify-self: center; }
         </div></div>
     </article>
 
-    <article class="card glass" id="climate">
+    <article class="card glass" id="climate" data-addon="weather">
       <h3>Climate</h3>
-      <div class="big" id="out">--<small>°</small></div><div class="sub" id="wx">Outside</div>
+      <div class="big" id="out" data-addon="weather">--<small>°</small></div><div class="sub" id="wx" data-addon="weather">Outside</div>
       <div class="list" id="temps"></div>
     </article>
 
@@ -286,9 +286,9 @@ body.lab .deck { justify-self: center; }
       <h3>Home</h3>
       <div class="big" id="lights">--<small>on</small></div><div class="sub">Lights</div>
       <div class="list">
-        <div><span>Front door</span><b id="door">--</b></div>
-        <div><span>Charger</span><b id="charger" data-addon="charger">--</b></div>
-        <div><span>Dante</span><b id="dante">--</b></div>
+        <div data-addon="lock"><span>Front door</span><b id="door">--</b></div>
+        <div data-addon="charger"><span>Charger</span><b id="charger">--</b></div>
+        <div data-addon="speakers"><span>Dante</span><b id="dante">--</b></div>
       </div>
     </article>
 

@@ -161,8 +161,8 @@ nav.tabs a.on { color: var(--accent); }
 
   <div class="cap"><span>Today</span><a href="/report">Report →</a></div>
   <div class="stats">
-    <div class="stat"><b id="n-today">–</b><span>visits today</span></div>
-    <div class="stat"><b id="n-people">–</b><span>people seen</span></div>
+    <div class="stat"><b id="n-today">–</b><span id="n-today-l">visits today</span></div>
+    <div class="stat"><b id="n-people">–</b><span id="n-people-l">people seen</span></div>
     <div class="stat"><b id="n-week">–</b><span>this week</span></div>
   </div>
   <div class="people" id="people"></div>
@@ -208,7 +208,12 @@ async function loadStatus() {
   $('arm').className = 'arm ' + (s.armed ? 'on' : 'off');
   $('arm').innerHTML = s.armed ? '<i class="icon icon-shield" aria-hidden="true"></i> Armed' : '<i class="icon icon-bell-off" aria-hidden="true"></i> Disarmed';
   $('sub').textContent = s.mode === 'schedule' ? `schedule ${s.schedule}` : (s.armed ? 'pushes on' : 'recording, no pushes');
+  // "1 people seen" is the kind of thing a person reads once and stops
+  // trusting the number next to it.
+  const plural = (n, one, many) => n === 1 ? one : many;
   $('n-today').textContent = s.today; $('n-week').textContent = s.week; $('n-people').textContent = s.people_today.length;
+  $('n-today-l').textContent = plural(s.today, 'visit today', 'visits today');
+  $('n-people-l').textContent = plural(s.people_today.length, 'person seen', 'people seen');
   $('people').innerHTML = s.people_today.map(p => `<a class="person" href="/?person=${encodeURIComponent(p.name)}"><i>${esc(p.name[0])}</i><b>${esc(p.name)}</b><span>${hm(p.last)}</span></a>`).join('');
   attention(s);
   cameras(s.cameras, s.snoozed || {});

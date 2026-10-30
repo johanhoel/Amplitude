@@ -9,6 +9,31 @@ One top-level folder per project, each with its own `README.md` and
 `CHANGELOG.md`. The root `README.md` indexes them; add a row there for a
 new project.
 
+## Every README has the same shape (always)
+
+A reader who knows one project should find their way around the next one
+without looking. Sections come in this order, and keep these names:
+
+```
+# <Name>            one line: what it does, for whom
+<logo, optional>
+<intro, 3 to 6 lines>
+## Screenshots      the tables, per the Screenshots rules below
+## Features         what it can do, one bullet each
+## Install          what you need, then the commands
+## Use              running it day to day
+## How it is built  folders, containers, hosts, ports
+## Troubleshooting  symptom and fix
+## Notes            privacy, licences, roadmap
+```
+
+- The title is the project's name as people say it, not the folder name
+  where the two differ: `panels/` is titled `# Home Deck`.
+- Leave a section out when the project has nothing for it. Never reorder
+  them, and never invent a synonym (`Setup`, `Getting started`, `About`).
+- Anything longer than a screenful goes under `###` inside its section,
+  not into a new `##`.
+
 ## Several sessions work here at once (always)
 
 Several Claude sessions commit to this repo on the same day, from different machines.

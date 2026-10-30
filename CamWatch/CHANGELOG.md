@@ -2,6 +2,27 @@
 
 Newest changes first.
 
+## 2026-10-30
+
+- The dashboard is yours. Studio is a console now, the same shape as Home Deck's: a column of sections on the
+  left, one at a time on the right. Its first section chooses what the dashboard shows - needs attention,
+  today's numbers, search, now, cameras, where people walked, the page directory, and the weather once Home
+  Deck is linked - in the order you put them, and which page camwatch opens on, including the icon on a phone.
+  Setting cameras up is still there, under Cameras and Discover, with the changes collected and applied
+  together. Devices that are not cameras no longer offer an identical Add button.
+- The Mac installer is gone. CamWatch installs on Debian, Ubuntu or a Raspberry Pi with
+  installers/linux/setup.sh, or in a Linux machine on a Mac - see docs/install-windows-mac.md.
+- The README follows the shape every project in this repository now uses: Screenshots,
+  Features, Install, Use, How it is built, Notes. Screenshots come before the feature list,
+  the camera, update, storage, GPU and Home Deck sections sit under Use, and the container
+  table under How it is built. Nothing was dropped; the opening paragraph is four lines
+  instead of one sentence.
+- The page bar says there is more of it. Fifteen pages, about ten of which fit: the bar scrolled sideways with
+  its scrollbar hidden, so Plates, Zones, Studio, Settings and Home Assistant were not merely off the edge,
+  nothing said they existed. The edge with more behind it now fades, and the page you are on is brought into
+  view when it loads.
+- The phone home said "1 people seen". It says "1 person seen".
+
 ## 2026-10-29
 
 - New: Studio. Every camera and every device Home Deck knows about, in one list, with the ones a network
