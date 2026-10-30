@@ -93,8 +93,9 @@ check("a house without the kit record takes the deploy road, not the kit install
       "the kit installer keeps every file of such a house as 'edited' and replaces nothing")
 check("the install tries the new version before it touches live",
       TREE.index("8099") < TREE.index("predeploy-") < TREE.index("homedeck-apply"))
-check("the install never touches the settings file", "homedeck.toml\" >" not in TREE
-      and "FILES=\"homedeck www server.py VERSION\"" in TREE)
+check("the install never touches the settings file",
+      not re.search(r'>\s*"?\$R/homedeck\.toml', TREE) and "FILES=\"homedeck www server.py VERSION\"" in TREE,
+      "the trial writes its own copy in its temporary folder; the live file must stay as it is")
 check("deploy.sh uses the same install", "homedeck-install-tree" in (ROOT / "tools" / "deploy.sh").read_text(encoding="utf-8"))
 check("it refuses to install when nothing is newer", "already up to date" in WEB)
 
