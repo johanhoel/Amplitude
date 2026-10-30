@@ -1,5 +1,16 @@
 # Amplitude
 
+<!-- Temporary, put up 2026-10-30. Remove this whole block once the fix is in.
+     It lives only here, so taking it down is one edit. -->
+> ### Work in progress
+>
+> Something here is broken, and a fix is going in later today. If you are
+> installing or updating right now, give it a few hours: `main` is moving,
+> and what you pull between now and then may not be the version that works.
+>
+> Nothing is lost and nothing needs undoing on your side. This block comes
+> down when the fix lands. Back shortly.
+
 Johan's AV, audio and home-lab projects, one folder each. Every folder has
 its own README, changelog and setup.
 
