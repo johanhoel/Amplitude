@@ -2,6 +2,15 @@
 
 Newest changes first.
 
+## 2026-10-30 (3)
+
+- Settings -> Image processing showed a C++ backtrace where it meant to say why a model stays on the
+  CPU. It put the first 300 characters of the onnxruntime failure in the tooltip, which on a real
+  install read "... const onnxruntime::openv" - cut mid-symbol. The reason is kept and the machinery
+  dropped, so that row now says "Model is not supported by the device: operation NonMaxSuppression is
+  not supported". Where nothing readable is left it says "the GPU driver refused this model", and the
+  whole error goes to the log instead of the page.
+
 ## 2026-10-30 (2)
 
 - The dashboard's "Package at ..." card led to Not Found. It linked to /clips, which is not a page:
