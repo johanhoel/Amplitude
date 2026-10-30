@@ -1,5 +1,5 @@
 #!/bin/bash
-# Deploy server/ to Home Deck (.52) from this PC. It rolls back by itself.
+# Deploy server/ to Home Deck from this PC. It rolls back by itself.
 # The update card in Home Deck's Settings does the same from GitHub (kit/homedeck-update).
 #
 # The repository is public and holds no house. This house's own values stay on the server: homedeck.toml (the
@@ -13,7 +13,17 @@
 # Usage: tools/deploy.sh [--accept-live]     --accept-live: replace live although it differs (after you checked it)
 set -euo pipefail
 cd "$(dirname "$0")/.."
-H=root@192.168.100.52; R=/opt/panel-wrapper
+# Where Home Deck runs. Not in the repository: the repository is public, and the address of a
+# machine you can SSH into as root is exactly the sort of thing it must not carry. Set it once:
+#
+#   echo root@homedeck.lan > panels/.deploy-host        (ignored by git)
+#
+# or per command:  HOMEDECK_HOST=root@homedeck.lan tools/deploy.sh
+H=${HOMEDECK_HOST:-$( [ -f .deploy-host ] && tr -d '[:space:]' < .deploy-host )}
+[ -n "$H" ] || { echo "No Home Deck to talk to. Put the address in panels/.deploy-host, e.g."
+  echo "    echo root@homedeck.lan > panels/.deploy-host"
+  echo "or set HOMEDECK_HOST for this command."; exit 1; }
+R=/opt/panel-wrapper
 PY=$(for p in python3 python py; do "$p" -c "import sys" 2>/dev/null && { echo "$p"; break; }; done)
 FILES="homedeck www server.py VERSION"
 TOP=$(git rev-parse --show-toplevel)

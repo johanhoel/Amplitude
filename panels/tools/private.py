@@ -4,7 +4,7 @@
 The repository is public, so it holds placeholders: 192.168.1.x, home.example.net, sample names. The real values live
 in private.map on the Home Deck server (/opt/panel-wrapper/private.map), never in git. One pair per line:
 
-    192.168.1.==>192.168.100.
+    192.168.1.==>192.0.2.
     home.example.net==>example.org
     # comments and empty lines are skipped
 

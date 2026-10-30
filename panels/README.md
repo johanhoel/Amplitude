@@ -98,11 +98,11 @@ must answer.
 
 | Folder | What | Lives on |
 |---|---|---|
-| `server/` | Home Deck backend (`homedeck/`), settings (`homedeck.toml`), every page (`www/`) | CT 106 `.52` `/opt/panel-wrapper` |
+| `server/` | Home Deck backend (`homedeck/`), settings (`homedeck.toml`), every page (`www/`) | the Home Deck machine, `/opt/panel-wrapper` |
 | `services/camwatch-feed/` | read-only camera feed (visits, thumbnails, video) | CT 102 `.81` `/opt/camwatch-feed` |
-| `infra/` | edge nginx site (`:8126`), `homedeck-apply`, `homedeck-onboard`, the systemd units | `.40`, `.52` |
+| `infra/` | edge nginx site (`:8126`), `homedeck-apply`, `homedeck-onboard`, the systemd units | the edge machine, the Home Deck machine |
 | `onboard/` | setup wizard for fresh installs: network scan, suggestions, writes `homedeck.toml` (`install.sh` installs it with the generic edition) | `/opt/homedeck-onboard` |
-| `app/` | Android app + Docker builder (`build.sh`, `publish.sh`) | builds here, APK to `.52` `www/app/` |
+| `app/` | Android app + Docker builder (`build.sh`, `publish.sh`) | builds here, APK to `www/app/` on the Home Deck machine |
 | `kit/` | installer, services and the `homedeck.sh` one-liner | published on winrepo `.41` |
 | `editor/` | the panel editor | port 8088 |
 | `docs/` | Studio handbook | |

@@ -96,6 +96,23 @@ for page in PAGES:
     found = sorted(set(PRIVATE_IP.findall(body)))
     check(f"www/{page.name} names no address in anyone's house", not found, f"{found[:4]}")
 
+# ---- nor do the scripts that talk to it -------------------------------
+# deploy.sh, pull-live.sh and publish.sh each held root@<the live machine>.
+# An address you can SSH into as root is the last thing a public repository
+# should carry, and when that machine died the scripts pointed at nothing.
+TOOLS = sorted((ROOT / "tools").glob("*.sh")) + [ROOT / "app" / "publish.sh"]
+check("there are scripts to check", len(TOOLS) >= 3, f"{[t.name for t in TOOLS]}")
+for tool in TOOLS:
+    body = tool.read_text(encoding="utf-8")
+    found = sorted(set(PRIVATE_IP.findall(body)))
+    check(f"{tool.name} names no machine of anyone's", not found, f"{found[:3]}")
+    if "ssh " in body:
+        check(f"{tool.name} is told where to go rather than assuming",
+              "HOMEDECK_HOST" in body or ".deploy-host" in body,
+              "a hard-coded host is wrong the day that machine is replaced")
+ignored = (ROOT / ".gitignore").read_text(encoding="utf-8")
+check("the address the scripts are told stays out of git", ".deploy-host" in ignored)
+
 # ---- and still works once the installer has filled in the address -----
 sys.path.insert(0, str(ROOT / "server"))
 import tempfile                                                   # noqa: E402
