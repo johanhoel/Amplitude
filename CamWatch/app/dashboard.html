@@ -179,8 +179,12 @@ async function status() {
   const box = $('#alerts');
   if (box) {
     const a = [];
-    if (s.unusual) a.push(['warn', 'alert', s.unusual.title || 'Something unusual', s.unusual.text || '', '/report']);
-    (s.packages_waiting || []).forEach(p => a.push(['', 'package', 'Package at ' + p.zone, 'delivered ' + hm(p.at), '/clips']));
+    // /api/status calls these unusual_today (a list) and gives each package the
+    // clip it came from, the same shapes the phone home reads.
+    (s.unusual_today || []).slice(-3).reverse().forEach(u => a.push(['warn', 'alert', `Unusual: ${u.camera} at ${hm(u.start)}`,
+                                                                    u.reason || '', `/clip/${u.day}/${encodeURIComponent(u.stem)}`]));
+    (s.packages_waiting || []).forEach(p => a.push(['', 'package', 'Package at ' + p.zone, 'delivered ' + hm(p.at),
+                                                    p.clip ? `/clip/${p.clip}` : '/']));
     if (s.strangers) a.push(['', 'person', s.strangers + (s.strangers === 1 ? ' recurring stranger' : ' recurring strangers'),
                              'name them once, recognised from then on', '/strangers']);
     box.innerHTML = a.length

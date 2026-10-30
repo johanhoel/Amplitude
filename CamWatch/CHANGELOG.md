@@ -2,6 +2,17 @@
 
 Newest changes first.
 
+## 2026-10-30 (2)
+
+- The dashboard's "Package at ..." card led to Not Found. It linked to /clips, which is not a page:
+  the clips list is /, and the only /clips routes are the two POSTs behind Select. The card now opens
+  the clip the package was seen in, which is what the phone home has always done.
+- The dashboard's "something unusual" alert never appeared. It read s.unusual; /api/status sends
+  unusual_today, a list. It now shows the three most recent, each opening its clip.
+- tests/test_links.py (4 checks): every path the static pages name is served by a route. The pages are
+  served as they are and their links are string literals, so nothing looked at them before - test_routes.py
+  walks the routes and asks whether they render, which is the other direction.
+
 ## 2026-10-30
 
 - The dashboard is yours. Studio is a console now, the same shape as Home Deck's: a column of sections on the
