@@ -26,8 +26,10 @@ find "$KIT/app" -name __pycache__ -prune -exec rm -rf {} +
 echo "repo-$(cd "$REPO" && git rev-parse --short HEAD 2>/dev/null || date +%Y.%m.%d)" > "$KIT/app/VERSION"
 cp "$REPO/editor/editor.py" "$REPO/editor/editor.html" "$KIT/editor/"
 python3 "$REPO/kit/patch_editor.py" "$KIT/editor/editor.py" >/dev/null
-cp "$REPO/kit/homedeck-apply" "$REPO/kit/homedeck-update" "$KIT/bin/"
-cp "$REPO/kit/panel-wrapper.service" "$REPO/kit/deck-editor.service" "$KIT/systemd/"
+# the same files build_kit.sh stages; install-homedeck.sh installs every one of them
+cp "$REPO/kit/homedeck-apply" "$REPO/kit/homedeck-update" "$REPO/kit/homedeck-install-tree" "$KIT/bin/"
+cp "$REPO/kit/panel-wrapper.service" "$REPO/kit/deck-editor.service" \
+   "$REPO/kit/homedeck-update.path" "$REPO/kit/homedeck-update.service" "$KIT/systemd/"
 cp "$REPO/kit/install-homedeck.sh" "$KIT/"; chmod +x "$KIT/install-homedeck.sh" "$KIT/bin/"*
 
 # the address is a placeholder: the wizard finds Home Assistant on the network and sets it
