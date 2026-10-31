@@ -1,5 +1,6 @@
 """Alert rules API endpoints."""
 from fastapi import APIRouter, HTTPException, Header
+from typing import Optional
 import json
 import uuid
 from pathlib import Path
