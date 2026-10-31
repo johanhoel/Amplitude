@@ -50,7 +50,7 @@ services:
     volumes:
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/etc/go2rtc
 
-: RTSP -> motion detection -> ntfy + recordings on the HDD (one container per camera slot)
+# RTSP -> motion detection -> ntfy + recordings on the HDD (one container per camera slot)
   recorder:
     <<: *camera
     build:
