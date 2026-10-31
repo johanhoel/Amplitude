@@ -40,6 +40,92 @@ CAMERA = env("CAMERA_NAME", "camera")       # the primary camera (.env)
 CAMERA_RE = re.compile(r"^[a-z0-9][a-z0-9_]{0,23}$")
 WEB_USER = env("WEB_USER", "admin")
 WEB_PASSWORD = env("WEB_PASSWORD")
+
+# ---------- JWT auth support (Phase 2) ----------
+import base64 as _b64
+import hashlib as _hashlib
+import time as _time
+from datetime import datetime, timezone as _tz
+
+DATA_DIR_JWT = Path(env("DATA_DIR", "/data"))
+_SECRET_KEY_FILE = DATA_DIR_JWT / "api_secret.key"
+
+
+def _get_jwt_secret():
+    if _SECRET_KEY_FILE.exists():
+        return _SECRET_KEY_FILE.read_text().strip()
+    key = secrets.token_hex(32)
+    _SECRET_KEY_FILE.write_text(key)
+    _SECRET_KEY_FILE.chmod(0o600)
+    return key
+
+
+def _hash_pw(password, salt=None):
+    if salt is None:
+        salt = secrets.token_hex(16)
+    hashed = _hashlib.sha256((salt + password).encode()).hexdigest()
+    return salt, hashed
+
+
+def _verify_pw(password, salt, stored_hash):
+    _, computed = _hash_pw(password, salt)
+    return computed == stored_hash
+
+
+def _get_users_db():
+    users_file = DATA_DIR_JWT / "users.json"
+    if not users_file.exists():
+        salt, hashed = _hash_pw(env("WEB_PASSWORD", "camwatch"))
+        users_file.write_text(json.dumps({"admin": {"salt": salt, "hash": hashed, "role": "admin", "created_at": datetime.now(_tz.utc).isoformat()}}))
+    try:
+        return json.loads(users_file.read_text())
+    except (FileNotFoundError, ValueError):
+        return {}
+
+
+def _save_users_db(users):
+    users_file = DATA_DIR_JWT / "users.json"
+    tmp = users_file.with_suffix(".tmp")
+    tmp.write_text(json.dumps(users, indent=2))
+    tmp.replace(users_file)
+
+
+def _create_jwt(username, role):
+    secret = _get_jwt_secret()
+    header = {"alg": "HS256", "typ": "JWT"}
+    payload = {"sub": username, "role": role, "iat": int(_time.time()), "exp": int(_time.time()) + 3600 * 24 * 7}
+    h_b64 = _b64.urlsafe_b64encode(json.dumps(header).encode()).rstrip(b"=").decode()
+    p_b64 = _b64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
+    sig_input = f"{h_b64}.{p_b64}"
+    signature = _hashlib.sha256((sig_input + secret).encode()).hexdigest()
+    return f"{h_b64}.{p_b64}.{signature}"
+
+
+def _decode_jwt(token):
+    try:
+        parts = token.split(".")
+        if len(parts) != 3:
+            return {}
+        h_b64, p_b64, signature = parts
+        secret = _get_jwt_secret()
+        sig_input = f"{h_b64}.{p_b64}"
+        expected_sig = _hashlib.sha256((sig_input + secret).encode()).hexdigest()
+        if signature != expected_sig:
+            return {}
+        padding = 4 - len(p_b64) % 4
+        if padding != 4:
+            p_b64 += "=" * padding
+        payload = json.loads(_b64.urlsafe_b64decode(p_b64))
+        exp = payload.get("exp", 0)
+        if int(datetime.now(_tz.utc).timestamp()) > exp:
+            return {}
+        return payload
+    except Exception:
+        return {}
+
+
+def _multi_user_enabled():
+    return env("MULTI_USER_ENABLED", "").lower() in ("1", "true")
 # "No password on the home network" (Settings) only trusts these networks. Docker's own 172.16/12 range is left out
 # on purpose: with some setups every request seems to come from the Docker bridge.
 
@@ -306,7 +392,75 @@ def auth():
     a = request.authorization
     if a and secrets.compare_digest(a.username or "", WEB_USER) and secrets.compare_digest(a.password or "", WEB_PASSWORD):
         return None
+    # JWT cookie auth (Phase 2 multi-user)
+    jwt_token = request.cookies.get("cw_jwt")
+    if jwt_token:
+        payload = _decode_jwt(jwt_token)
+        if payload:
+            # Attach user info to the request for templates and route handlers
+            request.state.user = payload.get("sub", "")
+            request.state.role = payload.get("role", "viewer")
+            return None
     return Response("Login required", 401, {"WWW-Authenticate": 'Basic realm="camwatch"'})
+
+
+# ---------- login / logout (Phase 2 multi-user) ----------
+
+LOGIN_HTML = """
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>camwatch — Login</title>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--ink:#e2e8f0;--accent:#38bdf8;--bad:#ef4444;--r:8px}
+*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.box{background:var(--card);border-radius:var(--r);padding:32px;width:100%;max-width:360px}
+h1{font-size:22px;font-weight:800;margin-bottom:4px}p.muted{color:#94a3b8;font-size:13.5px;margin-bottom:20px}
+label{display:block;font-size:13px;font-weight:600;color:#94a3b8;margin-bottom:4px}
+input[type=text],input[type=password]{width:100%;padding:10px 12px;border-radius:var(--r);border:1.5px solid #334155;background:#0f172a;color:var(--ink);font-size:15px;margin-bottom:16px;outline:none}
+input:focus{border-color:var(--accent)}
+button.primary{width:100%;padding:12px;border-radius:var(--r);border:none;background:var(--accent);color:#0f172a;font-weight:750;font-size:15px;cursor:pointer}
+.error{color:var(--bad);font-size:13.5px;margin-bottom:16px}
+</style></head><body>
+<div class="box">
+<h1>camwatch</h1>
+<p class="muted">Sign in to your surveillance system</p>
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+<form method=post><label for=u>Username</label>
+<input id=u name=username required autocomplete="username">
+<label for=p>Password</label>
+<input id=p name=password type=password required autocomplete="current-password">
+<button class="primary" type=submit>Sign in</button></form>
+</div></body></html>
+"""
+
+
+@app.get("/login")
+def login_page():
+    return LOGIN_HTML
+
+
+@app.post("/login")
+def do_login():
+    username = request.form.get("username", "").strip()
+    password = request.form.get("password", "")
+    users_db = _get_users_db()
+    if not username or username not in users_db:
+        return LOGIN_HTML.replace("{{ error }}", "Invalid credentials"), 401
+    user_info = users_db[username]
+    if not _verify_pw(password, user_info.get("salt", ""), user_info.get("hash", "")):
+        return LOGIN_HTML.replace("{{ error }}", "Invalid credentials"), 401
+    token = _create_jwt(username, user_info.get("role", "viewer"))
+    resp = redirect(url_for("index"))
+    resp.set_cookie("cw_jwt", token, httponly=True, samesite="lax", max_age=3600*24*7)
+    return resp
+
+
+@app.post("/logout")
+def do_logout():
+    resp = redirect(url_for("index"))
+    resp.set_cookie("cw_jwt", "", expires=0)
+    return resp
 
 
 # ---------- routes ----------
@@ -319,8 +473,13 @@ def homedeck_time(ts):
 @app.context_processor
 def inject_status():
     conf = settings.load()
+    # Phase 2: pass user info to templates
+    user_name = getattr(request, 'state', None) and getattr(request.state, 'user', '') or ''
+    user_role = getattr(request, 'state', None) and getattr(request.state, 'role', '') or ''
+    multi_user = _multi_user_enabled()
     return {"armed": settings.is_armed(conf), "arm_mode": conf["mode"], "app_version": app_version(),
-            "update_ready": updates.ready()}
+            "update_ready": updates.ready(), "user_name": user_name, "user_role": user_role,
+            "multi_user": multi_user}
 
 
 @app.get("/")
@@ -1974,13 +2133,20 @@ def service_worker():
     return Response(SERVICE_WORKER, mimetype="text/javascript", headers={"Cache-Control": "no-cache"})
 
 
-MOBILE_HTML = Path(__file__).with_name("mobile.html")
+# Phase 2: use redesigned mobile PWA
+MOBILE_V2 = Path(__file__).with_name("mobile_v2.html")
+# Keep old mobile page as fallback
+MOBILE_HTML_OLD = Path(__file__).with_name("mobile.html")
 
 
 @app.get("/m")
 def mobile():
-    """Phone home screen: what needs attention, live cameras, today, recent visits (app/mobile.html)."""
-    return Response(MOBILE_HTML.read_text(encoding="utf-8"), mimetype="text/html")
+    """Phone home screen: redesigned PWA with dark theme, attention cards, swipeable cameras, stats."""
+    try:
+        return Response(MOBILE_V2.read_text(encoding="utf-8"), mimetype="text/html")
+    except FileNotFoundError:
+        # Fallback to old mobile page
+        return Response(MOBILE_HTML_OLD.read_text(encoding="utf-8"), mimetype="text/html")
 
 
 @app.get("/dashboard")

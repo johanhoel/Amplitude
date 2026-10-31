@@ -440,6 +440,30 @@ class Finalizer(threading.Thread):
             "test": event.test,
             "video": final.name,
         }, indent=2))
+
+        # Phase 2: trigger alert engine evaluation for this new clip/event
+        try:
+            from api.alert_engine import alert_engine as _ae
+            _event_data = {
+                "camera": CAMERA,
+                "stem": stem,
+                "day": event.dir.name if hasattr(event.dir, 'name') else str(event.dir),
+                "start": dt.datetime.fromtimestamp(event.start).isoformat(timespec="seconds"),
+                "end": dt.datetime.fromtimestamp(event.end).isoformat(timespec="seconds") if event.end else None,
+                "labels": {k: round(v, 2) for k, v in event.labels.items()},
+                "zones": sorted(event.zones),
+                "loitering": event.loiter_sent,
+                "plates": plates,
+                "vehicles": event.vehicles,
+                "unusual": event.unusual,
+            }
+            matched = _ae.evaluate_event(_event_data)
+            if matched:
+                log.info("alert rules fired for %s: %s", stem, matched)
+        except Exception as _e:
+            # Alert engine is optional; don't break recording if it fails
+            pass
+
         log.info("saved %s (%d segments, %.0fs of motion)", final.relative_to(REC_DIR),
                  len(chosen), event.last_motion - event.start)
 
