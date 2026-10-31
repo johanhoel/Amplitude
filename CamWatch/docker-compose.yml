@@ -48,6 +48,7 @@ services:
   # go2rtc for WebRTC live streaming
   go2rtc:
     image: "ghcr.io/aler9/go2rtc:latest"
+    pull_policy: never
     container_name: ${CAMWATCH_PREFIX:-camwatch}-go2rtc
     ports:
       - "${GO2RTC_PORT:-1984}:1984"
