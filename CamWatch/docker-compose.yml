@@ -20,7 +20,9 @@ x-camera: &camera
   command: ["python", "camslot.py"]
   healthcheck:
     # Healthy while frames arrive from the camera AND video is being written - or while the slot is empty
-    test: "find /tmp/idle -mmin -1 2>/dev/null | grep -q . || { find /tmp/healthy -mmin -2 | grep -q . && find /tmp/recording -mmin -2 | grep -q . ; }"
+    test:
+        - CMD-SHELL
+        - "find /tmp/idle -mmin -1 2>/dev/null | grep -q . || { find /tmp/healthy -mmin -2 | grep -q . && find /tmp/recording -mmin -2 | grep -q . ; }"
     interval: 60s
     start_period: 120s
 
@@ -93,7 +95,9 @@ services:
       driver: json-file
     command: ["python", "camslot.py"]
     healthcheck:
-      test: "find /tmp/idle -mmin -1 2>/dev/null | grep -q . || { find /tmp/healthy -mmin -2 | grep -q . && find /tmp/recording -mmin -2 | grep -q . ; }"
+      test:
+        - CMD-SHELL
+        - "find /tmp/idle -mmin -1 2>/dev/null | grep -q . || { find /tmp/healthy -mmin -2 | grep -q . && find /tmp/recording -mmin -2 | grep -q . ; }"
       interval: 60s
       start_period: 120s
     container_name: ${CAMWATCH_PREFIX:-camwatch}-recorder-4
@@ -128,7 +132,9 @@ services:
     container_name: ${CAMWATCH_PREFIX:-camwatch}-presence
     command: ["python", "presence.py"]
     healthcheck:
-      test: "find /tmp/healthy -mmin -2 | grep -q ."
+      test:
+        - CMD-SHELL
+        - "find /tmp/healthy -mmin -2 | grep -q ."
       interval: 60s
       start_period: 60s
     volumes:
@@ -143,7 +149,9 @@ services:
     container_name: ${CAMWATCH_PREFIX:-camwatch}-offsite
     command: ["python", "offsite.py"]
     healthcheck:
-      test: "find /tmp/healthy -mmin -2 | grep -q ."
+      test:
+        - CMD-SHELL
+        - "find /tmp/healthy -mmin -2 | grep -q ."
       interval: 60s
       start_period: 60s
     volumes:
@@ -156,7 +164,11 @@ services:
     container_name: ${CAMWATCH_PREFIX:-camwatch}-webui
     command: ["python", "webui.py"]
     healthcheck:
-      test: "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=5)"
+      test:
+        - CMD
+        - python
+        - "-c"
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=5)"
       interval: 60s
     ports:
       - "${WEB_PORT:-8080}:8080"
