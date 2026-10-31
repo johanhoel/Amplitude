@@ -85,7 +85,20 @@ services:
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
 
   recorder-4:
-    <<: *camera
+    image: ${CAMWATCH_IMAGE:-camwatch:latest}
+    pull_policy: never
+    restart: unless-stopped
+    env_file: .env
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    command: ["python", "camslot.py"]
+    healthcheck:
+      test: [CMD-SHELL, find /tmp/idle -mmin -1 2>/dev/null | grep -q . || { find /tmp/healthy -mmin -2 | grep -q . && find /tmp/recording -mmin -2 | grep -q . ; }]
+      interval: 60s
+      start_period: 120s
     container_name: ${CAMWATCH_PREFIX:-camwatch}-recorder-4
     environment: {CAMERA_SLOT: "4"}
     volumes:
