@@ -48,7 +48,8 @@ services:
       args:
         GPU: "${CAMWATCH_GPU:-}"
     container_name: ${CAMWATCH_PREFIX:-camwatch}-recorder
-    environment: {CAMERA_SLOT: "1"}
+    environment:
+      CAMERA_SLOT: "1"
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
       - "buffer:/buffer"
@@ -58,7 +59,8 @@ services:
   recorder-2:
     <<: *camera
     container_name: ${CAMWATCH_PREFIX:-camwatch}-recorder-2
-    environment: {CAMERA_SLOT: "2"}
+    environment:
+      CAMERA_SLOT: "2"
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
       - buffer-2:/buffer
@@ -68,7 +70,8 @@ services:
   recorder-3:
     <<: *camera
     container_name: ${CAMWATCH_PREFIX:-camwatch}-recorder-3
-    environment: {CAMERA_SLOT: "3"}
+    environment:
+      CAMERA_SLOT: "3"
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
       - buffer-3:/buffer
@@ -78,7 +81,8 @@ services:
   recorder-4:
     <<: *camera
     container_name: ${CAMWATCH_PREFIX:-camwatch}-recorder-4
-    environment: {CAMERA_SLOT: "4"}
+    environment:
+      CAMERA_SLOT: "4"
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
       - buffer-4:/buffer
