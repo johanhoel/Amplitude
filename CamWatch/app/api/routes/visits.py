@@ -52,7 +52,7 @@ async def list_visits(
         pl = person.lower()
         filtered = [v for v in filtered if pl in v["who"].lower()]
     if camera: filtered = [v for v in filtered if v["camera"] == camera]
-    if kind: filtered = [v for v in filtered if any(vis["kind"] == kind for vis in v.get("visitors", [])]
+    if kind: filtered = [v for v in filtered if any(vis["kind"] == kind for vis in v.get("visitors", []))]
     if direction: filtered = [v for v in filtered if direction in (v.get("direction") or "")]
     if from_date: filtered = [v for v in filtered if v["day"] >= from_date]
     if to_date: filtered = [v for v in filtered if v["day"] <= to_date]
