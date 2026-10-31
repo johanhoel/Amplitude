@@ -95,9 +95,7 @@ services:
       driver: json-file
     command: ["python", "camslot.py"]
     healthcheck:
-      test:
-        - CMD-SHELL
-        - "find /tmp/idle -mmin -1 2>/dev/null | grep -q . || { find /tmp/healthy -mmin -2 | grep -q . && find /tmp/recording -mmin -2 | grep -q . ; }"
+      test: [CMD-SHELL, "find /tmp/idle -mmin -1 2>/dev/null | grep -q . || { find /tmp/healthy -mmin -2 | grep -q . && find /tmp/recording -mmin -2 | grep -q . ; }"]
       interval: 60s
       start_period: 120s
     container_name: ${CAMWATCH_PREFIX:-camwatch}-recorder-4
