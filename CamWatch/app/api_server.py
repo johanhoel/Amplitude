@@ -18,12 +18,38 @@ DATA_DIR = Path(os.environ.get("DATA_PATH", "/data"))
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: start the alert rules engine background thread
+    # Startup: start background services
     print("[api] Starting CamWatch API server on :8081")
     alert_engine.start()
+    
+    # Phase 3: Start camera health monitor and re-ID engine
+    try:
+        from api.camera_health import health_monitor
+        health_monitor.start()
+        print("[api] Camera health monitor started")
+    except Exception as e:
+        print(f"[api] Health monitor start failed: {e}")
+    
+    try:
+        from api.reid_worker import reid_engine
+        reid_engine.start()
+        print("[api] Person re-ID engine started")
+    except Exception as e:
+        print(f"[api] Re-ID engine start failed: {e}")
+    
     yield
-    # Shutdown: stop the alert engine
+    # Shutdown: stop all background services
     alert_engine.stop()
+    try:
+        from api.camera_health import health_monitor
+        health_monitor.stop()
+    except Exception:
+        pass
+    try:
+        from api.reid_worker import reid_engine
+        reid_engine.stop()
+    except Exception:
+        pass
     print("[api] CamWatch API server stopped")
 
 
@@ -128,6 +154,13 @@ app.include_router(settings_routes.router, prefix="/api", tags=["settings"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(alerts.router, prefix="/api/alerts", tags=["alerts"])
 app.include_router(health.router, prefix="/api", tags=["health"])
+
+# Phase 3: Camera health monitoring, person re-ID, analytics
+from api.routes import health_v2 as health_routes_v2, reid, analytics
+
+app.include_router(health_routes_v2.router, prefix="/api/health", tags=["health-v2"])
+app.include_router(reid.router, prefix="/api/reid", tags=["re-id"])
+app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
 
 
 # ---------- Additional endpoints not in route modules ----------
