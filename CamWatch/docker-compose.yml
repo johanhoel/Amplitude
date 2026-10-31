@@ -96,7 +96,15 @@ services:
 
   # Not live: identifies faces in finished recordings against the photo library
   facematch:
-    <<: *common
+    image: ${CAMWATCH_IMAGE:-camwatch:latest}
+    pull_policy: never
+    restart: unless-stopped
+    env_file: .env
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     container_name: ${CAMWATCH_PREFIX:-camwatch}-facematch
     command: ["python", "facematch.py"]
     volumes:
