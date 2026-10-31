@@ -25,7 +25,32 @@ x-camera: &camera
     start_period: 120s
 
 services:
-  # Always on: RTSP -> motion detection -> ntfy + recordings on the HDD (one container per camera slot)
+  # Always on
+  # FastAPI REST + WebSocket server (port 8081)
+  api:
+    <<: *common
+    container_name: ${CAMWATCH_PREFIX:-camwatch}-api
+    command: ["python", "api_server.py"]
+    ports:
+      - "${API_PORT:-8081}:8081"
+    volumes:
+      - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
+      - ${PHOTOS_PATH:-/mnt/hdd/camwatch/photos}:/photos
+      - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
+      - live:/live
+
+  # go2rtc for WebRTC live streaming
+  go2rtc:
+    image: "ghcr.io/aler9/go2rtc:latest"
+    container_name: ${CAMWATCH_PREFIX:-camwatch}-go2rtc
+    ports:
+      - "${GO2RTC_PORT:-1984}:1984"
+      - "8089:8089/tcp"
+      - "8089:8089/udp"
+    volumes:
+      - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/etc/go2rtc
+
+: RTSP -> motion detection -> ntfy + recordings on the HDD (one container per camera slot)
   recorder:
     <<: *camera
     build:
