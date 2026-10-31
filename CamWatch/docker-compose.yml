@@ -96,7 +96,7 @@ services:
     command: ["python", "facematch.py"]
     volumes:
       - "${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings"
-      - "${PHOTOS_PATH:-/mnt/hdd/camwatch/photos}:/photos":ro
+      - "${PHOTOS_PATH:-/mnt/hdd/camwatch/photos}:/photos:ro"
       - "${DATA_PATH:-/mnt/hdd/camwatch/data}:/data"
 
   presence:
@@ -108,8 +108,8 @@ services:
       interval: 60s
       start_period: 60s
     volumes:
-      - "${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings":ro
-      - "${DATA_PATH:-/mnt/hdd/camwatch/data}:/data":ro
+      - "${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings:ro"
+      - "${DATA_PATH:-/mnt/hdd/camwatch/data}:/data:ro"
       - "/run/mysqld:/run/mysqld"
 
   offsite:
@@ -121,7 +121,7 @@ services:
       interval: 60s
       start_period: 60s
     volumes:
-      - "${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings":ro
+      - "${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings:ro"
       - "${DATA_PATH:-/mnt/hdd/camwatch/data}:/data"
 
   webui:
