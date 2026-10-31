@@ -1,4 +1,4 @@
-"""Alert rules engine — evaluates rules against new events."""
+"""Alert rules engine â€” evaluates rules against new events."""
 import os, json, time, threading
 from pathlib import Path
 from datetime import datetime, timezone
