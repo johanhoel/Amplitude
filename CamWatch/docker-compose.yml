@@ -17,7 +17,9 @@ x-camera: &camera
   <<: *common
   # camslot.py starts the recorder with the camera set for this slot on the Settings page (slot 1 = the .env camera),
   # or waits while the slot is empty. Changing a camera there makes its recorder exit; Docker restarts it.
-  command: ["python", "camslot.py"]
+  command:
+    - python
+    - camslot.py
   healthcheck:
     # Healthy while frames arrive from the camera AND video is being written - or while the slot is empty
     test:
@@ -32,7 +34,9 @@ services:
   api:
     <<: *common
     container_name: ${CAMWATCH_PREFIX:-camwatch}-api
-    command: ["python", "api_server.py"]
+    command:
+      - python
+      - api_server.py
     ports:
       - "${API_PORT:-8081}:8081"
     volumes:
@@ -59,7 +63,8 @@ services:
       args:
         GPU: "${CAMWATCH_GPU:-}"
     container_name: ${CAMWATCH_PREFIX:-camwatch}-recorder
-    environment: {CAMERA_SLOT: "1"}
+    environment:
+      CAMERA_SLOT: "1"
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
       - "buffer:/buffer"
@@ -69,7 +74,8 @@ services:
   recorder-2:
     <<: *camera
     container_name: ${CAMWATCH_PREFIX:-camwatch}-recorder-2
-    environment: {CAMERA_SLOT: "2"}
+    environment:
+      CAMERA_SLOT: "2"
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
       - "buffer-2:/buffer"
@@ -79,7 +85,8 @@ services:
   recorder-3:
     <<: *camera
     container_name: ${CAMWATCH_PREFIX:-camwatch}-recorder-3
-    environment: {CAMERA_SLOT: "3"}
+    environment:
+      CAMERA_SLOT: "3"
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
       - "buffer-3:/buffer"
@@ -93,13 +100,18 @@ services:
     env_file: .env
     logging:
       driver: json-file
-    command: ["python", "camslot.py"]
+    command:
+      - python
+      - camslot.py
     healthcheck:
-      test: [CMD-SHELL, "find /tmp/idle -mmin -1 2>/dev/null | grep -q . || { find /tmp/healthy -mmin -2 | grep -q . && find /tmp/recording -mmin -2 | grep -q . ; }"]
+      test:
+        - CMD-SHELL
+        - "find /tmp/idle -mmin -1 2>/dev/null | grep -q . || { find /tmp/healthy -mmin -2 | grep -q . && find /tmp/recording -mmin -2 | grep -q . ; }"
       interval: 60s
       start_period: 120s
     container_name: ${CAMWATCH_PREFIX:-camwatch}-recorder-4
-    environment: {CAMERA_SLOT: "4"}
+    environment:
+      CAMERA_SLOT: "4"
     volumes:
       - "${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings"
       - "buffer-4:/buffer"
@@ -118,7 +130,9 @@ services:
         max-size: "10m"
         max-file: "3"
     container_name: ${CAMWATCH_PREFIX:-camwatch}-facematch
-    command: ["python", "facematch.py"]
+    command:
+      - python
+      - facematch.py
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
       - ${PHOTOS_PATH:-/mnt/hdd/camwatch/photos}:/photos:ro
@@ -128,7 +142,9 @@ services:
   presence:
     <<: *common
     container_name: ${CAMWATCH_PREFIX:-camwatch}-presence
-    command: ["python", "presence.py"]
+    command:
+      - python
+      - presence.py
     healthcheck:
       test:
         - CMD-SHELL
@@ -145,7 +161,9 @@ services:
   offsite:
     <<: *common
     container_name: ${CAMWATCH_PREFIX:-camwatch}-offsite
-    command: ["python", "offsite.py"]
+    command:
+      - python
+      - offsite.py
     healthcheck:
       test:
         - CMD-SHELL
@@ -160,7 +178,9 @@ services:
   webui:
     <<: *common
     container_name: ${CAMWATCH_PREFIX:-camwatch}-webui
-    command: ["python", "webui.py"]
+    command:
+      - python
+      - webui.py
     healthcheck:
       test:
         - CMD
