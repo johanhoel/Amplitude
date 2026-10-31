@@ -30,7 +30,7 @@ services:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
       - ${PHOTOS_PATH:-/mnt/hdd/camwatch/photos}:/photos
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
-      - live:/live
+      - "live:/live"
 
   go2rtc:
     image: "ghcr.io/aler9/go2rtc:latest"
@@ -51,8 +51,8 @@ services:
     environment: {CAMERA_SLOT: "1"}
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
-      - buffer:/buffer
-      - live:/live
+      - "buffer:/buffer"
+      - "live:/live"
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
 
   recorder-2:
@@ -62,7 +62,7 @@ services:
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
       - buffer-2:/buffer
-      - live:/live
+      - "live:/live"
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
 
   recorder-3:
@@ -72,7 +72,7 @@ services:
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
       - buffer-3:/buffer
-      - live:/live
+      - "live:/live"
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
 
   recorder-4:
@@ -82,7 +82,7 @@ services:
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
       - buffer-4:/buffer
-      - live:/live
+      - "live:/live"
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
 
 
@@ -133,7 +133,7 @@ services:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
       - ${PHOTOS_PATH:-/mnt/hdd/camwatch/photos}:/photos
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
-      - live:/live
+      - "live:/live"
       - /run/mysqld:/run/mysqld
 
 volumes:
