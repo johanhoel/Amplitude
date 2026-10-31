@@ -1,0 +1,15 @@
+FROM golang:1.23-bookworm AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+RUN git clone --depth 1 https://github.com/aler9/go2rtc.git go2rtc && cd go2rtc && go build -o /go2rtc .
+
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /go2rtc /usr/local/bin/go2rtc
+RUN chmod +x /usr/local/bin/go2rtc
+
+ENTRYPOINT ["go2rtc"]

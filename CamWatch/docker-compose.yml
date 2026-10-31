@@ -45,10 +45,11 @@ services:
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
       - "live:/live"
 
-  # go2rtc for WebRTC live streaming
+  # go2rtc for WebRTC live streaming (built from source to avoid ghcr.io pull issues)
   go2rtc:
-    image: "ghcr.io/aler9/go2rtc:latest"
-    pull_policy: never
+    build:
+      context: .
+      dockerfile: Dockerfile.go2rtc
     container_name: ${CAMWATCH_PREFIX:-camwatch}-go2rtc
     ports:
       - "${GO2RTC_PORT:-1984}:1984"
