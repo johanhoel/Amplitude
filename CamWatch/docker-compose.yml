@@ -27,9 +27,9 @@ services:
     ports:
       - "${API_PORT:-8081}:8081"
     volumes:
-      - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
-      - ${PHOTOS_PATH:-/mnt/hdd/camwatch/photos}:/photos
-      - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
+      - "${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings"
+      - "${PHOTOS_PATH:-/mnt/hdd/camwatch/photos}:/photos"
+      - "${DATA_PATH:-/mnt/hdd/camwatch/data}:/data"
       - "live:/live"
 
   go2rtc:
@@ -40,7 +40,7 @@ services:
       - "8089:8089/tcp"
       - "8089:8089/udp"
     volumes:
-      - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/etc/go2rtc
+      - "${DATA_PATH:-/mnt/hdd/camwatch/data}:/etc/go2rtc"
   recorder:
     <<: *camera
     build:
@@ -51,10 +51,10 @@ services:
     environment:
       CAMERA_SLOT: "1"
     volumes:
-      - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
+      - "${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings"
       - "buffer:/buffer"
       - "live:/live"
-      - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
+      - "${DATA_PATH:-/mnt/hdd/camwatch/data}:/data"
 
   recorder-2:
     <<: *camera
@@ -62,10 +62,10 @@ services:
     environment:
       CAMERA_SLOT: "2"
     volumes:
-      - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
-      - buffer-2:/buffer
+      - "${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings"
+      - "buffer-2:/buffer"
       - "live:/live"
-      - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
+      - "${DATA_PATH:-/mnt/hdd/camwatch/data}:/data"
 
   recorder-3:
     <<: *camera
@@ -73,10 +73,10 @@ services:
     environment:
       CAMERA_SLOT: "3"
     volumes:
-      - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
-      - buffer-3:/buffer
+      - "${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings"
+      - "buffer-3:/buffer"
       - "live:/live"
-      - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
+      - "${DATA_PATH:-/mnt/hdd/camwatch/data}:/data"
 
   recorder-4:
     <<: *camera
@@ -84,10 +84,10 @@ services:
     environment:
       CAMERA_SLOT: "4"
     volumes:
-      - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
-      - buffer-4:/buffer
+      - "${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings"
+      - "buffer-4:/buffer"
       - "live:/live"
-      - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
+      - "${DATA_PATH:-/mnt/hdd/camwatch/data}:/data"
 
 
   facematch:
@@ -95,9 +95,9 @@ services:
     container_name: ${CAMWATCH_PREFIX:-camwatch}-facematch
     command: ["python", "facematch.py"]
     volumes:
-      - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
-      - ${PHOTOS_PATH:-/mnt/hdd/camwatch/photos}:/photos:ro
-      - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
+      - "${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings"
+      - "${PHOTOS_PATH:-/mnt/hdd/camwatch/photos}:/photos":ro
+      - "${DATA_PATH:-/mnt/hdd/camwatch/data}:/data"
 
   presence:
     <<: *common
@@ -108,9 +108,9 @@ services:
       interval: 60s
       start_period: 60s
     volumes:
-      - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings:ro
-      - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data:ro
-      - /run/mysqld:/run/mysqld
+      - "${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings":ro
+      - "${DATA_PATH:-/mnt/hdd/camwatch/data}:/data":ro
+      - "/run/mysqld:/run/mysqld"
 
   offsite:
     <<: *common
@@ -121,8 +121,8 @@ services:
       interval: 60s
       start_period: 60s
     volumes:
-      - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings:ro
-      - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
+      - "${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings":ro
+      - "${DATA_PATH:-/mnt/hdd/camwatch/data}:/data"
 
   webui:
     <<: *common
@@ -134,11 +134,11 @@ services:
     ports:
       - "${WEB_PORT:-8080}:8080"
     volumes:
-      - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
-      - ${PHOTOS_PATH:-/mnt/hdd/camwatch/photos}:/photos
-      - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
+      - "${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings"
+      - "${PHOTOS_PATH:-/mnt/hdd/camwatch/photos}:/photos"
+      - "${DATA_PATH:-/mnt/hdd/camwatch/data}:/data"
       - "live:/live"
-      - /run/mysqld:/run/mysqld
+      - "/run/mysqld:/run/mysqld"
 
 volumes:
   buffer:
