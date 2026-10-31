@@ -1,8 +1,6 @@
 name: camwatch
 
 x-common: &common
-  # Built once by the recorder service; the others reuse the same image
-  # Staging runs next to production with CAMWATCH_IMAGE=camwatch:staging and CAMWATCH_PREFIX=camwatch-staging
   image: ${CAMWATCH_IMAGE:-camwatch:latest}
   pull_policy: never
   restart: unless-stopped
@@ -15,18 +13,13 @@ x-common: &common
 
 x-camera: &camera
   <<: *common
-  # camslot.py starts the recorder with the camera set for this slot on the Settings page (slot 1 = the .env camera),
-  # or waits while the slot is empty. Changing a camera there makes its recorder exit; Docker restarts it.
   command: ["python", "camslot.py"]
   healthcheck:
-    # Healthy while frames arrive from the camera AND video is being written - or while the slot is empty
     test: ["CMD-SHELL", "find /tmp/idle -mmin -1 2>/dev/null | grep -q . || { find /tmp/healthy -mmin -2 | grep -q . && find /tmp/recording -mmin -2 | grep -q . ; }"]
     interval: 60s
     start_period: 120s
 
 services:
-  # Always on
-  # FastAPI REST + WebSocket server (port 8081)
   api:
     <<: *common
     container_name: ${CAMWATCH_PREFIX:-camwatch}-api
@@ -39,7 +32,6 @@ services:
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
       - live:/live
 
-  # go2rtc for WebRTC live streaming
   go2rtc:
     image: "ghcr.io/aler9/go2rtc:latest"
     container_name: ${CAMWATCH_PREFIX:-camwatch}-go2rtc
@@ -49,8 +41,6 @@ services:
       - "8089:8089/udp"
     volumes:
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/etc/go2rtc
-
-  # RTSP -> motion detection -> ntfy + recordings on the HDD (one container per camera slot)
   recorder:
     <<: *camera
     build:
@@ -96,7 +86,6 @@ services:
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
 
 
-  # Not live: identifies faces in finished recordings against the photo library
   facematch:
     <<: *common
     container_name: ${CAMWATCH_PREFIX:-camwatch}-facematch
@@ -106,7 +95,6 @@ services:
       - ${PHOTOS_PATH:-/mnt/hdd/camwatch/photos}:/photos:ro
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
 
-  # Who came and when: imports finished events (+ faces, tags, plates) into MariaDB on the host
   presence:
     <<: *common
     container_name: ${CAMWATCH_PREFIX:-camwatch}-presence
@@ -117,11 +105,9 @@ services:
       start_period: 60s
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings:ro
-      # settings.json: the house/street zones that turn tracks into arrived / left
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data:ro
       - /run/mysqld:/run/mysqld
 
-  # Off-site storage (Settings -> Off-site storage): alarms right away, the rest nightly, through rclone
   offsite:
     <<: *common
     container_name: ${CAMWATCH_PREFIX:-camwatch}-offsite
@@ -134,7 +120,6 @@ services:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings:ro
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
 
-  # Browse/play/delete clips and tag people; ntfy notifications link here
   webui:
     <<: *common
     container_name: ${CAMWATCH_PREFIX:-camwatch}-webui
@@ -152,10 +137,8 @@ services:
       - /run/mysqld:/run/mysqld
 
 volumes:
-  # Rolling few-second buffer; kept on the container disk so the HDD isn't written constantly
   buffer:
   buffer-2:
   buffer-3:
   buffer-4:
-  # Latest frame for the web UI's live view, and the simulate-motion trigger
   live:
