@@ -17,112 +17,64 @@ x-camera: &camera
   <<: *common
   # camslot.py starts the recorder with the camera set for this slot on the Settings page (slot 1 = the .env camera),
   # or waits while the slot is empty. Changing a camera there makes its recorder exit; Docker restarts it.
-  command:
-    - python
-    - camslot.py
+  command: ["python", "camslot.py"]
   healthcheck:
     # Healthy while frames arrive from the camera AND video is being written - or while the slot is empty
-    test:
-        - CMD-SHELL
-        - "find /tmp/idle -mmin -1 2>/dev/null | grep -q . || { find /tmp/healthy -mmin -2 | grep -q . && find /tmp/recording -mmin -2 | grep -q . ; }"
+    test: ["CMD-SHELL", "find /tmp/idle -mmin -1 2>/dev/null | grep -q . || { find /tmp/healthy -mmin -2 | grep -q . && find /tmp/recording -mmin -2 | grep -q . ; }"]
     interval: 60s
     start_period: 120s
 
 services:
-  # Always on
-  # FastAPI REST + WebSocket server (port 8081)
-  api:
-    <<: *common
-    container_name: ${CAMWATCH_PREFIX:-camwatch}-api
-    command:
-      - python
-      - api_server.py
-    ports:
-      - "${API_PORT:-8081}:8081"
-    volumes:
-      - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
-      - ${PHOTOS_PATH:-/mnt/hdd/camwatch/photos}:/photos
-      - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
-      - "live:/live"
-
-  # RTSP -> motion detection -> ntfy + recordings on the HDD (one container per camera slot)
+  # Always on: RTSP -> motion detection -> ntfy + recordings on the HDD (one container per camera slot)
   recorder:
     <<: *camera
     build:
       context: .
-      args:
-        GPU: "${CAMWATCH_GPU:-}"
+      args: {GPU: "${CAMWATCH_GPU:-}"}     # GPU support: see Dockerfile and docker-compose.gpu-*.yml
     container_name: ${CAMWATCH_PREFIX:-camwatch}-recorder
-    environment:
-      CAMERA_SLOT: "1"
+    environment: {CAMERA_SLOT: "1"}
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
-      - "buffer:/buffer"
-      - "live:/live"
+      - buffer:/buffer
+      - live:/live
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
 
   recorder-2:
     <<: *camera
     container_name: ${CAMWATCH_PREFIX:-camwatch}-recorder-2
-    environment:
-      CAMERA_SLOT: "2"
+    environment: {CAMERA_SLOT: "2"}
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
-      - "buffer-2:/buffer"
-      - "live:/live"
+      - buffer-2:/buffer
+      - live:/live
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
 
   recorder-3:
     <<: *camera
     container_name: ${CAMWATCH_PREFIX:-camwatch}-recorder-3
-    environment:
-      CAMERA_SLOT: "3"
+    environment: {CAMERA_SLOT: "3"}
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
-      - "buffer-3:/buffer"
-      - "live:/live"
+      - buffer-3:/buffer
+      - live:/live
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
 
   recorder-4:
-    image: ${CAMWATCH_IMAGE:-camwatch:latest}
-    pull_policy: never
-    restart: unless-stopped
-    env_file: .env
-    logging:
-      driver: json-file
-    command:
-      - python
-      - camslot.py
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - "find /tmp/idle -mmin -1 2>/dev/null | grep -q . || { find /tmp/healthy -mmin -2 | grep -q . && find /tmp/recording -mmin -2 | grep -q . ; }"
-      interval: 60s
-      start_period: 120s
+    <<: *camera
     container_name: ${CAMWATCH_PREFIX:-camwatch}-recorder-4
-    environment:
-      CAMERA_SLOT: "4"
+    environment: {CAMERA_SLOT: "4"}
     volumes:
-      - "${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings"
-      - "buffer-4:/buffer"
-      - "live:/live"
+      - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
+      - buffer-4:/buffer
+      - live:/live
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
+
 
   # Not live: identifies faces in finished recordings against the photo library
   facematch:
-    image: ${CAMWATCH_IMAGE:-camwatch:latest}
-    pull_policy: never
-    restart: unless-stopped
-    env_file: .env
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+    <<: *common
     container_name: ${CAMWATCH_PREFIX:-camwatch}-facematch
-    command:
-      - python
-      - facematch.py
+    command: ["python", "facematch.py"]
     volumes:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
       - ${PHOTOS_PATH:-/mnt/hdd/camwatch/photos}:/photos:ro
@@ -132,13 +84,9 @@ services:
   presence:
     <<: *common
     container_name: ${CAMWATCH_PREFIX:-camwatch}-presence
-    command:
-      - python
-      - presence.py
+    command: ["python", "presence.py"]
     healthcheck:
-      test:
-        - CMD-SHELL
-        - "find /tmp/healthy -mmin -2 | grep -q ."
+      test: ["CMD-SHELL", "find /tmp/healthy -mmin -2 | grep -q ."]
       interval: 60s
       start_period: 60s
     volumes:
@@ -151,13 +99,9 @@ services:
   offsite:
     <<: *common
     container_name: ${CAMWATCH_PREFIX:-camwatch}-offsite
-    command:
-      - python
-      - offsite.py
+    command: ["python", "offsite.py"]
     healthcheck:
-      test:
-        - CMD-SHELL
-        - "find /tmp/healthy -mmin -2 | grep -q ."
+      test: ["CMD-SHELL", "find /tmp/healthy -mmin -2 | grep -q ."]
       interval: 60s
       start_period: 60s
     volumes:
@@ -168,15 +112,9 @@ services:
   webui:
     <<: *common
     container_name: ${CAMWATCH_PREFIX:-camwatch}-webui
-    command:
-      - python
-      - webui.py
+    command: ["python", "webui.py"]
     healthcheck:
-      test:
-        - CMD
-        - python
-        - "-c"
-        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=5)"
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=5)"]
       interval: 60s
     ports:
       - "${WEB_PORT:-8080}:8080"
@@ -184,7 +122,7 @@ services:
       - ${RECORDINGS_PATH:-/mnt/hdd/camwatch/recordings}:/recordings
       - ${PHOTOS_PATH:-/mnt/hdd/camwatch/photos}:/photos
       - ${DATA_PATH:-/mnt/hdd/camwatch/data}:/data
-      - "live:/live"
+      - live:/live
       - /run/mysqld:/run/mysqld
 
 volumes:

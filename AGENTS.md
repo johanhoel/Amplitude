@@ -43,6 +43,21 @@ Several Claude sessions commit to this repo on the same day, from different mach
 - Read the newest commit messages for the area you touch. They say what the other session changed and why.
 - Say in your commit message what another session needs to know: a new rule, a file that moved, a known gap.
 
+## Main stays installable; the servers are not a test bench (always)
+
+The update buttons in CamWatch and Home Deck install `main` from GitHub, on Johan's servers and on his friends'.
+On 2026-10-31 a night of untested commits went straight to `main`, the CI failed on every one of them, and each was
+installed on the production server to see whether it ran. A rollback then came from an old copy of the code.
+
+- This repository is the only source. `johanhoel/camwatch` (a separate, older CamWatch repository) is retired:
+  never build, release or deploy from it, or from any copy of CamWatch outside `amplitude/CamWatch`.
+- New features go on a branch and reach `main` through a pull request, with the CI green. Run the project's tests
+  (`python tests/run.py --quick` in CamWatch, every file in `panels/tests/`) before you push.
+- Try a change on staging (CamWatch: port 8090; Home Deck: the trial on port 8099), never on production.
+- A red CI run on `main` is the first thing to fix, before any other work.
+- Unfinished work from that night is on the branch `camwatch-phase-2-3`. It is not reviewed: its CI fails, and
+  `app/sw.js` does not parse.
+
 ## Private values stay off GitHub (always)
 
 The repository is public. Its history was rewritten on 2026-10-28 to remove the owner's private data.
