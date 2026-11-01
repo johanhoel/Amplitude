@@ -190,7 +190,7 @@ variables, Actions):
 
 | Secret | Used for |
 |---|---|
-| `DEVELOPER_ID_CERT_BASE64`, `DEVELOPER_ID_CERT_PASSWORD` | The Developer ID Application certificate (.p12, base64) and its password. Required. |
+| `DEVELOPER_ID_CERT_BASE64`, `DEVELOPER_ID_CERT_PASSWORD` | One .p12 (base64) with two certificates, and its password. Required. It must hold **Developer ID Application** (signs the app and Virgil's programs) and **Developer ID Installer** (signs `Virgil.pkg`). Apple rejects the app when the package inside it is not signed. Create both in your Apple developer account, under Certificates. Then export them together from Keychain Access as one .p12. |
 | `DEVELOPER_ID_TEAM` or `APPLE_TEAM_ID` | Team ID, part of the certificate name. Required. |
 | `APPLE_ID`, `APPLE_APP_PASSWORD` | Notarization with an Apple ID and an app-specific password from appleid.apple.com. |
 | `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID`, `APPLE_API_KEY_BASE64` | Notarization with an App Store Connect API key instead (the .p8 file in base64). |
