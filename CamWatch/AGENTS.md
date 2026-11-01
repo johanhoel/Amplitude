@@ -36,8 +36,11 @@ One Docker image (`camwatch:latest`), several containers (`docker-compose.yml`).
 4. **Secrets never reach the browser or the logs**: camera URLs are shown with `mask_url()`, passwords as empty
    fields that keep the saved value. `settings.json` and `rclone.conf` are mode 600.
 5. **Small, focused changes.** One feature per branch. Don't reformat files you don't change.
-6. **You never deploy and never touch the server.** No SSH, no `docker compose` on the live system. A human merges
-   and deploys (`extras/release.sh`, see below).
+6. **You deploy only when Johan asks for it, in your session.** Staging first (`extras/release.sh staging`), then
+   production. Never try an unfinished change on production: on 2026-10-31 that cost production three days of
+   features. Never release from `johanhoel/camwatch`, the retired separate repository.
+7. **Every commit says what changed, why, which tests ran and how to revert it.** The template is in the root
+   [AGENTS.md](../AGENTS.md).
 
 ## Gotchas (each one cost a real bug)
 
@@ -61,7 +64,7 @@ python tests/serve_fake.py                      # web UI with fake data on http:
 
 Setup once: `powershell -File dev/setup.ps1` (Windows) - creates `.venv` with the app requirements.
 
-## Deploying (humans only)
+## Deploying (only when Johan asks)
 
 Version: `app/VERSION` (date, e.g. `2026.10.27`) - bump it with each release. The commit is added automatically:
 `app/BUILD` is filled in by `git archive` (`.gitattributes` export-subst). Shown in every page footer and `/api/version`.
