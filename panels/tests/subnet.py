@@ -43,10 +43,10 @@ check("home_subnet sets the home network", str(c.C.HOME_NET) == "10.20.30.0/24",
 check("an address in it is at home", c.at_home("10.20.30.7") and not c.at_home("192.168.1.7"))
 check("[network.names] numbers become full addresses", c.home_ip("30") == "10.20.30.30", c.home_ip("30"))
 
-c = load(piholes='["192.168.100.30", "192.168.100.31"]')
+c = load(piholes='["192.168.50.30", "192.168.50.31"]')
 check("without home_subnet, the first Pi-hole's /24 is the home network",
-      str(c.C.HOME_NET) == "192.168.100.0/24", str(c.C.HOME_NET))
-check("the live house's phones count as home", c.at_home("192.168.100.42") and not c.at_home("192.168.1.42"))
+      str(c.C.HOME_NET) == "192.168.50.0/24", str(c.C.HOME_NET))
+check("a phone in that network counts as home", c.at_home("192.168.50.42") and not c.at_home("192.168.1.42"))
 
 c = load(ha="http://172.16.5.9:8123")
 check("without a Pi-hole, Home Assistant's /24 is the home network", str(c.C.HOME_NET) == "172.16.5.0/24", str(c.C.HOME_NET))
@@ -66,7 +66,7 @@ def problems(subnet):
 
 check("a public network is refused", problems("8.8.8.0/24"))
 check("only a /24 is accepted, because [network.names] counts on the last number", problems("192.168.1.0/16"))
-check("a private /24 passes the check", not problems("192.168.100.0/24"))
+check("a private /24 passes the check", not problems("192.168.50.0/24"))
 
 for f in ("presence.py", "insights.py"):
     code = (SERVER / "homedeck" / f).read_text(encoding="utf-8")
