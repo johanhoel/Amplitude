@@ -89,9 +89,10 @@ jobs:
 
       # Build Virgil from source at a pinned commit and sign its engine, Core Audio
       # driver and Virgil Control with the same Developer ID, so the package inside
-      # the app passes notarization with it. The app installs it with
-      # /usr/sbin/installer, so the .pkg itself needs no Installer certificate;
-      # it is signed too when the .p12 also holds a "Developer ID Installer" identity.
+      # the app passes notarization with it. The .pkg itself needs a "Developer ID
+      # Installer" identity in the same .p12: Apple rejects an unsigned package
+      # inside the app ("The binary is not signed", run of 2026-10-30), even though
+      # everything in it is signed. Without that identity this step stops at once.
       - name: Build Virgil (signed)
         env:
           TEAM_ID: ${{ secrets.DEVELOPER_ID_TEAM }}
@@ -132,7 +133,11 @@ jobs:
 
           export VIRGIL_CODESIGN_ID="Developer ID Application: Johan Hoel ($TEAM_ID)"
           installer_id=$(security find-identity -v -p basic build.keychain | sed -n 's/.*"\(Developer ID Installer: [^"]*\)".*/\1/p' | head -1)
-          if [ -n "$installer_id" ]; then export VIRGIL_INSTALLER_ID="$installer_id"; else echo "No Developer ID Installer identity: Virgil.pkg is unsigned (its contents are signed)."; fi
+          if [ -z "$installer_id" ]; then
+            echo "::error title=No Developer ID Installer certificate::DEVELOPER_ID_CERT_BASE64 holds no 'Developer ID Installer' identity. Apple rejects the unsigned Virgil.pkg inside the app. Add that certificate to the .p12 (see dstreamer-desktop/README.md)."
+            exit 1
+          fi
+          export VIRGIL_INSTALLER_ID="$installer_id"
           (cd "$src" && sh packaging/macos/build-pkg.sh)
           cp "$src"/dist/Virgil-*-macos.pkg "$RUNNER_TEMP/Virgil.pkg"
           codesign -v --strict "$src/build-macos-release/virgild" || true

@@ -2,12 +2,14 @@
 # template validates (the same check build_kit.sh runs) and its own tests run. Home Deck's page test
 # (panels/tests/smoke.py) needs a running Home Deck and Home Assistant, so it stays on the developer's machine
 # (panels/tools/check.sh). The image job builds the container and actually starts it.
+# DStreamer: its scripts parse and its Compose file is valid. The image itself builds the Dante engine from
+# source, which is too heavy for every push; build it as dstreamer/BUILD_AND_TEST.md says before a release.
 name: checks
 on:
   push:
-    paths: ["installers/**", "panels/**", ".github/workflows/checks.yml"]
+    paths: ["installers/**", "panels/**", "dstreamer/**", ".github/workflows/checks.yml"]
   pull_request:
-    paths: ["installers/**", "panels/**", ".github/workflows/checks.yml"]
+    paths: ["installers/**", "panels/**", "dstreamer/**", ".github/workflows/checks.yml"]
   workflow_dispatch:
 jobs:
   installers:
@@ -20,6 +22,19 @@ jobs:
         run: shellcheck --severity=error installers/linux/setup.sh
       - name: The installer's own checks
         run: python3 installers/tests/check.py
+
+  dstreamer:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scripts parse
+        run: |
+          bash -n dstreamer/docker-entrypoint.sh && echo "ok dstreamer/docker-entrypoint.sh"
+          shellcheck --severity=error dstreamer/docker-entrypoint.sh
+          python3 -m py_compile dstreamer/tools/*.py && echo "ok dstreamer/tools"
+      - name: The Compose file is valid
+        working-directory: dstreamer
+        run: docker compose config -q && echo "ok dstreamer/docker-compose.yml"
 
   homedeck:
     runs-on: ubuntu-24.04

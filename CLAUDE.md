@@ -1,3 +1,6 @@
 # amplitude
 
-Read [AGENTS.md](AGENTS.md): the layout and rules (always add screenshots of a project's features, and write every README, changelog, doc and commit message without AI slop) apply to every agent and every project folder.
+Read [AGENTS.md](AGENTS.md) before your first change. It is the rulebook for every agent and every project folder:
+work on a branch, document every change with its reason and how to revert it, run the project's tests before every
+commit, try changes on staging and never on production, and keep private values out of git.
+It also holds the README shape, the screenshot rules and the writing rules.
